@@ -149,6 +149,8 @@ app.use('/', (req, res, next) => {
     `);
 });
 
+const server = http.createServer(app);
+
 client.on('ready', () => {
     console.log(`Logged in as ${client.user.username}!`);
 
