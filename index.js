@@ -269,7 +269,7 @@ client.on('raw', async event => {
     client.emit(events[event.t], reaction, user);
 });
 
-// client.login(process.env.TOKEN);
+client.login(process.env.TOKEN);
 
 const displayError = (err) => {
     return `
