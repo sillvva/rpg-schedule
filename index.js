@@ -45,8 +45,11 @@ app.use(gameUrl, (req, res, next) => {
     
                     const channel = guild.channels.get(channelId) || guild.channels.array().find(c => c instanceof discord.TextChannel);
                     const d = new Date();
-                    const tz = parseFloat(req.query.tz);
-                    d.setHours(d.getHours()+tz);
+                    let tz = 0;
+                    if (req.method === 'POST') {
+                        tz = parseFloat(req.body.tz);
+                        d.setHours(d.getHours()+tz);
+                    }
     
                     if (!channel) {
                         throw new Error('Discord channel not found');
@@ -67,7 +70,8 @@ app.use(gameUrl, (req, res, next) => {
                         where: '',
                         reserved: '',
                         description: '',
-                        players: 7
+                        players: 7,
+                        isgame: req.query.g ? 1 : 0
                     };
     
                     if (req.query.g) {

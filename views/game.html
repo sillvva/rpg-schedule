@@ -37,11 +37,6 @@
         <form method="post">
             <input type="hidden" name="s" value="{{s}}">
             <input type="hidden" name="c" value="{{c}}">
-            <input type="hidden" name="tz" value="">
-            <script type="text/javascript">
-                var d = new Date();
-                document.querySelector('[name="tz"]').value = -d.getTimezoneOffset()/60;
-            </script>
             <div class="row">
                 <div class="form-group col-sm-6">
                     <label for="guild" class="col-form-label">Server</label>
@@ -90,6 +85,14 @@
                     </div>
                 </div>
             </div>
+            <script type="text/javascript">
+                if ({{isgame}} === 0) {
+                    const d = new Date();
+                    document.querySelector('#date').value = d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+(d.getDate()).toString().padStart(2, '0');
+                    document.querySelector('#time').value = d.getHours().toString().padStart(2, '0')+':'+d.getMinutes().toString().padStart(2, '0');
+                    document.querySelector('#timezone').value = -d.getTimezoneOffset()/60+tz;
+                }
+            </script>
             <div class="row">
                 <div class="form-group col-sm-5">
                     <label for="dm" class="col-form-label">DM Discord Tag</label>
