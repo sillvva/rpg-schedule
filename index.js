@@ -19,8 +19,6 @@ app.use(gameUrl, (req, res, next) => {
     const server = req.query.s;
 
     if (!db.connection()) next();
-    
-    console.log(req);
 
     if (server) {
         const guild = client.guilds.get(server);
@@ -44,12 +42,6 @@ app.use(gameUrl, (req, res, next) => {
                     }
     
                     const channel = guild.channels.get(channelId) || guild.channels.array().find(c => c instanceof discord.TextChannel);
-                    const d = new Date();
-                    let tz = 0;
-                    if (req.method === 'POST') {
-                        tz = parseFloat(req.body.tz);
-                        d.setHours(d.getHours()+tz);
-                    }
     
                     if (!channel) {
                         throw new Error('Discord channel not found');
@@ -61,9 +53,9 @@ app.use(gameUrl, (req, res, next) => {
                         channel: channel.name,
                         s: server,
                         c: channel.id,
-                        date: d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+(d.getDate()).toString().padStart(2, '0'),
-                        time: d.getHours().toString().padStart(2, '0')+':'+d.getMinutes().toString().padStart(2, '0'),
-                        timezone: -d.getTimezoneOffset()/60+tz,
+                        date: '',
+                        time: '',
+                        timezone: '',
                         dm: '',
                         adventure: '',
                         runtime: '',
