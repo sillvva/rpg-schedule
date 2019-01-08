@@ -29,6 +29,7 @@ app.use(gameUrl, (req, res, next) => {
                     if (err) throw err;
                     
                     let channelId;
+                    let result;
                     
                     if (req.query.g) {
                         result = await db.getGame(req.query.g);
