@@ -19,53 +19,48 @@ app.use(gameUrl, (req, res, next) => {
     const server = req.query.s;
 
     if (!db.connection()) next();
+    
+    console.log(req);
 
     if (server) {
         const guild = client.guilds.get(server);
 
         if (guild) {
-            fs.readFile(path.join(__dirname, 'views', 'game.html'), 'utf8', (err, data) => {
-                if (err) throw err;
-
-                let query;
-                if (req.query.g) {
-                    query = db.getGame(req.query.g);
-                }
-                else {
-                    query = db.getGuildConfig(guild.id);
-                }
-
-                if (!query) throw new Error('Invalid query');
-                query.then(result => {
-                    if (!result) {
-                        if (req.query.g) {
-                            throw new Error('Game not found');
-                        } else {
-                            throw new Error('Discord server not found');
-                        }
-                    }
-
-                    let channelId = result.channel;
+            fs.readFile(path.join(__dirname, 'views', 'game.html'), 'utf8', async (err, data) => {
+                try {
+                    if (err) throw err;
+                    
+                    let channelId;
+                    
                     if (req.query.g) {
+                        result = await db.getGame(req.query.g);
+                        if (!result) throw new Error('Game not found');
                         channelId = result.c;
                     }
-
+                    else {
+                        result = await db.getGuildConfig(guild.id);
+                        if (!result) throw new Error('Discord server not found');
+                        channelId = result.channel;
+                    }
+    
                     const channel = guild.channels.get(channelId) || guild.channels.array().find(c => c instanceof discord.TextChannel);
                     const d = new Date();
-
+                    const tz = parseFloat(req.query.tz);
+                    d.setHours(d.getHours()+tz);
+    
                     if (!channel) {
                         throw new Error('Discord channel not found');
                     }
-
+    
                     let dataValues = {
                         title: req.query.g ? 'Edit Game' : 'New Game',
                         guild: guild.name,
                         channel: channel.name,
                         s: server,
                         c: channel.id,
-                        date: d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+(d.getDate()+1).toString().padStart(2, '0'),
+                        date: d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+(d.getDate()).toString().padStart(2, '0'),
                         time: d.getHours().toString().padStart(2, '0')+':'+d.getMinutes().toString().padStart(2, '0'),
-                        timezone: -d.getTimezoneOffset()/60,
+                        timezone: -d.getTimezoneOffset()/60+tz,
                         dm: '',
                         adventure: '',
                         runtime: '',
@@ -74,14 +69,14 @@ app.use(gameUrl, (req, res, next) => {
                         description: '',
                         players: 7
                     };
-
+    
                     if (req.query.g) {
                         const savedValues = { ...result };
                         delete savedValues.gameId;
                         delete savedValues.messageId;
                         dataValues = Object.assign(dataValues, savedValues);
                     }
-
+    
                     if (req.method === 'POST') {
                         dataValues.date = req.body.date;
                         dataValues.time = req.body.time;
@@ -94,22 +89,22 @@ app.use(gameUrl, (req, res, next) => {
                         dataValues.timezone = req.body.timezone;
                         dataValues.players = req.body.players;
                     }
-
+    
                     Object.entries(dataValues).forEach(entry => {
                         const [key, val] = entry;
                         data = data.replace(new RegExp('{{'+key+'}}', 'g'), val);
                     });
-
+    
                     if (req.method === 'POST') {
                         let gameId = (new Date().getTime()).toString() +
                             (req.body.dm.match(/#\d{4}/) ? req.body.dm.split('#').pop() : Math.round(Math.random() * 9999));
-
+    
                         if (req.query.g) {
                             gameId = req.query.g;
                         }
-
+    
                         const game = { id: gameId, ...req.body };
-
+    
                         db.setGame(channel, game).then(response => {
                             // res.send(data);
                             res.redirect(gameUrl+'?s='+req.body.s+'&g='+game.id);
@@ -121,27 +116,21 @@ app.use(gameUrl, (req, res, next) => {
                             if (err.message.startsWith('DM')) {
                                 data = data.replace(/{{dm-error}}/g, `<small class="error">${err.message}</small>`);
                             }
-
+    
                             data = data.replace(/{{[^-]+-error}}/g, '');
-
+    
                             res.send(data);
                         });
                     } else {
                         data = data.replace(/{{[^-]+-error}}/g, '');
-
+    
                         res.send(data);
                     }
-                })
-                .catch(err => {
-                    data = `
-                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 2rem; font-family: sans-serif; position: fixed; top: 0; left: 0; right: 0; bottom: 0;">
-                            <h3>Error:</h3>
-                            <pre>${err.message}</pre>
-                        </div>
-                        `;
+                } catch(err) {
+                    data = displayError(err);
 
                     res.send(data);
-                });
+                }
             });
         } else {
             next();
@@ -159,8 +148,6 @@ app.use('/', (req, res, next) => {
         </div>
     `);
 });
-
-const server = http.createServer(app);
 
 client.on('ready', () => {
     console.log(`Logged in as ${client.user.username}!`);
@@ -282,4 +269,13 @@ client.on('raw', async event => {
     client.emit(events[event.t], reaction, user);
 });
 
-client.login(process.env.TOKEN);
+// client.login(process.env.TOKEN);
+
+const displayError = (err) => {
+    return `
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 2rem; font-family: sans-serif; position: fixed; top: 0; left: 0; right: 0; bottom: 0;">
+        <h3>Error:</h3>
+        <pre>${err.message}</pre>
+    </div>
+    `;
+}

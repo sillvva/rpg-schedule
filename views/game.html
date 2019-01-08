@@ -37,6 +37,11 @@
         <form method="post">
             <input type="hidden" name="s" value="{{s}}">
             <input type="hidden" name="c" value="{{c}}">
+            <input type="hidden" name="tz" value="">
+            <script type="text/javascript">
+                var d = new Date();
+                document.querySelector('[name="tz"]').value = -d.getTimezoneOffset()/60;
+            </script>
             <div class="row">
                 <div class="form-group col-sm-6">
                     <label for="guild" class="col-form-label">Server</label>
