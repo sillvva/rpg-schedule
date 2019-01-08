@@ -69,19 +69,18 @@ class database {
         else throw new Error('DM must be a Discord tag');
 
         let reserved = [];
+        let waitlist = [];
         game.reserved.split(/\r?\n/).forEach(res => {
             if (res.trim().length === 0) return;
             let member = guild.members.array().find(mem => mem.user.tag === res.trim());
             
-            let wl = 0;
-            if (reserved.length > parseInt(game.players)) wl = 2;
+            let name = res.trim();
+            if (member) name = member.user.toString();
             
-            if (member) reserved.push((reserved.length+1)+'. '+member.user.toString());
-            else reserved.push((reserved.length+1-wl)+'. '+res.trim());
-
-            if (reserved.length === parseInt(game.players)) {
-                reserved.push('');
-                reserved.push('**Waitlist:**');
+            if (reserved.length < parseInt(game.players)) {
+                reserved.push((reserved.length+1)+'. '+name);
+            } else {
+                waitlist.push((reserved.length+waitlist.length+1)+'. '+name);
             }
         });
 
@@ -104,6 +103,10 @@ class database {
                 game.description.replace(new RegExp(m, 'g'), chan.toString())
             }
         });
+        
+        let signups = '';
+        if (reserved.length > 0) signups += `\n**Sign Ups:**\n${reserved.join("\n")}\n`;
+        if (waitlist.length > 0) signups += `\n**Waitlist:**\n${waitlist.join("\n")}\n`;
 
         let embed = new discord.RichEmbed()
             .setTitle('Game Announcement')
@@ -115,10 +118,7 @@ class database {
                 ${game.description.length > 0 ? "**Description:**\n"+game.description+"\n" : game.description}
                 **When:** ${gameDate} - ${gameTime} (${timeZone})
                 **Where:** ${game.where}
-                
-                **Sign Ups:** 
-                ${reserved.join("\n")}
-                
+                ${signups}
                 (➕ Add Me | ➖ Remove Me)
             `);
 
