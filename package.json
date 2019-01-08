@@ -1,0 +1,28 @@
+{
+  "name": "rpg-schedule",
+  "version": "1.0.0",
+  "description": "A discord bot for announcing RPG games with automated sign up",
+  "main": "index.js",
+  "dependencies": {
+    "body-parser": "^1.18.3",
+    "discord.js": "^11.4.2",
+    "express": "^4.16.4",
+    "mongodb": "^3.1.10",
+    "nodemon": "^1.18.9"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sillvva/rpg-schedule.git"
+  },
+  "author": "Matt DeKok",
+  "license": "MIT",
+  "engines": {
+    "node": "8.14.0",
+    "npm": "6.4.1"
+  }
+}
