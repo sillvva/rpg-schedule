@@ -72,8 +72,12 @@ class database {
         game.reserved.split(/\r?\n/).forEach(res => {
             if (res.trim().length === 0) return;
             let member = guild.members.array().find(mem => mem.user.tag === res.trim());
+            
+            let wl = 0;
+            if (reserved.length > parseInt(game.players)) wl = 2;
+            
             if (member) reserved.push((reserved.length+1)+'. '+member.user.toString());
-            else reserved.push((reserved.length+1)+'. '+res.trim());
+            else reserved.push((reserved.length+1-wl)+'. '+res.trim());
 
             if (reserved.length === parseInt(game.players)) {
                 reserved.push('');
