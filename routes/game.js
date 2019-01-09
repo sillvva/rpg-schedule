@@ -59,14 +59,19 @@ module.exports = (options) => {
                         reserved: '',
                         description: '',
                         players: 7,
-                        newgame: !req.query.g ? true : false,
-                        editgame: req.query.g ? true : false,
                         method: 'automated',
                         customSignup: '',
                         when: 'datetime',
                         date: '',
                         time: '',
-                        timezone: ''
+                        timezone: '',
+                        is: {
+                            newgame: !req.query.g ? true : false,
+                            editgame: req.query.g ? true : false
+                        },
+                        errors: {
+                            dm: false
+                        }
                     };
     
                     if (req.query.g) {
@@ -109,14 +114,14 @@ module.exports = (options) => {
                                 response.dm.send("You can edit your `"+game.adventure+"` game here:\n"+host+gameUrl+'?s='+req.body.s+'&g='+game.id);
                             }
                         }).catch(err => {
-                            data.dmError = err.message.startsWith('DM') ? err.message : false;
+                            data.errors.dm = err.message.startsWith('DM') ? err.message : false;
                             res.render('game', data);
                         });
                     } else {
                         res.render('game', data);
                     }
                 } catch(err) {
-                    res.send(displayError(err));
+                    res.render('error', err);
                 }
             } else {
                 next();
@@ -127,13 +132,4 @@ module.exports = (options) => {
     });
     
     return router;
-};
-
-const displayError = (err) => {
-    return `
-    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 2rem; font-family: sans-serif; position: fixed; top: 0; left: 0; right: 0; bottom: 0;">
-        <h3>Error:</h3>
-        <pre>${err.message}</pre>
-    </div>
-    `;
 };
