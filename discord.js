@@ -1,9 +1,10 @@
-const http = require('http');
 const discord = require('discord.js');
 
-const discordProcesses = (app, db) => {
+const host = process.env.HOST;
+const gameUrl = '/game';
+
+const discordProcesses = (app, db, readyCallback) => {
     const client = new discord.Client();
-    const server = http.createServer(app);
 
     /**
      * Discord.JS - ready
@@ -11,15 +12,7 @@ const discordProcesses = (app, db) => {
     client.on('ready', () => {
         console.log(`Logged in as ${client.user.username}!`);
     
-        server.listen(process.env.PORT || 5000);
-    
-        db.connect().then(connected => {
-            if (connected) {
-                console.log('Connected!');
-            } else {
-                console.log('Not connected!');
-            }
-        });
+        readyCallback();
         
         if (process.env.HOST.indexOf('aws') >= 0) console.log('Demo Game: '+process.env.HOST+'/game?s=532564186023329792');
     });
@@ -85,15 +78,18 @@ const discordProcesses = (app, db) => {
         const game = await db.getGameBy('messageId', message.id);
         if (game && user.id !== message.author.id) {
             const channel = message.channel;
+            console.log(reaction.emoji.name);
             if (reaction.emoji.name === '➕') {
                 if (game.reserved.indexOf(user.tag) < 0) {
                     game.reserved = [ ...game.reserved.trim().split(/\r?\n/), user.tag ].join("\n");
                     if (game.reserved.startsWith("\n")) game.reserved = game.reserved.substr(1);
+                    console.log(game.reserved);
                     db.setGame(channel, game);
                 }
             } else if (reaction.emoji.name === '➖') {
                 if (game.reserved.indexOf(user.tag) >= 0) {
                     game.reserved = game.reserved.split(/\r?\n/).filter(tag => tag !== user.tag).join("\n");
+                    console.log(game.reserved);
                     db.setGame(channel, game);
                 }
             }
