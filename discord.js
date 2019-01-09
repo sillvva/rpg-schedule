@@ -78,7 +78,7 @@ const discordProcesses = (app, db, readyCallback) => {
         const game = await db.getGameBy('messageId', message.id);
         if (game && user.id !== message.author.id) {
             const channel = message.channel;
-            console.log(reaction.emoji.name);
+            console.log(reaction.emoji);
             if (reaction.emoji.name === '➕') {
                 if (game.reserved.indexOf(user.tag) < 0) {
                     game.reserved = [ ...game.reserved.trim().split(/\r?\n/), user.tag ].join("\n");
