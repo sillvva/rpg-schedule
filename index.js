@@ -38,8 +38,12 @@ app.use(gameUrl, (req, res, next) => {
                     }
                     else {
                         result = await db.getGuildConfig(guild.id);
-                        if (!result) throw new Error('Discord server not found');
-                        channelId = result.channel;
+                        if (result) channelId = result.channel;
+                        else {
+                            const firstChannel = guild.channels.array().filter(c => c instanceof TextChannel)[0];
+                            if (!firstChannel) throw new Error('Discord server not found');
+                            channelId = firstChannel.id;
+                        }
                     }
     
                     const channel = guild.channels.get(channelId) || guild.channels.array().find(c => c instanceof discord.TextChannel);
@@ -160,10 +164,6 @@ client.on('ready', () => {
     });
 
     server.listen(process.env.PORT || 5000);
-    
-    setInterval(function() {
-        http.get(process.env.HOST.replace('https', 'http'));
-    }, 300000); // every 5 minutes (300000)
 });
 
 client.on('message', (message) => {
