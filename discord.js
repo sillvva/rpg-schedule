@@ -137,9 +137,14 @@ const discordProcesses = (app, db, readyCallback) => {
         client.emit(events[event.t], reaction, user);
     });
     
-    client.login(process.env.TOKEN);
-    
     return client;
 }
 
-module.exports = discordProcesses;
+const discordLogin = (client) => {
+    client.login(process.env.TOKEN);
+};
+
+module.exports = {
+    processes: discordProcesses,
+    login: discordLogin
+};
