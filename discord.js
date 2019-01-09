@@ -78,18 +78,15 @@ const discordProcesses = (app, db, readyCallback) => {
         const game = await db.getGameBy('messageId', message.id);
         if (game && user.id !== message.author.id) {
             const channel = message.channel;
-            console.log(reaction.emoji);
             if (reaction.emoji.name === '➕') {
                 if (game.reserved.indexOf(user.tag) < 0) {
                     game.reserved = [ ...game.reserved.trim().split(/\r?\n/), user.tag ].join("\n");
                     if (game.reserved.startsWith("\n")) game.reserved = game.reserved.substr(1);
-                    console.log(game.reserved);
                     db.setGame(channel, game);
                 }
             } else if (reaction.emoji.name === '➖') {
                 if (game.reserved.indexOf(user.tag) >= 0) {
                     game.reserved = game.reserved.split(/\r?\n/).filter(tag => tag !== user.tag).join("\n");
-                    console.log(game.reserved);
                     db.setGame(channel, game);
                 }
             }
