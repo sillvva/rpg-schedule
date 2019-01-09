@@ -40,7 +40,7 @@ app.use(gameUrl, (req, res, next) => {
                         result = await db.getGuildConfig(guild.id);
                         if (result) channelId = result.channel;
                         else {
-                            const firstChannel = guild.channels.array().filter(c => c instanceof TextChannel)[0];
+                            const firstChannel = guild.channels.array().filter(c => c instanceof discord.TextChannel)[0];
                             if (!firstChannel) throw new Error('Discord server not found');
                             channelId = firstChannel.id;
                         }
