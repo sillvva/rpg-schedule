@@ -108,20 +108,18 @@ class database {
         if (game.method === 'automated') {
             if (reserved.length > 0) signups += `\n**Sign Ups:**\n${reserved.join("\n")}\n`;
             if (waitlist.length > 0) signups += `\n**Waitlist:**\n${waitlist.join("\n")}\n`;
-            signups += `(➕ Add Me | ➖ Remove Me)`;
+            signups += `\n(➕ Add Me | ➖ Remove Me)`;
         } else if (game.method === 'custom') {
             signups += `\n${game.customSignup}`;
         }
         
         let when = '';
-        console.log(game.when);
         if (game.when === 'datetime') {
             when = `${gameDate} - ${gameTime} (${timeZone})`;
         } else if (game.when === 'now') {
             when = 'Now';
         }
         
-        console.log(when);
         let embed = new discord.RichEmbed()
             .setTitle('Game Announcement')
             .setColor(0x2196F3)

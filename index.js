@@ -76,23 +76,24 @@ client.on('ready', () => {
  * Discord.JS - message
  */
 client.on('message', (message) => {
-    if (message.content.startsWith('!schedule')) {
+    if (message.content.startsWith(process.env.BOTCOMMAND_SCHEDULE)) {
         const parts = message.content.split(' ').slice(1);
         const cmd = parts.reverse().pop();
 
-        if (cmd === 'help') {
+        if (cmd === 'help' || message.content.split(' ').length === 1) {
             let embed = new discord.RichEmbed()
                 .setTitle('RPG Schedule Help')
                 .setColor(0x2196F3)
                 .setDescription(`
                     __**Command List**__
-                    \`!schedule help\` - Display this help window
+                    \`${process.env.BOTCOMMAND_SCHEDULE}\` - Display this help window
+                    \`${process.env.BOTCOMMAND_SCHEDULE} help\` - Display this help window
                     
                     Configuration
-                    \`!schedule channel #channel-name\` - Configure the channel where games are posted
+                    \`${process.env.BOTCOMMAND_SCHEDULE} channel #channel-name\` - Configure the channel where games are posted
                     
                     Usage
-                    \`!schedule link\` - Retrieve link for posting games
+                    \`${process.env.BOTCOMMAND_SCHEDULE} link\` - Retrieve link for posting games
                 `);
             message.channel.send(embed);
         } else if (cmd === 'link') {
