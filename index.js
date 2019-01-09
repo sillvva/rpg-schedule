@@ -1,11 +1,11 @@
 const http = require('http');
-const fs = require('fs');
-const path = require('path');
 const bodyParser = require('body-parser');
 const express = require('express');
 const discord = require('discord.js');
+const expressHbs = require('express-handlebars');
 
 const db = require('./db');
+const gameRoutes = require('./routes/game');
 
 const client = new discord.Client();
 const host = process.env.HOST;
@@ -13,133 +13,13 @@ const gameUrl = '/game';
 
 const app = express();
 
+app.engine('handlebars', expressHbs());
+app.set('view engine', 'handlebars');
+app.set('views', 'views');
+
 app.use(bodyParser.urlencoded());
 
-app.use(gameUrl, (req, res, next) => {
-    const server = req.query.s;
-
-    if (!db.connection()) next();
-
-    if (server) {
-        const guild = client.guilds.get(server);
-
-        if (guild) {
-            fs.readFile(path.join(__dirname, 'views', 'game.html'), 'utf8', async (err, data) => {
-                try {
-                    if (err) throw err;
-                    
-                    let channelId;
-                    let result;
-                    
-                    if (req.query.g) {
-                        result = await db.getGame(req.query.g);
-                        if (!result) throw new Error('Game not found');
-                        channelId = result.c;
-                    }
-                    else {
-                        result = await db.getGuildConfig(guild.id);
-                        if (result) channelId = result.channel;
-                        else {
-                            const firstChannel = guild.channels.array().filter(c => c instanceof discord.TextChannel)[0];
-                            if (!firstChannel) throw new Error('Discord server not found');
-                            channelId = firstChannel.id;
-                        }
-                    }
-    
-                    const channel = guild.channels.get(channelId) || guild.channels.array().find(c => c instanceof discord.TextChannel);
-    
-                    if (!channel) {
-                        throw new Error('Discord channel not found');
-                    }
-    
-                    let dataValues = {
-                        title: req.query.g ? 'Edit Game' : 'New Game',
-                        guild: guild.name,
-                        channel: channel.name,
-                        s: server,
-                        c: channel.id,
-                        date: '',
-                        time: '',
-                        timezone: '',
-                        dm: '',
-                        adventure: '',
-                        runtime: '',
-                        where: '',
-                        reserved: '',
-                        description: '',
-                        players: 7,
-                        isgame: req.query.g ? 1 : 0
-                    };
-    
-                    if (req.query.g) {
-                        const savedValues = { ...result };
-                        delete savedValues.gameId;
-                        delete savedValues.messageId;
-                        dataValues = Object.assign(dataValues, savedValues);
-                    }
-    
-                    if (req.method === 'POST') {
-                        dataValues.date = req.body.date;
-                        dataValues.time = req.body.time;
-                        dataValues.dm = req.body.dm;
-                        dataValues.adventure = req.body.adventure;
-                        dataValues.runtime = req.body.runtime;
-                        dataValues.where = req.body.where;
-                        dataValues.description = req.body.description;
-                        dataValues.reserved = req.body.reserved;
-                        dataValues.timezone = req.body.timezone;
-                        dataValues.players = req.body.players;
-                    }
-    
-                    Object.entries(dataValues).forEach(entry => {
-                        const [key, val] = entry;
-                        data = data.replace(new RegExp('{{'+key+'}}', 'g'), val);
-                    });
-    
-                    if (req.method === 'POST') {
-                        let gameId = (new Date().getTime()).toString() +
-                            (req.body.dm.match(/#\d{4}/) ? req.body.dm.split('#').pop() : Math.round(Math.random() * 9999));
-    
-                        if (req.query.g) {
-                            gameId = req.query.g;
-                        }
-    
-                        const game = { id: gameId, ...req.body };
-    
-                        db.setGame(channel, game).then(response => {
-                            // res.send(data);
-                            res.redirect(gameUrl+'?s='+req.body.s+'&g='+game.id);
-                            
-                            if (response.dm) {
-                                response.dm.sendMessage("You can edit your `"+game.adventure+"` game here:\n"+host+gameUrl+'?s='+req.body.s+'&g='+game.id);
-                            }
-                        }).catch(err => {
-                            if (err.message.startsWith('DM')) {
-                                data = data.replace(/{{dm-error}}/g, `<small class="error">${err.message}</small>`);
-                            }
-    
-                            data = data.replace(/{{[^-]+-error}}/g, '');
-    
-                            res.send(data);
-                        });
-                    } else {
-                        data = data.replace(/{{[^-]+-error}}/g, '');
-    
-                        res.send(data);
-                    }
-                } catch(err) {
-                    data = displayError(err);
-
-                    res.send(data);
-                }
-            });
-        } else {
-            next();
-        }
-    } else {
-        next();
-    }
-});
+app.use(gameRoutes({ client: client }));
 
 app.use('/', (req, res, next) => {
     res.send(`
@@ -273,12 +153,3 @@ client.on('raw', async event => {
 });
 
 client.login(process.env.TOKEN);
-
-const displayError = (err) => {
-    return `
-    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 2rem; font-family: sans-serif; position: fixed; top: 0; left: 0; right: 0; bottom: 0;">
-        <h3>Error:</h3>
-        <pre>${err.message}</pre>
-    </div>
-    `;
-}

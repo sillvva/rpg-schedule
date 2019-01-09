@@ -38,6 +38,7 @@ build/Release
 # Dependency directories
 node_modules/
 jspm_packages/
+nodemon.json
 
 # TypeScript v1 declaration files
 typings/
