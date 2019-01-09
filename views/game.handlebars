@@ -67,33 +67,6 @@
                 </div>
             </div>
             <div class="row">
-                <div class="form-group col-sm-4">
-                    <label for="date" class="col-form-label">Date</label>
-                    <input type="date" class="form-control" id="date" name="date" value="{{date}}" required>
-                </div>
-                <div class="form-group col-sm-4">
-                    <label for="time" class="col-form-label">Time</label>
-                    <input type="time" class="form-control" id="time" name="time" value="{{time}}" required>
-                </div>
-                <div class="form-group col-sm-4">
-                    <label for="timezone" class="col-form-label">Time Zone</label>
-                    <div class="input-group">
-                        <div class="input-group-prepend">
-                            <div class="input-group-text">GMT</div>
-                        </div>
-                        <input type="number" min="-12" max="14" class="form-control" id="timezone" name="timezone" value="{{timezone}}">
-                    </div>
-                </div>
-            </div>
-            <script type="text/javascript">
-                if ({{isgame}} === 0) {
-                    const d = new Date();
-                    document.querySelector('#date').value = d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+(d.getDate()).toString().padStart(2, '0');
-                    document.querySelector('#time').value = d.getHours().toString().padStart(2, '0')+':'+d.getMinutes().toString().padStart(2, '0');
-                    document.querySelector('#timezone').value = -d.getTimezoneOffset()/60;
-                }
-            </script>
-            <div class="row">
                 <div class="form-group col-sm-5">
                     <label for="dm" class="col-form-label">DM Discord Tag</label>
                     <input type="text" class="form-control" id="dm" name="dm" placeholder="Username#1234" required value="{{dm}}">
@@ -104,6 +77,53 @@
                 <div class="form-group col-sm-7">
                     <label for="where" class="col-form-label">Where</label>
                     <input type="text" class="form-control" id="where" name="where" required value="{{where}}">
+                </div>
+            </div>
+            {{# if newgame }}
+                <div class="row">
+                    <div class="form-group col-sm-6">
+                        <label for="method" class="col-form-label">Sign Up Method</label>
+                        <select class="form-control" name="method" id="method">
+                            <option value="automated" {{selected method "automated"}}>Automated Signup</option>
+                            <option value="custom" {{selected method "custom"}}>Custom Signup Instructions</option>
+                        </select>
+                        <small id="method-desc"></small>
+                    </div>
+                    <div class="form-group col-sm-6">
+                        <label for="when" class="col-form-label">When</label>
+                        <select class="form-control" name="when" id="when">
+                            <option value="datetime" {{selected when "datetime"}}>Date/Time</option>
+                            <option value="now" {{selected when "now"}}>Now</option>
+                        </select>
+                    </div>
+                </div>
+            {{else}}
+                <input type="hidden" name="method" id="method" value="{{method}}">
+                <input type="hidden" name="when" id="when" value="{{when}}">
+            {{/if}}
+            <div id="method__custom">
+                <div class="form-group">
+                    <label for="customSignup" class="col-form-label">Custom Signup Instructions</label>
+                    <input type="text" class="form-control" id="customSignup" name="customSignup" value="{{customSignup}}">
+                </div>
+            </div>
+            <div id="when__datetime" class="row">
+                <div class="form-group col-sm-4">
+                    <label for="date" class="col-form-label">Date</label>
+                    <input type="date" class="form-control" id="date" name="date" value="{{date}}">
+                </div>
+                <div class="form-group col-sm-4">
+                    <label for="time" class="col-form-label">Time</label>
+                    <input type="time" class="form-control" id="time" name="time" value="{{time}}">
+                </div>
+                <div class="form-group col-sm-4">
+                    <label for="timezone" class="col-form-label">Time Zone</label>
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <div class="input-group-text">GMT</div>
+                        </div>
+                        <input type="number" min="-12" max="14" class="form-control" id="timezone" name="timezone" value="{{timezone}}">
+                    </div>
                 </div>
             </div>
             <div class="row">
@@ -131,5 +151,45 @@
             </div>
         </form>
     </div>
+    <script type="text/javascript">
+        $('#method').change(function() {
+            const sel = $(this).val();
+            $('#method__custom').addClass('d-none');
+            $('#customSignup').removeAttr('required');
+            $('#method-desc').html('');
+            
+            if (sel === 'automated') {
+                $('#method-desc').html('Uses discord reaction buttons on the game announcement to allow users to sign up or cancel');
+                $('#when').val('datetime').change();
+            } else  if (sel === 'custom') {
+                $('#method__custom').removeClass('d-none');
+                $('#customSignup').attr('required','');
+            }
+        }).change();
+        
+        $('#when').change(function() {
+            const sel = $(this).val();
+            $('#when__datetime').addClass('d-none');
+            $('#date').removeAttr('required');
+            $('#time').removeAttr('required');
+            $('#timezone').removeAttr('required');
+            
+            if (sel === 'datetime') {
+                $('#when__datetime').removeClass('d-none');
+                $('#date').attr('required','');
+                $('#time').attr('required','');
+                $('#timezone').attr('required','');
+            } else if (sel === 'now') {
+                $('#method').val('custom').change();
+            }
+        }).change();
+        
+        {{# if newgame }}
+        const d = new Date();
+        document.querySelector('#date').value = d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+(d.getDate()).toString().padStart(2, '0');
+        document.querySelector('#time').value = d.getHours().toString().padStart(2, '0')+':'+d.getMinutes().toString().padStart(2, '0');
+        document.querySelector('#timezone').value = -d.getTimezoneOffset()/60;
+        {{/if}}
+    </script>
 </body>
 </html>

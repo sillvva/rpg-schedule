@@ -13,12 +13,33 @@ const gameUrl = '/game';
 
 const app = express();
 
-app.engine('handlebars', expressHbs());
+/**
+ * Handlebars
+ */
+const hbs = expressHbs.create({
+    helpers: {
+        selected: (option, value) => {
+            if (option === value) {
+                return 'selected';
+            } else {
+                return ''
+            }
+        }
+    }
+});
+ 
+app.engine('handlebars', hbs.engine);
 app.set('view engine', 'handlebars');
 app.set('views', 'views');
 
+/**
+ * POST body parser
+ */
 app.use(bodyParser.urlencoded());
 
+/**
+ * Routes
+ */
 app.use(gameRoutes({ client: client }));
 
 app.use('/', (req, res, next) => {
@@ -32,6 +53,9 @@ app.use('/', (req, res, next) => {
 
 const server = http.createServer(app);
 
+/**
+ * Discord.JS - ready
+ */
 client.on('ready', () => {
     console.log(`Logged in as ${client.user.username}!`);
 
@@ -44,8 +68,13 @@ client.on('ready', () => {
     });
 
     server.listen(process.env.PORT || 5000);
+    
+    if (process.env.HOST.indexOf('aws') >= 0) console.log('Demo Game: '+process.env.HOST+'/game?s=532564186023329792');
 });
 
+/**
+ * Discord.JS - message
+ */
 client.on('message', (message) => {
     if (message.content.startsWith('!schedule')) {
         const parts = message.content.split(' ').slice(1);
@@ -95,6 +124,9 @@ client.on('message', (message) => {
     }
 });
 
+/**
+ * Discord.JS - messageReactionAdd
+ */
 client.on('messageReactionAdd', async (reaction, user) => {
     const message = reaction.message;
     const game = await db.getGameBy('messageId', message.id);
@@ -117,6 +149,10 @@ client.on('messageReactionAdd', async (reaction, user) => {
     }
 });
 
+/**
+ * Discord.JS - messageDelete
+ * Delete the game from the database when the announcement message is deleted
+ */
 client.on('messageDelete', async message => {
     const game = await db.getGameBy('messageId', message.id);
     if (game) {
@@ -126,6 +162,9 @@ client.on('messageDelete', async message => {
     }
 });
 
+/**
+ * Add events to non-cached messages
+ */
 const events = {
     MESSAGE_REACTION_ADD: 'messageReactionAdd',
     MESSAGE_REACTION_REMOVE: 'messageReactionRemove',

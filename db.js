@@ -105,9 +105,23 @@ class database {
         });
         
         let signups = '';
-        if (reserved.length > 0) signups += `\n**Sign Ups:**\n${reserved.join("\n")}\n`;
-        if (waitlist.length > 0) signups += `\n**Waitlist:**\n${waitlist.join("\n")}\n`;
-
+        if (game.method === 'automated') {
+            if (reserved.length > 0) signups += `\n**Sign Ups:**\n${reserved.join("\n")}\n`;
+            if (waitlist.length > 0) signups += `\n**Waitlist:**\n${waitlist.join("\n")}\n`;
+            signups += `(➕ Add Me | ➖ Remove Me)`;
+        } else if (game.method === 'custom') {
+            signups += `\n${game.customSignup}`;
+        }
+        
+        let when = '';
+        console.log(game.when);
+        if (game.when === 'datetime') {
+            when = `${gameDate} - ${gameTime} (${timeZone})`;
+        } else if (game.when === 'now') {
+            when = 'Now';
+        }
+        
+        console.log(when);
         let embed = new discord.RichEmbed()
             .setTitle('Game Announcement')
             .setColor(0x2196F3)
@@ -116,10 +130,9 @@ class database {
                 **Adventure:** ${game.adventure}
                 **Runtime:** ${game.runtime} hours
                 ${game.description.length > 0 ? "**Description:**\n"+game.description+"\n" : game.description}
-                **When:** ${gameDate} - ${gameTime} (${timeZone})
+                **When:** ${when}
                 **Where:** ${game.where}
                 ${signups}
-                (➕ Add Me | ➖ Remove Me)
             `);
 
         if (dmmember) embed.setThumbnail(dmmember.user.avatarURL);
@@ -134,8 +147,8 @@ class database {
         } else {
             const inserted = await collection.insertOne(game);
             const message = await channel.send(embed);
-            await message.react('➕');
-            await message.react('➖');
+            if (game.method === 'automated') await message.react('➕');
+            if (game.method === 'automated') await message.react('➖');
             const updated = await collection.updateOne({ id: game.id }, { $set: { messageId: message.id } });
             return { message: message, dm: dmmember };
         }

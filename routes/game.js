@@ -52,9 +52,6 @@ module.exports = (options) => {
                         channel: channel.name,
                         s: server,
                         c: channel.id,
-                        date: '',
-                        time: '',
-                        timezone: '',
                         dm: '',
                         adventure: '',
                         runtime: '',
@@ -62,7 +59,14 @@ module.exports = (options) => {
                         reserved: '',
                         description: '',
                         players: 7,
-                        isgame: req.query.g ? 1 : 0
+                        newgame: !req.query.g ? true : false,
+                        editgame: req.query.g ? true : false,
+                        method: 'automated',
+                        customSignup: '',
+                        when: 'datetime',
+                        date: '',
+                        time: '',
+                        timezone: ''
                     };
     
                     if (req.query.g) {
@@ -73,14 +77,17 @@ module.exports = (options) => {
                     }
     
                     if (req.method === 'POST') {
-                        data.date = req.body.date;
-                        data.time = req.body.time;
                         data.dm = req.body.dm;
                         data.adventure = req.body.adventure;
                         data.runtime = req.body.runtime;
                         data.where = req.body.where;
                         data.description = req.body.description;
                         data.reserved = req.body.reserved;
+                        data.method = req.body.method;
+                        data.customSignup = req.body.customSignup;
+                        data.when = req.body.when;
+                        data.date = req.body.date;
+                        data.time = req.body.time;
                         data.timezone = req.body.timezone;
                         data.players = req.body.players;
                     }
