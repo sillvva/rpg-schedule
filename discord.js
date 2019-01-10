@@ -6,7 +6,7 @@ const Game = require('./models/game');
 const host = process.env.HOST;
 const gameUrl = '/game';
 
-const discordProcesses = (app, db, readyCallback) => {
+const discordProcesses = (readyCallback) => {
     const client = new discord.Client();
 
     /**

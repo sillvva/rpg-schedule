@@ -8,7 +8,8 @@ const gameRoutes = require('./routes/game');
 const discord = require('./discord');
 
 const app = express();
-const client = discord.processes(app, db, ()  => {
+
+const client = discord.processes(()  => {
     const server = http.createServer(app);
     server.listen(process.env.PORT || 5000);
 
