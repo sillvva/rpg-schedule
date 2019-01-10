@@ -20,9 +20,10 @@ const client = discord.processes(app, db, ()  => {
         }
     });
     
-    setTimeout(() => {
+    setInterval(() => {
+        // console.log('Stay awake...')
         http.get(process.env.HOST.replace('https', 'http'));
-    }, 10 * 60 * 1000); 
+    }, 5 * 60 * 1000);
 });
 
 /**
