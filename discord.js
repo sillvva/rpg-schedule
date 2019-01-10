@@ -131,7 +131,7 @@ const discordProcesses = (readyCallback) => {
         const message = await channel.fetchMessage(data.message_id);
         const emojiKey = (data.emoji.id) ? `${data.emoji.name}:${data.emoji.id}` : data.emoji.name;
         let reaction = message.reactions.get(emojiKey);
-    
+        
         if (!reaction) {
             const emoji = new discord.Emoji(client.guilds.get(data.guild_id), data.emoji);
             reaction = new discord.MessageReaction(message, emoji, 1, data.user_id === client.user.id);
@@ -147,7 +147,29 @@ const discordLogin = (client) => {
     client.login(process.env.TOKEN);
 };
 
+const refreshMessages = async guilds => {
+    const guildConfigs = await GuildConfig.fetchAll();
+    guilds.array().forEach(async guild => {
+        const channel = guild.channels.array().find(c => guildConfigs.find(gc => gc.guild === guild.id && gc.channel === c.id ))
+        if (channel) {
+            let games = await Game.fetchAllBy({ s: guild.id, c: channel.id, when: 'datetime', method: 'automated', timestamp: {$gte: new Date().getTime()}  });
+            games.forEach(async game => {
+                try {
+                    const message = await channel.fetchMessage(game.messageId);
+                    await message.clearReactions();
+                    await message.react('➕');
+                    await message.react('➖');
+                }
+                catch(err) {
+                    
+                }
+            })
+        }
+    })
+};
+
 module.exports = {
     processes: discordProcesses,
-    login: discordLogin
+    login: discordLogin,
+    refreshMessages: refreshMessages
 };

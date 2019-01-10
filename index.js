@@ -2,27 +2,34 @@ const http = require('http');
 const bodyParser = require('body-parser');
 const express = require('express');
 
-const { db, connection } = require('./db');
+const { db } = require('./db');
+const discord = require('./discord');
 
 const gameRoutes = require('./routes/game');
-const discord = require('./discord');
 
 const app = express();
 
+// Create the Discord processes and then call a
+// callback function when the bot has logged in.
+// Return the client to pass to the app routing logic.
 const client = discord.processes(()  => {
+    // Start the http server
     const server = http.createServer(app);
     server.listen(process.env.PORT || 5000);
-
+    
+    // Create the database connection
     db.connect().then(connected => {
         if (connected) {
             console.log('Connected!');
+            
+            discord.refreshMessages(client.guilds);
         } else {
             console.log('Not connected!');
         }
     });
     
+    // Stay awake...
     setInterval(() => {
-        // console.log('Stay awake...')
         http.get(process.env.HOST.replace('https', 'http'));
     }, 5 * 60 * 1000);
 });
@@ -47,4 +54,5 @@ app.use('/', (req, res, next) => {
     res.render('invite', { invite: process.env.INVITE });
 });
 
+// Login the Discord bot
 discord.login(client);

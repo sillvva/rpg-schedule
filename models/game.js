@@ -1,3 +1,4 @@
+const mongodb = require('mongodb');
 const discord = require('discord.js');
 
 const { connection } = require('../db');
@@ -8,7 +9,7 @@ module.exports = class Game {
     static async save(channel, game) {
         if (!connection()) throw new Error('No database connection');
         const guild = channel.guild;
-
+        
         let dm;
         let dmmember = guild.members.array().find(mem => mem.user.tag === game.dm.trim());
         if (dmmember) dm = dmmember.user.toString();
@@ -62,8 +63,10 @@ module.exports = class Game {
         let when = '';
         if (game.when === 'datetime') {
             when = `${gameDate} - ${gameTime} (${timeZone})`;
+            game.timestamp = new Date(`${game.date} ${game.time} ${timeZone}`).getTime()
         } else if (game.when === 'now') {
             when = 'Now';
+            game.timestamp = new Date.getTime();
         }
         
         let embed = new discord.RichEmbed()
@@ -82,24 +85,29 @@ module.exports = class Game {
         if (dmmember) embed.setThumbnail(dmmember.user.avatarURL);
 
         const dbCollection = connection().collection(collection);
-        const found = await Game.fetch(game.id);
+        const found = await Game.fetch(game._id);
+        delete game._id;
+        
         if (found) {
-            await dbCollection.updateOne({ id: game.id }, { $set: game });
+            const updated = await dbCollection.updateOne({ _id: new mongodb.ObjectId(found._id) }, { $set: game });
             let message = await channel.fetchMessage(found.messageId);
-            return { message: await message.edit(embed) };
+            message = await message.edit(embed);
+            return { message: message, _id: found._id };
         } else {
-            await dbCollection.insertOne(game);
+            const inserted = await dbCollection.insertOne(game);
             const message = await channel.send(embed);
             if (game.method === 'automated') await message.react('➕');
             if (game.method === 'automated') await message.react('➖');
-            await dbCollection.updateOne({ id: game.id }, { $set: { messageId: message.id } });
-            return { message: message, dm: dmmember };
+            await dbCollection.updateOne({ _id: new mongodb.ObjectId(inserted.insertedId) }, { $set: { messageId: message.id } });
+            return { message: message, _id: inserted.insertedId, dm: dmmember };
         }
     }
     
     static async fetch(gameId) {
         if (!connection()) throw new Error('No database connection');
-        return Game.fetchBy('id', gameId);
+        return await connection()
+            .collection(collection)
+            .findOne({ _id: new mongodb.ObjectId(gameId) });
     }
     
     static async fetchBy(key, value) {
@@ -111,10 +119,18 @@ module.exports = class Game {
             .findOne(query);
     }
     
+    static async fetchAllBy(query) {
+        if (!connection()) throw new Error('No database connection');
+        return await connection()
+            .collection(collection)
+            .find(query)
+            .toArray();
+    }
+    
     static async delete(gameId) {
         if (!connection()) throw new Error('No database connection');
         return await connection()
             .collection(collection)
-            .deleteOne({ id: gameId });
+            .deleteOne({ _id: new mongodb.ObjectId(gameId) });
     }
 }

@@ -19,4 +19,12 @@ module.exports = class GuildConfig {
             .collection(collection)
             .findOne({ guild: guildId });
     }
+    
+    static async fetchAll() {
+        if (!connection()) throw new Error('No database connection');
+        return await connection()
+            .collection(collection)
+            .find()
+            .toArray();
+    }
 }

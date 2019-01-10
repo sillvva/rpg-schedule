@@ -92,22 +92,19 @@ module.exports = (options) => {
                         data.timezone = req.body.timezone;
                         data.players = req.body.players;
                     }
-    
+                    
                     if (req.method === 'POST') {
-                        let gameId = (new Date().getTime()).toString() +
-                            (req.body.dm.match(/#\d{4}/) ? req.body.dm.split('#').pop() : Math.round(Math.random() * 9999));
+                        const game = { ...req.body };
     
                         if (req.query.g) {
-                            gameId = req.query.g;
+                            game._id = req.query.g;
                         }
-    
-                        const game = { id: gameId, ...req.body };
-    
+                        
                         Game.save(channel, game).then(response => {
-                            res.redirect(gameUrl+'?s='+req.body.s+'&g='+game.id);
+                            res.redirect(gameUrl+'?s='+req.body.s+'&g='+response._id);
                             
                             if (response.dm) {
-                                response.dm.send("You can edit your `"+game.adventure+"` game here:\n"+host+gameUrl+'?s='+req.body.s+'&g='+game.id);
+                                response.dm.send("You can edit your `"+game.adventure+"` game here:\n"+host+gameUrl+'?s='+req.body.s+'&g='+response._id);
                             }
                         }).catch(err => {
                             data.errors.dm = err.message.startsWith('DM') ? err.message : false;

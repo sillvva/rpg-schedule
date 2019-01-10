@@ -6,10 +6,6 @@ class database {
     constructor() {
         this.client = mongodb.MongoClient;
         this.connected = false;
-        this.collections = {
-            config: 'guildConfig',
-            games: 'games'
-        };
     }
 
     async connect() {
@@ -22,17 +18,14 @@ class database {
         } catch (err) {
             console.log(err);
         }
-
-        this.connected = true;
-        _db = result.db();
-
-        return true;
-    }
-
-    connection() {
-        if (_db) {
-            return _db;
+        
+        if (result) {
+            this.connected = true;
+            _db = result.db();
+            return true;
         }
+        
+        return false;
     }
 }
 
