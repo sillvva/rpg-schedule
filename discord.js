@@ -1,5 +1,8 @@
 const discord = require('discord.js');
 
+const GuildConfig = require('./models/guild-config');
+const Game = require('./models/game');
+
 const host = process.env.HOST;
 const gameUrl = '/game';
 
@@ -56,7 +59,7 @@ const discordProcesses = (app, db, readyCallback) => {
                 const member = message.channel.guild.members.array().find(m => m.user.id === message.author.id);
                 if (member) {
                     if (member.hasPermission(discord.Permissions.MANAGE_CHANNELS)) {
-                        db.setGuildConfig({
+                        GuildConfig.save({ 
                             guild: message.channel.guild.id,
                             channel: parts[0].replace(/\<\#|\>/g,'')
                         }).then(result => {
@@ -75,19 +78,19 @@ const discordProcesses = (app, db, readyCallback) => {
      */
     client.on('messageReactionAdd', async (reaction, user) => {
         const message = reaction.message;
-        const game = await db.getGameBy('messageId', message.id);
+        const game = await Game.fetchBy('messageId', message.id);
         if (game && user.id !== message.author.id) {
             const channel = message.channel;
             if (reaction.emoji.name === '➕') {
                 if (game.reserved.indexOf(user.tag) < 0) {
                     game.reserved = [ ...game.reserved.trim().split(/\r?\n/), user.tag ].join("\n");
                     if (game.reserved.startsWith("\n")) game.reserved = game.reserved.substr(1);
-                    db.setGame(channel, game);
+                    Game.save(channel, game);
                 }
             } else if (reaction.emoji.name === '➖') {
                 if (game.reserved.indexOf(user.tag) >= 0) {
                     game.reserved = game.reserved.split(/\r?\n/).filter(tag => tag !== user.tag).join("\n");
-                    db.setGame(channel, game);
+                    Game.save(channel, game);
                 }
             }
     
@@ -100,9 +103,9 @@ const discordProcesses = (app, db, readyCallback) => {
      * Delete the game from the database when the announcement message is deleted
      */
     client.on('messageDelete', async message => {
-        const game = await db.getGameBy('messageId', message.id);
+        const game = await Game.fetchBy('messageId', message.id);
         if (game) {
-            db.deleteGame(game.id).then((result) => {
+            Game.delete(game.id).then((result) => {
                 console.log('Game deleted');
             });
         }

@@ -2,7 +2,8 @@ const http = require('http');
 const bodyParser = require('body-parser');
 const express = require('express');
 
-const db = require('./db');
+const { db, connection } = require('./db');
+
 const gameRoutes = require('./routes/game');
 const discord = require('./discord');
 

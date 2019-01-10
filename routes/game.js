@@ -1,7 +1,8 @@
 const express = require('express');
 const discord = require('discord.js');
 
-const db = require('../db');
+const Game = require('../models/game');
+const GuildConfig = require('../models/guild-config');
 
 const host = process.env.HOST;
 const gameUrl = '/game';
@@ -13,23 +14,21 @@ module.exports = (options) => {
     router.use(gameUrl, async (req, res, next) => {
         const server = req.query.s;
     
-        if (!db.connection()) next();
-    
         if (server) {
             const guild = client.guilds.get(server);
     
             if (guild) {
                 try {
                     let channelId;
-                    let result;
+                    let savedValues;
                     
                     if (req.query.g) {
-                        result = await db.getGame(req.query.g);
-                        if (!result) throw new Error('Game not found');
-                        channelId = result.c;
+                        savedValues = await Game.fetch(req.query.g);
+                        if (!savedValues) throw new Error('Game not found');
+                        channelId = savedValues.c;
                     }
                     else {
-                        result = await db.getGuildConfig(guild.id);
+                        const result = await GuildConfig.fetch(guild.id);
                         if (result) channelId = result.channel;
                         else {
                             const firstChannel = guild.channels.array().filter(c => c instanceof discord.TextChannel)[0];
@@ -73,10 +72,9 @@ module.exports = (options) => {
                     };
     
                     if (req.query.g) {
-                        const savedValues = { ...result };
                         delete savedValues.gameId;
                         delete savedValues.messageId;
-                        data = Object.assign(data, savedValues);
+                        data = { ...data, ...savedValues };
                     }
     
                     if (req.method === 'POST') {
@@ -105,7 +103,7 @@ module.exports = (options) => {
     
                         const game = { id: gameId, ...req.body };
     
-                        db.setGame(channel, game).then(response => {
+                        Game.save(channel, game).then(response => {
                             res.redirect(gameUrl+'?s='+req.body.s+'&g='+game.id);
                             
                             if (response.dm) {
@@ -113,13 +111,14 @@ module.exports = (options) => {
                             }
                         }).catch(err => {
                             data.errors.dm = err.message.startsWith('DM') ? err.message : false;
+                            
                             res.render('game', data);
                         });
                     } else {
                         res.render('game', data);
                     }
                 } catch(err) {
-                    res.render('error', err);
+                    res.render('error', { message: err });
                 }
             } else {
                 next();
