@@ -2,8 +2,12 @@ const mongodb = require('mongodb');
 const discord = require('discord.js');
 
 const { connection } = require('../db');
+const ws = require('../processes/socket');
 
+const ObjectId = mongodb.ObjectId;
 const collection = 'games';
+const host = process.env.HOST;
+const gameUrl = '/game';
 
 module.exports = class Game {
     static async save(channel, game) {
@@ -82,24 +86,38 @@ module.exports = class Game {
                 ${signups}
             `);
 
-        if (dmmember) embed.setThumbnail(dmmember.user.avatarURL);
+        embed.setThumbnail(dmmember.user.avatarURL);
 
         const dbCollection = connection().collection(collection);
-        const found = await Game.fetch(game._id);
-        delete game._id;
-        
-        if (found) {
-            const updated = await dbCollection.updateOne({ _id: new mongodb.ObjectId(found._id) }, { $set: game });
-            let message = await channel.fetchMessage(found.messageId);
-            message = await message.edit(embed);
-            return { message: message, _id: found._id };
+        if (game._id) {
+            const updated = await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: game });
+            let message;
+            try {
+                message = await channel.fetchMessage(game.messageId);
+                message = await message.edit(embed);
+                ws.getIo().emit('game', { action: 'updated', game: game });
+            }
+            catch(err) {
+                Game.delete(game._id);
+                updated.modifiedCount = 0;
+            }
+            return { 
+                message: message, 
+                _id: game._id, 
+                modified: updated.modifiedCount > 0 
+            };
         } else {
             const inserted = await dbCollection.insertOne(game);
             const message = await channel.send(embed);
             if (game.method === 'automated') await message.react('➕');
             if (game.method === 'automated') await message.react('➖');
-            await dbCollection.updateOne({ _id: new mongodb.ObjectId(inserted.insertedId) }, { $set: { messageId: message.id } });
-            return { message: message, _id: inserted.insertedId, dm: dmmember };
+            const pm = await dmmember.send("You can edit your `"+guild.name+"` `"+game.adventure+"` game here:\n"+host+gameUrl+'?s='+guild.id+'&g='+inserted.insertedId);
+            const updated = await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { messageId: message.id, pm: pm.id } });
+            return { 
+                message: message, 
+                _id: inserted.insertedId, 
+                modified: updated.modifiedCount > 0 
+            };
         }
     }
     
@@ -107,7 +125,7 @@ module.exports = class Game {
         if (!connection()) throw new Error('No database connection');
         return await connection()
             .collection(collection)
-            .findOne({ _id: new mongodb.ObjectId(gameId) });
+            .findOne({ _id: new ObjectId(gameId) });
     }
     
     static async fetchBy(key, value) {
@@ -127,10 +145,20 @@ module.exports = class Game {
             .toArray();
     }
     
-    static async delete(gameId) {
+    static async delete(game, channel) {
         if (!connection()) throw new Error('No database connection');
+        if (game.pm) {
+            const dm = channel.guild.members.array().find(m => m.user.tag === game.dm);
+            if (dm) {
+                const pm = dm.user.dmChannel.messages.get(game.pm);
+                if (pm) {
+                    pm.delete();
+                }
+            }
+        }
+        ws.getIo().emit('game', { action: 'deleted', gameId: game._id });
         return await connection()
             .collection(collection)
-            .deleteOne({ _id: new mongodb.ObjectId(gameId) });
+            .deleteOne({ _id: new ObjectId(game._id) });
     }
 }

@@ -20,12 +20,12 @@ module.exports = (options) => {
             if (guild) {
                 try {
                     let channelId;
-                    let savedValues;
+                    let game;
                     
                     if (req.query.g) {
-                        savedValues = await Game.fetch(req.query.g);
-                        if (!savedValues) throw new Error('Game not found');
-                        channelId = savedValues.c;
+                        game = await Game.fetch(req.query.g);
+                        if (!game) throw new Error('Game not found');
+                        channelId = game.c;
                     }
                     else {
                         const result = await GuildConfig.fetch(guild.id);
@@ -72,9 +72,7 @@ module.exports = (options) => {
                     };
     
                     if (req.query.g) {
-                        delete savedValues.gameId;
-                        delete savedValues.messageId;
-                        data = { ...data, ...savedValues };
+                        data = { ...data, ...game };
                     }
     
                     if (req.method === 'POST') {
@@ -94,21 +92,11 @@ module.exports = (options) => {
                     }
                     
                     if (req.method === 'POST') {
-                        const game = { ...req.body };
-    
-                        if (req.query.g) {
-                            game._id = req.query.g;
-                        }
-                        
-                        Game.save(channel, game).then(response => {
-                            res.redirect(gameUrl+'?s='+req.body.s+'&g='+response._id);
-                            
-                            if (response.dm) {
-                                response.dm.send("You can edit your `"+game.adventure+"` game here:\n"+host+gameUrl+'?s='+req.body.s+'&g='+response._id);
-                            }
+                        Game.save(channel, { ...game, ...req.body }).then(response => {
+                            if (response.modified) res.redirect(gameUrl+'?s='+req.body.s+'&g='+response._id);
+                            else res.render('game', data);
                         }).catch(err => {
                             data.errors.dm = err.message.startsWith('DM') ? err.message : false;
-                            
                             res.render('game', data);
                         });
                     } else {
