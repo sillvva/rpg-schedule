@@ -1,7 +1,7 @@
 const discord = require('discord.js');
 
-const GuildConfig = require('./models/guild-config');
-const Game = require('./models/game');
+const GuildConfig = require('../models/guild-config');
+const Game = require('../models/game');
 
 const host = process.env.HOST;
 const gameUrl = '/game';
@@ -105,7 +105,7 @@ const discordProcesses = (readyCallback) => {
     client.on('messageDelete', async message => {
         const game = await Game.fetchBy('messageId', message.id);
         if (game) {
-            Game.delete(game.id).then((result) => {
+            Game.delete(game, message.channel).then((result) => {
                 console.log('Game deleted');
             });
         }
@@ -147,6 +147,11 @@ const discordLogin = (client) => {
     client.login(process.env.TOKEN);
 };
 
+const setSocket = (i, s) => {
+    io = i;
+    socket = s;
+};
+
 const refreshMessages = async guilds => {
     const guildConfigs = await GuildConfig.fetchAll();
     guilds.array().forEach(async guild => {
@@ -171,5 +176,6 @@ const refreshMessages = async guilds => {
 module.exports = {
     processes: discordProcesses,
     login: discordLogin,
-    refreshMessages: refreshMessages
+    refreshMessages: refreshMessages,
+    setSocket: setSocket
 };

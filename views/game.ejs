@@ -9,6 +9,10 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js" integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k" crossorigin="anonymous"></script>
 
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+    
+    <% if (is.editgame) { %>
+        <script src="/socket.io/socket.io.js"></script>
+    <% } %>
 
     <style type="text/css">
         body {
@@ -141,14 +145,23 @@
                     </div>
                 </div>
             </div>
-            <div class="form-group row">
-                <p class="col-sm-6">
-                    <button type="submit" class="btn btn-primary col-12">Submit</button>
-                </p>
-                <p class="col-sm-6">
-                    <a href="/game?s=<%= s %>" class="btn btn-light col-12">New Game</a>
-                </p>
-            </div>
+            <% if (is.newgame) { %>
+                <div class="form-group row">
+                    <p class="col-sm-8 mx-auto">
+                        <button type="submit" class="btn btn-primary col-12">Submit</button>
+                    </p>
+                </div>
+            <% } %>
+            <% if (is.editgame) { %>
+                <div class="form-group row">
+                    <p class="col-sm-6">
+                        <button type="submit" class="btn btn-primary col-12">Submit</button>
+                    </p>
+                    <p class="col-sm-6">
+                        <a href="/game?s=<%= s %>" class="btn btn-light col-12">New Game</a>
+                    </p>
+                </div>
+            <% } %>
         </form>
     </div>
     <script type="text/javascript">
@@ -185,11 +198,29 @@
         }).change();
         
         <% if (is.newgame) {  %>
-        const d = new Date();
-        document.querySelector('#date').value = d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+(d.getDate()).toString().padStart(2, '0');
-        document.querySelector('#time').value = d.getHours().toString().padStart(2, '0')+':'+d.getMinutes().toString().padStart(2, '0');
-        document.querySelector('#timezone').value = -d.getTimezoneOffset()/60;
-        <% }  %>
+            const d = new Date();
+            document.querySelector('#date').value = d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+(d.getDate()).toString().padStart(2, '0');
+            document.querySelector('#time').value = d.getHours().toString().padStart(2, '0')+':'+d.getMinutes().toString().padStart(2, '0');
+            document.querySelector('#timezone').value = -d.getTimezoneOffset()/60;
+        <% } %>
+        
+        <% if (is.editgame) { %>
+            const gameId = '<%= _id %>';
+            const socket = io();
+            
+            socket.on('game', response => {
+                if (response.action === 'updated') {
+                    Object.keys(response.game).forEach(key => {
+                        if ($('#'+key).length > 0) $('#'+key).val(response.game[key]);
+                    });
+                } else if (response.action === 'deleted') {
+                    if (gameId === response.gameId) {
+                        alert('This game has been deleted');
+                        window.location = '/game?s=<%= s %>';
+                    }
+                }
+            });
+        <% } %>
     </script>
 </body>
 </html>

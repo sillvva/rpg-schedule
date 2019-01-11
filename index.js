@@ -3,30 +3,30 @@ const bodyParser = require('body-parser');
 const express = require('express');
 
 const { db } = require('./db');
-const discord = require('./discord');
+const discord = require('./processes/discord');
+const ws = require('./processes/socket');
 
 const gameRoutes = require('./routes/game');
 
 const app = express();
 
-// Create the Discord processes and then call a
+// Initialize the Discord event handlers and then call a
 // callback function when the bot has logged in.
 // Return the client to pass to the app routing logic.
-const client = discord.processes(()  => {
-    // Start the http server
-    const server = http.createServer(app);
-    server.listen(process.env.PORT || 5000);
-    
+const client = discord.processes(async ()  => {
     // Create the database connection
-    db.connect().then(connected => {
-        if (connected) {
-            console.log('Connected!');
-            
-            discord.refreshMessages(client.guilds);
-        } else {
-            console.log('Not connected!');
-        }
-    });
+    let connected = await db.connect();
+    if (connected) {
+        console.log('DB Connected!');
+        
+        // Start the http server
+        const server = http.createServer(app).listen(process.env.PORT || 5000);
+        const io = ws.init(server);
+        
+        discord.refreshMessages(client.guilds);
+    } else {
+        console.log('DB Not connected!');
+    }
     
     // Stay awake...
     setInterval(() => {
