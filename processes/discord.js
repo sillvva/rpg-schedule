@@ -147,11 +147,6 @@ const discordLogin = (client) => {
     client.login(process.env.TOKEN);
 };
 
-const setSocket = (i, s) => {
-    io = i;
-    socket = s;
-};
-
 const refreshMessages = async guilds => {
     const guildConfigs = await GuildConfig.fetchAll();
     guilds.array().forEach(async guild => {
@@ -176,6 +171,5 @@ const refreshMessages = async guilds => {
 module.exports = {
     processes: discordProcesses,
     login: discordLogin,
-    refreshMessages: refreshMessages,
-    setSocket: setSocket
+    refreshMessages: refreshMessages
 };
