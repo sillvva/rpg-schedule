@@ -16,7 +16,6 @@ module.exports = (options) => {
                 const guild = client.guilds.get(server);
         
                 if (guild) {
-                    try {
                     let channelId;
                     let game;
                     
