@@ -44,8 +44,8 @@ module.exports = class Game {
         const gameDate = d.toDateString();
         const gameTime = (d.getHours() > 12 ? d.getHours()-12 : d.getHours())+':'+d.getMinutes().toString().padStart(2, '0')+' '+(d.getHours() < 12 ? 'AM' : 'PM');
 
-        game.where = parseChannels(game.where, guild.channels);
-        game.description = parseChannels(game.description, guild.channels);
+        const where = parseChannels(game.where, guild.channels);
+        const description = parseChannels(game.description, guild.channels);
         
         let signups = '';
         if (game.method === 'automated') {
@@ -72,9 +72,9 @@ module.exports = class Game {
                 **DM:** ${dm}
                 **Adventure:** ${game.adventure}
                 **Runtime:** ${game.runtime} hours
-                ${game.description.length > 0 ? "**Description:**\n"+game.description+"\n" : game.description}
+                ${description.length > 0 ? "**Description:**\n"+description+"\n" : description}
                 **When:** ${when}
-                **Where:** ${game.where}
+                **Where:** ${where}
                 ${signups}
             `);
 
