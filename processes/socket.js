@@ -1,11 +1,10 @@
-let _io, _socket;
+let _io;
 
 const init = (httpServer) => {
     _io = require('socket.io')(httpServer);
     
     _io.on('connection', socket => {
         console.log('Client connected!');
-        _socket = socket;
     });
     
     return _io;
@@ -16,10 +15,7 @@ const getIo = () => {
     return _io; 
 };
 
-const getSocket = () => { return _socket; };
-
 module.exports = {
     init: init,
-    getIo: getIo,
-    getSocket: getSocket
+    getIo: getIo
 };
