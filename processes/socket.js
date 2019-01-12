@@ -16,7 +16,7 @@ const getIo = () => {
     return _io; 
 };
 
-const getSocket = () => { return _io; };
+const getSocket = () => { return _socket; };
 
 module.exports = {
     init: init,
