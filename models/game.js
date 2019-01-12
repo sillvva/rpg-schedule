@@ -44,19 +44,8 @@ module.exports = class Game {
         const gameDate = d.toDateString();
         const gameTime = (d.getHours() > 12 ? d.getHours()-12 : d.getHours())+':'+d.getMinutes().toString().padStart(2, '0')+' '+(d.getHours() < 12 ? 'AM' : 'PM');
 
-        (game.where.match(/#[^ ]+/g) || []).forEach(m => {
-            const chan = guild.channels.array().find(c => c.name === m.substr(1));
-            if (chan) {
-                game.where.replace(new RegExp(m, 'g'), chan.toString())
-            }
-        });
-
-        (game.description.match(/#[^ ]+/g) || []).forEach(m => {
-            const chan = guild.channels.array().find(c => c.name === m.substr(1));
-            if (chan) {
-                game.description.replace(new RegExp(m, 'g'), chan.toString())
-            }
-        });
+        game.where = parseChannels(game.where, guild.channels);
+        game.description = parseChannels(game.description, guild.channels);
         
         let signups = '';
         if (game.method === 'automated') {
@@ -164,4 +153,19 @@ module.exports = class Game {
             .collection(collection)
             .deleteOne({ _id: new ObjectId(game._id) });
     }
+}
+
+const parseChannels = (text, channels) => {
+    try {
+        (text.match(/#[a-z0-9\-_]+/g) || []).forEach(m => {
+            const chan = channels.array().find(c => c.name === m.substr(1));
+            if (chan) {
+                text = text.replace(new RegExp(m, 'g'), chan.toString())
+            }
+        });
+    }
+    catch(err) {
+        console.log(err);
+    }
+    return text;
 }
