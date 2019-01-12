@@ -7,9 +7,12 @@ const ws = require('../processes/socket');
 const ObjectId = mongodb.ObjectId;
 const collection = 'games';
 const host = process.env.HOST;
-const gameUrl = '/game';
 
 module.exports = class Game {
+    static get url() {
+        return '/game';
+    }
+    
     static async save(channel, game) {
         if (!connection()) throw new Error('No database connection');
         const guild = channel.guild;
@@ -111,7 +114,7 @@ module.exports = class Game {
             const message = await channel.send(embed);
             if (game.method === 'automated') await message.react('➕');
             if (game.method === 'automated') await message.react('➖');
-            const pm = await dmmember.send("You can edit your `"+guild.name+"` `"+game.adventure+"` game here:\n"+host+gameUrl+'?s='+guild.id+'&g='+inserted.insertedId);
+            const pm = await dmmember.send("You can edit your `"+guild.name+"` `"+game.adventure+"` game here:\n"+host+Game.url+'?s='+guild.id+'&g='+inserted.insertedId);
             const updated = await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { messageId: message.id, pm: pm.id } });
             return { 
                 message: message, 

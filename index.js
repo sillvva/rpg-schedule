@@ -1,6 +1,7 @@
 const http = require('http');
 const bodyParser = require('body-parser');
 const express = require('express');
+const path = require('path');
 
 const { db } = require('./db');
 const discord = require('./processes/discord');
@@ -40,10 +41,8 @@ const client = discord.processes(async ()  => {
 app.set('view engine', 'ejs');
 app.set('views', 'views');
 
-/**
- * POST body parser
- */
 app.use(bodyParser.urlencoded());
+app.use(express.static(path.join(__dirname, 'public')));
 
 /**
  * Routes

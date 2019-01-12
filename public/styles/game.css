@@ -1,0 +1,12 @@
+body {
+    background-color: #343a40;
+    color: #fff;
+}
+
+input[readonly], input[disabled] {
+    background-color: #aaa !important;
+}
+
+.error {
+    color: salmon;
+}

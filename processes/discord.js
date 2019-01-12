@@ -17,7 +17,7 @@ const discordProcesses = (readyCallback) => {
     
         readyCallback();
         
-        if (process.env.HOST.indexOf('aws') >= 0) console.log('Demo Game: '+process.env.HOST+'/game?s=532564186023329792');
+        if (process.env.HOST.indexOf('aws') >= 0) console.log('Demo Game: '+process.env.HOST+Game.url+'?s=531279336632877106');
     });
     
     /**

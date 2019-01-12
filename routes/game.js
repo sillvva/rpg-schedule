@@ -5,13 +5,12 @@ const Game = require('../models/game');
 const GuildConfig = require('../models/guild-config');
 
 const host = process.env.HOST;
-const gameUrl = '/game';
 
 module.exports = (options) => {
     const router = express.Router();
     const { client } = options; 
     
-    router.use(gameUrl, async (req, res, next) => {
+    router.use(Game.url, async (req, res, next) => {
         const server = req.query.s;
     
         if (server) {
@@ -93,7 +92,7 @@ module.exports = (options) => {
                     
                     if (req.method === 'POST') {
                         Game.save(channel, { ...game, ...req.body }).then(response => {
-                            if (response.modified) res.redirect(gameUrl+'?s='+req.body.s+'&g='+response._id);
+                            if (response.modified) res.redirect(Game.url+'?s='+req.body.s+'&g='+response._id);
                             else res.render('game', data);
                         }).catch(err => {
                             data.errors.dm = err.message.startsWith('DM') ? err.message : false;
@@ -106,10 +105,10 @@ module.exports = (options) => {
                     res.render('error', { message: err });
                 }
             } else {
-                next();
+                res.render('error', { message: 'Discord server not found' });
             }
         } else {
-            next();
+            res.render('error', { message: 'Discord server not specified' });
         }
     });
     
