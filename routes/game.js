@@ -4,8 +4,6 @@ const discord = require('discord.js');
 const Game = require('../models/game');
 const GuildConfig = require('../models/guild-config');
 
-const host = process.env.HOST;
-
 module.exports = (options) => {
     const router = express.Router();
     const { client } = options; 
@@ -13,11 +11,12 @@ module.exports = (options) => {
     router.use(Game.url, async (req, res, next) => {
         const server = req.query.s;
     
-        if (server) {
-            const guild = client.guilds.get(server);
-    
-            if (guild) {
-                try {
+        try {
+            if (server) {
+                const guild = client.guilds.get(server);
+        
+                if (guild) {
+                    try {
                     let channelId;
                     let game;
                     
@@ -29,11 +28,6 @@ module.exports = (options) => {
                     else {
                         const result = await GuildConfig.fetch(guild.id);
                         if (result) channelId = result.channel;
-                        else {
-                            const firstChannel = guild.channels.array().filter(c => c instanceof discord.TextChannel)[0];
-                            if (!firstChannel) throw new Error('Discord server not found');
-                            channelId = firstChannel.id;
-                        }
                     }
     
                     const channel = guild.channels.get(channelId) || guild.channels.array().find(c => c instanceof discord.TextChannel);
@@ -101,14 +95,14 @@ module.exports = (options) => {
                     } else {
                         res.render('game', data);
                     }
-                } catch(err) {
-                    res.render('error', { message: err });
+                } else {
+                    throw new Error('Discord server not found');
                 }
             } else {
-                res.render('error', { message: 'Discord server not found' });
+                throw new Error('Discord server not specified');
             }
-        } else {
-            res.render('error', { message: 'Discord server not specified' });
+        } catch(err) {
+            res.render('error', { message: err });
         }
     });
     
