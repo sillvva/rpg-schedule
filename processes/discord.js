@@ -28,7 +28,6 @@ const discordProcesses = (readyCallback) => {
             const parts = message.content.split(' ').slice(1);
             const cmd = parts.reverse().pop();
 
-            message.channel.send(JSON.stringify([parts, cmd, cmd === 'channel']));
             if (cmd === 'help' || message.content.split(' ').length === 1) {
                 let embed = new discord.RichEmbed()
                     .setTitle('RPG Schedule Help')
@@ -53,7 +52,6 @@ const discordProcesses = (readyCallback) => {
                 const guildId = message.channel.guild.id;
                 message.channel.send(host+gameUrl+'?s='+guildId);
             } else if (cmd === 'channel') {
-                message.channel.send(JSON.stringify(message.channel.guild));
                 if (!message.channel.guild) {
                     message.reply('This command will only work in a server');
                     return;
@@ -61,17 +59,17 @@ const discordProcesses = (readyCallback) => {
                 const member = message.channel.guild.members.array().find(m => m.user.id === message.author.id);
                 if (member) {
                     if (true) { //member.hasPermission(discord.Permissions.MANAGE_CHANNELS)
-                        GuildConfig.save({ 
+                        console.log({
+                            guild: message.channel.guild.id,
+                            channel: parts[0].replace(/\<\#|\>/g,'')
+                        });
+                        GuildConfig.save({
                             guild: message.channel.guild.id,
                             channel: parts[0].replace(/\<\#|\>/g,'')
                         }).then(result => {
                             message.channel.send('Channel updated! Make sure the bot has permissions in the designated channel.');
                         });
-                    } else {
-                        message.reply('Error Code: 2');
                     }
-                } else {
-                    message.reply('Error Code: 1');
                 }
             }
     
