@@ -52,6 +52,7 @@ const discordProcesses = (readyCallback) => {
                 const guildId = message.channel.guild.id;
                 message.channel.send(host+gameUrl+'?s='+guildId);
             } else if (cmd === 'channel') {
+                message.channel.send(JSON.stringify(message.channel.guild));
                 if (!message.channel.guild) {
                     message.reply('This command will only work in a server');
                     return;
