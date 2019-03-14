@@ -27,7 +27,8 @@ const discordProcesses = (readyCallback) => {
         if (message.content.startsWith(process.env.BOTCOMMAND_SCHEDULE)) {
             const parts = message.content.split(' ').slice(1);
             const cmd = parts.reverse().pop();
-    
+
+            message.channel.send(JSON.stringify([parts, cmd, cmd === 'channel']));
             if (cmd === 'help' || message.content.split(' ').length === 1) {
                 let embed = new discord.RichEmbed()
                     .setTitle('RPG Schedule Help')
