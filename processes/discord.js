@@ -65,7 +65,11 @@ const discordProcesses = (readyCallback) => {
                         }).then(result => {
                             message.channel.send('Channel updated! Make sure the bot has permissions in the designated channel.');
                         });
+                    } else {
+                        message.reply('Error Code: 2');
                     }
+                } else {
+                    message.reply('Error Code: 1');
                 }
             }
     

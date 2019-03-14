@@ -11,6 +11,8 @@ pids
 *.seed
 *.pid.lock
 
+.idea/
+
 # Cloud9
 .c9/
 
