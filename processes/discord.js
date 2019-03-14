@@ -60,7 +60,7 @@ const discordProcesses = (readyCallback) => {
                 }
                 const member = message.channel.guild.members.array().find(m => m.user.id === message.author.id);
                 if (member) {
-                    if (member.hasPermission(discord.Permissions.MANAGE_CHANNELS)) {
+                    if (true) { //member.hasPermission(discord.Permissions.MANAGE_CHANNELS)
                         GuildConfig.save({ 
                             guild: message.channel.guild.id,
                             channel: parts[0].replace(/\<\#|\>/g,'')
