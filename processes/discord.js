@@ -74,12 +74,8 @@ const discordProcesses = (readyCallback) => {
                 }
                 const member = message.channel.guild.members.array().find(m => m.user.id === message.author.id);
                 if (member) {
-                    console.log(discord.Permissions.MANAGE_CHANNELS);
-                    console.log(member.hasPermission(discord.Permissions.MANAGE_CHANNELS));
-                    console.log({
-                        guild: message.channel.guild.id,
-                        channel: parts[0].replace(/\<\#|\>/g,'')
-                    });
+                    console.log(discord.Permissions.FLAGS.MANAGE_CHANNELS);
+                    console.log(member.hasPermission(discord.Permissions.FLAGS.MANAGE_CHANNELS));
                     if (member.hasPermission(discord.Permissions.MANAGE_CHANNELS)) {
                         GuildConfig.save({
                             guild: message.channel.guild.id,
