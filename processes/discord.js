@@ -58,25 +58,7 @@ const discordProcesses = (readyCallback) => {
                 }
                 const member = message.channel.guild.members.array().find(m => m.user.id === message.author.id);
                 if (member) {
-                    if (1 !== 1) { //member.hasPermission(discord.Permissions.MANAGE_CHANNELS)
-                        GuildConfig.save({
-                            guild: message.channel.guild.id,
-                            channel: parts[0].replace(/\<\#|\>/g,'')
-                        }).then(result => {
-                            message.channel.send('Channel updated! Make sure the bot has permissions in the designated channel.');
-                        });
-                    }
-                }
-            } else if (cmd === 'tchannel') {
-                if (!message.channel.guild) {
-                    message.reply('This command will only work in a server');
-                    return;
-                }
-                const member = message.channel.guild.members.array().find(m => m.user.id === message.author.id);
-                if (member) {
-                    console.log(discord.Permissions.FLAGS.MANAGE_CHANNELS);
-                    console.log(member.hasPermission(discord.Permissions.FLAGS.MANAGE_CHANNELS));
-                    if (member.hasPermission(discord.Permissions.MANAGE_CHANNELS)) {
+                    if (member.hasPermission(discord.Permissions.FLAGS.MANAGE_CHANNELS)) {
                         GuildConfig.save({
                             guild: message.channel.guild.id,
                             channel: parts[0].replace(/\<\#|\>/g,'')
