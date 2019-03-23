@@ -67,6 +67,22 @@ const discordProcesses = (readyCallback) => {
                         });
                     }
                 }
+            } else if (cmd === 'tchannel') {
+                if (!message.channel.guild) {
+                    message.reply('This command will only work in a server');
+                    return;
+                }
+                const member = message.channel.guild.members.array().find(m => m.user.id === message.author.id);
+                if (member) {
+                    if (member.hasPermission(discord.Permissions.MANAGE_CHANNELS)) {
+                        GuildConfig.save({
+                            guild: message.channel.guild.id,
+                            channel: parts[0].replace(/\<\#|\>/g,'')
+                        }).then(result => {
+                            message.channel.send('Channel updated! Make sure the bot has permissions in the designated channel.');
+                        });
+                    }
+                }
             }
     
             message.delete();
