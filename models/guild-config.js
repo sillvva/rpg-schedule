@@ -6,6 +6,7 @@ module.exports = class GuildConfig {
         if (!connection()) throw new Error('No database connection');
         const config = await GuildConfig.fetch(data.guild);
         const collection = connection().collection(collection);
+        console.log(config, data);
         if (config) {
             return await collection.updateOne({ guild: data.guild }, { $set: { ...config, ...data } });
         } else {
