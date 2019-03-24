@@ -136,6 +136,13 @@ module.exports = class Game {
             .find(query)
             .toArray();
     }
+
+    static async deleteAllBy(query) {
+        if (!connection()) throw new Error('No database connection');
+        return await connection()
+            .collection(collection)
+            .deleteMany(query);
+    }
     
     static async delete(game, channel) {
         if (!connection()) throw new Error('No database connection');
