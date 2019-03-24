@@ -170,9 +170,14 @@ const refreshMessages = async guilds => {
 
 const pruneOldGames = async () => {
     console.log('Pruning old games');
-    const result = await Game.deleteAllBy({ s: { $nin: ['532564186023329792', '531279336632877106'] }, timestamp: { $lt: (new Date().getTime()) - 24 * 3600 * 1000 } });
+    const query = { s: { $nin: ['532564186023329792', '531279336632877106'] }, timestamp: { $lt: (new Date().getTime()) - 24 * 3600 * 1000 } };
+    const result = await Game.deleteAllBy(query);
     if (result.acknowledged) console.log('Old games successfully pruned');
-    else console.log('Error pruning old games');
+    else {
+        console.log('Error pruning old games');
+        console.log(query);
+        console.log(result);
+    }
     return result;
 };
 
