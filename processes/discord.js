@@ -174,7 +174,7 @@ const pruneOldGames = async () => {
         console.log('Pruning old games');
         const query = { s: { $nin: ['532564186023329792', '531279336632877106'] }, timestamp: { $lt: (new Date().getTime()) - 24 * 3600 * 1000 } };
         result = await Game.deleteAllBy(query);
-        console.log(result.deletedCount, 'old games successfully pruned');
+        console.log(`${result.deletedCount} old games successfully pruned`);
     } catch (err) {
         console.log(err);
     }
