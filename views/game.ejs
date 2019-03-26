@@ -99,15 +99,15 @@
                 </div>
             </div>
             <div id="when__datetime" class="row">
-                <div class="form-group col-sm-4">
+                <div class="form-group col-sm-3">
                     <label for="date" class="col-form-label">Date</label>
                     <input type="date" class="form-control" id="date" name="date" value="<%= date %>">
                 </div>
-                <div class="form-group col-sm-4">
+                <div class="form-group col-sm-3">
                     <label for="time" class="col-form-label">Time</label>
                     <input type="time" class="form-control" id="time" name="time" value="<%= time %>">
                 </div>
-                <div class="form-group col-sm-4">
+                <div class="form-group col-sm-3">
                     <label for="timezone" class="col-form-label">Time Zone</label>
                     <div class="input-group">
                         <div class="input-group-prepend">
@@ -115,6 +115,15 @@
                         </div>
                         <input type="number" min="-12" max="14" class="form-control" id="timezone" name="timezone" value="<%= timezone %>">
                     </div>
+                </div>
+                <div class="form-group col-sm-3">
+                    <label for="reminder" class="col-form-label">Reminder</label>
+                    <select class="form-control" id="reminder" name="reminder">
+                        <option value="0">No Reminder</option>
+                        <option value="15">15 minutes</option>
+                        <option value="30">30 minutes</option>
+                        <option value="60">1 hour</option>
+                    </select>
                 </div>
             </div>
             <div class="row">
@@ -134,7 +143,7 @@
             </div>
             <% if (is.newgame) { %>
                 <div class="form-group row">
-                    <p class="col-sm-8 mx-auto">
+                    <p class="col-sm-6 mx-auto">
                         <button type="submit" class="btn btn-primary col-12">Submit</button>
                     </p>
                 </div>
@@ -142,7 +151,7 @@
             <% if (is.editgame) { %>
                 <div class="form-group row">
                     <p class="col-sm-6">
-                        <button type="submit" class="btn btn-primary col-12">Submit</button>
+                        <button type="submit" class="btn btn-primary col-12">Save</button>
                     </p>
                     <p class="col-sm-6">
                         <a href="/game?s=<%= s %>" class="btn btn-light col-12">New Game</a>

@@ -79,6 +79,7 @@ module.exports = (options) => {
                         data.when = req.body.when;
                         data.date = req.body.date;
                         data.time = req.body.time;
+                        data.reminder = parseInt(req.body.reminder);
                         data.timezone = req.body.timezone;
                         data.players = req.body.players;
                     }

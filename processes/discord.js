@@ -141,7 +141,7 @@ const discordProcesses = (readyCallback) => {
     });
     
     return client;
-}
+};
 
 const discordLogin = (client) => {
     client.login(process.env.TOKEN);
@@ -181,9 +181,46 @@ const pruneOldGames = async () => {
     return result;
 };
 
+const postReminders = async () => {
+    let games = await Game.fetchAllBy({ when: 'datetime', reminder: { $gt: 0 } });
+    games.forEach(async game => {
+        const guild = client.guilds.get(game.s);
+        if (guild) {
+            const channel = guild.channels.get(game.c);
+            if (channel) {
+                const reserved = [];
+                game.reserved.split(/\r?\n/).forEach(res => {
+                    if (res.trim().length === 0) return;
+                    let member = guild.members.array().find(mem => mem.user.tag === res.trim());
+
+                    let name = res.trim();
+                    if (member) name = member.user.toString();
+
+                    if (reserved.length < parseInt(game.players)) {
+                        reserved.push(name);
+                    }
+                });
+
+                if (reserved.length > 0) {
+                    let message = `
+                    Reminder for the game starting in ${game.reminder} minutes
+                    
+                    **DM:** ${game.dm}
+                    **Players:**
+                    ${reserved.join(`\n`)}
+                    `;
+
+                    await channel.send(message);
+                }
+            }
+        }
+    });
+};
+
 module.exports = {
     processes: discordProcesses,
     login: discordLogin,
     refreshMessages: refreshMessages,
-    pruneOldGames: pruneOldGames
+    pruneOldGames: pruneOldGames,
+    postReminders: postReminders
 };
