@@ -210,7 +210,7 @@ const postReminders = async () => {
                     ${reserved.join(`\n`)}
                     `;
 
-                    await channel.send(message);
+                    // await channel.send(message);
                 }
             }
         }
