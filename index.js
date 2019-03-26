@@ -31,9 +31,9 @@ const client = discord.processes(async ()  => {
         setInterval(() => {
             discord.pruneOldGames();
         }, 24 * 3600 * 1000);
-        discord.postReminders();
+        discord.postReminders(client);
         setInterval(() => {
-            discord.postReminders();
+            discord.postReminders(client);
         }, 60 * 1000);
     } else {
         console.log('DB Not connected!');

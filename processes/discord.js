@@ -181,7 +181,7 @@ const pruneOldGames = async () => {
     return result;
 };
 
-const postReminders = async () => {
+const postReminders = async (client) => {
     let games = await Game.fetchAllBy({ when: 'datetime', reminder: { $in: ['15','30','60'] } });
     console.log(games.length);
     games.forEach(async game => {
