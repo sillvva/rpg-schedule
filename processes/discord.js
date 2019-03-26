@@ -186,8 +186,10 @@ const postReminders = async () => {
     games.forEach(async game => {
         const guild = client.guilds.get(game.s);
         if (guild) {
+            console.log(game.s);
             const channel = guild.channels.get(game.c);
             if (channel) {
+                console.log(games.reserved);
                 const reserved = [];
                 game.reserved.split(/\r?\n/).forEach(res => {
                     if (res.trim().length === 0) return;
@@ -210,6 +212,7 @@ const postReminders = async () => {
                     ${reserved.join(`\n`)}
                     `;
 
+                    console.log(message);
                     // await channel.send(message);
                 }
             }
