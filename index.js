@@ -31,6 +31,7 @@ const client = discord.processes(async ()  => {
         setInterval(() => {
             discord.pruneOldGames();
         }, 24 * 3600 * 1000);
+        discord.postReminders();
         setInterval(() => {
             discord.postReminders();
         }, 60 * 1000);
