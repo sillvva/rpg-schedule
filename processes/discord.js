@@ -183,6 +183,7 @@ const pruneOldGames = async () => {
 
 const postReminders = async () => {
     let games = await Game.fetchAllBy({ when: 'datetime', reminder: { $gt: 0 } });
+    console.log(games.length);
     games.forEach(async game => {
         const guild = client.guilds.get(game.s);
         if (guild) {
