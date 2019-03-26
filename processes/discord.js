@@ -185,7 +185,7 @@ const postReminders = async () => {
     let games = await Game.fetchAllBy({ when: 'datetime', reminder: { $in: ['15','30','60'] } });
     console.log(games.length);
     games.forEach(async game => {
-        if (game.timestamp - parseInt(game.reminder) > new Date().getTime()) return;
+        if (game.timestamp - parseInt(game.reminder) < new Date().getTime()) return;
         const guild = client.guilds.get(game.s);
         if (guild) {
             console.log(game.s);
