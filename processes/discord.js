@@ -213,6 +213,9 @@ const postReminders = async (client) => {
                     `;
 
                     await channel.send(message);
+
+
+                    game.reminder = '0';
                     Game.save(channel, game);
                 }
             }
