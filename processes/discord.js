@@ -185,14 +185,11 @@ const postReminders = async (client) => {
     let games = await Game.fetchAllBy({ when: 'datetime', reminder: { $in: ['15','30','60'] } });
     console.log(games.length);
     games.forEach(async game => {
-        console.log(game.timestamp - parseInt(game.reminder), new Date().getTime())
         if (game.timestamp - parseInt(game.reminder) > new Date().getTime()) return;
         const guild = client.guilds.get(game.s);
         if (guild) {
-            console.log(game.s);
             const channel = guild.channels.get(game.c);
             if (channel) {
-                console.log(games.reserved);
                 const reserved = [];
                 game.reserved.split(/\r?\n/).forEach(res => {
                     if (res.trim().length === 0) return;
@@ -208,15 +205,15 @@ const postReminders = async (client) => {
 
                 if (reserved.length > 0) {
                     let message = `
-                    Reminder for the game starting in ${game.reminder} minutes
+                    Reminder for the game starting at ${game.time} (${game.timezone})
                     
                     **DM:** ${game.dm}
                     **Players:**
                     ${reserved.join(`\n`)}
                     `;
 
-                    console.log(message);
-                    // await channel.send(message);
+                    await channel.send(message);
+                    Game.save(channel, game);
                 }
             }
         }
