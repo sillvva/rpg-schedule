@@ -202,6 +202,14 @@ const postReminders = async (client) => {
                     }
                 });
 
+                let dm = game.dm;
+                if (dm.trim().length === 0) return;
+                let member = guild.members.array().find(mem => mem.user.tag === dm.trim());
+
+                let name = dm.trim();
+                if (member) name = member.user.toString();
+                dm = name;
+
                 if (reserved.length > 0) {
                     const timeZone = 'GMT'+(game.timezone >=0 ? '+' : '')+game.timezone;
                     const d = new Date(game.date+' '+game.time+' '+timeZone);
@@ -209,7 +217,7 @@ const postReminders = async (client) => {
                     const gameTime = (d.getHours() > 12 ? d.getHours()-12 : d.getHours())+':'+d.getMinutes().toString().padStart(2, '0')+' '+(d.getHours() < 12 ? 'AM' : 'PM');
 
                     let message = `Reminder for the game starting at ${gameTime} (${timeZone})\n\n`;
-                    message += `**DM:** ${game.dm}\n`;
+                    message += `**DM:** ${dm}\n`;
                     message += `**Players:**\n`;
                     message += `${reserved.join(`\n`)}`;
 
