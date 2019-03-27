@@ -211,6 +211,7 @@ const postReminders = async (client) => {
                     message += `${reserved.join(`\n`)}`;
 
                     await channel.send(message);
+                    console.log(message);
 
                     game.reminder = '0';
                     Game.save(channel, game);
