@@ -205,13 +205,10 @@ const postReminders = async (client) => {
                 if (reserved.length > 0) {
                     const gameTime = (d.getHours() > 12 ? d.getHours()-12 : d.getHours())+':'+d.getMinutes().toString().padStart(2, '0')+' '+(d.getHours() < 12 ? 'AM' : 'PM');
 
-                    let message = `
-                    Reminder for the game starting at ${gameTime} (${game.timezone})
-                    
-                    **DM:** ${game.dm}
-                    **Players:**
-                    ${reserved.join(`\n`)}
-                    `;
+                    let message = `Reminder for the game starting at ${gameTime} (${game.timezone})\n\n`;
+                    message += `**DM:** ${game.dm}\n`;
+                    message += `**Players:**\n`;
+                    message += `${reserved.join(`\n`)}`;
 
                     await channel.send(message);
 
