@@ -183,7 +183,6 @@ const pruneOldGames = async () => {
 
 const postReminders = async (client) => {
     let games = await Game.fetchAllBy({ when: 'datetime', reminder: { $in: ['15','30','60'] } });
-    console.log(games.length);
     games.forEach(async game => {
         if (game.timestamp - parseInt(game.reminder) * 60 * 1000 > new Date().getTime()) return;
         const guild = client.guilds.get(game.s);
@@ -202,17 +201,19 @@ const postReminders = async (client) => {
                         reserved.push(name);
                     }
                 });
-                console.log(reserved.length);
+
                 if (reserved.length > 0) {
+                    const timeZone = 'GMT'+(game.timezone >=0 ? '+' : '')+game.timezone;
+                    const d = new Date(game.date+' '+game.time+' '+timeZone);
+                    d.setHours(d.getHours()+parseInt(game.timezone));
                     const gameTime = (d.getHours() > 12 ? d.getHours()-12 : d.getHours())+':'+d.getMinutes().toString().padStart(2, '0')+' '+(d.getHours() < 12 ? 'AM' : 'PM');
 
-                    let message = `Reminder for the game starting at ${gameTime} (${game.timezone})\n\n`;
+                    let message = `Reminder for the game starting at ${gameTime} (${timeZone})\n\n`;
                     message += `**DM:** ${game.dm}\n`;
                     message += `**Players:**\n`;
                     message += `${reserved.join(`\n`)}`;
 
                     await channel.send(message);
-                    console.log(message);
 
                     game.reminder = '0';
                     Game.save(channel, game);
