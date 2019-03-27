@@ -119,10 +119,10 @@
                 <div class="form-group col-sm-3">
                     <label for="reminder" class="col-form-label">Reminder</label>
                     <select class="form-control" id="reminder" name="reminder">
-                        <option value="0">No Reminder</option>
-                        <option value="15">15 minutes</option>
-                        <option value="30">30 minutes</option>
-                        <option value="60">1 hour</option>
+                        <option value="0" <%= reminder === '0' ? 'selected' : '' %>>No Reminder</option>
+                        <option value="15" <%= reminder === '15' ? 'selected' : '' %>>15 minutes</option>
+                        <option value="30" <%= reminder === '30' ? 'selected' : '' %>>30 minutes</option>
+                        <option value="60" <%= reminder === '60' ? 'selected' : '' %>>1 hour</option>
                     </select>
                 </div>
             </div>
