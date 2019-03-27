@@ -202,13 +202,9 @@ const postReminders = async (client) => {
                     }
                 });
 
-                let dm = game.dm;
-                if (dm.trim().length === 0) return;
-                let member = guild.members.array().find(mem => mem.user.tag === dm.trim());
-
-                let name = dm.trim();
-                if (member) name = member.user.toString();
-                dm = name;
+                const member = guild.members.array().find(mem => mem.user.tag === game.dm.trim());
+                let dm = game.dm.trim();
+                if (member) dm = member.user.toString();
 
                 if (reserved.length > 0) {
                     const timeZone = 'GMT'+(game.timezone >=0 ? '+' : '')+game.timezone;
