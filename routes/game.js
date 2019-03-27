@@ -84,8 +84,6 @@ module.exports = (options) => {
                         data.reminder = req.body.reminder;
                         data.players = req.body.players;
                     }
-
-                    console.log(data);
                     
                     if (req.method === 'POST') {
                         Game.save(channel, { ...game, ...req.body }).then(response => {
