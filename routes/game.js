@@ -54,6 +54,7 @@ module.exports = (options) => {
                         date: '',
                         time: '',
                         timezone: '',
+                        reminder: '0',
                         is: {
                             newgame: !req.query.g ? true : false,
                             editgame: req.query.g ? true : false
@@ -79,10 +80,12 @@ module.exports = (options) => {
                         data.when = req.body.when;
                         data.date = req.body.date;
                         data.time = req.body.time;
-                        data.reminder = parseInt(req.body.reminder);
                         data.timezone = req.body.timezone;
+                        data.reminder = req.body.reminder;
                         data.players = req.body.players;
                     }
+
+                    console.log(data);
                     
                     if (req.method === 'POST') {
                         Game.save(channel, { ...game, ...req.body }).then(response => {
