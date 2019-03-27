@@ -183,8 +183,10 @@ const pruneOldGames = async () => {
 
 const postReminders = async (client) => {
     let games = await Game.fetchAllBy({ when: 'datetime', reminder: { $in: ['15','30','60'] } });
+    console.log(games.length);
     games.forEach(async game => {
         if (game.timestamp - parseInt(game.reminder) > new Date().getTime()) return;
+        console.log(game.s, game.c);
         const guild = client.guilds.get(game.s);
         if (guild) {
             const channel = guild.channels.get(game.c);
@@ -201,7 +203,7 @@ const postReminders = async (client) => {
                         reserved.push(name);
                     }
                 });
-
+                console.log(reserved.length);
                 if (reserved.length > 0) {
                     const gameTime = (d.getHours() > 12 ? d.getHours()-12 : d.getHours())+':'+d.getMinutes().toString().padStart(2, '0')+' '+(d.getHours() < 12 ? 'AM' : 'PM');
 
