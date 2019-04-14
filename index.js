@@ -18,7 +18,7 @@ const client = discord.processes(async ()  => {
     // Create the database connection
     let connected = await db.connect();
     if (connected) {
-        console.log('DB Connected!');
+        console.log('Database connected!');
         
         // Start the http server
         const server = http.createServer(app).listen(process.env.PORT || 5000);
@@ -30,19 +30,21 @@ const client = discord.processes(async ()  => {
         discord.pruneOldGames();
         setInterval(() => {
             discord.pruneOldGames();
-        }, 24 * 3600 * 1000);
+        }, 24 * 3600 * 1000); // 24 hours
+
+        // Post Game Reminders
         discord.postReminders(client);
         setInterval(() => {
             discord.postReminders(client);
-        }, 60 * 1000);
+        }, 60 * 1000); // 1 minute
+
+        // Stay awake...
+        setInterval(() => {
+            http.get(process.env.HOST.replace('https', 'http'));
+        }, 5 * 60 * 1000); // 5 minutes
     } else {
-        console.log('DB Not connected!');
+        console.log('Database not connected!');
     }
-    
-    // Stay awake...
-    setInterval(() => {
-        http.get(process.env.HOST.replace('https', 'http'));
-    }, 5 * 60 * 1000);
 });
 
 /**

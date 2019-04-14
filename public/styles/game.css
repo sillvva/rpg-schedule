@@ -1,6 +1,10 @@
 body {
-    background-color: #343a40;
+    background-color: #2f3236;
     color: #fff;
+}
+
+@-ms-viewport{
+    width: device-width;
 }
 
 input[readonly], input[disabled] {
@@ -9,4 +13,29 @@ input[readonly], input[disabled] {
 
 .error {
     color: salmon;
+}
+
+.bg-primary {
+    background-color: #202225 !important;
+}
+
+.form-group {
+    margin-bottom: 0;
+}
+
+.form-control {
+    color: #fff;
+    background-color: #484C52;
+    border: 1px solid #484C52;
+}
+
+input[readonly], input[disabled] {
+    background-color: #2B2C31 !important;
+    border-color: #2B2C31;
+}
+
+.input-group-text {
+    color: #fff;
+    background-color: #484C52;
+    border: 1px solid #484C52;
 }
