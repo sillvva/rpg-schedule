@@ -149,30 +149,34 @@ module.exports = class Game {
     
     static async delete(game, channel) {
         if (!connection()) throw new Error('No database connection');
-        if (channel) {
-            if (game.messageId) {
-                const message = await channel.fetchMessage(game.messageId);
-                if (message) {
-                    message.delete().catch(console.log);
+        try {
+            if (channel) {
+                if (game.messageId) {
+                    const message = await channel.fetchMessage(game.messageId);
+                    if (message) {
+                        message.delete().catch(console.log);
+                    }
                 }
-            }
 
-            if (game.reminderMessageId) {
-                const message = await channel.fetchMessage(game.reminderMessageId);
-                if (message) {
-                    message.delete().catch(console.log);
+                if (game.reminderMessageId) {
+                    const message = await channel.fetchMessage(game.reminderMessageId);
+                    if (message) {
+                        message.delete().catch(console.log);
+                    }
                 }
-            }
 
-            if (game.pm) {
-                const dm = channel.guild.members.array().find(m => m.user.tag === game.dm);
-                if (dm) {
-                    const pm = dm.user.dmChannel.messages.get(game.pm);
-                    if (pm) {
-                        pm.delete();
+                if (game.pm) {
+                    const dm = channel.guild.members.array().find(m => m.user.tag === game.dm);
+                    if (dm) {
+                        const pm = dm.user.dmChannel.messages.get(game.pm);
+                        if (pm) {
+                            pm.delete();
+                        }
                     }
                 }
             }
+        } catch(e) {
+
         }
         ws.getIo().emit('game', { action: 'deleted', gameId: game._id });
         return await connection()
