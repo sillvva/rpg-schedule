@@ -10,7 +10,7 @@ module.exports = (options) => {
     
     router.use(Game.url, async (req, res, next) => {
         const server = req.query.s;
-        console.log('test 1');
+
         try {
             if (server) {
                 const guild = client.guilds.get(server);
@@ -111,20 +111,24 @@ module.exports = (options) => {
         }
     });
 
-    router.get('/delete', async (req, res, next) => {
-        console.log('test 2');
+    router.get(Game.deleteUrl, async (req, res, next) => {
         try {
             if (req.query.g) {
                 const game = await Game.fetch(req.query.g);
                 if (!game) throw new Error('Game not found');
-                const channelId = game.c;
                 const serverId = game.s;
+                const channelId = game.c;
 
-                const channel = guild.channels.get(channelId);
+                const guild = client.guilds.get(serverId);
+                if (guild) {
+                    const channel = guild.channels.get(channelId);
 
-                Game.delete(game, channel).then(response => {
-                    res.redirect(Game.url+'?s='+serverId);
-                });
+                    Game.delete(game, channel).then(response => {
+                        res.redirect(Game.url+'?s='+serverId);
+                    });
+                } else {
+                    throw new Error('Server not found');
+                }
             } else {
                 throw new Error('Game not found');
             }

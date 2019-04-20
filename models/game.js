@@ -12,6 +12,9 @@ module.exports = class Game {
     static get url() {
         return '/game';
     }
+    static get deleteUrl() {
+        return '/delete';
+    }
     
     static async save(channel, game) {
         if (!connection()) throw new Error('No database connection');
