@@ -149,12 +149,21 @@ module.exports = class Game {
     
     static async delete(game, channel) {
         if (!connection()) throw new Error('No database connection');
-        if (game.pm && channel) {
-            const dm = channel.guild.members.array().find(m => m.user.tag === game.dm);
-            if (dm) {
-                const pm = dm.user.dmChannel.messages.get(game.pm);
-                if (pm) {
-                    pm.delete();
+        if (channel) {
+            if (game.messageId) {
+                const message = await channel.fetchMessage(game.messageId);
+                if (message) {
+                    message.delete();
+                }
+            }
+
+            if (game.pm) {
+                const dm = channel.guild.members.array().find(m => m.user.tag === game.dm);
+                if (dm) {
+                    const pm = dm.user.dmChannel.messages.get(game.pm);
+                    if (pm) {
+                        pm.delete();
+                    }
                 }
             }
         }
