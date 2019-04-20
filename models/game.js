@@ -153,7 +153,14 @@ module.exports = class Game {
             if (game.messageId) {
                 const message = await channel.fetchMessage(game.messageId);
                 if (message) {
-                    message.delete();
+                    message.delete().catch(console.log);
+                }
+            }
+
+            if (game.reminderMessageId) {
+                const message = await channel.fetchMessage(game.reminderMessageId);
+                if (message) {
+                    message.delete().catch(console.log);
                 }
             }
 
