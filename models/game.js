@@ -146,7 +146,7 @@ module.exports = class Game {
     
     static async delete(game, channel) {
         if (!connection()) throw new Error('No database connection');
-        if (game.pm) {
+        if (game.pm && channel) {
             const dm = channel.guild.members.array().find(m => m.user.tag === game.dm);
             if (dm) {
                 const pm = dm.user.dmChannel.messages.get(game.pm);
@@ -160,7 +160,7 @@ module.exports = class Game {
             .collection(collection)
             .deleteOne({ _id: new ObjectId(game._id) });
     }
-}
+};
 
 const parseChannels = (text, channels) => {
     try {

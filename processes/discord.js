@@ -39,6 +39,7 @@ const discordProcesses = (readyCallback) => {
                         
                         Configuration
                         \`${process.env.BOTCOMMAND_SCHEDULE} channel #channel-name\` - Configure the channel where games are posted
+                        \`${process.env.BOTCOMMAND_SCHEDULE} password password\` - Configure the password for posting games
                         
                         Usage
                         \`${process.env.BOTCOMMAND_SCHEDULE} link\` - Retrieve link for posting games
@@ -64,6 +65,22 @@ const discordProcesses = (readyCallback) => {
                             channel: parts[0].replace(/\<\#|\>/g,'')
                         }).then(result => {
                             message.channel.send('Channel updated! Make sure the bot has permissions in the designated channel.');
+                        });
+                    }
+                }
+            } else if (cmd === 'password') {
+                if (!message.channel.guild) {
+                    message.reply('This command will only work in a server');
+                    return;
+                }
+                const member = message.channel.guild.members.array().find(m => m.user.id === message.author.id);
+                if (member) {
+                    if (member.hasPermission(discord.Permissions.FLAGS.MANAGE_CHANNELS)) {
+                        GuildConfig.save({
+                            guild: message.channel.guild.id,
+                            password: parts.join(' ')
+                        }).then(result => {
+                            message.channel.send('Password updated!');
                         });
                     }
                 }

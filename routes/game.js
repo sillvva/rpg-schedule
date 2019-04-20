@@ -6,7 +6,7 @@ const GuildConfig = require('../models/guild-config');
 
 module.exports = (options) => {
     const router = express.Router();
-    const { client } = options; 
+    const { client } = options;
     
     router.use(Game.url, async (req, res, next) => {
         const server = req.query.s;
@@ -17,7 +17,11 @@ module.exports = (options) => {
         
                 if (guild) {
                     let channelId;
+                    let password;
                     let game;
+
+                    const result = await GuildConfig.fetch(guild.id);
+                    if (result) password = result.password;
                     
                     if (req.query.g) {
                         game = await Game.fetch(req.query.g);
@@ -25,7 +29,6 @@ module.exports = (options) => {
                         channelId = game.c;
                     }
                     else {
-                        const result = await GuildConfig.fetch(guild.id);
                         if (result) channelId = result.channel;
                     }
     
@@ -59,6 +62,7 @@ module.exports = (options) => {
                             newgame: !req.query.g ? true : false,
                             editgame: req.query.g ? true : false
                         },
+                        password: password ? password : false,
                         errors: {
                             dm: false
                         }
