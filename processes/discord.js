@@ -29,6 +29,11 @@ const discordProcesses = (readyCallback) => {
             const cmd = parts.reverse().pop();
 
             if (cmd === 'help' || message.content.split(' ').length === 1) {
+                const member = message.channel.guild.members.array().find(m => m.user.id === message.author.id);
+                let canPassword = member ? member.hasPermission(discord.Permissions.FLAGS.MANAGE_CHANNELS) : false;
+                let canChannel = member ? member.hasPermission(discord.Permissions.FLAGS.MANAGE_GUILD) : false;
+                let canConfigure = canPassword || canChannel;
+
                 let embed = new discord.RichEmbed()
                     .setTitle('RPG Schedule Help')
                     .setColor(0x2196F3)
@@ -37,10 +42,10 @@ const discordProcesses = (readyCallback) => {
                         \`${process.env.BOTCOMMAND_SCHEDULE}\` - Display this help window
                         \`${process.env.BOTCOMMAND_SCHEDULE} help\` - Display this help window
                         
-                        Configuration
-                        \`${process.env.BOTCOMMAND_SCHEDULE} channel #channel-name\` - Configure the channel where games are posted
-                        \`${process.env.BOTCOMMAND_SCHEDULE} password password\` - Configure the password for posting games
-                        \`${process.env.BOTCOMMAND_SCHEDULE} password\` - Remove the password
+                        ` + (canConfigure ? `Configuration
+                        ` + (canChannel ? `\`${process.env.BOTCOMMAND_SCHEDULE} channel #channel-name\` - Configure the channel where games are posted` : ``) + `
+                        ` + (canPassword ? `\`${process.env.BOTCOMMAND_SCHEDULE} password password\` - Configure the password for posting games
+                        \`${process.env.BOTCOMMAND_SCHEDULE} password\` - Remove the password` : ``) : ``) + `
                         
                         Usage
                         \`${process.env.BOTCOMMAND_SCHEDULE} link\` - Retrieve link for posting games
@@ -76,7 +81,7 @@ const discordProcesses = (readyCallback) => {
                 }
                 const member = message.channel.guild.members.array().find(m => m.user.id === message.author.id);
                 if (member) {
-                    if (member.hasPermission(discord.Permissions.FLAGS.MANAGE_CHANNELS)) {
+                    if (member.hasPermission(discord.Permissions.FLAGS.MANAGE_GUILD)) {
                         GuildConfig.save({
                             guild: message.channel.guild.id,
                             password: parts.join(' ')
