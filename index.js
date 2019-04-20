@@ -8,7 +8,6 @@ const discord = require('./processes/discord');
 const ws = require('./processes/socket');
 
 const gameRoutes = require('./routes/game');
-const deleteRoute = require('./routes/delete');
 
 const app = express();
 
@@ -61,7 +60,6 @@ app.use(express.static(path.join(__dirname, 'public')));
  * Routes
  */
 app.use(gameRoutes({ client: client }));
-app.use(deleteRoute());
 
 app.use('/', (req, res, next) => {
     res.render('invite', { invite: process.env.INVITE });
