@@ -10,7 +10,7 @@ module.exports = (options) => {
     
     router.use(Game.url, async (req, res, next) => {
         const server = req.query.s;
-    
+        console.log('test 1');
         try {
             if (server) {
                 const guild = client.guilds.get(server);
@@ -111,7 +111,8 @@ module.exports = (options) => {
         }
     });
 
-    router.use('/delete', async (req, res, next) => {
+    router.get('/delete', async (req, res, next) => {
+        console.log('test 2');
         try {
             if (req.query.g) {
                 const game = await Game.fetch(req.query.g);
