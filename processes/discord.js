@@ -40,6 +40,7 @@ const discordProcesses = (readyCallback) => {
                         Configuration
                         \`${process.env.BOTCOMMAND_SCHEDULE} channel #channel-name\` - Configure the channel where games are posted
                         \`${process.env.BOTCOMMAND_SCHEDULE} password password\` - Configure the password for posting games
+                        \`${process.env.BOTCOMMAND_SCHEDULE} password\` - Remove the password
                         
                         Usage
                         \`${process.env.BOTCOMMAND_SCHEDULE} link\` - Retrieve link for posting games
