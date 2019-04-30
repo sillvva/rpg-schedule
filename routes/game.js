@@ -98,7 +98,7 @@ module.exports = (options) => {
                     
                     if (req.method === 'POST') {
                         Game.save(channel, { ...game, ...req.body }).then(response => {
-                            if (response.modified) res.redirect(Game.url+'?s='+req.body.s+'&g='+response._id);
+                            if (response.modified) res.redirect(Game.url+'?g='+response._id);
                             else res.render('game', data);
                         }).catch(err => {
                             data.errors.dm = err.message.startsWith('DM') ? err.message : false;
