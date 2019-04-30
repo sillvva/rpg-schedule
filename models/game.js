@@ -31,7 +31,7 @@ module.exports = class Game {
             if (res.trim().length === 0) return;
             let member = guild.members.array().find(mem => mem.user.tag === res.trim());
             
-            let name = res.trim();
+            let name = res.trim().replace('@','');
             if (member) name = member.user.toString();
             
             if (reserved.length < parseInt(game.players)) {
