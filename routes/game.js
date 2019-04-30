@@ -9,27 +9,34 @@ module.exports = (options) => {
     const { client } = options;
     
     router.use(Game.url, async (req, res, next) => {
-        const server = req.query.s;
-
         try {
+            let game;
+            let server = req.query.s;
+
+            if (req.query.g) {
+                game = await Game.fetch(req.query.g);
+                if (game) {
+                    server = game.s;
+                } else {
+                    throw new Error('Game not found');
+                }
+            }
+
             if (server) {
                 const guild = client.guilds.get(server);
         
                 if (guild) {
                     let channelId;
                     let password;
-                    let game;
 
-                    const result = await GuildConfig.fetch(guild.id);
-                    if (result) password = result.password;
-                    
+                    const config = await GuildConfig.fetch(guild.id);
+                    if (config) password = config.password;
+
                     if (req.query.g) {
-                        game = await Game.fetch(req.query.g);
-                        if (!game) throw new Error('Game not found');
                         channelId = game.c;
                     }
                     else {
-                        if (result) channelId = result.channel;
+                        if (config) channelId = config.channel;
                     }
     
                     const channel = guild.channels.get(channelId) || guild.channels.array().find(c => c instanceof discord.TextChannel);
