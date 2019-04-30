@@ -21,7 +21,11 @@ module.exports = class Game {
         const guild = channel.guild;
         
         let dm;
-        let dmmember = guild.members.array().find(mem => mem.user.tag === game.dm.trim());
+        let dmmember = guild.members.array().find(mem => {
+            console.log(mem.user.tag, game.dm.trim().replace('@',''))
+            return mem.user.tag === game.dm.trim().replace('@','');
+        });
+        console.log(dmmember);
         if (dmmember) dm = dmmember.user.toString();
         else throw new Error('DM must be a Discord tag');
 
