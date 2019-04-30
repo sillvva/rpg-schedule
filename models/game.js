@@ -29,7 +29,7 @@ module.exports = class Game {
         let waitlist = [];
         game.reserved.split(/\r?\n/).forEach(res => {
             if (res.trim().length === 0) return;
-            let member = guild.members.array().find(mem => mem.user.tag === res.trim());
+            let member = guild.members.array().find(mem => mem.user.tag === res.trim().replace('@',''));
             
             let name = res.trim().replace('@','');
             if (member) name = member.user.toString();

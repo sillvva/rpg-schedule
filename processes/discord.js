@@ -215,9 +215,9 @@ const postReminders = async (client) => {
                 const reserved = [];
                 game.reserved.split(/\r?\n/).forEach(res => {
                     if (res.trim().length === 0) return;
-                    let member = guild.members.array().find(mem => mem.user.tag === res.trim());
+                    let member = guild.members.array().find(mem => mem.user.tag === res.trim().replace('@',''));
 
-                    let name = res.trim();
+                    let name = res.trim().replace('@','');
                     if (member) name = member.user.toString();
 
                     if (reserved.length < parseInt(game.players)) {
@@ -225,8 +225,8 @@ const postReminders = async (client) => {
                     }
                 });
 
-                const member = guild.members.array().find(mem => mem.user.tag === game.dm.trim());
-                let dm = game.dm.trim();
+                const member = guild.members.array().find(mem => mem.user.tag === game.dm.trim().replace('@',''));
+                let dm = game.dm.trim().replace('@','');
                 if (member) dm = member.user.toString();
 
                 if (reserved.length > 0) {
