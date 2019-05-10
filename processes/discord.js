@@ -195,7 +195,15 @@ const pruneOldGames = async () => {
     let result;
     try {
         console.log('Pruning old games');
-        const query = { s: { $nin: ['532564186023329792', '531279336632877106'] }, timestamp: { $lt: (new Date().getTime()) - 24 * 3600 * 1000 } };
+        const query = { 
+            s: { 
+                $nin: ['532564186023329792', '531279336632877106'] // not in these specific servers
+            }, 
+            timestamp: { 
+                $lt: (new Date().getTime()) - 48 * 3600 * 1000 // timestamp lower than 48 hours ago
+            } 
+        };
+
         result = await Game.deleteAllBy(query);
         console.log(`${result.deletedCount} old games successfully pruned`);
     } catch (err) {

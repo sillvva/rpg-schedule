@@ -200,4 +200,4 @@ const parseChannels = (text, channels) => {
         console.log(err);
     }
     return text;
-}
+};
