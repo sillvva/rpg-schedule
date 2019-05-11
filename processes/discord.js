@@ -186,24 +186,41 @@ const refreshMessages = async guilds => {
                 catch(err) {
                     
                 }
-            })
+            });
         }
     })
 };
 
-const pruneOldGames = async () => {
+const pruneOldGames = async (client) => {
     let result;
-    try {
-        console.log('Pruning old games');
-        const query = { 
-            s: { 
-                $nin: ['532564186023329792', '531279336632877106'] // not in these specific servers
-            }, 
-            timestamp: { 
-                $lt: (new Date().getTime()) - 48 * 3600 * 1000 // timestamp lower than 48 hours ago
-            } 
-        };
+    console.log('Pruning old games');
+    const query = {
+        s: {
+            $nin: ['532564186023329792', '531279336632877106'] // not in these specific servers
+        },
+        timestamp: {
+            $lt: (new Date().getTime()) - 48 * 3600 * 1000 // timestamp lower than 48 hours ago
+        }
+    };
 
+    let games = await Game.fetchAllBy(query);
+    games.forEach(async game => {
+        try {
+            const guild = client.guilds.get(game.s);
+            if (guild) {
+                const channel = guild.channels.get(game.c);
+                if (channel) {
+                    const message = await channel.fetchMessage(game.messageId);
+                    message.delete();
+                }
+            }
+        }
+        catch(err) {
+
+        }
+    });
+
+    try {
         result = await Game.deleteAllBy(query);
         console.log(`${result.deletedCount} old games successfully pruned`);
     } catch (err) {

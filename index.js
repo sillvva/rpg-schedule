@@ -27,9 +27,9 @@ const client = discord.processes(async ()  => {
         discord.refreshMessages(client.guilds);
 
         // Once per day, prune games from the database that are more than 24 hours old
-        discord.pruneOldGames();
+        discord.pruneOldGames(client);
         setInterval(() => {
-            discord.pruneOldGames();
+            discord.pruneOldGames(client);
         }, 24 * 3600 * 1000); // 24 hours
 
         // Post Game Reminders
