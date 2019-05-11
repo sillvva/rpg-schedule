@@ -18,17 +18,18 @@ You can invite the discord bot to your server with the following link:
 https://rpg-schedule.herokuapp.com
 
 ## Command List
-Command | Description
---- | ---
-**General Commands** | 
-!schedule | Displays the help menu
-!schedule help | Displays the help menu
-**Configuration** | 
-!schedule channel #channel-name | Configure the channel where games are posted (recommended)
-!schedule password password | Configure the password for posting games
-!schedule password | Remove the password
-**Usage** | 
-!schedule link | Retrieve the link for posting games
+Command | Default | Description
+--- | --- | ---
+**General Commands** | |
+!schedule | | Displays the help menu
+!schedule help | | Displays the help menu
+**Configuration** | |
+!schedule channel `#channel-name` | first text channel | Configure the channel where games are posted (recommended)
+!schedule pruning `on/off` | off | Automatically delete old game announcements. As noted above, games over 48 hours past their scheduled date are automatically pruned from the database. However, by default the announcements are not.
+!schedule password `password` | disabled | Configure the password for posting games
+!schedule password | | Remove the password
+**Usage** | |
+!schedule link | | Retrieve the link for posting games
 
 ## About the bot
 

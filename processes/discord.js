@@ -44,8 +44,9 @@ const discordProcesses = (readyCallback) => {
                         
                         ` + (canConfigure ? `Configuration
                         ` + (canChannel ? `\`${process.env.BOTCOMMAND_SCHEDULE} channel #channel-name\` - Configure the channel where games are posted` : ``) + `
-                        ` + (canPassword ? `\`${process.env.BOTCOMMAND_SCHEDULE} password password\` - Configure the password for posting games
-                        \`${process.env.BOTCOMMAND_SCHEDULE} password\` - Remove the password` : ``) : ``) + `
+                        ` + (canChannel ? `\`${process.env.BOTCOMMAND_SCHEDULE} pruning on\` - \`on/off\` - Automatically delete old announcements` : ``) + `
+                        ` + (canPassword ? `\`${process.env.BOTCOMMAND_SCHEDULE} password password\` - Configure the password for posting games` : ``) + `
+                        ` + (canPassword ? `\`${process.env.BOTCOMMAND_SCHEDULE} password\` - Remove the password` : ``) : ``) + `
                         
                         Usage
                         \`${process.env.BOTCOMMAND_SCHEDULE} link\` - Retrieve link for posting games
@@ -71,6 +72,22 @@ const discordProcesses = (readyCallback) => {
                             channel: parts[0].replace(/\<\#|\>/g,'')
                         }).then(result => {
                             message.channel.send('Channel updated! Make sure the bot has permissions in the designated channel.');
+                        });
+                    }
+                }
+            } else if (cmd === 'pruning') {
+                if (!message.channel.guild) {
+                    message.reply('This command will only work in a server');
+                    return;
+                }
+                const member = message.channel.guild.members.array().find(m => m.user.id === message.author.id);
+                if (member) {
+                    if (member.hasPermission(discord.Permissions.FLAGS.MANAGE_CHANNELS)) {
+                        GuildConfig.save({
+                            guild: message.channel.guild.id,
+                            pruning: parts[0] === 'on'
+                        }).then(result => {
+                            message.channel.send('Configuration updated!');
                         });
                     }
                 }
@@ -203,22 +220,28 @@ const pruneOldGames = async (client) => {
         }
     };
 
-    // let games = await Game.fetchAllBy(query);
-    // games.forEach(async game => {
-    //     try {
-    //         const guild = client.guilds.get(game.s);
-    //         if (guild) {
-    //             const channel = guild.channels.get(game.c);
-    //             if (channel) {
-    //                 const message = await channel.fetchMessage(game.messageId);
-    //                 message.delete();
-    //             }
-    //         }
-    //     }
-    //     catch(err) {
-    //
-    //     }
-    // });
+    const games = await Game.fetchAllBy(query);
+    const guildConfigs = await GuildConfig.fetchAll();
+    games.forEach(async game => {
+        try {
+            const guildConfig = guildConfigs.find(gc => gc.guild === game.s );
+            if (guildConfig) {
+                if (guildConfig.pruning) {
+                    const guild = client.guilds.get(game.s);
+                    if (guild) {
+                        const channel = guild.channels.get(game.c);
+                        if (channel) {
+                            const message = await channel.fetchMessage(game.messageId);
+                            message.delete();
+                        }
+                    }
+                }
+            }
+        }
+        catch(err) {
+
+        }
+    });
 
     try {
         result = await Game.deleteAllBy(query);
