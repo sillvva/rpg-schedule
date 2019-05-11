@@ -203,22 +203,22 @@ const pruneOldGames = async (client) => {
         }
     };
 
-    let games = await Game.fetchAllBy(query);
-    games.forEach(async game => {
-        try {
-            const guild = client.guilds.get(game.s);
-            if (guild) {
-                const channel = guild.channels.get(game.c);
-                if (channel) {
-                    const message = await channel.fetchMessage(game.messageId);
-                    message.delete();
-                }
-            }
-        }
-        catch(err) {
-
-        }
-    });
+    // let games = await Game.fetchAllBy(query);
+    // games.forEach(async game => {
+    //     try {
+    //         const guild = client.guilds.get(game.s);
+    //         if (guild) {
+    //             const channel = guild.channels.get(game.c);
+    //             if (channel) {
+    //                 const message = await channel.fetchMessage(game.messageId);
+    //                 message.delete();
+    //             }
+    //         }
+    //     }
+    //     catch(err) {
+    //
+    //     }
+    // });
 
     try {
         result = await Game.deleteAllBy(query);
