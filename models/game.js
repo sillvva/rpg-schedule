@@ -88,10 +88,6 @@ module.exports = class Game {
             embed = msg;
         }
 
-        console.log(guildConfig);
-        console.log('----------------');
-        console.log(embed);
-
         const dbCollection = connection().collection(collection);
         if (game._id) {
             const updated = await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: game });
