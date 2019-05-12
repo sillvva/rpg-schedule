@@ -85,9 +85,11 @@ module.exports = class Game {
         embed.setThumbnail(dmmember.user.avatarURL);
 
         if (guildConfig.embeds === false) {
-            embed = `__**Game Announcement**__`;
-            embed += msg;
+            embed = msg;
         }
+
+        console.log(guildConfig);
+        console.log(embed);
 
         const dbCollection = connection().collection(collection);
         if (game._id) {
