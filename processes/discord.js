@@ -71,6 +71,7 @@ const discordProcesses = (readyCallback) => {
                             Guild: \`${guild.name}\`
                             Channel: \`${channel.name}\`
                             Pruning: \`${guildConfig.pruning ? 'on' : 'off'}\`
+                            Embeds: \`${!(guildConfig.embeds === false) ? 'on' : 'off'}\`
                             Password: ${guildConfig.password ? `\`${guildConfig.password}\`` : 'disabled'}
                         `);
                     message.author.send(embed);
