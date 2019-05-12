@@ -50,7 +50,7 @@ const discordProcesses = (readyCallback) => {
                         (canConfigure ? `\nConfiguration\n` +
                         (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} configuration\` - Get the bot configuration\n` : ``) +
                         (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} channel #channel-name\` - Configure the channel where games are posted\n` : ``) +
-                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} pruning ${guildConfig.pruning ? 'on' : 'off'}\` - \`on/off\` - Automatically delete old announcements\m` : ``) +
+                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} pruning ${guildConfig.pruning ? 'on' : 'off'}\` - \`on/off\` - Automatically delete old announcements\n` : ``) +
                         (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} embeds ${guildConfig.embeds || guildConfig.embeds == null ? 'on' : 'off'}\` - \`on/off\` - Use discord embeds for announcements\n` : ``) +
                         (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} password password\` - Configure the password for posting games\n` : ``) +
                         (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} password\` - Remove the password\n` : ``) : ``) +
