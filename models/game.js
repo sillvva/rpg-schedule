@@ -114,6 +114,8 @@ module.exports = class Game {
             if (game.method === 'automated') await message.react('➖');
             const pm = await dmmember.send("You can edit your `"+guild.name+"` `"+game.adventure+"` game here:\n"+host+config.urls.game.create+'?g='+inserted.insertedId);
             const updated = await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { messageId: message.id, pm: pm.id } });
+            console.log({ messageId: message.id, pm: pm.id });
+            console.log(updated);
             return { 
                 message: message, 
                 _id: inserted.insertedId, 

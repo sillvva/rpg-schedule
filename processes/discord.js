@@ -67,13 +67,13 @@ const discordProcesses = (readyCallback) => {
                     let embed = new discord.RichEmbed()
                         .setTitle('RPG Schedule Configuration')
                         .setColor(0x2196F3)
-                        .setDescription(`
-                            Guild: \`${guild.name}\`
-                            Channel: \`${channel.name}\`
-                            Pruning: \`${guildConfig.pruning ? 'on' : 'off'}\`
-                            Embeds: \`${!(guildConfig.embeds === false) ? 'on' : 'off'}\`
-                            Password: ${guildConfig.password ? `\`${guildConfig.password}\`` : 'disabled'}
-                        `);
+                        .setDescription(
+                            `Guild: \`${guild.name}\`\n` +
+                            `Channel: \`${channel.name}\`\n` +
+                            `Pruning: \`${guildConfig.pruning ? 'on' : 'off'}\`\n` +
+                            `Embeds: \`${!(guildConfig.embeds === false) ? 'on' : 'off'}\`\n` +
+                            `Password: ${guildConfig.password ? `\`${guildConfig.password}\`` : 'disabled'}`
+                        );
                     message.author.send(embed);
                 }
             } else if (cmd === 'channel') {
