@@ -64,6 +64,11 @@ https://rpg-schedule.herokuapp.com
 <td>Automatically delete old game announcements. As noted above, games over 48 hours past their scheduled date are automatically pruned from the database. However, by default the announcements are not.</td>
 </tr>
 <tr>
+<td>!schedule embeds <code>on/off</code></td>
+<td>on</td>
+<td>Use discord embeds for announcements</td>
+</tr>
+<tr>
 <td>!schedule password <code>password</code></td>
 <td>disabled</td>
 <td>Configure the password for posting games</td>

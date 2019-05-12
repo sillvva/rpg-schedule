@@ -3,6 +3,7 @@ const discord = require('discord.js');
 
 const { connection } = require('../db');
 const ws = require('../processes/socket');
+const GuildConfig = require('./guild-config');
 const config = require('./config');
 
 const ObjectId = mongodb.ObjectId;
@@ -13,13 +14,14 @@ module.exports = class Game {
     static async save(channel, game) {
         if (!connection()) throw new Error('No database connection');
         const guild = channel.guild;
+        const guildConfig = await GuildConfig.fetch(guild.id);
         
-        let dm;
+        let dm = game.dm.trim().replace('@','').replace(/\#\d{4}/, '');
         let dmmember = guild.members.array().find(mem => {
             return mem.user.tag === game.dm.trim().replace('@','');
         });
-        if (dmmember) dm = dmmember.user.toString();
-        else throw new Error('DM must be a Discord tag');
+        if (!dmmember) throw new Error('DM must be a Discord tag');
+        else if (guildConfig.embeds === false) dm = dmmember.user.toString();
 
         let reserved = [];
         let waitlist = [];
@@ -27,12 +29,13 @@ module.exports = class Game {
             if (res.trim().length === 0) return;
             let member = guild.members.array().find(mem => mem.user.tag === res.trim().replace('@',''));
             
-            let name = res.trim().replace('@','');
-            if (member) name = member.user.toString();
+            let name = res.trim().replace('@','').replace(/\#\d{4}/, '');
+            if (member && guildConfig.embeds === false) name = member.user.toString();
             
             if (reserved.length < parseInt(game.players)) {
                 reserved.push((reserved.length+1)+'. '+name);
-            } else {
+            }
+            else {
                 waitlist.push((reserved.length+waitlist.length+1)+'. '+name);
             }
         });
@@ -51,7 +54,8 @@ module.exports = class Game {
             if (reserved.length > 0) signups += `\n**Sign Ups:**\n${reserved.join("\n")}\n`;
             if (waitlist.length > 0) signups += `\n**Waitlist:**\n${waitlist.join("\n")}\n`;
             signups += `\n(➕ Add Me | ➖ Remove Me)`;
-        } else if (game.method === 'custom') {
+        }
+        else if (game.method === 'custom') {
             signups += `\n${game.customSignup}`;
         }
         
@@ -59,25 +63,30 @@ module.exports = class Game {
         if (game.when === 'datetime') {
             when = `${gameDate} - ${gameTime} (${timeZone})`;
             game.timestamp = new Date(`${game.date} ${game.time} ${timeZone}`).getTime()
-        } else if (game.when === 'now') {
+        }
+        else if (game.when === 'now') {
             when = 'Now';
             game.timestamp = new Date.getTime();
         }
-        
+
+        const msg = `\n**DM:** ${dm}` +
+            `\n**Adventure:** ${game.adventure}` +
+            `\n**Runtime:** ${game.runtime} hours` +
+            `\n${description.length > 0 ? "**Description:**\n"+description+"\n" : description}` +
+            `\n**When:** ${when}` +
+            `\n**Where:** ${where}` +
+            `\n${signups}`;
+
         let embed = new discord.RichEmbed()
             .setTitle('Game Announcement')
             .setColor(0x2196F3)
-            .setDescription(`
-                **DM:** ${dm}
-                **Adventure:** ${game.adventure}
-                **Runtime:** ${game.runtime} hours
-                ${description.length > 0 ? "**Description:**\n"+description+"\n" : description}
-                **When:** ${when}
-                **Where:** ${where}
-                ${signups}
-            `);
+            .setDescription(msg);
 
         embed.setThumbnail(dmmember.user.avatarURL);
+
+        if (guildConfig.embeds === false) {
+            embed = msg;
+        }
 
         const dbCollection = connection().collection(collection);
         if (game._id) {
@@ -104,7 +113,7 @@ module.exports = class Game {
             if (game.method === 'automated') await message.react('➖');
             const pm = await dmmember.send("You can edit your `"+guild.name+"` `"+game.adventure+"` game here:\n"+host+config.urls.game.create+'?g='+inserted.insertedId);
             const updated = await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { messageId: message.id, pm: pm.id } });
-            return { 
+            return {
                 message: message, 
                 _id: inserted.insertedId, 
                 modified: updated.modifiedCount > 0 

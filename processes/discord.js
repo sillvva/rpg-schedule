@@ -38,48 +38,46 @@ const discordProcesses = (readyCallback) => {
             const guildConfig = await GuildConfig.fetch(guildId);
 
             const member = message.channel.guild.members.array().find(m => m.user.id === message.author.id);
-            const canGuild = member ? member.hasPermission(discord.Permissions.FLAGS.MANAGE_GUILD) : false;
-            const canConfigure = canGuild;
+            const canConfigure = member ? member.hasPermission(discord.Permissions.FLAGS.MANAGE_GUILD) : false;
 
             if (cmd === 'help' || message.content.trim().split(' ').length === 1) {
                 let embed = new discord.RichEmbed()
                     .setTitle('RPG Schedule Help')
                     .setColor(0x2196F3)
-                    .setDescription(`
-                        __**Command List**__
-                        \`${process.env.BOTCOMMAND_SCHEDULE}\` - Display this help window
-                        \`${process.env.BOTCOMMAND_SCHEDULE} help\` - Display this help window
-                        
-                        ` + (canConfigure ? `Configuration
-                        ` + (canGuild ? `\`${process.env.BOTCOMMAND_SCHEDULE} configuration\` - Get the bot configuration` : ``) + `
-                        ` + (canGuild ? `\`${process.env.BOTCOMMAND_SCHEDULE} channel #channel-name\` - Configure the channel where games are posted` : ``) + `
-                        ` + (canGuild ? `\`${process.env.BOTCOMMAND_SCHEDULE} pruning ${guildConfig.pruning ? 'on' : 'off'}\` - \`on/off\` - Automatically delete old announcements` : ``) + `
-                        ` + (canGuild ? `\`${process.env.BOTCOMMAND_SCHEDULE} password password\` - Configure the password for posting games` : ``) + `
-                        ` + (canGuild ? `\`${process.env.BOTCOMMAND_SCHEDULE} password\` - Remove the password` : ``) : ``) + `
-                        
-                        Usage
-                        \`${process.env.BOTCOMMAND_SCHEDULE} link\` - Retrieve link for posting games
-                    `);
+                    .setDescription(`__**Command List**__\n` +
+                        `\`${process.env.BOTCOMMAND_SCHEDULE}\` - Display this help window\n` +
+                        `\`${process.env.BOTCOMMAND_SCHEDULE} help\` - Display this help window\n` +
+                        (canConfigure ? `\nConfiguration\n` +
+                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} configuration\` - Get the bot configuration\n` : ``) +
+                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} channel #channel-name\` - Configure the channel where games are posted\n` : ``) +
+                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} pruning ${guildConfig.pruning ? 'on' : 'off'}\` - \`on/off\` - Automatically delete old announcements\n` : ``) +
+                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} embeds ${guildConfig.embeds || guildConfig.embeds == null ? 'on' : 'off'}\` - \`on/off\` - Use discord embeds for announcements\n` : ``) +
+                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} password password\` - Configure the password for posting games\n` : ``) +
+                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} password\` - Remove the password\n` : ``) : ``) +
+                        `\nUsage\n` +
+                        `\`${process.env.BOTCOMMAND_SCHEDULE} link\` - Retrieve link for posting games`
+                    );
                 message.channel.send(embed);
             } else if (cmd === 'link') {
                 message.channel.send(host+gameUrl+'?s='+guildId);
             } else if (cmd === 'configuration') {
-                if (canGuild) {
+                if (canConfigure) {
                     const channel = guild.channels.get(guildConfig.channel) || guild.channels.array().find(c => c instanceof discord.TextChannel);
 
                     let embed = new discord.RichEmbed()
                         .setTitle('RPG Schedule Configuration')
                         .setColor(0x2196F3)
-                        .setDescription(`
-                            Guild: \`${guild.name}\`
-                            Channel: \`${channel.name}\`
-                            Pruning: \`${guildConfig.pruning ? 'on' : 'off'}\`
-                            Password: ${guildConfig.password ? `\`${guildConfig.password}\`` : 'disabled'}
-                        `);
+                        .setDescription(
+                            `Guild: \`${guild.name}\`\n` +
+                            `Channel: \`${channel.name}\`\n` +
+                            `Pruning: \`${guildConfig.pruning ? 'on' : 'off'}\`\n` +
+                            `Embeds: \`${!(guildConfig.embeds === false) ? 'on' : 'off'}\`\n` +
+                            `Password: ${guildConfig.password ? `\`${guildConfig.password}\`` : 'disabled'}`
+                        );
                     message.author.send(embed);
                 }
             } else if (cmd === 'channel') {
-                if (canGuild) {
+                if (canConfigure) {
                     GuildConfig.save({
                         guild: guildId,
                         channel: parts[0].replace(/\<\#|\>/g,'')
@@ -88,7 +86,7 @@ const discordProcesses = (readyCallback) => {
                     });
                 }
             } else if (cmd === 'pruning') {
-                if (canGuild) {
+                if (canConfigure) {
                     GuildConfig.save({
                         guild: guildId,
                         pruning: parts[0] === 'on'
@@ -96,8 +94,17 @@ const discordProcesses = (readyCallback) => {
                         message.channel.send('Configuration updated! Pruning was turned '+(parts[0] === 'on' ? 'on' : 'off'));
                     });
                 }
+            } else if (cmd === 'embeds') {
+                if (canConfigure) {
+                    GuildConfig.save({
+                        guild: guildId,
+                        embeds: !(parts[0] === 'off')
+                    }).then(result => {
+                        message.channel.send('Configuration updated! Embeds were turned '+(!(parts[0] === 'off') ? 'on' : 'off'));
+                    });
+                }
             } else if (cmd === 'password') {
-                if (canGuild) {
+                if (canConfigure) {
                     GuildConfig.save({
                         guild: guildId,
                         password: parts.join(' ')

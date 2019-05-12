@@ -30,14 +30,14 @@ module.exports = (options) => {
                     let channelId;
                     let password;
 
-                    const config = await GuildConfig.fetch(guild.id);
-                    if (config) password = config.password;
+                    const guildConfig = await GuildConfig.fetch(guild.id);
+                    if (guildConfig) password = guildConfig.password;
 
                     if (req.query.g) {
                         channelId = game.c;
                     }
                     else {
-                        if (config) channelId = config.channel;
+                        if (guildConfig) channelId = guildConfig.channel;
                     }
     
                     const channel = guild.channels.get(channelId) || guild.channels.array().find(c => c instanceof discord.TextChannel);
