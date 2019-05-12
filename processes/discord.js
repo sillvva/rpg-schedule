@@ -23,17 +23,24 @@ const discordProcesses = (readyCallback) => {
     /**
      * Discord.JS - message
      */
-    client.on('message', (message) => {
+    client.on('message', async message => {
         if (message.content.startsWith(process.env.BOTCOMMAND_SCHEDULE)) {
-            const parts = message.content.split(' ').slice(1);
+            const parts = message.content.trim().split(' ').slice(1);
             const cmd = parts.reverse().pop();
 
-            if (cmd === 'help' || message.content.split(' ').length === 1) {
-                const member = message.channel.guild.members.array().find(m => m.user.id === message.author.id);
-                let canPassword = member ? member.hasPermission(discord.Permissions.FLAGS.MANAGE_CHANNELS) : false;
-                let canChannel = member ? member.hasPermission(discord.Permissions.FLAGS.MANAGE_GUILD) : false;
-                let canConfigure = canPassword || canChannel;
+            if (!message.channel.guild) {
+                message.reply('This command will only work in a server');
+                return;
+            }
 
+            const guild = message.channel.guild;
+            const guildId = guild.id;
+            const guildConfig = await GuildConfig.fetch(guildId);
+
+            const member = message.channel.guild.members.array().find(m => m.user.id === message.author.id);
+            let canGuild = member ? member.hasPermission(discord.Permissions.FLAGS.MANAGE_GUILD) : false;
+
+            if (cmd === 'help' || message.content.trim().split(' ').length === 1) {
                 let embed = new discord.RichEmbed()
                     .setTitle('RPG Schedule Help')
                     .setColor(0x2196F3)
@@ -43,69 +50,59 @@ const discordProcesses = (readyCallback) => {
                         \`${process.env.BOTCOMMAND_SCHEDULE} help\` - Display this help window
                         
                         ` + (canConfigure ? `Configuration
-                        ` + (canChannel ? `\`${process.env.BOTCOMMAND_SCHEDULE} channel #channel-name\` - Configure the channel where games are posted` : ``) + `
-                        ` + (canChannel ? `\`${process.env.BOTCOMMAND_SCHEDULE} pruning on\` - \`on/off\` - Automatically delete old announcements` : ``) + `
-                        ` + (canPassword ? `\`${process.env.BOTCOMMAND_SCHEDULE} password password\` - Configure the password for posting games` : ``) + `
-                        ` + (canPassword ? `\`${process.env.BOTCOMMAND_SCHEDULE} password\` - Remove the password` : ``) : ``) + `
+                        ` + (canGuild ? `\`${process.env.BOTCOMMAND_SCHEDULE} configuration\` - Get the bot configuration` : ``) + `
+                        ` + (canGuild ? `\`${process.env.BOTCOMMAND_SCHEDULE} channel #channel-name\` - Configure the channel where games are posted` : ``) + `
+                        ` + (canGuild ? `\`${process.env.BOTCOMMAND_SCHEDULE} pruning ${guildConfig.pruning ? 'on' : 'off'}\` - \`on/off\` - Automatically delete old announcements` : ``) + `
+                        ` + (canGuild ? `\`${process.env.BOTCOMMAND_SCHEDULE} password password\` - Configure the password for posting games` : ``) + `
+                        ` + (canGuild ? `\`${process.env.BOTCOMMAND_SCHEDULE} password\` - Remove the password` : ``) : ``) + `
                         
                         Usage
                         \`${process.env.BOTCOMMAND_SCHEDULE} link\` - Retrieve link for posting games
                     `);
                 message.channel.send(embed);
             } else if (cmd === 'link') {
-                if (!message.channel.guild) {
-                    message.reply('This command will only work in a server');
-                    return;
-                }
-                const guildId = message.channel.guild.id;
                 message.channel.send(host+gameUrl+'?s='+guildId);
-            } else if (cmd === 'channel') {
-                if (!message.channel.guild) {
-                    message.reply('This command will only work in a server');
-                    return;
+            } else if (cmd === 'configuration') {
+                if (canGuild) {
+                    const channel = guild.channels.get(guildConfig.channel) || guild.channels.array().find(c => c instanceof discord.TextChannel);
+
+                    let embed = new discord.RichEmbed()
+                        .setTitle('RPG Schedule Configuration')
+                        .setColor(0x2196F3)
+                        .setDescription(`
+                            Guild: \`${guild.name}\`
+                            Channel: \`${channel.name}\`
+                            Pruning: \`${guildConfig.pruning ? 'on' : 'off'}\`
+                            Password: ${guildConfig.password ? `\`${guildConfig.password}\`` : 'disabled'}
+                        `);
+                    message.author.send(embed);
                 }
-                const member = message.channel.guild.members.array().find(m => m.user.id === message.author.id);
-                if (member) {
-                    if (member.hasPermission(discord.Permissions.FLAGS.MANAGE_CHANNELS)) {
-                        GuildConfig.save({
-                            guild: message.channel.guild.id,
-                            channel: parts[0].replace(/\<\#|\>/g,'')
-                        }).then(result => {
-                            message.channel.send('Channel updated! Make sure the bot has permissions in the designated channel.');
-                        });
-                    }
+            } else if (cmd === 'channel') {
+                if (canGuild) {
+                    GuildConfig.save({
+                        guild: guildId,
+                        channel: parts[0].replace(/\<\#|\>/g,'')
+                    }).then(result => {
+                        message.channel.send('Channel updated! Make sure the bot has permissions in the designated channel.');
+                    });
                 }
             } else if (cmd === 'pruning') {
-                if (!message.channel.guild) {
-                    message.reply('This command will only work in a server');
-                    return;
-                }
-                const member = message.channel.guild.members.array().find(m => m.user.id === message.author.id);
-                if (member) {
-                    if (member.hasPermission(discord.Permissions.FLAGS.MANAGE_CHANNELS)) {
-                        GuildConfig.save({
-                            guild: message.channel.guild.id,
-                            pruning: parts[0] === 'on'
-                        }).then(result => {
-                            message.channel.send('Configuration updated!');
-                        });
-                    }
+                if (canGuild) {
+                    GuildConfig.save({
+                        guild: guildId,
+                        pruning: parts[0] === 'on'
+                    }).then(result => {
+                        message.channel.send('Configuration updated! Pruning was turned '+(parts[0] === 'on' ? 'on' : 'off'));
+                    });
                 }
             } else if (cmd === 'password') {
-                if (!message.channel.guild) {
-                    message.reply('This command will only work in a server');
-                    return;
-                }
-                const member = message.channel.guild.members.array().find(m => m.user.id === message.author.id);
-                if (member) {
-                    if (member.hasPermission(discord.Permissions.FLAGS.MANAGE_GUILD)) {
-                        GuildConfig.save({
-                            guild: message.channel.guild.id,
-                            password: parts.join(' ')
-                        }).then(result => {
-                            message.channel.send('Password updated!');
-                        });
-                    }
+                if (canGuild) {
+                    GuildConfig.save({
+                        guild: guildId,
+                        password: parts.join(' ')
+                    }).then(result => {
+                        message.channel.send('Password updated!');
+                    });
                 }
             }
     
@@ -183,7 +180,7 @@ const discordProcesses = (readyCallback) => {
     return client;
 };
 
-const discordLogin = (client) => {
+const discordLogin = client => {
     client.login(process.env.TOKEN);
 };
 
@@ -208,12 +205,12 @@ const refreshMessages = async guilds => {
     })
 };
 
-const pruneOldGames = async (client) => {
+const pruneOldGames = async client => {
     let result;
     console.log('Pruning old games');
     const query = {
         s: {
-            $nin: ['532564186023329792', '531279336632877106'] // not in these specific servers
+            $nin: ['532564186023329792'] // not in these specific servers
         },
         timestamp: {
             $lt: (new Date().getTime()) - 48 * 3600 * 1000 // timestamp lower than 48 hours ago
@@ -232,7 +229,9 @@ const pruneOldGames = async (client) => {
                         const channel = guild.channels.get(game.c);
                         if (channel) {
                             const message = await channel.fetchMessage(game.messageId);
-                            message.delete();
+                            if (message) message.delete();
+                            const reminder = await channel.fetchMessage(game.reminderMessageId);
+                            if (reminder) reminder.delete();
                         }
                     }
                 }
@@ -252,7 +251,7 @@ const pruneOldGames = async (client) => {
     return result;
 };
 
-const postReminders = async (client) => {
+const postReminders = async client => {
     let games = await Game.fetchAllBy({ when: 'datetime', reminder: { $in: ['15','30','60'] } });
     games.forEach(async game => {
         if (game.timestamp - parseInt(game.reminder) * 60 * 1000 > new Date().getTime()) return;
