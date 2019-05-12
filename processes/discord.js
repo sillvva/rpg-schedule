@@ -38,7 +38,8 @@ const discordProcesses = (readyCallback) => {
             const guildConfig = await GuildConfig.fetch(guildId);
 
             const member = message.channel.guild.members.array().find(m => m.user.id === message.author.id);
-            let canGuild = member ? member.hasPermission(discord.Permissions.FLAGS.MANAGE_GUILD) : false;
+            const canGuild = member ? member.hasPermission(discord.Permissions.FLAGS.MANAGE_GUILD) : false;
+            const canConfigure = canGuild;
 
             if (cmd === 'help' || message.content.trim().split(' ').length === 1) {
                 let embed = new discord.RichEmbed()
