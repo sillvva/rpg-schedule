@@ -21,7 +21,7 @@ module.exports = class Game {
             return mem.user.tag === game.dm.trim().replace('@','');
         });
         if (!dmmember) throw new Error('DM must be a Discord tag');
-        else if (!(guildConfig.embeds === false)) dm = dmmember.user.toString();
+        else if (guildConfig.embeds === false) dm = dmmember.user.toString();
 
         let reserved = [];
         let waitlist = [];
@@ -30,7 +30,7 @@ module.exports = class Game {
             let member = guild.members.array().find(mem => mem.user.tag === res.trim().replace('@',''));
             
             let name = res.trim().replace('@','').replace(/\#\d{4}/, '');
-            if (member && !(guildConfig.embeds === false)) name = member.user.toString();
+            if (member && guildConfig.embeds === false) name = member.user.toString();
             
             if (reserved.length < parseInt(game.players)) {
                 reserved.push((reserved.length+1)+'. '+name);
