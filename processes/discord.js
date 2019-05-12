@@ -89,7 +89,7 @@ const discordProcesses = (readyCallback) => {
                 if (canConfigure) {
                     GuildConfig.save({
                         guild: guildId,
-                        pruning: parts[0] === 'on'
+                        pruning: Boolean(parts[0] === 'on')
                     }).then(result => {
                         message.channel.send('Configuration updated! Pruning was turned '+(parts[0] === 'on' ? 'on' : 'off'));
                     });
@@ -98,7 +98,7 @@ const discordProcesses = (readyCallback) => {
                 if (canConfigure) {
                     GuildConfig.save({
                         guild: guildId,
-                        pruning: !(parts[0] === 'off')
+                        pruning: Boolean(!(parts[0] === 'off'))
                     }).then(result => {
                         message.channel.send('Configuration updated! Embeds were turned '+(!(parts[0] === 'off') ? 'on' : 'off'));
                     });
