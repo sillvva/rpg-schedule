@@ -89,6 +89,7 @@ module.exports = class Game {
         }
 
         console.log(guildConfig);
+        console.log('----------------');
         console.log(embed);
 
         const dbCollection = connection().collection(collection);
