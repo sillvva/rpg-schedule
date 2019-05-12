@@ -3,12 +3,13 @@ const discord = require('discord.js');
 
 const Game = require('../models/game');
 const GuildConfig = require('../models/guild-config');
+const config = require('../models/config');
 
 module.exports = (options) => {
     const router = express.Router();
     const { client } = options;
     
-    router.use(Game.url, async (req, res, next) => {
+    router.use(config.urls.game.create, async (req, res, next) => {
         try {
             let game;
             let server = req.query.s;
@@ -98,7 +99,7 @@ module.exports = (options) => {
                     
                     if (req.method === 'POST') {
                         Game.save(channel, { ...game, ...req.body }).then(response => {
-                            if (response.modified) res.redirect(Game.url+'?g='+response._id);
+                            if (response.modified) res.redirect(config.urls.game.create+'?g='+response._id);
                             else res.render('game', data);
                         }).catch(err => {
                             data.errors.dm = err.message.startsWith('DM') ? err.message : false;
@@ -118,7 +119,7 @@ module.exports = (options) => {
         }
     });
 
-    router.get(Game.deleteUrl, async (req, res, next) => {
+    router.get(config.urls.game.delete, async (req, res, next) => {
         try {
             if (req.query.g) {
                 const game = await Game.fetch(req.query.g);
@@ -131,7 +132,7 @@ module.exports = (options) => {
                     const channel = guild.channels.get(channelId);
 
                     Game.delete(game, channel).then(response => {
-                        res.redirect(Game.url+'?s='+serverId);
+                        res.redirect(config.urls.game.create+'?s='+serverId);
                     });
                 } else {
                     throw new Error('Server not found');

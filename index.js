@@ -8,6 +8,7 @@ const discord = require('./processes/discord');
 const ws = require('./processes/socket');
 
 const gameRoutes = require('./routes/game');
+const inviteRoute = require('./routes/invite');
 
 const app = express();
 
@@ -60,9 +61,9 @@ app.use(express.static(path.join(__dirname, 'public')));
  * Routes
  */
 app.use(gameRoutes({ client: client }));
-
+app.use(inviteRoute());
 app.use('/', (req, res, next) => {
-    res.render('invite', { invite: process.env.INVITE });
+    res.render('invite');
 });
 
 // Login the Discord bot

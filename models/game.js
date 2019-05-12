@@ -3,19 +3,13 @@ const discord = require('discord.js');
 
 const { connection } = require('../db');
 const ws = require('../processes/socket');
+const config = require('./config');
 
 const ObjectId = mongodb.ObjectId;
 const collection = 'games';
 const host = process.env.HOST;
 
 module.exports = class Game {
-    static get url() {
-        return '/game';
-    }
-    static get deleteUrl() {
-        return '/delete';
-    }
-    
     static async save(channel, game) {
         if (!connection()) throw new Error('No database connection');
         const guild = channel.guild;
@@ -108,7 +102,7 @@ module.exports = class Game {
             const message = await channel.send(embed);
             if (game.method === 'automated') await message.react('➕');
             if (game.method === 'automated') await message.react('➖');
-            const pm = await dmmember.send("You can edit your `"+guild.name+"` `"+game.adventure+"` game here:\n"+host+Game.url+'?g='+inserted.insertedId);
+            const pm = await dmmember.send("You can edit your `"+guild.name+"` `"+game.adventure+"` game here:\n"+host+config.urls.game.create+'?g='+inserted.insertedId);
             const updated = await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { messageId: message.id, pm: pm.id } });
             return { 
                 message: message, 
