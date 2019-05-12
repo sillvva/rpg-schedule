@@ -99,7 +99,7 @@ module.exports = (options) => {
                     
                     if (req.method === 'POST') {
                         Game.save(channel, { ...game, ...req.body }).then(response => {
-                            console.log(response.modified);
+                            console.log(config.urls.game.create, response._id);
                             if (response.modified) res.redirect(config.urls.game.create+'?g='+response._id);
                             else res.render('game', data);
                         }).catch(err => {
