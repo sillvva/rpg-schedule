@@ -2,6 +2,8 @@ const http = require('http');
 const bodyParser = require('body-parser');
 const express = require('express');
 const path = require('path');
+const session = require('express-session');
+const MongoDBStore = require('connect-mongodb-session')(session);
 
 const { db } = require('./db');
 const discord = require('./processes/discord');
@@ -11,6 +13,11 @@ const gameRoutes = require('./routes/game');
 const inviteRoute = require('./routes/invite');
 
 const app = express();
+const store = new MongoDBStore({
+    uri: process.env.MONGODB_URL,
+    collection: 'sessions',
+    expires: 1000 * 60 * 60 * 24 // 1 day
+});
 
 // Initialize the Discord event handlers and then call a
 // callback function when the bot has logged in.
@@ -58,6 +65,13 @@ app.set('views', 'views');
 
 app.use(bodyParser.urlencoded());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(session({
+    secret: process.env.TOKEN,
+    resave: false,
+    saveUninitialized: false,
+    cookie: { secure: true },
+    store: store
+}));
 
 /**
  * Routes

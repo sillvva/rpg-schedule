@@ -5,10 +5,12 @@
   "main": "index.js",
   "dependencies": {
     "body-parser": "^1.18.3",
+    "connect-mongodb-session": "^2.1.1",
     "discord.js": "^11.4.2",
     "ejs": "^2.6.1",
     "express": "^4.16.4",
     "express-handlebars": "^3.0.0",
+    "express-session": "^1.16.1",
     "mongodb": "^3.1.10",
     "nodemon": "^1.18.9",
     "socket.io": "^2.2.0",

@@ -3,8 +3,14 @@ module.exports  = {
         game: {
             create: '/game',
             delete: '/delete',
-            password: '/password'
+            password: '/password',
+            auth: '/authenticate'
         },
         invite: '/invite'
+    },
+    defaults: {
+        sessionStatus: {
+            loggedInTo: []
+        }
     }
 };

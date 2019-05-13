@@ -201,23 +201,32 @@
         }).change();
 
         <% if (password) { %>
-        if (!sessionStorage.getItem('authenticated')) {
-            const password = prompt('Enter the password provided by the server');
-            fetch('/password?s=<%= s %>&p='+escape(password), { method: 'GET' })
-                .then(response => {
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.result) {
-                        sessionStorage.setItem('authenticated', true);
-                    } else {
-                        window.location = '/';
-                    }
-                })
-                .catch(err => {
-                    console.log('Error: '+err);
-                });
-        }
+        fetch('<%= config.urls.game.auth %>?s=<%= s %>', { method: 'GET' })
+            .then(response => {
+                return response.json();
+            })
+            .then(status => {
+                if (!status) window.location = '/';
+                if (!status.loggedInTo) window.location = '/';
+                if (!status.loggedInTo.includes('<%= s %>')) {
+                    password = prompt('Enter the password provided by the server');
+                    fetch('<%= config.urls.game.password %>?s=<%= s %>&p='+escape(password), { method: 'GET' })
+                        .then(response => {
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (!data.result) {
+                                window.location = '/';
+                            }
+                        })
+                        .catch(err => {
+                            window.location = '/'
+                        });
+                }
+            })
+            .catch(err => {
+                console.log('Error: '+err);
+            });
         <% } %>
         
         <% if (is.newgame) { %>

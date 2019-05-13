@@ -151,13 +151,30 @@ module.exports = (options) => {
         try {
             const guildConfig = await GuildConfig.fetch(req.query.s);
             if (guildConfig) {
-                res.status(200).json({ result: guildConfig.password === req.query.p });
+                if (guildConfig.password === req.query.p) {
+                    req.session.status = {
+                        ...config.defaults.sessionStatus,
+                        ...req.session.status
+                    };
+                    req.session.status.loggedInTo.push(req.query.s);
+                    res.status(200).json({ result: true });
+                }
             } else {
                 throw new Error('Server not found');
             }
         } catch(err) {
+            req.session.status = config.defaults.sessionStatus;
             res.render('error', { message: err });
         }
+    });
+
+    router.get(config.urls.game.auth, (req, res, next) => {
+        if (!req.session.status) {
+            req.session.status = config.defaults.sessionStatus;
+        } else {
+            req.session.status = { ...config.defaults.sessionStatus, ...req.session.status };
+        }
+        res.status(200).json({ status: req.session.status });
     });
     
     return router;
