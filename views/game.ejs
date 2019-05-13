@@ -209,7 +209,7 @@
                 if (!session) window.location = '/';
                 if (!session.status) window.location = '/';
                 if (!(session.status.loggedInTo || []).includes('<%= s %>')) {
-                    password = prompt('Enter the password provided by the server');
+                    const password = prompt('Enter the password provided by the server');
                     fetch('<%= config.urls.game.password %>?s=<%= s %>&p='+escape(password), { method: 'GET' })
                         .then(response => {
                             return response.json();
@@ -225,7 +225,7 @@
                 }
             })
             .catch(err => {
-                console.log('Error: '+err);
+                console.log(err);
             });
         <% } %>
         
