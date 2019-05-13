@@ -146,6 +146,19 @@ module.exports = (options) => {
             res.render('error', { message: err });
         }
     });
+
+    router.get(config.urls.game.password, async (req, res, next) => {
+        try {
+            const guildConfig = await GuildConfig.fetch(req.query.s);
+            if (guildConfig) {
+                res.status(200).json({ result: guildConfig.password === req.query.p });
+            } else {
+                throw new Error('Server not found');
+            }
+        } catch(err) {
+            res.render('error', { message: err });
+        }
+    });
     
     return router;
 };

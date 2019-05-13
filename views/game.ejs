@@ -202,11 +202,21 @@
 
         <% if (password) { %>
         if (!sessionStorage.getItem('authenticated')) {
-            if (prompt('Enter the password provided by the server') === '<%= password %>') {
-                sessionStorage.setItem('authenticated', true);
-            } else {
-                window.location = '/';
-            }
+            const password = prompt('Enter the password provided by the server');
+            fetch('/password?s=<%= s %>&p='+escape(password), { method: 'GET' })
+                .then(response => {
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.result) {
+                        sessionStorage.setItem('authenticated', true);
+                    } else {
+                        window.location = '/';
+                    }
+                })
+                .catch(err => {
+                    console.log('Error: '+err);
+                });
         }
         <% } %>
         

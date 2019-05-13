@@ -2,7 +2,8 @@ module.exports  = {
     urls: {
         game: {
             create: '/game',
-            delete: '/delete'
+            delete: '/delete',
+            password: '/password'
         },
         invite: '/invite'
     }
