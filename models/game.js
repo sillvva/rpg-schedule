@@ -15,7 +15,7 @@ module.exports = class Game {
         if (!connection()) throw new Error('No database connection');
         const guild = channel.guild;
         const guildConfig = await GuildConfig.fetch(guild.id);
-        
+
         let dm = game.dm.trim().replace('@','').replace(/\#\d{4}/, '');
         let dmmember = guild.members.array().find(mem => {
             return mem.user.tag === game.dm.trim().replace('@','');
@@ -28,10 +28,10 @@ module.exports = class Game {
         game.reserved.split(/\r?\n/).forEach(res => {
             if (res.trim().length === 0) return;
             let member = guild.members.array().find(mem => mem.user.tag === res.trim().replace('@',''));
-            
+
             let name = res.trim().replace('@','').replace(/\#\d{4}/, '');
             if (member && guildConfig.embeds === false) name = member.user.toString();
-            
+
             if (reserved.length < parseInt(game.players)) {
                 reserved.push((reserved.length+1)+'. '+name);
             }
@@ -48,7 +48,7 @@ module.exports = class Game {
 
         const where = parseChannels(game.where, guild.channels);
         const description = parseChannels(game.description, guild.channels);
-        
+
         let signups = '';
         if (game.method === 'automated') {
             if (reserved.length > 0) signups += `\n**Sign Ups:**\n${reserved.join("\n")}\n`;
@@ -58,7 +58,7 @@ module.exports = class Game {
         else if (game.method === 'custom') {
             signups += `\n${game.customSignup}`;
         }
-        
+
         let when = '';
         if (game.when === 'datetime') {
             when = `${gameDate} - ${gameTime} (${timeZone})`;
@@ -84,27 +84,27 @@ module.exports = class Game {
 
         embed.setThumbnail(dmmember.user.avatarURL);
 
-        if (guildConfig.embeds === false) {
-            embed = msg;
-        }
-
         const dbCollection = connection().collection(collection);
         if (game._id) {
             const updated = await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: game });
             let message;
             try {
                 message = await channel.fetchMessage(game.messageId);
-                message = await message.edit(embed);
+                if (guildConfig.embeds === false) {
+                    message = await message.edit(msg, { embed: {} });
+                } else {
+                    message = await message.edit(embed);
+                }
                 ws.getIo().emit('game', { action: 'updated', game: game });
             }
             catch(err) {
                 Game.delete(game._id);
                 updated.modifiedCount = 0;
             }
-            return { 
-                message: message, 
-                _id: game._id, 
-                modified: updated.modifiedCount > 0 
+            return {
+                message: message,
+                _id: game._id,
+                modified: updated.modifiedCount > 0
             };
         } else {
             const inserted = await dbCollection.insertOne(game);
@@ -114,20 +114,20 @@ module.exports = class Game {
             const pm = await dmmember.send("You can edit your `"+guild.name+"` `"+game.adventure+"` game here:\n"+host+config.urls.game.create+'?g='+inserted.insertedId);
             const updated = await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { messageId: message.id, pm: pm.id } });
             return {
-                message: message, 
-                _id: inserted.insertedId, 
-                modified: updated.modifiedCount > 0 
+                message: message,
+                _id: inserted.insertedId,
+                modified: updated.modifiedCount > 0
             };
         }
     }
-    
+
     static async fetch(gameId) {
         if (!connection()) throw new Error('No database connection');
         return await connection()
             .collection(collection)
             .findOne({ _id: new ObjectId(gameId) });
     }
-    
+
     static async fetchBy(key, value) {
         if (!connection()) throw new Error('No database connection');
         const query = {};
@@ -136,7 +136,7 @@ module.exports = class Game {
             .collection(collection)
             .findOne(query);
     }
-    
+
     static async fetchAllBy(query) {
         if (!connection()) throw new Error('No database connection');
         return await connection()
@@ -151,7 +151,7 @@ module.exports = class Game {
             .collection(collection)
             .deleteMany(query);
     }
-    
+
     static async delete(game, channel) {
         if (!connection()) throw new Error('No database connection');
         try {
