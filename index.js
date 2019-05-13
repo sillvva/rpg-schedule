@@ -16,7 +16,7 @@ const app = express();
 const store = new MongoDBStore({
     uri: process.env.MONGODB_URL,
     collection: 'sessions',
-    expires: 1000 * 60 * 60 * 24 // 1 day
+    expires: 1000 * 60 * 60 * 6 // 6 hours
 });
 
 // Initialize the Discord event handlers and then call a

@@ -152,12 +152,15 @@ module.exports = (options) => {
             const guildConfig = await GuildConfig.fetch(req.query.s);
             if (guildConfig) {
                 const result = guildConfig.password === req.query.p;
+                req.session.status = {
+                    ...config.defaults.sessionStatus,
+                    ...req.session.status
+                };
                 if (result) {
-                    req.session.status = {
-                        ...config.defaults.sessionStatus,
-                        ...req.session.status
-                    };
                     req.session.status.loggedInTo.push(req.query.s);
+                } else {
+                    req.session.status.loggedInTo =
+                        req.session.status.loggedInTo.filter(s => s !== req.query.s);
                 }
                 res.status(200).json({ result: result });
             } else {
