@@ -4,7 +4,7 @@ const GuildConfig = require('../models/guild-config');
 const Game = require('../models/game');
 const config = require('../models/config');
 
-const discordProcesses = (readyCallback) => {
+const discordProcesses = readyCallback => {
     const client = new discord.Client();
 
     /**
@@ -12,10 +12,7 @@ const discordProcesses = (readyCallback) => {
      */
     client.on('ready', () => {
         console.log(`Logged in as ${client.user.username}!`);
-    
         readyCallback();
-        
-        if (process.env.HOST.indexOf('aws') >= 0) console.log('Demo Game: '+process.env.HOST+Game.url+'?s=531279336632877106');
     });
     
     /**
