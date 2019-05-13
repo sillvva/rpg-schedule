@@ -156,7 +156,7 @@ module.exports = class Game {
         if (!connection()) throw new Error('No database connection');
 
         const {
-            wsRespond = true
+            sendWS = true
         } = options;
 
         try {
@@ -188,7 +188,7 @@ module.exports = class Game {
         } catch(e) {
 
         }
-        if(wsRespond) ws.getIo().emit('game', { action: 'deleted', gameId: game._id });
+        if(sendWS) ws.getIo().emit('game', { action: 'deleted', gameId: game._id });
         return await connection()
             .collection(collection)
             .deleteOne({ _id: new ObjectId(game._id) });

@@ -133,7 +133,7 @@ module.exports = (options) => {
                 if (guild) {
                     const channel = guild.channels.get(channelId);
 
-                    Game.delete(game, channel, false).then(response => {
+                    Game.delete(game, channel, { sendWS: false }).then(response => {
                         res.redirect(config.urls.game.create+'?s='+serverId);
                     });
                 } else {
