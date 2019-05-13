@@ -205,11 +205,10 @@
             .then(response => {
                 return response.json();
             })
-            .then(status => {
-                console.log(status);
-                // if (!status) window.location = '/';
-                // if (!status.loggedInTo) window.location = '/';
-                if (!status.loggedInTo.includes('<%= s %>')) {
+            .then(session => {
+                if (!session) window.location = '/';
+                if (!session.status) window.location = '/';
+                if (!(session.status.loggedInTo || []).includes('<%= s %>')) {
                     password = prompt('Enter the password provided by the server');
                     fetch('<%= config.urls.game.password %>?s=<%= s %>&p='+escape(password), { method: 'GET' })
                         .then(response => {
