@@ -68,9 +68,11 @@ module.exports = (options) => {
                         reminder: '0',
                         is: {
                             newgame: !req.query.g ? true : false,
-                            editgame: req.query.g ? true : false
+                            editgame: req.query.g ? true : false,
+                            locked: password ? true : false
                         },
                         password: password ? password : false,
+                        config: config,
                         errors: {
                             dm: false
                         }
@@ -131,7 +133,7 @@ module.exports = (options) => {
                 if (guild) {
                     const channel = guild.channels.get(channelId);
 
-                    Game.delete(game, channel).then(response => {
+                    Game.delete(game, channel, false).then(response => {
                         res.redirect(config.urls.game.create+'?s='+serverId);
                     });
                 } else {
