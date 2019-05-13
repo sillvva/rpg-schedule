@@ -68,9 +68,11 @@ module.exports = (options) => {
                         reminder: '0',
                         is: {
                             newgame: !req.query.g ? true : false,
-                            editgame: req.query.g ? true : false
+                            editgame: req.query.g ? true : false,
+                            locked: password ? true : false
                         },
                         password: password ? password : false,
+                        config: config,
                         errors: {
                             dm: false
                         }
@@ -131,7 +133,7 @@ module.exports = (options) => {
                 if (guild) {
                     const channel = guild.channels.get(channelId);
 
-                    Game.delete(game, channel).then(response => {
+                    Game.delete(game, channel, { sendWS: false }).then(response => {
                         res.redirect(config.urls.game.create+'?s='+serverId);
                     });
                 } else {
@@ -143,6 +145,39 @@ module.exports = (options) => {
         } catch(err) {
             res.render('error', { message: err });
         }
+    });
+
+    router.get(config.urls.game.password, async (req, res, next) => {
+        try {
+            const guildConfig = await GuildConfig.fetch(req.query.s);
+            if (guildConfig) {
+                const result = guildConfig.password === req.query.p;
+                req.session.status = {
+                    ...config.defaults.sessionStatus,
+                    ...req.session.status
+                };
+                if (result) {
+                    req.session.status.loggedInTo.push(req.query.s);
+                } else {
+                    req.session.status.loggedInTo =
+                        req.session.status.loggedInTo.filter(s => s !== req.query.s);
+                }
+                res.status(200).json({ result: result });
+            } else {
+                throw new Error('Server not found');
+            }
+        } catch(err) {
+            res.render('error', { message: err });
+        }
+    });
+
+    router.get(config.urls.game.auth, (req, res, next) => {
+        if (!req.session.status) {
+            req.session.status = config.defaults.sessionStatus;
+        } else {
+            req.session.status = { ...config.defaults.sessionStatus, ...req.session.status };
+        }
+        res.status(200).json({ status: req.session.status });
     });
     
     return router;

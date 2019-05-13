@@ -2,8 +2,15 @@ module.exports  = {
     urls: {
         game: {
             create: '/game',
-            delete: '/delete'
+            delete: '/delete',
+            password: '/password',
+            auth: '/authenticate'
         },
         invite: '/invite'
+    },
+    defaults: {
+        sessionStatus: {
+            loggedInTo: []
+        }
     }
 };

@@ -2,11 +2,9 @@ const discord = require('discord.js');
 
 const GuildConfig = require('../models/guild-config');
 const Game = require('../models/game');
+const config = require('../models/config');
 
-const host = process.env.HOST;
-const gameUrl = '/game';
-
-const discordProcesses = (readyCallback) => {
+const discordProcesses = readyCallback => {
     const client = new discord.Client();
 
     /**
@@ -14,10 +12,7 @@ const discordProcesses = (readyCallback) => {
      */
     client.on('ready', () => {
         console.log(`Logged in as ${client.user.username}!`);
-    
         readyCallback();
-        
-        if (process.env.HOST.indexOf('aws') >= 0) console.log('Demo Game: '+process.env.HOST+Game.url+'?s=531279336632877106');
     });
     
     /**
@@ -59,7 +54,7 @@ const discordProcesses = (readyCallback) => {
                     );
                 message.channel.send(embed);
             } else if (cmd === 'link') {
-                message.channel.send(host+gameUrl+'?s='+guildId);
+                message.channel.send(process.env.HOST + config.urls.game.create + '?s=' + guildId);
             } else if (cmd === 'configuration') {
                 if (canConfigure) {
                     const channel = guild.channels.get(guildConfig.channel) || guild.channels.array().find(c => c instanceof discord.TextChannel);

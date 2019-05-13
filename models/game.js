@@ -152,8 +152,13 @@ module.exports = class Game {
             .deleteMany(query);
     }
 
-    static async delete(game, channel) {
+    static async delete(game, channel, options) {
         if (!connection()) throw new Error('No database connection');
+
+        const {
+            sendWS = true
+        } = options;
+
         try {
             if (channel) {
                 if (game.messageId) {
@@ -183,7 +188,7 @@ module.exports = class Game {
         } catch(e) {
 
         }
-        ws.getIo().emit('game', { action: 'deleted', gameId: game._id });
+        if(sendWS) ws.getIo().emit('game', { action: 'deleted', gameId: game._id });
         return await connection()
             .collection(collection)
             .deleteOne({ _id: new ObjectId(game._id) });
