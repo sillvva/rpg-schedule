@@ -158,10 +158,10 @@
                         <button type="submit" class="btn btn-primary col-12">Save</button>
                     </p>
                     <p class="col-sm-3">
-                        <a href="/delete?g=<%= _id %>" class="btn btn-danger col-12">Delete Game</a>
+                        <a href="<%= config.urls.game.delete %>?g=<%= _id %>" class="btn btn-danger col-12">Delete Game</a>
                     </p>
                     <p class="col-sm-3">
-                        <a href="/game?s=<%= s %>" class="btn btn-light col-12">New Game</a>
+                        <a href="<%= config.urls.game.create %>?s=<%= s %>" class="btn btn-light col-12">New Game</a>
                     </p>
                 </div>
             <% } %>
@@ -229,7 +229,7 @@
             } else if (response.action === 'deleted') {
                 if (gameId === response.gameId) {
                     alert('This game has been deleted');
-                    window.location = '/game?s=<%= s %>';
+                    window.location = '<%= config.urls.game.create %>?s=<%= s %>';
                 }
             }
         });
