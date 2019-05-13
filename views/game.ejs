@@ -201,8 +201,12 @@
         }).change();
 
         <% if (password) { %>
-        if (prompt('Enter the password provided by the server') !== '<%= password %>') {
-            window.location = '/';
+        if (!sessionStorage.getItem('authenticated')) {
+            if (prompt('Enter the password provided by the server') === '<%= password %>') {
+                sessionStorage.setItem('authenticated', true);
+            } else {
+                window.location = '/';
+            }
         }
         <% } %>
         
