@@ -288,20 +288,20 @@
 
         $('#date').change(function() {
             var link = getURLs($('#date').val(), $('#time').val(), $('#timezone').val());
-            $('#covertLink').html(`<a href="${link.convert}" target="_blank">${link.convert}</a>`);
-            $('#countdownLink').html(`<a href="${link.countdown}" target="_blank">${link.countdown}</a>`);
+            $('#covertLink').html(`Time Zone Conversion: <a href="${link.convert}" target="_blank">${link.convert}</a>`);
+            $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank">${link.countdown}</a>`);
         }).change();
 
         $('#time').change(function() {
             var link = getURLs($('#date').val(), $('#time').val(), $('#timezone').val());
-            $('#covertLink').html(`<a href="${link.convert}" target="_blank">${link.convert}</a>`);
-            $('#countdownLink').html(`<a href="${link.countdown}" target="_blank">${link.countdown}</a>`);
+            $('#covertLink').html(`Time Zone Conversion: <a href="${link.convert}" target="_blank">${link.convert}</a>`);
+            $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank">${link.countdown}</a>`);
         }).change();
 
         $('#timezone').change(function() {
             var link = getURLs($('#date').val(), $('#time').val(), $('#timezone').val());
-            $('#covertLink').html(`<a href="${link.convert}" target="_blank">${link.convert}</a>`);
-            $('#countdownLink').html(`<a href="${link.countdown}" target="_blank">${link.countdown}</a>`);
+            $('#covertLink').html(`Time Zone Conversion: <a href="${link.convert}" target="_blank">${link.convert}</a>`);
+            $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank">${link.countdown}</a>`);
         }).change();
         
         <% if (is.editgame) { %>
