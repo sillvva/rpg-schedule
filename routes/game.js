@@ -73,6 +73,7 @@ module.exports = (options) => {
                         },
                         password: password ? password : false,
                         config: config,
+                        host: process.env.HOST,
                         errors: {
                             dm: false
                         }

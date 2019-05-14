@@ -64,6 +64,8 @@
                     <input type="text" class="form-control" id="dm" name="dm" placeholder="Username#1234" required value="<%= dm %>">
                     <% if (errors.dm) { %>
                         <small class="error"><%= errors.dm %></small>
+                    <% } else { %>
+                        <small>Discord tags are case sensitive</small>
                     <% } %>
                 </div>
                 <div class="form-group col-sm-7">
@@ -125,6 +127,12 @@
                         <option value="30" <%= reminder === '30' ? 'selected' : '' %>>30 minutes</option>
                         <option value="60" <%= reminder === '60' ? 'selected' : '' %>>1 hour</option>
                     </select>
+                </div>
+                <div class="col-12">
+                    <div class="pinfo">
+                        <p id="convertLink"></p>
+                        <p id="countdownLink"></p>
+                    </div>
                 </div>
             </div>
             <div class="row">
@@ -228,13 +236,75 @@
                 console.log(err);
             });
         <% } %>
+
+        const getURLs = (date, time, gmtOffset) => {
+            const d = new Date(`${date} ${time} GMT${gmtOffset < 0 ? '-' : '+'}${Math.abs(gmtOffset)}`);
+            const n = d.toISOString().replace(/-|:|\.\d+Z/g,'');
+            d.setHours(d.getHours()+parseInt(gmtOffset))
+            const n2 = d.toISOString().replace(/-|:|\.\d+Z/g,'');
+
+            const tzs = {
+                '-12': 3926,
+                '-11': 3925,
+                '-10': 3924,
+                '-9': 3923,
+                '-8': 3922,
+                '-7': 3921,
+                '-6': 3920,
+                '-5': 3919,
+                '-4': 3918,
+                '-3': 3917,
+                '-2': 3916,
+                '-1': 3915,
+                '0': 1440,
+                '1': 3903,
+                '2': 3904,
+                '3': 3905,
+                '4': 3906,
+                '5': 3907,
+                '6': 3908,
+                '7': 3909,
+                '8': 3910,
+                '9': 3911,
+                '10': 3912,
+                '11': 3913,
+                '12': 3914,
+                '13': 3927,
+                '14': 3928
+            };
+
+            const tz = tzs[parseInt(gmtOffset)] || tzs['0'];
+
+            return {
+                convert: `${document.location.origin}/tz/${n}/${tz}`,
+                countdown: `${document.location.origin}/cd/${n2}/${tz}`
+            };
+        };
         
         <% if (is.newgame) { %>
         const d = new Date();
-        document.querySelector('#date').value = d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+(d.getDate()).toString().padStart(2, '0');
-        document.querySelector('#time').value = d.getHours().toString().padStart(2, '0')+':'+d.getMinutes().toString().padStart(2, '0');
-        document.querySelector('#timezone').value = -d.getTimezoneOffset()/60;
+        $('#date').val(d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+(d.getDate()).toString().padStart(2, '0'));
+        $('#time').val(d.getHours().toString().padStart(2, '0')+':'+d.getMinutes().toString().padStart(2, '0'));
+        $('#timezone').val(-d.getTimezoneOffset()/60);
         <% } %>
+
+        $('#date').change(function() {
+            var link = getURLs($('#date').val(), $('#time').val(), $('#timezone').val());
+            $('#convertLink').html(`Time Zone Conversion: <a href="${link.convert}" target="_blank">${link.convert}</a>`);
+            $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank">${link.countdown}</a>`);
+        }).change();
+
+        $('#time').change(function() {
+            var link = getURLs($('#date').val(), $('#time').val(), $('#timezone').val());
+            $('#convertLink').html(`Time Zone Conversion: <a href="${link.convert}" target="_blank">${link.convert}</a>`);
+            $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank">${link.countdown}</a>`);
+        }).change();
+
+        $('#timezone').change(function() {
+            var link = getURLs($('#date').val(), $('#time').val(), $('#timezone').val());
+            $('#convertLink').html(`Time Zone Conversion: <a href="${link.convert}" target="_blank">${link.convert}</a>`);
+            $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank">${link.countdown}</a>`);
+        }).change();
         
         <% if (is.editgame) { %>
         const gameId = '<%= _id %>';

@@ -39,3 +39,12 @@ input[readonly], input[disabled] {
     background-color: #484C52;
     border: 1px solid #484C52;
 }
+
+.pinfo {
+    padding: 5px 0;
+}
+
+.pinfo p {
+    margin: 5px 0;
+    padding: 0;
+}
