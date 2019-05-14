@@ -26,7 +26,7 @@ module.exports = class GuildConfig {
         if (!connection()) throw new Error('No database connection');
         return await connection()
             .collection(collection)
-            .findOne({ guild: guildId });
+            .findOne({ guild: guildId }) || GuildConfig.defaultConfig(guildId);
     }
     
     static async fetchAll() {
