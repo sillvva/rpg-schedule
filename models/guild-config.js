@@ -13,7 +13,7 @@ module.exports = class GuildConfig {
 
     static async save(data) {
         if (!connection()) throw new Error('No database connection');
-        const config = await GuildConfig.fetch(data.guild);
+        const config = await GuildConfig.fetch(data.guild, false);
         const col = connection().collection(collection);
         if (config) {
             return await col.updateOne({ guild: data.guild }, { $set: { ...config, ...data } });
@@ -22,11 +22,11 @@ module.exports = class GuildConfig {
         }
     }
     
-    static async fetch(guildId) {
+    static async fetch(guildId, defaults = true) {
         if (!connection()) throw new Error('No database connection');
         return await connection()
             .collection(collection)
-            .findOne({ guild: guildId }) || GuildConfig.defaultConfig(guildId);
+            .findOne({ guild: guildId }) || (defaults ? GuildConfig.defaultConfig(guildId) : null);
     }
     
     static async fetchAll() {
