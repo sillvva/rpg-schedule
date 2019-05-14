@@ -30,7 +30,7 @@ const discordProcesses = readyCallback => {
 
             const guild = message.channel.guild;
             const guildId = guild.id;
-            const guildConfig = await GuildConfig.fetch(guildId);
+            const guildConfig = await GuildConfig.fetch(guildId) || GuildConfig.defaultConfig(guildId);
 
             const member = message.channel.guild.members.array().find(m => m.user.id === message.author.id);
             const canConfigure = member ? member.hasPermission(discord.Permissions.FLAGS.MANAGE_GUILD) : false;
