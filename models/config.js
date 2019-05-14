@@ -6,7 +6,11 @@ module.exports  = {
             password: '/password',
             auth: '/authenticate'
         },
-        invite: '/invite'
+        invite: '/invite',
+        timezone: {
+            convert: '/tz/:time/:tz',
+            countdown: '/cd/:time/:tz'
+        }
     },
     defaults: {
         sessionStatus: {
