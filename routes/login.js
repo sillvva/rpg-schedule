@@ -32,7 +32,6 @@ module.exports = () => {
                         ...req.session.status
                     }
                     req.session.status.access = token;
-                    console.log(req.session);
                     res.redirect(config.urls.game.dashboard);
                     return;
                 }

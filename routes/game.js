@@ -11,11 +11,33 @@ module.exports = (options) => {
 
     router.use(config.urls.game.dashboard, async (req, res, next) => {
         try {
-            console.log(req.session);
-            res.render('error', { message: 'testing' });
+            if (req.session.status) {
+                const access = req.session.status.access;
+                if (access) {
+                    fetch('https://discordapp.com/api/users/@me', {
+                        headers: {
+                            authorization: `${access.token_type} ${access.access_token}`
+                        }
+                    })
+                        .then(res => res.json())
+                        .then(response => {
+                            const { username, discriminator } = response;
+                            console.log(response);
+                            res.render('error', { message: 'Check logs' });
+                        })
+                        .catch(e => {
+                            console.log(e);
+                            res.render('error', { message: e });
+                        });
+                } else {
+                    res.redirect(config.urls.login);
+                }
+            } else {
+                res.redirect(config.urls.login);
+            }
         }
         catch(e) {
-
+            res.render('error', { message: e.message });
         }
     });
     
