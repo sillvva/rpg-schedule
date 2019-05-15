@@ -285,6 +285,16 @@ const postReminders = async client => {
                     d.setHours(d.getHours()+parseInt(game.timezone));
                     const gameTime = (d.getHours() > 12 ? d.getHours()-12 : d.getHours())+':'+d.getMinutes().toString().padStart(2, '0')+' '+(d.getHours() < 12 ? 'AM' : 'PM');
 
+                    const channels = game.where.match(/#[a-z0-9\-_]+/gi);
+                    if (channels) {
+                        channels.forEach(chan => {
+                            const guildChannel = guild.channels.find(c => c.name === chan.replace(/#/, ''));
+                            if (guildChannel) {
+                                game.where = game.where.replace(chan, guildChannel.toString());
+                            }
+                        });
+                    }
+
                     let message = `Reminder for **${game.adventure}**\n`;
                     message += `**When:** Starting in ${game.reminder} minutes\n`;
                     message += `**Where:** ${game.where}\n\n`;
