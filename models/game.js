@@ -1,5 +1,6 @@
 const mongodb = require('mongodb');
 const discord = require('discord.js');
+const moment = require('moment');
 
 const { connection } = require('../db');
 const ws = require('../processes/socket');
@@ -40,12 +41,7 @@ module.exports = class Game {
             }
         });
 
-        const timeZone = 'GMT'+(game.timezone >=0 ? '+' : '')+game.timezone;
-        const d = new Date(game.date+' '+game.time+' '+timeZone);
-        d.setHours(d.getHours()+parseInt(game.timezone));
-        const gameDate = d.toDateString();
-        const gameTime = (d.getHours() > 12 ? d.getHours()-12 : d.getHours())+':'+d.getMinutes().toString().padStart(2, '0')+' '+(d.getHours() < 12 ? 'AM' : 'PM');
-
+        const timezone = 'GMT'+(game.timezone >=0 ? '+' : '')+game.timezone;
         const where = parseChannels(game.where, guild.channels);
         const description = parseChannels(game.description, guild.channels);
 
@@ -61,8 +57,9 @@ module.exports = class Game {
 
         let when = '';
         if (game.when === 'datetime') {
-            when = `${gameDate} - ${gameTime} (${timeZone})`;
-            game.timestamp = new Date(`${game.date} ${game.time} ${timeZone}`).getTime()
+            const date = `${game.date} ${game.time} GMT${game.timezone >= 0 ? '+' : '-'}${Math.abs(game.timezone)}`;
+            when = moment(date).utcOffset(parseInt(game.timezone)).format(config.formats.dateLong)+` (${timezone})`;
+            game.timestamp = new Date(date).getTime()
         }
         else if (game.when === 'now') {
             when = 'Now';
