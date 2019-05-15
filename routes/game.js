@@ -35,6 +35,7 @@ module.exports = (options) => {
 
                                 client.guilds.forEach(guild => {
                                     guild.members.forEach(member => {
+                                        console.log(member.id, id);
                                         if (member.id === id) {
                                             data.guilds.push({
                                                 id: guild.id,
