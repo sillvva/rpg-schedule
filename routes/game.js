@@ -78,8 +78,8 @@ module.exports = (options) => {
                                 games.forEach(game => {
                                     const date = `${game.date} ${game.time} GMT${game.timezone >= 0 ? '+' : '-'}${Math.abs(game.timezone)}`;
                                     game.moment = {
-                                        date: moment(date).utcOffset(game.timezone).format(config.formats.dateLong),
-                                        from: moment(date).utcOffset(game.timezone).fromNow()
+                                        date: moment(date).utcOffset(parseInt(game.timezone)).format(config.formats.dateLong),
+                                        from: moment(date).utcOffset(parseInt(game.timezone)).fromNow()
                                     };
 
                                     const gi = data.guilds.findIndex(g => g.id === game.s);

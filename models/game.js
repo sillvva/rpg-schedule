@@ -157,12 +157,12 @@ module.exports = class Game {
             .deleteMany(query);
     }
 
-    static async delete(game, channel, options) {
+    static async delete(game, channel, options = {}) {
         if (!connection()) throw new Error('No database connection');
 
         const {
             sendWS = true
-        } = (options || {});
+        } = options;
 
         try {
             if (channel) {
