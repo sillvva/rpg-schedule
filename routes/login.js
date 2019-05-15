@@ -25,7 +25,10 @@ module.exports = () => {
                     scope: 'identify guilds',
                 }
             }, function (error, response, body) {
+                console.log(error);
+                console.log(response).
                 if (!error && response.statusCode == 200) {
+                    console.log(response)
                     console.log(body)
                 }
                 res.render('error', {message: 'Check the logs'})
