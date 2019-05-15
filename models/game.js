@@ -162,7 +162,7 @@ module.exports = class Game {
 
         const {
             sendWS = true
-        } = options;
+        } = (options || {});
 
         try {
             if (channel) {
