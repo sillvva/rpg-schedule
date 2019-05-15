@@ -12,9 +12,9 @@ module.exports = (options) => {
 
     router.use('/', async (req, res, next) => {
         req.userData = null;
-        const isGame = !Object.values(config.urls.game).find(url => req.originalUrl.indexOf(url) === 0);
+        const isGame = Object.values(config.urls.game).find(url => req.originalUrl.indexOf(url) === 0);
         const isDashboard = req.originalUrl.indexOf(config.urls.game.dashboard) === 0;
-        if (isGame) {
+        if (!isGame) {
             next();
             return;
         }
