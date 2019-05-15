@@ -25,6 +25,7 @@ module.exports = () => {
                     scope: 'identify guilds',
                 }
             }, function (error, response, body) {
+                console.log(response);
                 if (!error && response.statusCode === 200) {
                     console.log(body)
                 }
