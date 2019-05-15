@@ -17,7 +17,17 @@
 <body>
 <nav class="navbar fixed-top navbar-dark bg-primary row">
     <div class="col-xs-12 col-sm-12 col-md-10 col-lg-8 col-xl-6 mx-auto">
-        <a class="navbar-brand mx-auto" href="#">Games Dashboard</a>
+        <div class="row">
+            <div class="col">
+                <a class="navbar-brand mx-auto" href="#">Games Dashboard</a>
+            </div>
+            <div class="col text-right">
+                <h2 class="guild-name">
+                    <img class="guild-icon" src="<%= user.avatarURL %>" alt="" />
+                    <%= user.username %>
+                </h2>
+            </div>
+        </div>
     </div>
 </nav>
 <p>&nbsp;</p>
@@ -46,8 +56,6 @@
         <% }); %>
     </div>
     <% }); %>
-
-    <p><%= JSON.stringify(user) %></p>
 </div>
 </body>
 </html>
