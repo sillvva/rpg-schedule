@@ -1,4 +1,5 @@
 const express = require('express');
+const request = require('request');
 const discord = require('discord.js');
 
 const Game = require('../models/game');
@@ -8,6 +9,112 @@ const config = require('../models/config');
 module.exports = (options) => {
     const router = express.Router();
     const { client } = options;
+
+    router.use('/', async (req, res, next) => {
+        req.userData = null;
+        const isGame = Object.values(config.urls.game).find(url => req.originalUrl.indexOf(url) === 0);
+        const isDashboard = req.originalUrl.indexOf(config.urls.game.dashboard) === 0;
+        if (!isGame) {
+            next();
+            return;
+        }
+        try {
+            if (req.session.status) {
+                const access = req.session.status.access;
+                if (access.token_type) {
+                    request({
+                        url: 'https://discordapp.com/api/users/@me',
+                        method: 'GET',
+                        headers: {
+                            authorization: `${access.token_type} ${access.access_token}`
+                        }
+                    }, async (error, response, body) => {
+                        try {
+                            if (!error && response.statusCode === 200) {
+                                const response = JSON.parse(body);
+                                const { username, discriminator, id, avatar } = response;
+                                const tag = `${username}#${discriminator}`;
+
+                                const data = {
+                                    config: config,
+                                    user: {
+                                        ...response,
+                                        ...{
+                                            tag: tag,
+                                            avatarURL: `https://cdn.discordapp.com/avatars/${id}/${avatar}.png?size=128`
+                                        }
+                                    },
+                                    guilds: []
+                                };
+
+                                client.guilds.forEach(guild => {
+                                    guild.members.forEach(member => {
+                                        if (member.id === id) {
+                                            data.guilds.push({
+                                                id: guild.id,
+                                                name: guild.name,
+                                                icon: guild.iconURL,
+                                                games: []
+                                            });
+                                        }
+                                    });
+                                });
+
+                                const gameOptions = {
+                                    s: {
+                                        $in: data.guilds.reduce((i, g) => {
+                                            i.push(g.id);
+                                            return i;
+                                        }, [])
+                                    }
+                                };
+
+                                if (tag !== 'Sillvva#2532') {
+                                    gameOptions.dm = tag;
+                                }
+
+                                const games = await Game.fetchAllBy(gameOptions);
+                                games.forEach(game => {
+                                    const gi = data.guilds.findIndex(g => g.id === game.s);
+                                    data.guilds[gi].games.push(game);
+                                });
+
+                                req.account = data;
+                                next();
+                                return;
+                            }
+                            throw new Error(error);
+                        } catch(err) {
+                            if (isDashboard) {
+                                res.render('error', { message: err });
+                            } else {
+                                next();
+                            }
+                        }
+                    });
+                } else {
+                    if (isDashboard) {
+                        res.redirect(config.urls.login);
+                    } else {
+                        next();
+                    }
+                }
+            } else {
+                if (isDashboard) {
+                    res.redirect(config.urls.login);
+                } else {
+                    next();
+                }
+            }
+        }
+        catch(e) {
+            res.render('error', { message: e.message });
+        }
+    });
+
+    router.use(config.urls.game.dashboard, async (req, res, next) => {
+        res.render('games', req.account);
+    });
     
     router.use(config.urls.game.create, async (req, res, next) => {
         try {
@@ -52,7 +159,7 @@ module.exports = (options) => {
                         channel: channel.name,
                         s: server,
                         c: channel.id,
-                        dm: '',
+                        dm: req.account ? req.account.user.tag : '',
                         adventure: '',
                         runtime: '',
                         where: '',
@@ -74,6 +181,7 @@ module.exports = (options) => {
                         password: password ? password : false,
                         config: config,
                         host: process.env.HOST,
+                        account: req.account,
                         errors: {
                             dm: false
                         }
@@ -135,7 +243,12 @@ module.exports = (options) => {
                     const channel = guild.channels.get(channelId);
 
                     Game.delete(game, channel, { sendWS: false }).then(response => {
-                        res.redirect(config.urls.game.create+'?s='+serverId);
+                        console.log(req.account);
+                        if (req.account) {
+                            res.redirect(config.urls.game.dashboard);
+                        } else {
+                            res.redirect(config.urls.game.create+'?s='+serverId);
+                        }
                     });
                 } else {
                     throw new Error('Server not found');

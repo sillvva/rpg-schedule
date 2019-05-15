@@ -12,6 +12,7 @@ const ws = require('./processes/socket');
 const gameRoutes = require('./routes/game');
 const inviteRoute = require('./routes/invite');
 const timezoneRoutes = require('./routes/timezone');
+const loginRoutes = require('./routes/login');
 
 const app = express();
 const store = new MongoDBStore({
@@ -69,18 +70,18 @@ app.use(session({
     secret: process.env.TOKEN,
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: true, sameSite: true },
     store: store
 }));
 
 /**
  * Routes
  */
+app.use(loginRoutes());
 app.use(gameRoutes({ client: client }));
 app.use(inviteRoute());
 app.use(timezoneRoutes());
 app.use('/', (req, res, next) => {
-    res.render('invite');
+    res.render('home');
 });
 
 // Login the Discord bot

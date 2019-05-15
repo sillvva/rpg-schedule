@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><%= title %></title>
+    <title><%= title %> - RPG Schedule</title>
+    <link rel="icon" type="image/png" href="/images/rpg-schedule.png">
 
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous"></script>
@@ -18,310 +19,340 @@
     <% } %>
 </head>
 <body>
-    <nav class="navbar fixed-top navbar-dark bg-primary row">
-        <div class="col-xs-12 col-sm-12 col-md-10 col-lg-8 col-xl-6 mx-auto">
-            <a class="navbar-brand mx-auto" href="#"><%= title %></a>
+<nav class="navbar navbar-expand-md sticky-top navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand" href="#">
+            <img src="/images/rpg-schedule.png" class="navbar-icon" alt="" />
+            RPG Schedule
+        </a>
+
+        <% if (account) { %>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#menu" aria-controls="menu" aria-expanded="false">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="menu">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="#">
+                        <img class="guild-icon" src="<%= account.user.avatarURL %>" alt="" />
+                        <%= account.user.username %>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="<%= config.urls.logout %>">
+                        Logout
+                    </a>
+                </li>
+            </ul>
         </div>
-    </nav>
-    <p>&nbsp;</p>
-    <p style="margin: 0;">&nbsp;</p>
-    <div class="col-xs-12 col-sm-12 col-md-10 col-lg-8 col-xl-6 mx-auto">
-        <form method="post">
-            <input type="hidden" name="s" value="<%= s %>">
-            <input type="hidden" name="c" value="<%= c %>">
+        <% } %>
+    </div>
+</nav>
+<div class="container">
+    <h6 class="breadcrumbs">
+        <% if (account) { %>
+        <a href="<%= config.urls.game.dashboard %>">Games</a>
+        <span class="breadcrumb-divider">/</span>
+        <% } %>
+        <%= title %>
+    </h6>
+    <hr />
+    <form method="post">
+        <input type="hidden" name="s" value="<%= s %>">
+        <input type="hidden" name="c" value="<%= c %>">
+        <div class="row">
+            <div class="form-group col-sm-6">
+                <label for="guild" class="col-form-label">Server</label>
+                <input type="text" readonly class="form-control" id="guild" name="guild" value="<%= guild %>">
+            </div>
+            <div class="form-group col-sm-6">
+                <label for="channel" class="col-form-label">Channel</label>
+                <input type="text" readonly class="form-control" id="channel" name="channel" value="<%= channel %>">
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group col-sm-6">
+                <label for="adventure" class="col-form-label">Adventure</label>
+                <input type="text" class="form-control" id="adventure" name="adventure" required value="<%= adventure %>">
+            </div>
+            <div class="form-group col-sm-3">
+                <label for="runtime" class="col-form-label">Run Time</label>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="runtime" name="runtime" value="<%= runtime %>">
+                    <div class="input-group-append">
+                        <div class="input-group-text">hours</div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group col-sm-3">
+                <label for="players" class="col-form-label">Max Players</label>
+                <input type="number" min="1" class="form-control" id="players" name="players" required value="<%= players %>">
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group col-sm-5">
+                <label for="dm" class="col-form-label">DM Discord Tag</label>
+                <input type="text" class="form-control" id="dm" name="dm" placeholder="Username#1234" required value="<%= dm %>">
+                <% if (errors.dm) { %>
+                    <small class="error"><%= errors.dm %></small>
+                <% } else { %>
+                    <small>Discord tags are case sensitive</small>
+                <% } %>
+            </div>
+            <div class="form-group col-sm-7">
+                <label for="where" class="col-form-label">Where</label>
+                <input type="text" class="form-control" id="where" name="where" required value="<%= where %>">
+            </div>
+        </div>
+        <% if (is.newgame) { %>
             <div class="row">
                 <div class="form-group col-sm-6">
-                    <label for="guild" class="col-form-label">Server</label>
-                    <input type="text" readonly class="form-control" id="guild" name="guild" value="<%= guild %>">
+                    <label for="method" class="col-form-label">Sign Up Method</label>
+                    <select class="form-control" name="method" id="method">
+                        <option value="automated" <%= method === "automated" ? 'selected' : '' %>>Automated Signup</option>
+                        <option value="custom" <%= method === "custom" ? 'selected' : '' %>>Custom Signup Instructions</option>
+                    </select>
+                    <small id="method-desc"></small>
                 </div>
                 <div class="form-group col-sm-6">
-                    <label for="channel" class="col-form-label">Channel</label>
-                    <input type="text" readonly class="form-control" id="channel" name="channel" value="<%= channel %>">
-                </div>
-            </div>
-            <div class="row">
-                <div class="form-group col-sm-6">
-                    <label for="adventure" class="col-form-label">Adventure</label>
-                    <input type="text" class="form-control" id="adventure" name="adventure" required value="<%= adventure %>">
-                </div>
-                <div class="form-group col-sm-3">
-                    <label for="runtime" class="col-form-label">Run Time</label>
-                    <div class="input-group">
-                        <input type="text" class="form-control" id="runtime" name="runtime" value="<%= runtime %>">
-                        <div class="input-group-append">
-                            <div class="input-group-text">hours</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="form-group col-sm-3">
-                    <label for="players" class="col-form-label">Max Players</label>
-                    <input type="number" min="1" class="form-control" id="players" name="players" required value="<%= players %>">
-                </div>
-            </div>
-            <div class="row">
-                <div class="form-group col-sm-5">
-                    <label for="dm" class="col-form-label">DM Discord Tag</label>
-                    <input type="text" class="form-control" id="dm" name="dm" placeholder="Username#1234" required value="<%= dm %>">
-                    <% if (errors.dm) { %>
-                        <small class="error"><%= errors.dm %></small>
-                    <% } else { %>
-                        <small>Discord tags are case sensitive</small>
-                    <% } %>
-                </div>
-                <div class="form-group col-sm-7">
-                    <label for="where" class="col-form-label">Where</label>
-                    <input type="text" class="form-control" id="where" name="where" required value="<%= where %>">
-                </div>
-            </div>
-            <% if (is.newgame) { %>
-                <div class="row">
-                    <div class="form-group col-sm-6">
-                        <label for="method" class="col-form-label">Sign Up Method</label>
-                        <select class="form-control" name="method" id="method">
-                            <option value="automated" <%= method === "automated" ? 'selected' : '' %>>Automated Signup</option>
-                            <option value="custom" <%= method === "custom" ? 'selected' : '' %>>Custom Signup Instructions</option>
-                        </select>
-                        <small id="method-desc"></small>
-                    </div>
-                    <div class="form-group col-sm-6">
-                        <label for="when" class="col-form-label">When</label>
-                        <select class="form-control" name="when" id="when">
-                            <option value="datetime" <%= when === 'datetime' ? 'selected' : '' %>>Date/Time</option>
-                            <option value="now" <%= when === 'now' ? 'selected' : '' %>>Now</option>
-                        </select>
-                    </div>
-                </div>
-            <% } else { %>
-                <input type="hidden" name="method" id="method" value="<%= method %>">
-                <input type="hidden" name="when" id="when" value="<%= when %>">
-            <% } %>
-            <div id="method__custom">
-                <div class="form-group">
-                    <label for="customSignup" class="col-form-label">Custom Signup Instructions</label>
-                    <input type="text" class="form-control" id="customSignup" name="customSignup" value="<%= customSignup %>">
-                </div>
-            </div>
-            <div id="when__datetime" class="row">
-                <div class="form-group col-sm-3">
-                    <label for="date" class="col-form-label">Date</label>
-                    <input type="date" class="form-control" id="date" name="date" value="<%= date %>">
-                </div>
-                <div class="form-group col-sm-3">
-                    <label for="time" class="col-form-label">Time</label>
-                    <input type="time" class="form-control" id="time" name="time" value="<%= time %>">
-                </div>
-                <div class="form-group col-sm-3">
-                    <label for="timezone" class="col-form-label">Time Zone</label>
-                    <div class="input-group">
-                        <div class="input-group-prepend">
-                            <div class="input-group-text">GMT</div>
-                        </div>
-                        <input type="number" min="-12" max="14" class="form-control" id="timezone" name="timezone" value="<%= timezone %>">
-                    </div>
-                </div>
-                <div class="form-group col-sm-3">
-                    <label for="reminder" class="col-form-label">Reminder</label>
-                    <select class="form-control" id="reminder" name="reminder">
-                        <option value="0" <%= reminder === '0' ? 'selected' : '' %>>No Reminder</option>
-                        <option value="15" <%= reminder === '15' ? 'selected' : '' %>>15 minutes</option>
-                        <option value="30" <%= reminder === '30' ? 'selected' : '' %>>30 minutes</option>
-                        <option value="60" <%= reminder === '60' ? 'selected' : '' %>>1 hour</option>
+                    <label for="when" class="col-form-label">When</label>
+                    <select class="form-control" name="when" id="when">
+                        <option value="datetime" <%= when === 'datetime' ? 'selected' : '' %>>Date/Time</option>
+                        <option value="now" <%= when === 'now' ? 'selected' : '' %>>Now</option>
                     </select>
                 </div>
-                <div class="col-12">
-                    <div class="pinfo">
-                        <p id="convertLink"></p>
-                        <p id="countdownLink"></p>
-                    </div>
-                </div>
             </div>
-            <div class="row">
-                <div class="col-sm-5">
-                    <div class="form-group">
-                        <label for="reserved" class="col-form-label">Reserved Slots (1 per line)</label>
-                        <textarea class="form-control" id="reserved" name="reserved" rows="7" placeholder="Username#1234"><%= reserved %></textarea>
-                    </div>
-                </div>
-                <div class="col-sm-7">
-                    <div class="form-group">
-                        <label for="description" class="col-form-label">Description</label>
-                        <textarea class="form-control" id="description" name="description" rows="7"><%= description %></textarea>
-                        <small>Discord formatting allowed</small>
-                    </div>
-                </div>
-            </div>
-            <div class="form-group row">
-                &nbsp;
-            </div>
-            <% if (is.newgame) { %>
-                <div class="form-group row">
-                    <p class="col-sm-6 mx-auto">
-                        <button type="submit" class="btn btn-primary col-12">Submit</button>
-                    </p>
-                </div>
-            <% } %>
-            <% if (is.editgame) { %>
-                <div class="form-group row">
-                    <p class="col-sm-6">
-                        <button type="submit" class="btn btn-primary col-12">Save</button>
-                    </p>
-                    <p class="col-sm-3">
-                        <a href="<%= config.urls.game.delete %>?g=<%= _id %>" class="btn btn-danger col-12">Delete Game</a>
-                    </p>
-                    <p class="col-sm-3">
-                        <a href="<%= config.urls.game.create %>?s=<%= s %>" class="btn btn-light col-12">New Game</a>
-                    </p>
-                </div>
-            <% } %>
-        </form>
-    </div>
-    <script type="text/javascript">
-        $('#method').change(function() {
-            const sel = $(this).val();
-            $('#method__custom').addClass('d-none');
-            $('#customSignup').removeAttr('required');
-            $('#method-desc').html('');
-            
-            if (sel === 'automated') {
-                $('#method-desc').html('Uses discord reaction buttons on the game announcement to allow users to sign up or cancel');
-                $('#when').val('datetime').change();
-            } else  if (sel === 'custom') {
-                $('#method__custom').removeClass('d-none');
-                $('#customSignup').attr('required','');
-            }
-        }).change();
-        
-        $('#when').change(function() {
-            const sel = $(this).val();
-            $('#when__datetime').addClass('d-none');
-            $('#date').removeAttr('required');
-            $('#time').removeAttr('required');
-            $('#timezone').removeAttr('required');
-            
-            if (sel === 'datetime') {
-                $('#when__datetime').removeClass('d-none');
-                $('#date').attr('required','');
-                $('#time').attr('required','');
-                $('#timezone').attr('required','');
-            } else if (sel === 'now') {
-                $('#method').val('custom').change();
-            }
-        }).change();
-
-        <% if (password) { %>
-        fetch('<%= config.urls.game.auth %>?s=<%= s %>', { method: 'GET' })
-            .then(response => {
-                return response.json();
-            })
-            .then(session => {
-                if (!session) window.location = '/';
-                if (!session.status) window.location = '/';
-                if (!(session.status.loggedInTo || []).includes('<%= s %>')) {
-                    const password = prompt('Enter the password provided by the server');
-                    fetch('<%= config.urls.game.password %>?s=<%= s %>&p='+escape(password), { method: 'GET' })
-                        .then(response => {
-                            return response.json();
-                        })
-                        .then(data => {
-                            if (!data.result) {
-                                window.location = '/';
-                            }
-                        })
-                        .catch(err => {
-                            window.location = '/'
-                        });
-                }
-            })
-            .catch(err => {
-                console.log(err);
-            });
+        <% } else { %>
+            <input type="hidden" name="method" id="method" value="<%= method %>">
+            <input type="hidden" name="when" id="when" value="<%= when %>">
         <% } %>
-
-        const getURLs = (date, time, gmtOffset) => {
-            const d = new Date(`${date} ${time} GMT${gmtOffset < 0 ? '-' : '+'}${Math.abs(gmtOffset)}`);
-            const n = d.toISOString().replace(/-|:|\.\d+Z/g,'');
-            d.setHours(d.getHours()+parseInt(gmtOffset))
-            const n2 = d.toISOString().replace(/-|:|\.\d+Z/g,'');
-
-            const tzs = {
-                '-12': 3926,
-                '-11': 3925,
-                '-10': 3924,
-                '-9': 3923,
-                '-8': 3922,
-                '-7': 3921,
-                '-6': 3920,
-                '-5': 3919,
-                '-4': 3918,
-                '-3': 3917,
-                '-2': 3916,
-                '-1': 3915,
-                '0': 1440,
-                '1': 3903,
-                '2': 3904,
-                '3': 3905,
-                '4': 3906,
-                '5': 3907,
-                '6': 3908,
-                '7': 3909,
-                '8': 3910,
-                '9': 3911,
-                '10': 3912,
-                '11': 3913,
-                '12': 3914,
-                '13': 3927,
-                '14': 3928
-            };
-
-            const tz = tzs[parseInt(gmtOffset)] || tzs['0'];
-
-            return {
-                convert: `${document.location.origin}/tz/${n}/${tz}`,
-                countdown: `${document.location.origin}/cd/${n2}/${tz}`
-            };
-        };
-        
+        <div id="method__custom">
+            <div class="form-group">
+                <label for="customSignup" class="col-form-label">Custom Signup Instructions</label>
+                <input type="text" class="form-control" id="customSignup" name="customSignup" value="<%= customSignup %>">
+            </div>
+        </div>
+        <div id="when__datetime" class="row">
+            <div class="form-group col-sm-6 col-md-3">
+                <label for="date" class="col-form-label">Date</label>
+                <input type="date" class="form-control" id="date" name="date" value="<%= date %>">
+            </div>
+            <div class="form-group col-sm-6 col-md-3">
+                <label for="time" class="col-form-label">Time</label>
+                <input type="time" class="form-control" id="time" name="time" value="<%= time %>">
+            </div>
+            <div class="form-group col-sm-6 col-md-3">
+                <label for="timezone" class="col-form-label">Time Zone</label>
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <div class="input-group-text">GMT</div>
+                    </div>
+                    <input type="number" min="-12" max="14" class="form-control" id="timezone" name="timezone" value="<%= timezone %>">
+                </div>
+            </div>
+            <div class="form-group col-sm-6 col-md-3">
+                <label for="reminder" class="col-form-label">Reminder</label>
+                <select class="form-control" id="reminder" name="reminder">
+                    <option value="0" <%= reminder === '0' ? 'selected' : '' %>>No Reminder</option>
+                    <option value="15" <%= reminder === '15' ? 'selected' : '' %>>15 minutes</option>
+                    <option value="30" <%= reminder === '30' ? 'selected' : '' %>>30 minutes</option>
+                    <option value="60" <%= reminder === '60' ? 'selected' : '' %>>1 hour</option>
+                </select>
+            </div>
+            <div class="col-12">
+                <div class="pinfo overflow-hidden">
+                    <p id="convertLink"></p>
+                    <p id="countdownLink"></p>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-5">
+                <div class="form-group">
+                    <label for="reserved" class="col-form-label">Reserved Slots (1 per line)</label>
+                    <textarea class="form-control" id="reserved" name="reserved" rows="7" placeholder="Username#1234"><%= reserved %></textarea>
+                </div>
+            </div>
+            <div class="col-sm-7">
+                <div class="form-group">
+                    <label for="description" class="col-form-label">Description</label>
+                    <textarea class="form-control" id="description" name="description" rows="7"><%= description %></textarea>
+                    <small>Discord formatting allowed</small>
+                </div>
+            </div>
+        </div>
+        <div class="form-group row">
+            &nbsp;
+        </div>
         <% if (is.newgame) { %>
-        const d = new Date();
-        $('#date').val(d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+(d.getDate()).toString().padStart(2, '0'));
-        $('#time').val(d.getHours().toString().padStart(2, '0')+':'+d.getMinutes().toString().padStart(2, '0'));
-        $('#timezone').val(-d.getTimezoneOffset()/60);
+            <div class="form-group row">
+                <p class="col-sm-6 mx-auto">
+                    <button type="submit" class="btn btn-primary col-12">Submit</button>
+                </p>
+            </div>
         <% } %>
-
-        $('#date').change(function() {
-            var link = getURLs($('#date').val(), $('#time').val(), $('#timezone').val());
-            $('#convertLink').html(`Time Zone Conversion: <a href="${link.convert}" target="_blank">${link.convert}</a>`);
-            $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank">${link.countdown}</a>`);
-        }).change();
-
-        $('#time').change(function() {
-            var link = getURLs($('#date').val(), $('#time').val(), $('#timezone').val());
-            $('#convertLink').html(`Time Zone Conversion: <a href="${link.convert}" target="_blank">${link.convert}</a>`);
-            $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank">${link.countdown}</a>`);
-        }).change();
-
-        $('#timezone').change(function() {
-            var link = getURLs($('#date').val(), $('#time').val(), $('#timezone').val());
-            $('#convertLink').html(`Time Zone Conversion: <a href="${link.convert}" target="_blank">${link.convert}</a>`);
-            $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank">${link.countdown}</a>`);
-        }).change();
-        
         <% if (is.editgame) { %>
-        const gameId = '<%= _id %>';
-        const socket = io();
-
-        socket.on('game', response => {
-            if (gameId !== response.gameId) return;
-            if (response.action === 'updated') {
-                Object.keys(response.game).forEach(key => {
-                    if ($('#'+key).length > 0) $('#'+key).val(response.game[key]);
-                });
-            } else if (response.action === 'deleted') {
-                alert('This game has been deleted');
-                window.location = '<%= config.urls.game.create %>?s=<%= s %>';
-            }
-        });
+            <div class="form-group row">
+                <p class="col-sm-6">
+                    <button type="submit" class="btn btn-primary col-12">Save</button>
+                </p>
+                <p class="col-sm-3">
+                    <a href="<%= config.urls.game.delete %>?g=<%= _id %>" class="btn btn-danger col-12">Delete Game</a>
+                </p>
+                <p class="col-sm-3">
+                    <a href="<%= config.urls.game.create %>?s=<%= s %>" class="btn btn-light col-12">New Game</a>
+                </p>
+            </div>
         <% } %>
-    </script>
+    </form>
+</div>
+<script type="text/javascript">
+    $('#method').change(function() {
+        const sel = $(this).val();
+        $('#method__custom').addClass('d-none');
+        $('#customSignup').removeAttr('required');
+        $('#method-desc').html('');
+
+        if (sel === 'automated') {
+            $('#method-desc').html('Uses discord reaction buttons on the game announcement to allow users to sign up or cancel');
+            $('#when').val('datetime').change();
+        } else  if (sel === 'custom') {
+            $('#method__custom').removeClass('d-none');
+            $('#customSignup').attr('required','');
+        }
+    }).change();
+
+    $('#when').change(function() {
+        const sel = $(this).val();
+        $('#when__datetime').addClass('d-none');
+        $('#date').removeAttr('required');
+        $('#time').removeAttr('required');
+        $('#timezone').removeAttr('required');
+
+        if (sel === 'datetime') {
+            $('#when__datetime').removeClass('d-none');
+            $('#date').attr('required','');
+            $('#time').attr('required','');
+            $('#timezone').attr('required','');
+        } else if (sel === 'now') {
+            $('#method').val('custom').change();
+        }
+    }).change();
+
+    <% if (password) { %>
+    fetch('<%= config.urls.game.auth %>?s=<%= s %>', { method: 'GET' })
+        .then(response => {
+            return response.json();
+        })
+        .then(session => {
+            if (!session) window.location = '/';
+            if (!session.status) window.location = '/';
+            if (!(session.status.loggedInTo || []).includes('<%= s %>')) {
+                const password = prompt('Enter the password provided by the server');
+                fetch('<%= config.urls.game.password %>?s=<%= s %>&p='+escape(password), { method: 'GET' })
+                    .then(response => {
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (!data.result) {
+                            window.location = '/';
+                        }
+                    })
+                    .catch(err => {
+                        window.location = '/'
+                    });
+            }
+        })
+        .catch(err => {
+            console.log(err);
+        });
+    <% } %>
+
+    const getURLs = (date, time, gmtOffset) => {
+        const d = new Date(`${date} ${time} GMT${gmtOffset < 0 ? '-' : '+'}${Math.abs(gmtOffset)}`);
+        const n = d.toISOString().replace(/-|:|\.\d+Z/g,'');
+        d.setHours(d.getHours()+parseInt(gmtOffset))
+        const n2 = d.toISOString().replace(/-|:|\.\d+Z/g,'');
+
+        const tzs = {
+            '-12': 3926,
+            '-11': 3925,
+            '-10': 3924,
+            '-9': 3923,
+            '-8': 3922,
+            '-7': 3921,
+            '-6': 3920,
+            '-5': 3919,
+            '-4': 3918,
+            '-3': 3917,
+            '-2': 3916,
+            '-1': 3915,
+            '0': 1440,
+            '1': 3903,
+            '2': 3904,
+            '3': 3905,
+            '4': 3906,
+            '5': 3907,
+            '6': 3908,
+            '7': 3909,
+            '8': 3910,
+            '9': 3911,
+            '10': 3912,
+            '11': 3913,
+            '12': 3914,
+            '13': 3927,
+            '14': 3928
+        };
+
+        const tz = tzs[parseInt(gmtOffset)] || tzs['0'];
+
+        return {
+            convert: `${document.location.origin}/tz/${n}/${tz}`,
+            countdown: `${document.location.origin}/cd/${n2}/${tz}`
+        };
+    };
+
+    <% if (is.newgame) { %>
+    const d = new Date();
+    $('#date').val(d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+(d.getDate()).toString().padStart(2, '0'));
+    $('#time').val(d.getHours().toString().padStart(2, '0')+':'+d.getMinutes().toString().padStart(2, '0'));
+    $('#timezone').val(-d.getTimezoneOffset()/60);
+    <% } %>
+
+    $('#date').change(function() {
+        var link = getURLs($('#date').val(), $('#time').val(), $('#timezone').val());
+        $('#convertLink').html(`Time Zone Conversion: <a href="${link.convert}" target="_blank">${link.convert}</a>`);
+        $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank">${link.countdown}</a>`);
+    }).change();
+
+    $('#time').change(function() {
+        var link = getURLs($('#date').val(), $('#time').val(), $('#timezone').val());
+        $('#convertLink').html(`Time Zone Conversion: <a href="${link.convert}" target="_blank">${link.convert}</a>`);
+        $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank">${link.countdown}</a>`);
+    }).change();
+
+    $('#timezone').change(function() {
+        var link = getURLs($('#date').val(), $('#time').val(), $('#timezone').val());
+        $('#convertLink').html(`Time Zone Conversion: <a href="${link.convert}" target="_blank">${link.convert}</a>`);
+        $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank">${link.countdown}</a>`);
+    }).change();
+
+    <% if (is.editgame) { %>
+    const gameId = '<%= _id %>';
+    const socket = io();
+
+    socket.on('game', response => {
+        if (gameId !== response.gameId) return;
+        if (response.action === 'updated') {
+            Object.keys(response.game).forEach(key => {
+                if ($('#'+key).length > 0) $('#'+key).val(response.game[key]);
+            });
+        } else if (response.action === 'deleted') {
+            alert('This game has been deleted');
+            window.location = '<%= config.urls.game.create %>?s=<%= s %>';
+        }
+    });
+    <% } %>
+</script>
 </body>
 </html>
