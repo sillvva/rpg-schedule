@@ -49,6 +49,14 @@ input[readonly], input[disabled] {
     padding: 0;
 }
 
+nav .guild-name {
+    margin: 8px 0 0; font-weight: normal;
+}
+
+nav .guild-name img {
+    margin-right: 4px;
+}
+
 .guild-name {
     line-height: 20px;
     font-size: 20px;
@@ -61,6 +69,7 @@ input[readonly], input[disabled] {
 
 .games {
     display: grid; grid-template-columns: 1fr; grid-gap: 10px;
+    margin-bottom: 20px;
 }
 
 @media (min-width: 600px) {
