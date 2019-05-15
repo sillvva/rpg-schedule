@@ -30,7 +30,7 @@ module.exports = () => {
                     req.session.status = {
                         ...config.defaults.sessionStatus,
                         ...req.session.status
-                    }
+                    };
                     req.session.status.access = token;
                     res.redirect(config.urls.game.dashboard);
                     return;
@@ -40,6 +40,11 @@ module.exports = () => {
         } else {
             res.redirect(process.env.AUTH_URL);
         }
+    });
+
+    router.use(config.urls.logout, (req, res, next) => {
+        res.session.status = config.defaults.sessionStatus;
+        res.redirect('/');
     });
 
     return router;

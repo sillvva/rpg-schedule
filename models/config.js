@@ -9,6 +9,7 @@ module.exports  = {
         },
         invite: '/invite',
         login: '/login',
+        logout: '/logout',
         timezone: {
             convert: '/tz/:time/:tz',
             countdown: '/cd/:time/:tz'

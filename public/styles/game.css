@@ -50,7 +50,7 @@ input[readonly], input[disabled] {
 }
 
 nav .guild-name {
-    margin: 4px 0 0; font-weight: normal;
+    margin: 0 0 0 1rem; font-weight: normal;
 }
 
 nav .guild-name img {

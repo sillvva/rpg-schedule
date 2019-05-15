@@ -22,12 +22,13 @@
                 <a class="navbar-brand" href="#">RPG Schedule</a>
             </div>
             <div class="col text-right">
-                <h2 class="guild-name">
+                <a class="guild-name navbar-brand">
                     <img class="guild-icon" src="<%= user.avatarURL %>" alt="" />
                     <span class="d-xs-none">
                         <%= user.username %>
                     </span>
-                </h2>
+                </a>
+                <a class="guild-name navbar-brand" href="<%= config.urls.logout %>">Logout</a>
             </div>
         </div>
     </div>
