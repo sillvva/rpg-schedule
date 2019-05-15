@@ -22,6 +22,8 @@ module.exports = (options) => {
             if (req.session.status) {
                 const access = req.session.status.access.token_type;
                 if (access) {
+                    console.log(access);
+                    console.log(`${access.token_type} ${access.access_token}`);
                     request({
                         url: 'https://discordapp.com/api/users/@me',
                         method: 'GET',
