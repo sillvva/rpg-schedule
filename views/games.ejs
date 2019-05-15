@@ -31,7 +31,7 @@
     <div class="games">
         <% guild.games.forEach(game => { %>
         <div class="game">
-            <h4 class="game-name"><%= game.name %></h4>
+            <h4 class="game-name"><%= game.adventure %></h4>
             <div class="game-time">
                 <strong>When:</strong>
                 <% if (game.timestamp > new Date().getTime()) {%>
