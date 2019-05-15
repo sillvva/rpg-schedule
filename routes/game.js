@@ -12,7 +12,7 @@ module.exports = (options) => {
 
     router.use('/', async (req, res, next) => {
         req.userData = null;
-        if (req.originalUrl.indexOf('/game') !== 0) {
+        if (!Object.values(config.urls.game).find(url => req.originalUrl.indexOf(url) !== 0)) {
             next();
             return;
         }
