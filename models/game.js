@@ -95,7 +95,7 @@ module.exports = class Game {
                 } else {
                     message = await message.edit(embed);
                 }
-                ws.getIo().emit('game', { action: 'updated', game: game });
+                ws.getIo().emit('game', { action: 'updated', gameId: game._id, game: game });
             }
             catch(err) {
                 Game.delete(game._id);
