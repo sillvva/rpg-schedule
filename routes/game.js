@@ -42,7 +42,6 @@ module.exports = (options) => {
                                 client.guilds.forEach(guild => {
                                     guild.members.forEach(member => {
                                         if (member.id === id) {
-                                            console.log(guild);
                                             data.guilds.push({
                                                 id: guild.id,
                                                 name: guild.name,

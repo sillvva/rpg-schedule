@@ -15,7 +15,27 @@
     <link rel="stylesheet" href="/styles/game.css">
 </head>
 <body>
-<p><%= JSON.stringify(user) %></p>
-<p><%= JSON.stringify(guilds) %></p>
+<nav class="navbar fixed-top navbar-dark bg-primary row">
+    <div class="col-xs-12 col-sm-12 col-md-10 col-lg-8 col-xl-6 mx-auto">
+        <a class="navbar-brand mx-auto" href="#">Games Dashboard</a>
+    </div>
+</nav>
+<p>&nbsp;</p>
+<p style="margin: 0;">&nbsp;</p>
+<div class="col-xs-12 col-sm-12 col-md-10 col-lg-8 col-xl-6 mx-auto">
+    <% guilds.forEach(guild => { %>
+    <h2 class="guild-name">
+        <img class="guild-icon" src="<%= guild.icon %>" alt="" />
+        <%= guild.name %>
+    </h2>
+    <% guild.games.forEach(game => { %>
+    <div class="game">
+        <%= JSON.stringify(game); %>
+    </div>
+    <% }); %>
+    <% }); %>
+
+    <p><%= JSON.stringify(user) %></p>
+</div>
 </body>
 </html>
