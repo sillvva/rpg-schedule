@@ -28,6 +28,7 @@ module.exports = () => {
                 if (!error && response.statusCode == 200) {
                     console.log(body)
                 }
+                res.render('error', {message: 'Check the logs'})
             })
         } else {
             res.redirect(process.env.AUTH_URL);
