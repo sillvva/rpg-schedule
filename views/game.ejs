@@ -23,7 +23,10 @@
         <div class="col-xs-12 col-sm-12 col-md-10 col-lg-8 col-xl-6 mx-auto">
             <div class="row">
                 <div class="col">
-                    <a class="navbar-brand" href="#">RPG Schedule</a>
+                    <a class="navbar-brand" href="#">
+                        <img src="/images/rpg-schedule.png" class="navbar-icon" alt="" />
+                        RPG Schedule
+                    </a>
                 </div>
                 <% if (account.user) { %>
                 <div class="col text-right">
@@ -46,6 +49,7 @@
             <span class="breadcrumb-divider">/</span>
             <%= title %>
         </h6>
+        <hr />
         <form method="post">
             <input type="hidden" name="s" value="<%= s %>">
             <input type="hidden" name="c" value="<%= c %>">

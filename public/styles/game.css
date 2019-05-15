@@ -49,6 +49,16 @@ input[readonly], input[disabled] {
     padding: 0;
 }
 
+hr {
+    border-color: rgba(255,255,255,0.2);
+}
+
+.navbar-icon {
+    width: 35px; height: 35px;
+    margin-top: -5px;
+    margin-right: 5px;
+}
+
 nav .guild-name {
     margin: 0 0 0 1rem; font-weight: normal;
 }
