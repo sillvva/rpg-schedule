@@ -60,9 +60,9 @@
             <div class="game-time">
                 <strong>When:</strong>
                 <% if (game.timestamp > new Date().getTime()) {%>
-                <%= new Date(`${game.date} ${game.time} GMT${game.timezone >= 0 ? '+' : '-'}${Math.abs(game.timezone)}`) %>
+                <%= game.moment.calendar %> (<%= game.moment.from %>)
                 <% } else { %>
-                Expired
+                <span class="text-danger"><%= game.moment.date %> (<%= game.moment.from %>)</span>
                 <% } %>
              </div>
             <div class="game-reserved"><strong>Reserved:</strong> <%= Math.min(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0)%></div>
@@ -72,5 +72,10 @@
     </div>
     <% }); %>
 </div>
+<script type="text/javascript">
+    $('[data-datetime]').each(function() {
+        console.log($(this).get(0))
+    });
+</script>
 </body>
 </html>

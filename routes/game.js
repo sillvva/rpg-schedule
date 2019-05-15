@@ -1,6 +1,7 @@
 const express = require('express');
 const request = require('request');
 const discord = require('discord.js');
+const moment = require('moment');
 
 const Game = require('../models/game');
 const GuildConfig = require('../models/guild-config');
@@ -75,6 +76,13 @@ module.exports = (options) => {
 
                                 const games = await Game.fetchAllBy(gameOptions);
                                 games.forEach(game => {
+                                    const date = `${game.date} ${game.time} GMT${game.timezone >= 0 ? '+' : '-'}${Math.abs(game.timezone)}`;
+                                    game.moment = {
+                                        date: moment(date).utcOffset(parseInt(game.timezone)).format(config.formats.dateLong),
+                                        calendar: moment(date).utcOffset(parseInt(game.timezone)).calendar(),
+                                        from: moment(date).utcOffset(parseInt(game.timezone)).fromNow()
+                                    };
+
                                     const gi = data.guilds.findIndex(g => g.id === game.s);
                                     data.guilds[gi].games.push(game);
                                 });

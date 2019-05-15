@@ -35,6 +35,7 @@ module.exports = () => {
                     res.redirect(config.urls.game.dashboard);
                     return;
                 }
+                console.log(error);
                 res.render('error', {message: error});
             })
         } else if (req.query.error) {
