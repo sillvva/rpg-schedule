@@ -81,7 +81,7 @@ app.use(gameRoutes({ client: client }));
 app.use(inviteRoute());
 app.use(timezoneRoutes());
 app.use('/', (req, res, next) => {
-    res.render('invite');
+    res.render('home');
 });
 
 // Login the Discord bot
