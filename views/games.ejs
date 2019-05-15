@@ -17,20 +17,26 @@
 <body>
 <nav class="navbar fixed-top navbar-dark bg-primary row">
     <div class="col-xs-12 col-sm-12 col-md-10 col-lg-8 col-xl-6 mx-auto">
-        <div class="row">
-            <div class="col">
-                <img src="/images/rpg-schedule.png" class="navbar-icon" alt="" />
-                <a class="navbar-brand" href="#">RPG Schedule</a>
-            </div>
-            <div class="col text-right">
-                <a class="guild-name navbar-brand">
-                    <img class="guild-icon" src="<%= user.avatarURL %>" alt="" />
-                    <span class="d-xs-none">
+        <a class="navbar-brand" href="#">
+            <img src="/images/rpg-schedule.png" class="navbar-icon" alt="" />
+            RPG Schedule
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#menu" aria-controls="menu" aria-expanded="false">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="menu">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item active">
+                    <a class="nav-link" href="#">
+                        <img class="guild-icon" src="<%= user.avatarURL %>" alt="" />
                         <%= user.username %>
-                    </span>
-                </a>
-                <a class="guild-name navbar-brand" href="<%= config.urls.logout %>">Logout</a>
-            </div>
+                    </a>
+                    <a class="nav-link" href="<%= config.urls.logout %>">
+                        Logout
+                    </a>
+                </li>
+            </ul>
         </div>
     </div>
 </nav>
