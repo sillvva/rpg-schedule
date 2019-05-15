@@ -78,7 +78,8 @@ module.exports = (options) => {
                                 games.forEach(game => {
                                     const date = `${game.date} ${game.time} GMT${game.timezone >= 0 ? '+' : '-'}${Math.abs(game.timezone)}`;
                                     game.moment = {
-                                        date: moment(date).utcOffset(parseInt(game.timezone)).calendar(), //format(config.formats.dateLong),
+                                        date: moment(date).utcOffset(parseInt(game.timezone)).format(config.formats.dateLong),
+                                        calendar: moment(date).utcOffset(parseInt(game.timezone)).calendar(),
                                         from: moment(date).utcOffset(parseInt(game.timezone)).fromNow()
                                     };
 

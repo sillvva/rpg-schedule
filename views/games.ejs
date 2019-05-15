@@ -60,7 +60,7 @@
             <div class="game-time">
                 <strong>When:</strong>
                 <% if (game.timestamp > new Date().getTime()) {%>
-                <%= game.moment.date %> (<%= game.moment.from %>)
+                <%= game.moment.calendar %> (<%= game.moment.from %>)
                 <% } else { %>
                 <span class="text-danger"><%= game.moment.date %> (<%= game.moment.from %>)</span>
                 <% } %>
