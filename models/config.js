@@ -1,6 +1,7 @@
 module.exports  = {
     urls: {
         game: {
+            dashboard: '/games',
             create: '/game',
             delete: '/delete',
             password: '/password',
@@ -15,6 +16,7 @@ module.exports  = {
     },
     defaults: {
         sessionStatus: {
+            access: {},
             loggedInTo: []
         }
     }

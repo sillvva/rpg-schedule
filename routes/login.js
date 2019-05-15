@@ -27,9 +27,8 @@ module.exports = () => {
             }, function (error, response, body) {
                 if (!error && response.statusCode === 200) {
                     const token = JSON.parse(body);
-                    console.log(token);
-
-                    res.render('error', { message: body });
+                    req.session.access = token;
+                    res.redirect(config.urls.game.dashboard);
                     return;
                 }
                 res.render('error', { message: error });

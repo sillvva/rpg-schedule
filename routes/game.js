@@ -8,6 +8,16 @@ const config = require('../models/config');
 module.exports = (options) => {
     const router = express.Router();
     const { client } = options;
+
+    router.use(config.urls.game.dashboard, async (req, res, next) => {
+        try {
+            console.log(req.session.access);
+            res.render('error', { message: 'testing' });
+        }
+        catch(e) {
+
+        }
+    });
     
     router.use(config.urls.game.create, async (req, res, next) => {
         try {
