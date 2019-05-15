@@ -12,7 +12,10 @@ module.exports = (options) => {
 
     router.use('/', async (req, res, next) => {
         req.userData = null;
-        console.log(req, config.urls.game.dashboard);
+        if (req.originalUrl.indexOf('/game') !== 0) {
+            next();
+            return;
+        }
         try {
             if (req.session.status) {
                 const access = req.session.status.access;
