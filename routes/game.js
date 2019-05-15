@@ -26,11 +26,11 @@ module.exports = (options) => {
                             if (!error && response.statusCode === 200) {
                                 const response = JSON.parse(body);
                                 const { username, discriminator, id } = response;
+                                const tag = `${username}#${discriminator}`;
 
                                 const data = {
-                                    user: { ...response, ...{ tag: `${username}#${discriminator}` } },
-                                    guilds: [],
-                                    guildIds: []
+                                    user: { ...response, ...{ tag: tag } },
+                                    guilds: []
                                 };
 
                                 client.guilds.forEach(guild => {
@@ -47,18 +47,24 @@ module.exports = (options) => {
                                     });
                                 });
 
-                                data.guildIds = data.guilds.reduce((i, g) => {
-                                    i.push(g.id);
-                                    return i;
-                                }, []);
-                                // const games = Game.fetchAllBy({
-                                //     s: {
-                                //         $in: data.guilds.reduce((i, g) => {
-                                //             i.push(g.id);
-                                //             return i;
-                                //         }, [])
-                                //     }
-                                // });
+                                const gameOptions = {
+                                    s: {
+                                        $in: data.guilds.reduce((i, g) => {
+                                            i.push(g.id);
+                                            return i;
+                                        }, [])
+                                    }
+                                };
+
+                                if (tag !== 'Sillvva#2532') {
+                                    gameOptions.dm = tag;
+                                }
+
+                                const games = await Game.fetchAllBy(gameOptions);
+                                games.forEach(game => {
+                                    const gi = data.guilds.findIndex(g => g.id === game.s);
+                                    data.guilds[gi].games.push(game);
+                                });
 
                                 res.render('games', data);
 
