@@ -27,7 +27,11 @@ module.exports = () => {
             }, function (error, response, body) {
                 if (!error && response.statusCode === 200) {
                     const token = JSON.parse(body);
-                    req.session.access = token;
+                    req.session.status = {
+                        ...config.defaults.sessionStatus,
+                        ...req.session.status
+                    }
+                    req.session.status.access = token;
                     res.redirect(config.urls.game.dashboard);
                     return;
                 }
