@@ -25,12 +25,12 @@ module.exports = () => {
                     scope: 'identify guilds',
                 }
             }, function (error, response, body) {
-                console.log(response);
-                console.log(response.toJSON());
                 if (!error && response.statusCode === 200) {
-                    console.log(body)
+                    const token = JSON.parse(body);
+                    console.log(token);
+                    return;
                 }
-                res.render('error', {message: 'Check the logs'})
+                res.render('error', { message: error })
             })
         } else {
             res.redirect(process.env.AUTH_URL);
