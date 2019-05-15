@@ -14,21 +14,30 @@ module.exports = (options) => {
             if (req.session.status) {
                 const access = req.session.status.access;
                 if (access) {
-                    fetch('https://discordapp.com/api/users/@me', {
+                    request({
+                        url: 'https://discordapp.com/api/users/@me',
+                        method: 'POST',
                         headers: {
                             authorization: `${access.token_type} ${access.access_token}`
+                        },
+                        form: {
+                            client_id: process.env.CLIENT_ID,
+                            client_secret: process.env.CLIENT_SECRET,
+                            grant_type: 'authorization_code',
+                            code: req.query.code,
+                            redirect_uri: process.env.HOST+config.urls.login,
+                            scope: 'identify guilds',
                         }
-                    })
-                        .then(res => res.json())
-                        .then(response => {
+                    }, function (error, response, body) {
+                        if (!error && response.statusCode === 200) {
+                            const response = JSON.parse(body);
                             const { username, discriminator } = response;
                             console.log(response);
                             res.render('error', { message: 'Check logs' });
-                        })
-                        .catch(e => {
-                            console.log(e);
-                            res.render('error', { message: e });
-                        });
+                            return;
+                        }
+                        res.render('error', { message: error });
+                    });
                 } else {
                     res.redirect(config.urls.login);
                 }
