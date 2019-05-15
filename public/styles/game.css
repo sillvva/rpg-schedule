@@ -1,6 +1,7 @@
 body {
     background-color: #2f3236;
     color: #fff;
+    overflow-x: hidden;
 }
 
 @-ms-viewport{
@@ -68,7 +69,7 @@ nav .guild-name img {
 }
 
 .breadcrumbs {
-    margin-bottom: 1rem; font-size: 1.5rem;
+    margin: 0.8rem 0 1rem; font-size: 1.5rem;
 }
 
 .breadcrumbs a, .breadcrumbs a:hover {

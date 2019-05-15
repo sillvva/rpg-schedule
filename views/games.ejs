@@ -15,8 +15,8 @@
     <link rel="stylesheet" href="/styles/game.css">
 </head>
 <body>
-<nav class="navbar fixed-top navbar-dark bg-primary row">
-    <div class="col-xs-12 col-sm-12 col-md-10 col-lg-8 col-xl-6 mx-auto">
+<nav class="navbar navbar-expand-md sticky-top navbar-dark bg-primary">
+    <div class="container">
         <a class="navbar-brand" href="#">
             <img src="/images/rpg-schedule.png" class="navbar-icon" alt="" />
             RPG Schedule
@@ -27,11 +27,13 @@
 
         <div class="collapse navbar-collapse" id="menu">
             <ul class="navbar-nav ml-auto">
-                <li class="nav-item active">
+                <li class="nav-item">
                     <a class="nav-link" href="#">
                         <img class="guild-icon" src="<%= user.avatarURL %>" alt="" />
                         <%= user.username %>
                     </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" href="<%= config.urls.logout %>">
                         Logout
                     </a>
@@ -40,9 +42,7 @@
         </div>
     </div>
 </nav>
-<p>&nbsp;</p>
-<p style="margin: 0;">&nbsp;</p>
-<div class="col-xs-12 col-sm-12 col-md-10 col-lg-8 col-xl-6 mx-auto">
+<div class="container">
     <h6 class="breadcrumbs">
         Games
     </h6>
