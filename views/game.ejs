@@ -131,15 +131,15 @@
             </div>
         </div>
         <div id="when__datetime" class="row">
-            <div class="form-group col-sm-3">
+            <div class="form-group col-sm-6 col-md-3">
                 <label for="date" class="col-form-label">Date</label>
                 <input type="date" class="form-control" id="date" name="date" value="<%= date %>">
             </div>
-            <div class="form-group col-sm-3">
+            <div class="form-group col-sm-6 col-md-3">
                 <label for="time" class="col-form-label">Time</label>
                 <input type="time" class="form-control" id="time" name="time" value="<%= time %>">
             </div>
-            <div class="form-group col-sm-3">
+            <div class="form-group col-sm-6 col-md-3">
                 <label for="timezone" class="col-form-label">Time Zone</label>
                 <div class="input-group">
                     <div class="input-group-prepend">
@@ -148,7 +148,7 @@
                     <input type="number" min="-12" max="14" class="form-control" id="timezone" name="timezone" value="<%= timezone %>">
                 </div>
             </div>
-            <div class="form-group col-sm-3">
+            <div class="form-group col-sm-6 col-md-3">
                 <label for="reminder" class="col-form-label">Reminder</label>
                 <select class="form-control" id="reminder" name="reminder">
                     <option value="0" <%= reminder === '0' ? 'selected' : '' %>>No Reminder</option>
@@ -158,7 +158,7 @@
                 </select>
             </div>
             <div class="col-12">
-                <div class="pinfo">
+                <div class="pinfo overflow-hidden">
                     <p id="convertLink"></p>
                     <p id="countdownLink"></p>
                 </div>
