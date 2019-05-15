@@ -30,6 +30,7 @@ module.exports = (options) => {
                                 const tag = `${username}#${discriminator}`;
 
                                 const data = {
+                                    config: config,
                                     user: {
                                         ...response,
                                         ...{

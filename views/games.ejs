@@ -37,12 +37,13 @@
 <div class="col-xs-12 col-sm-12 col-md-10 col-lg-8 col-xl-6 mx-auto">
     <% guilds.forEach(guild => { %>
     <h2 class="guild-name">
+        <a href="<%= config.urls.game.create %>?s=<%= guild.id %>" class="btn btn-primary btn-sm">New Game</a>
         <img class="guild-icon" src="<%= guild.icon %>" alt="" />
         <%= guild.name %>
     </h2>
     <div class="games">
         <% guild.games.forEach(game => { %>
-        <a class="game" href="/game?g=<%= game._id %>">
+        <a class="game" href="<%= config.urls.game.create %>?g=<%= game._id %>">
             <h4 class="game-name"><%= game.adventure %></h4>
             <div class="game-time">
                 <strong>When:</strong>
