@@ -108,7 +108,12 @@ module.exports = class Game {
             };
         } else {
             const inserted = await dbCollection.insertOne(game);
-            const message = await channel.send(embed);
+            let message;
+            if (guildConfig.embeds === false) {
+                message = await channel.send(msg);
+            } else {
+                message = await channel.send(embed);
+            }
             if (game.method === 'automated') await message.react('➕');
             if (game.method === 'automated') await message.react('➖');
             const pm = await dmmember.send("You can edit your `"+guild.name+"` - `"+game.adventure+"` game here:\n"+host+config.urls.game.create+'?g='+inserted.insertedId);
