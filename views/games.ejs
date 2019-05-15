@@ -28,11 +28,23 @@
         <img class="guild-icon" src="<%= guild.icon %>" alt="" />
         <%= guild.name %>
     </h2>
-    <% guild.games.forEach(game => { %>
-    <div class="game">
-        <%= JSON.stringify(game); %>
+    <div class="games">
+        <% guild.games.forEach(game => { %>
+        <div class="game">
+            <h4 class="game-name"><%= game.name %></h4>
+            <div class="game-time">
+                <strong>When:</strong>
+                <% if (game.timestamp > new Date().getTime()) {%>
+                <%= new Date(`${game.date} ${game.time} GMT${game.timezone >= 0 ? '+' : '-'}${Math.abs(game.timezone)}`) %>
+                <% } else { %>
+                Expired
+                <% } %>
+             </div>
+            <div class="game-reserved"><strong>Reserved:</strong> <%= Math.max(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0)%></div>
+            <div class="game-reserved"><strong>Waitlisted:</strong> <%= Math.min(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0) - parseInt(game.players)%></div>
+        </div>
+        <% }); %>
     </div>
-    <% }); %>
     <% }); %>
 
     <p><%= JSON.stringify(user) %></p>
