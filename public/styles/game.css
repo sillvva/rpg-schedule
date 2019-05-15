@@ -92,7 +92,8 @@ nav .guild-name img {
 }
 
 .game:hover {
-    box-shadow: 0 0 8px rgba(0,0,0,0.75);
+    box-shadow: 0 0 8px rgba(0,0,0,0.75); color: #fff;
+    text-decoration: none;
 }
 
 .game-name {
