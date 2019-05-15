@@ -69,7 +69,7 @@ app.use(session({
     secret: process.env.TOKEN,
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: true },
+    cookie: { secure: true, sameSite: true },
     store: store
 }));
 

@@ -311,15 +311,14 @@
         const socket = io();
 
         socket.on('game', response => {
+            if (gameId !== response.gameId) return;
             if (response.action === 'updated') {
                 Object.keys(response.game).forEach(key => {
                     if ($('#'+key).length > 0) $('#'+key).val(response.game[key]);
                 });
             } else if (response.action === 'deleted') {
-                if (gameId === response.gameId) {
-                    alert('This game has been deleted');
-                    window.location = '<%= config.urls.game.create %>?s=<%= s %>';
-                }
+                alert('This game has been deleted');
+                window.location = '<%= config.urls.game.create %>?s=<%= s %>';
             }
         });
         <% } %>
