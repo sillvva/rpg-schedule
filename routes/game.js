@@ -159,7 +159,7 @@ module.exports = (options) => {
                         channel: channel.name,
                         s: server,
                         c: channel.id,
-                        dm: '',
+                        dm: req.account ? req.account.user.tag : '',
                         adventure: '',
                         runtime: '',
                         where: '',

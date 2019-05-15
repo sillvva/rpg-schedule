@@ -26,7 +26,7 @@
             RPG Schedule
         </a>
 
-        <% if (account) { if (account.user) { %>
+        <% if (account) { %>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#menu" aria-controls="menu" aria-expanded="false">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -45,13 +45,15 @@
                 </li>
             </ul>
         </div>
-        <% } } %>
+        <% } %>
     </div>
 </nav>
 <div class="container">
     <h6 class="breadcrumbs">
+        <% if (account) { %>
         <a href="<%= config.urls.game.dashboard %>">Games</a>
         <span class="breadcrumb-divider">/</span>
+        <% } %>
         <%= title %>
     </h6>
     <hr />
