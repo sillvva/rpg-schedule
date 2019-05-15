@@ -43,7 +43,7 @@ module.exports = () => {
     });
 
     router.use(config.urls.logout, (req, res, next) => {
-        res.session.status = config.defaults.sessionStatus;
+        req.session.status = config.defaults.sessionStatus;
         res.redirect('/');
     });
 
