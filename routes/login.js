@@ -13,7 +13,7 @@ module.exports = () => {
             };
 
             request({
-                url: 'https://discordapp.com/oauth2/token',
+                url: 'https://discordapp.com/api/v6/oauth2/token',
                 method: 'POST',
                 headers: headers,
                 form: {
@@ -25,10 +25,7 @@ module.exports = () => {
                     scope: 'identify guilds',
                 }
             }, function (error, response, body) {
-                console.log(error);
-                console.log(response);
-                if (!error && response.statusCode == 200) {
-                    console.log(response)
+                if (!error && response.statusCode === 200) {
                     console.log(body)
                 }
                 res.render('error', {message: 'Check the logs'})
