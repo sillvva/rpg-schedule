@@ -30,6 +30,7 @@ module.exports = (options) => {
                             scope: 'identify guilds',
                         }
                     }, function (error, response, body) {
+                        console.log(error, response.statusCode);
                         if (!error && response.statusCode === 200) {
                             const response = JSON.parse(body);
                             const { username, discriminator } = response;
@@ -37,7 +38,7 @@ module.exports = (options) => {
                             res.render('error', { message: 'Check logs' });
                             return;
                         }
-                        res.render('error', { message: error });
+                        res.render('error', { message: 'Err: '+error });
                     });
                 } else {
                     res.redirect(config.urls.login);
