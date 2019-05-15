@@ -7,6 +7,7 @@ module.exports  = {
             auth: '/authenticate'
         },
         invite: '/invite',
+        login: '/login',
         timezone: {
             convert: '/tz/:time/:tz',
             countdown: '/cd/:time/:tz'

@@ -212,9 +212,9 @@ const pruneOldGames = async client => {
     let result;
     console.log('Pruning old games');
     const query = {
-        s: {
-            $nin: ['532564186023329792'] // not in these specific servers
-        },
+        /*s: {
+            $nin: [] // not in these specific servers
+        },*/
         timestamp: {
             $lt: (new Date().getTime()) - 48 * 3600 * 1000 // timestamp lower than 48 hours ago
         }
