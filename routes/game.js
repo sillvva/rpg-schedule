@@ -15,13 +15,6 @@ module.exports = (options) => {
             if (req.session.status) {
                 const access = req.session.status.access;
                 if (access) {
-                    console.log({
-                        url: 'https://discordapp.com/api/users/@me',
-                        method: 'GET',
-                        headers: {
-                            authorization: `${access.token_type} ${access.access_token}`
-                        }
-                    })
                     request({
                         url: 'https://discordapp.com/api/users/@me',
                         method: 'GET',
@@ -29,12 +22,25 @@ module.exports = (options) => {
                             authorization: `${access.token_type} ${access.access_token}`
                         }
                     }, function (error, response, body) {
-                        console.log(error, response.statusCode);
                         if (!error && response.statusCode === 200) {
                             const response = JSON.parse(body);
                             const { username, discriminator } = response;
-                            console.log(response);
-                            res.render('error', { message: 'Check logs' });
+                            const tag = `${username}#${discriminator}`;
+                            request({
+                                url: 'https://discordapp.com/api/users/@me/guilds',
+                                method: 'GET',
+                                headers: {
+                                    authorization: `${access.token_type} ${access.access_token}`
+                                }
+                            }, function (error, response, body) {
+                                if (!error && response.statusCode === 200) {
+                                    const response = JSON.parse(body);
+                                    console.log(response);
+                                    res.render('error', { message: 'Check logs' });
+                                    return;
+                                }
+                                res.render('error', { message: 'Err: '+error });
+                            });
                             return;
                         }
                         res.render('error', { message: 'Err: '+error });
