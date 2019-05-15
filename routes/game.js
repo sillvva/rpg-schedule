@@ -30,6 +30,7 @@ module.exports = (options) => {
                         }
                     }, async (error, response, body) => {
                         try {
+                            console.log(error, response.statusCode);
                             if (!error && response.statusCode === 200) {
                                 const response = JSON.parse(body);
                                 const { username, discriminator, id, avatar } = response;
