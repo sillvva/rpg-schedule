@@ -15,6 +15,9 @@ module.exports  = {
             countdown: '/cd/:time/:tz'
         }
     },
+    formats: {
+        dateLong: 'ddd, MMMM Do YYYY, h:mm a'
+    },
     defaults: {
         sessionStatus: {
             access: {},
