@@ -25,18 +25,24 @@ module.exports = (options) => {
                         try {
                             if (!error && response.statusCode === 200) {
                                 const response = JSON.parse(body);
-                                const { username, discriminator, id } = response;
+                                const { username, discriminator, id, avatar } = response;
                                 const tag = `${username}#${discriminator}`;
 
                                 const data = {
-                                    user: { ...response, ...{ tag: tag } },
+                                    user: {
+                                        ...response,
+                                        ...{
+                                            tag: tag,
+                                            avatarURL: `https://cdn.discordapp.com/avatars/${id}/${avatar}.png?size=128`
+                                        }
+                                    },
                                     guilds: []
                                 };
 
                                 client.guilds.forEach(guild => {
                                     guild.members.forEach(member => {
-                                        console.log(member.id, id);
                                         if (member.id === id) {
+                                            console.log(guild);
                                             data.guilds.push({
                                                 id: guild.id,
                                                 name: guild.name,
