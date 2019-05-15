@@ -285,7 +285,7 @@ const postReminders = async client => {
                     d.setHours(d.getHours()+parseInt(game.timezone));
                     const gameTime = (d.getHours() > 12 ? d.getHours()-12 : d.getHours())+':'+d.getMinutes().toString().padStart(2, '0')+' '+(d.getHours() < 12 ? 'AM' : 'PM');
 
-                    let message = `Reminder for ${game.adventure}\n`;
+                    let message = `Reminder for **${game.adventure}**\n`;
                     message += `**When:** Starting in ${game.reminder} minutes\n`;
                     message += `**Where:** ${game.where}\n\n`;
                     message += `**DM:** ${dm}\n`;
