@@ -10,7 +10,8 @@ module.exports = (options) => {
     const router = express.Router();
     const { client } = options;
 
-    router.use(config.urls.game.dashboard, async (req, res, next) => {
+    router.use('/', async (req, res, next) => {
+        req.userData = null;
         try {
             if (req.session.status) {
                 const access = req.session.status.access;
@@ -71,41 +72,41 @@ module.exports = (options) => {
                                     data.guilds[gi].games.push(game);
                                 });
 
-                                res.render('games', data);
-
-                                // request({
-                                //     url: 'https://discordapp.com/api/users/@me/guilds',
-                                //     method: 'GET',
-                                //     headers: {
-                                //         authorization: `${access.token_type} ${access.access_token}`
-                                //     }
-                                // }, function (error, response, body) {
-                                //     if (!error && response.statusCode === 200) {
-                                //         const response = JSON.parse(body);
-                                //         console.log(response);
-                                //         console.log(client.guilds);
-                                //         res.render('error', { message: 'Check logs' });
-                                //         return;
-                                //     }
-                                //     res.render('error', { message: 'Err: '+error });
-                                // });
+                                req.userData = data;
+                                next();
                                 return;
                             }
-                            res.render('error', { message: 'Err: '+error });
-                        } catch(e) {
-                            res.render('error', { message: 'Err: '+e.message });
+                            throw new Error(error);
+                        } catch(err) {
+                            if (req.baseUrl === config.urls.game.dashboard) {
+                                res.render('error', { message: err });
+                            } else {
+                                next();
+                            }
                         }
                     });
                 } else {
-                    res.redirect(config.urls.login);
+                    if (req.baseUrl === config.urls.game.dashboard) {
+                        res.redirect(config.urls.login);
+                    } else {
+                        next();
+                    }
                 }
             } else {
-                res.redirect(config.urls.login);
+                if (req.baseUrl === config.urls.game.dashboard) {
+                    res.redirect(config.urls.login);
+                } else {
+                    next();
+                }
             }
         }
         catch(e) {
             res.render('error', { message: e.message });
         }
+    });
+
+    router.use(config.urls.game.dashboard, async (req, res, next) => {
+        res.render('games', req.userData);
     });
     
     router.use(config.urls.game.create, async (req, res, next) => {
@@ -173,6 +174,7 @@ module.exports = (options) => {
                         password: password ? password : false,
                         config: config,
                         host: process.env.HOST,
+                        user: req.userData,
                         errors: {
                             dm: false
                         }
@@ -234,7 +236,11 @@ module.exports = (options) => {
                     const channel = guild.channels.get(channelId);
 
                     Game.delete(game, channel, { sendWS: false }).then(response => {
-                        res.redirect(config.urls.game.create+'?s='+serverId);
+                        if (req.userData) {
+                            res.redirect(config.urls.game.dashboard);
+                        } else {
+                            res.redirect(config.urls.game.create+'?s='+serverId);
+                        }
                     });
                 } else {
                     throw new Error('Server not found');
