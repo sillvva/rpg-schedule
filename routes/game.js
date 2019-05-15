@@ -17,7 +17,7 @@ module.exports = (options) => {
                 if (access) {
                     request({
                         url: 'https://discordapp.com/api/users/@me',
-                        method: 'POST',
+                        method: 'GET',
                         headers: {
                             authorization: `${access.token_type} ${access.access_token}`
                         }
