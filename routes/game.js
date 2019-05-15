@@ -26,9 +26,9 @@ module.exports = (options) => {
                             if (!error && response.statusCode === 200) {
                                 const response = JSON.parse(body);
                                 const { username, discriminator, id } = response;
-                                const tag = `${username}#${discriminator}`;
 
                                 const data = {
+                                    user: { ...response, ...{ tag: `${username}#${discriminator}` } },
                                     guilds: [],
                                     guildIds: []
                                 };
