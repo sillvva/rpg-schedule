@@ -12,11 +12,14 @@ module.exports = (options) => {
 
     router.use('/', async (req, res, next) => {
         req.userData = null;
-        if (!Object.values(config.urls.game).find(url => req.originalUrl.indexOf(url) !== 0)) {
+        const isGame = !Object.values(config.urls.game).find(url => req.originalUrl.indexOf(url) !== 0);
+        const isDashboard = req.originalUrl.indexOf('/games') !== 0;
+        if (isGame) {
             next();
             return;
         }
         try {
+            console.log(req.session.status);
             if (req.session.status) {
                 const access = req.session.status.access;
                 if (access) {
@@ -83,7 +86,7 @@ module.exports = (options) => {
                             }
                             throw new Error(error);
                         } catch(err) {
-                            if (req.baseUrl === config.urls.game.dashboard) {
+                            if (isDashboard) {
                                 res.render('error', { message: err });
                             } else {
                                 next();
@@ -91,14 +94,14 @@ module.exports = (options) => {
                         }
                     });
                 } else {
-                    if (req.baseUrl === config.urls.game.dashboard) {
+                    if (isDashboard) {
                         res.redirect(config.urls.login);
                     } else {
                         next();
                     }
                 }
             } else {
-                if (req.baseUrl === config.urls.game.dashboard) {
+                if (isDashboard) {
                     res.redirect(config.urls.login);
                 } else {
                     next();
