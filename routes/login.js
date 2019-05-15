@@ -28,9 +28,11 @@ module.exports = () => {
                 if (!error && response.statusCode === 200) {
                     const token = JSON.parse(body);
                     console.log(token);
+
+                    res.render('error', { message: body });
                     return;
                 }
-                res.render('error', { message: error })
+                res.render('error', { message: error });
             })
         } else {
             res.redirect(process.env.AUTH_URL);
