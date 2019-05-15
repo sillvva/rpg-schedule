@@ -57,7 +57,7 @@ module.exports = (options) => {
                                                 id: guild.id,
                                                 name: guild.name,
                                                 icon: guild.iconURL,
-                                                permission: guildConfig.role ? member.roles.find(r => r.name.toLowerCase().trim() === guildConfig.role.toLowerCase().trim()) : true
+                                                permission: guildConfig.role ? member.roles.find(r => r.name.toLowerCase().trim() === guildConfig.role.toLowerCase().trim()) : true,
                                                 games: []
                                             });
                                         }
