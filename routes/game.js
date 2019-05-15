@@ -73,7 +73,7 @@ module.exports = (options) => {
                                     data.guilds[gi].games.push(game);
                                 });
 
-                                req.userData = data;
+                                req.account = data;
                                 next();
                                 return;
                             }
@@ -107,7 +107,7 @@ module.exports = (options) => {
     });
 
     router.use(config.urls.game.dashboard, async (req, res, next) => {
-        res.render('games', req.userData);
+        res.render('games', req.account);
     });
     
     router.use(config.urls.game.create, async (req, res, next) => {
@@ -175,7 +175,7 @@ module.exports = (options) => {
                         password: password ? password : false,
                         config: config,
                         host: process.env.HOST,
-                        user: req.userData,
+                        account: req.account,
                         errors: {
                             dm: false
                         }
@@ -237,7 +237,8 @@ module.exports = (options) => {
                     const channel = guild.channels.get(channelId);
 
                     Game.delete(game, channel, { sendWS: false }).then(response => {
-                        if (req.userData) {
+                        console.log(req.account);
+                        if (req.account) {
                             res.redirect(config.urls.game.dashboard);
                         } else {
                             res.redirect(config.urls.game.create+'?s='+serverId);

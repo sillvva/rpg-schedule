@@ -23,6 +23,25 @@
         <div class="col-xs-12 col-sm-12 col-md-10 col-lg-8 col-xl-6 mx-auto">
             <a class="navbar-brand mx-auto" href="#"><%= title %></a>
         </div>
+        <div class="col-xs-12 col-sm-12 col-md-10 col-lg-8 col-xl-6 mx-auto">
+            <div class="row">
+                <div class="col">
+                    <a class="navbar-brand" href="<%= config.urls.game.dashboard %>">Games</a>
+                    <span class="navbar-brand">></span>
+                    <a class="navbar-brand" href="#"><%= title %></a>
+                </div>
+                <% if (account.user) { %>
+                <div class="col text-right">
+                    <h2 class="guild-name">
+                        <img class="guild-icon" src="<%= account.user.avatarURL %>" alt="" />
+                        <span class="d-xs-none">
+                        <%= account.user.username %>
+                    </span>
+                    </h2>
+                </div>
+                <% } %>
+            </div>
+        </div>
     </nav>
     <p>&nbsp;</p>
     <p style="margin: 0;">&nbsp;</p>
