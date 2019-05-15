@@ -19,7 +19,7 @@
     <div class="col-xs-12 col-sm-12 col-md-10 col-lg-8 col-xl-6 mx-auto">
         <div class="row">
             <div class="col">
-                <a class="navbar-brand mx-auto" href="#">Games</a>
+                <a class="nav-brand" href="#">RPG Schedule</a>
             </div>
             <div class="col text-right">
                 <h2 class="guild-name">
@@ -34,6 +34,9 @@
 </nav>
 <p>&nbsp;</p>
 <p style="margin: 0;">&nbsp;</p>
+<h6 class="breadcrumbs">
+    <a href="<%= config.urls.game.dashboard %>">Games</a>
+</h6>
 <div class="col-xs-12 col-sm-12 col-md-10 col-lg-8 col-xl-6 mx-auto">
     <% guilds.forEach(guild => { %>
     <h2 class="guild-name">
