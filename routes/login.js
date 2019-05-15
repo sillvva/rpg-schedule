@@ -21,7 +21,7 @@ module.exports = () => {
                     client_secret: process.env.CLIENT_SECRET,
                     grant_type: 'authorization_code',
                     code: req.query.code,
-                    redirect_uri: process.env.HOST+config.urls.login,
+                    redirect_uri: process.env.HOST + config.urls.login,
                     scope: 'identify guilds',
                 }
             }, function (error, response, body) {
@@ -35,11 +35,12 @@ module.exports = () => {
                     res.redirect(config.urls.game.dashboard);
                     return;
                 }
-                res.render('error', { message: error });
+                res.render('error', {message: error});
             })
+        } else if (req.query.error) {
+            res.redirect('/');
         } else {
-            res.render('error', {message: 'test'});
-            // res.redirect(process.env.AUTH_URL);
+            res.redirect(process.env.AUTH_URL);
         }
     });
 
