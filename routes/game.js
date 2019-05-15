@@ -1,4 +1,5 @@
 const express = require('express');
+const request = require('request');
 const discord = require('discord.js');
 
 const Game = require('../models/game');
