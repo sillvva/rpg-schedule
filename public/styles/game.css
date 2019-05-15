@@ -57,8 +57,12 @@ nav .guild-name img {
     margin-right: 4px;
 }
 
+.breadcrumbs {
+    margin-bottom: 1rem; font-size: 1.5rem;
+}
+
 .breadcrumbs a, .breadcrumbs a:hover {
-    color: #fff; text-decoration: none;
+    text-decoration: none;
 }
 
 .breadcrumb-divider {
