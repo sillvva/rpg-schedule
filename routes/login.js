@@ -26,6 +26,7 @@ module.exports = () => {
                 }
             }, function (error, response, body) {
                 console.log(response);
+                console.log(response.json())
                 if (!error && response.statusCode === 200) {
                     console.log(body)
                 }
