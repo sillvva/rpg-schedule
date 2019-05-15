@@ -12,16 +12,15 @@ module.exports = (options) => {
 
     router.use('/', async (req, res, next) => {
         req.userData = null;
-        const isGame = !Object.values(config.urls.game).find(url => req.originalUrl.indexOf(url) !== 0);
-        const isDashboard = req.originalUrl.indexOf('/games') !== 0;
+        const isGame = !Object.values(config.urls.game).find(url => req.originalUrl.indexOf(url) === 0);
+        const isDashboard = req.originalUrl.indexOf('/games') === 0;
         if (isGame) {
             next();
             return;
         }
         try {
-            console.log(req.session.status);
             if (req.session.status) {
-                const access = req.session.status.access;
+                const access = req.session.status.access.token_type;
                 if (access) {
                     request({
                         url: 'https://discordapp.com/api/users/@me',
