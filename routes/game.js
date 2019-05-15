@@ -12,7 +12,7 @@ module.exports = (options) => {
 
     router.use('/', async (req, res, next) => {
         req.userData = null;
-        console.log(req.baseUrl, config.urls.game.dashboard);
+        console.log(req, config.urls.game.dashboard);
         try {
             if (req.session.status) {
                 const access = req.session.status.access;
