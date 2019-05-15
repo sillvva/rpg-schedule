@@ -11,7 +11,7 @@ module.exports = (options) => {
 
     router.use(config.urls.game.dashboard, async (req, res, next) => {
         try {
-            console.log(req.session.access);
+            console.log(req.session);
             res.render('error', { message: 'testing' });
         }
         catch(e) {
