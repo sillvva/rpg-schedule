@@ -49,7 +49,9 @@
     <% guilds.forEach(guild => { %>
     <hr />
     <h2 class="guild-name">
+        <% if (guild.permission) { %>
         <a href="<%= config.urls.game.create %>?s=<%= guild.id %>" class="btn btn-primary btn-sm float-right">New Game</a>
+        <% } %>
         <img class="guild-icon" src="<%= guild.icon %>" alt="" />
         <%= guild.name %>
     </h2>

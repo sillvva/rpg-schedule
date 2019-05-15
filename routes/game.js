@@ -35,6 +35,7 @@ module.exports = (options) => {
                                 const response = JSON.parse(body);
                                 const { username, discriminator, id, avatar } = response;
                                 const tag = `${username}#${discriminator}`;
+                                const guildConfigs = await GuildConfig.fetchAll();
 
                                 const data = {
                                     config: config,
@@ -49,12 +50,14 @@ module.exports = (options) => {
                                 };
 
                                 client.guilds.forEach(guild => {
+                                    const guildConfig = guildConfigs.find(gc => gc.guild === guild.id) || {};
                                     guild.members.forEach(member => {
                                         if (member.id === id) {
                                             data.guilds.push({
                                                 id: guild.id,
                                                 name: guild.name,
                                                 icon: guild.iconURL,
+                                                permission: guildConfig.role ? member.roles.find(r => r.name.toLowerCase().trim() === guildConfig.role.toLowerCase().trim()) : true
                                                 games: []
                                             });
                                         }
@@ -146,12 +149,30 @@ module.exports = (options) => {
                     let password;
 
                     const guildConfig = await GuildConfig.fetch(guild.id);
-                    if (guildConfig) password = guildConfig.password;
+                    if (guildConfig) {
+                        password = guildConfig.password;
+                        if (guildConfig.role) {
+                            if (!req.account) {
+                                res.redirect(config.urls.login);
+                                return;
+                            } else {
+                                const member = guild.members.find(m => m.id === req.account.user.id);
+                                if (member) {
+                                    if (!member.roles.find(r => r.name.toLowerCase().trim() === guildConfig.role.toLowerCase().trim())) {
+                                        res.redirect(config.urls.game.dashboard);
+                                        return;
+                                    }
+                                } else {
+                                    res.redirect(config.urls.game.dashboard);
+                                    return;
+                                }
+                            }
+                        }
+                    }
 
                     if (req.query.g) {
                         channelId = game.c;
-                    }
-                    else {
+                    } else {
                         if (guildConfig) channelId = guildConfig.channel;
                     }
     
