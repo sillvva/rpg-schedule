@@ -62,7 +62,7 @@
                 <% if (game.timestamp > new Date().getTime()) {%>
                 <%= game.moment.date %> (<%= game.moment.from %>)
                 <% } else { %>
-                Expired
+                <span class="text-danger"><%= game.moment.date %> (<%= game.moment.from %>)</span>
                 <% } %>
              </div>
             <div class="game-reserved"><strong>Reserved:</strong> <%= Math.min(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0)%></div>
