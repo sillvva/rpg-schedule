@@ -78,3 +78,11 @@ input[readonly], input[disabled] {
 .game {
     border-radius: 5px; background: #36393F; padding: 10px;
 }
+
+.game-name {
+    font-size: 16px;
+}
+
+.game div {
+    font-size: 12px;
+}
