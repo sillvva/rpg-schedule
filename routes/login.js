@@ -38,7 +38,8 @@ module.exports = () => {
                 res.render('error', { message: error });
             })
         } else {
-            res.redirect(process.env.AUTH_URL);
+            res.render('error', {message: 'test'});
+            // res.redirect(process.env.AUTH_URL);
         }
     });
 
