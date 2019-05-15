@@ -22,63 +22,67 @@ module.exports = (options) => {
                             authorization: `${access.token_type} ${access.access_token}`
                         }
                     }, async (error, response, body) => {
-                        if (!error && response.statusCode === 200) {
-                            const response = JSON.parse(body);
-                            const { username, discriminator, id } = response;
-                            const tag = `${username}#${discriminator}`;
+                        try {
+                            if (!error && response.statusCode === 200) {
+                                const response = JSON.parse(body);
+                                const { username, discriminator, id } = response;
+                                const tag = `${username}#${discriminator}`;
 
-                            const data = {
-                                guilds: [],
-                                guildIds: []
-                            };
+                                const data = {
+                                    guilds: [],
+                                    guildIds: []
+                                };
 
-                            client.guilds.forEach(guild => {
-                                guild.members.forEach(member => {
-                                    if (member.id === id) {
-                                        data.guilds.push({
-                                            id: guild.id,
-                                            name: guild.name,
-                                            icon: guild.iconURL,
-                                            games: []
-                                        });
-                                    }
+                                client.guilds.forEach(guild => {
+                                    guild.members.forEach(member => {
+                                        if (member.id === id) {
+                                            data.guilds.push({
+                                                id: guild.id,
+                                                name: guild.name,
+                                                icon: guild.iconURL,
+                                                games: []
+                                            });
+                                        }
+                                    });
                                 });
-                            });
 
-                            data.guildIds = data.guilds.reduce((i, g) => {
-                                i.push(g.id);
-                                return i;
-                            }, []);
-                            // const games = Game.fetchAllBy({
-                            //     s: {
-                            //         $in: data.guilds.reduce((i, g) => {
-                            //             i.push(g.id);
-                            //             return i;
-                            //         }, [])
-                            //     }
-                            // });
+                                data.guildIds = data.guilds.reduce((i, g) => {
+                                    i.push(g.id);
+                                    return i;
+                                }, []);
+                                // const games = Game.fetchAllBy({
+                                //     s: {
+                                //         $in: data.guilds.reduce((i, g) => {
+                                //             i.push(g.id);
+                                //             return i;
+                                //         }, [])
+                                //     }
+                                // });
 
-                            res.render('games', data);
+                                res.render('games', data);
 
-                            // request({
-                            //     url: 'https://discordapp.com/api/users/@me/guilds',
-                            //     method: 'GET',
-                            //     headers: {
-                            //         authorization: `${access.token_type} ${access.access_token}`
-                            //     }
-                            // }, function (error, response, body) {
-                            //     if (!error && response.statusCode === 200) {
-                            //         const response = JSON.parse(body);
-                            //         console.log(response);
-                            //         console.log(client.guilds);
-                            //         res.render('error', { message: 'Check logs' });
-                            //         return;
-                            //     }
-                            //     res.render('error', { message: 'Err: '+error });
-                            // });
-                            return;
+                                // request({
+                                //     url: 'https://discordapp.com/api/users/@me/guilds',
+                                //     method: 'GET',
+                                //     headers: {
+                                //         authorization: `${access.token_type} ${access.access_token}`
+                                //     }
+                                // }, function (error, response, body) {
+                                //     if (!error && response.statusCode === 200) {
+                                //         const response = JSON.parse(body);
+                                //         console.log(response);
+                                //         console.log(client.guilds);
+                                //         res.render('error', { message: 'Check logs' });
+                                //         return;
+                                //     }
+                                //     res.render('error', { message: 'Err: '+error });
+                                // });
+                                return;
+                            }
+                            res.render('error', { message: 'Err: '+error });
+                        } catch(e) {
+                            res.render('error', { message: 'Err: '+e.message });
                         }
-                        res.render('error', { message: 'Err: '+error });
                     });
                 } else {
                     res.redirect(config.urls.login);
