@@ -20,10 +20,8 @@ module.exports = (options) => {
         }
         try {
             if (req.session.status) {
-                const access = req.session.status.access.token_type;
-                if (access) {
-                    console.log(access);
-                    console.log(`${access.token_type} ${access.access_token}`);
+                const access = req.session.status.access;
+                if (access.token_type) {
                     request({
                         url: 'https://discordapp.com/api/users/@me',
                         method: 'GET',
@@ -32,7 +30,6 @@ module.exports = (options) => {
                         }
                     }, async (error, response, body) => {
                         try {
-                            console.log(error, response.statusCode);
                             if (!error && response.statusCode === 200) {
                                 const response = JSON.parse(body);
                                 const { username, discriminator, id, avatar } = response;
@@ -111,7 +108,6 @@ module.exports = (options) => {
             }
         }
         catch(e) {
-            console.log(e);
             res.render('error', { message: e.message });
         }
     });
