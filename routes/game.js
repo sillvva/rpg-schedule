@@ -20,14 +20,6 @@ module.exports = (options) => {
                         method: 'POST',
                         headers: {
                             authorization: `${access.token_type} ${access.access_token}`
-                        },
-                        form: {
-                            client_id: process.env.CLIENT_ID,
-                            client_secret: process.env.CLIENT_SECRET,
-                            grant_type: 'authorization_code',
-                            code: req.query.code,
-                            redirect_uri: process.env.HOST+config.urls.login,
-                            scope: 'identify guilds',
                         }
                     }, function (error, response, body) {
                         console.log(error, response.statusCode);
