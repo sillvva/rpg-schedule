@@ -61,6 +61,10 @@ nav .guild-name img {
     color: #fff; text-decoration: none;
 }
 
+.breadcrumb-divider {
+    margin: 0 8px;
+}
+
 .guild-name {
     line-height: 1.5;
     font-size: 20px;

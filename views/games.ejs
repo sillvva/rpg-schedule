@@ -34,10 +34,10 @@
 </nav>
 <p>&nbsp;</p>
 <p style="margin: 0;">&nbsp;</p>
-<h6 class="breadcrumbs">
-    <a href="<%= config.urls.game.dashboard %>">Games</a>
-</h6>
 <div class="col-xs-12 col-sm-12 col-md-10 col-lg-8 col-xl-6 mx-auto">
+    <h6 class="breadcrumbs">
+        <a href="<%= config.urls.game.dashboard %>">Games</a>
+    </h6>
     <% guilds.forEach(guild => { %>
     <h2 class="guild-name">
         <a href="<%= config.urls.game.create %>?s=<%= guild.id %>" class="btn btn-primary btn-sm float-right">New Game</a>
