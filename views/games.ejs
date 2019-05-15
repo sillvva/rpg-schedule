@@ -46,7 +46,7 @@
     <h6 class="breadcrumbs">
         Games
     </h6>
-    <% guilds.forEach(guild => { %>
+    <% guilds.filter(guild => guild.permission).forEach(guild => { %>
     <hr />
     <h2 class="guild-name">
         <% if (guild.permission) { %>
