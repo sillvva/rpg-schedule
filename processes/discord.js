@@ -49,7 +49,7 @@ const discordProcesses = readyCallback => {
                             (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} pruning ${guildConfig.pruning ? 'on' : 'off'}\` - \`on/off\` - Automatically delete old announcements\n` : ``) +
                             (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} embeds ${guildConfig.embeds || guildConfig.embeds == null ? 'on' : 'off'}\` - \`on/off\` - Use discord embeds for announcements\n` : ``) +
                             (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} role role name\` - Assign a role as a prerequisite for posting games\n` : ``) +
-                            (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} password password\` - Configure the password for posting games\n` : ``) +
+                            (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} password password\` - Configure a password for posting games\n` : ``) +
                             (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} password\` - Remove the password\n` : ``) : ``) +
                         `\nUsage\n` +
                         `\`${process.env.BOTCOMMAND_SCHEDULE} link\` - Retrieve link for posting games`

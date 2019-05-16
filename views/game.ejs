@@ -26,12 +26,12 @@
             RPG Schedule
         </a>
 
-        <% if (account) { %>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#menu" aria-controls="menu" aria-expanded="false">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="menu">
             <ul class="navbar-nav ml-auto">
+                <% if (account) { %>
                 <li class="nav-item">
                     <a class="nav-link" href="#">
                         <img class="guild-icon" src="<%= account.user.avatarURL %>" alt="" />
@@ -43,9 +43,15 @@
                         Logout
                     </a>
                 </li>
+                <% } else { %>
+                <li class="nav-item">
+                    <a class="nav-link" href="<%= config.urls.login %>">
+                        Login
+                    </a>
+                </li>
+                <% } %>
             </ul>
         </div>
-        <% } %>
     </div>
 </nav>
 <div class="container">
@@ -245,8 +251,8 @@
             return response.json();
         })
         .then(session => {
-            if (!session) window.location = '/';
-            if (!session.status) window.location = '/';
+            if (!session) window.location = '<%= config.urls.base %>';
+            if (!session.status) window.location = '<%= config.urls.base %>';
             if (!(session.status.loggedInTo || []).includes('<%= s %>')) {
                 const password = prompt('Enter the password provided by the server');
                 fetch('<%= config.urls.game.password %>?s=<%= s %>&p='+escape(password), { method: 'GET' })
@@ -255,11 +261,19 @@
                     })
                     .then(data => {
                         if (!data.result) {
-                            window.location = '/';
+                            <% if (account) { %>
+                            window.location = '<%= config.urls.game.dashboard %>';
+                            <% } else { %>
+                            window.location = '<%= config.urls.base %>';
+                            <% } %>
                         }
                     })
                     .catch(err => {
-                        window.location = '/'
+                        <% if (account) { %>
+                        window.location = '<%= config.urls.game.dashboard %>';
+                        <% } else { %>
+                        window.location = '<%= config.urls.base %>';
+                        <% } %>
                     });
             }
         })
