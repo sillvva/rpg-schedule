@@ -87,8 +87,8 @@
             const parsed = {
                 calendar: moment(date).utcOffset(moment().utcOffset()).calendar(),
                 from: moment(date).utcOffset(moment().utcOffset()).fromNow()
-            }
-            $(this).html(`${parse.calendar} (${parsed.from})`);
+            };
+            $(this).html(`${parsed.calendar} (${parsed.from})`);
         });
     };
 
