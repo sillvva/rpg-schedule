@@ -85,8 +85,8 @@
         $('[data-datetime]').each(function() {
             const date = $(this).get(0).dataset.datetime;
             const parsed = {
-                calendar: moment(date).calendar(),
-                from: moment(date).fromNow()
+                calendar: moment(date).utcOffset(moment().utcOffset()).calendar(),
+                from: moment(date).utcOffset(moment().utcOffset()).fromNow()
             }
             $(this).html(`${parse.calendar} (${parsed.from})`);
         });
