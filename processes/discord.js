@@ -22,6 +22,7 @@ const discordProcesses = readyCallback => {
         if (message.content.startsWith(process.env.BOTCOMMAND_SCHEDULE)) {
             const parts = message.content.trim().split(' ').slice(1);
             const cmd = parts.reverse().pop();
+            parts.reverse();
 
             if (!message.channel.guild) {
                 message.reply('This command will only work in a server');
