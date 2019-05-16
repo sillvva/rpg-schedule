@@ -46,10 +46,12 @@
     <h6 class="breadcrumbs">
         Games
     </h6>
-    <% guilds.forEach(guild => { %>
+    <% guilds.filter(guild => guild.permission).forEach(guild => { %>
     <hr />
     <h2 class="guild-name">
+        <% if (guild.permission) { %>
         <a href="<%= config.urls.game.create %>?s=<%= guild.id %>" class="btn btn-primary btn-sm float-right">New Game</a>
+        <% } %>
         <img class="guild-icon" src="<%= guild.icon %>" alt="" />
         <%= guild.name %>
     </h2>
@@ -71,6 +73,12 @@
         <% }); %>
     </div>
     <% }); %>
+    <% if (guilds.filter(guild => guild.permission).length === 0) { %>
+    <div class="no-guilds">
+        <p>You are not a member of a server that has granted you permission to post games. If you would like to use this bot on your own server, click the Invite button below.</p>
+        <a href="/invite" target="_blank" class="btn btn-primary btn-lg">Invite</a>
+    </div>
+    <% } %>
 </div>
 <script type="text/javascript">
     $('[data-datetime]').each(function() {

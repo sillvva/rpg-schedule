@@ -126,3 +126,9 @@ nav .guild-name img {
 .game div {
     font-size: 12px;
 }
+
+.no-guilds {
+    max-width: 400px; margin: auto; text-align: center; padding: 20px;
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    border-radius: 8px; background: #36393F;
+}
