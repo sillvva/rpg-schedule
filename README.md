@@ -69,9 +69,14 @@ https://rpg-schedule.herokuapp.com
 <td>Use discord embeds for announcements</td>
 </tr>
 <tr>
+<td>!schedule role <code>role name</code></td>
+<td>All Roles</td>
+<td>Assign a role as a prerequisite for posting games</td>
+</tr>
+<tr>
 <td>!schedule password <code>password</code></td>
 <td>disabled</td>
-<td>Configure the password for posting games</td>
+<td>Configure a password for posting games</td>
 </tr>
 <tr>
 <td>!schedule password</td>

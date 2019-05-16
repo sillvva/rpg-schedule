@@ -89,13 +89,16 @@
                 from: moment(date).utcOffset(moment().utcOffset()).fromNow()
             };
             $(this).html(`${parsed.calendar} (${parsed.from})`);
+            if (new Date().getTime() >= new Date(date).getTime()) {
+                $(this).addClass('text-danger');
+            }
         });
     };
 
     parseDates();
     setInterval(() => {
         parseDates();
-    }, 60 * 1000);
+    }, 30 * 1000);
 </script>
 </body>
 </html>
