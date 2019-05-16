@@ -68,7 +68,7 @@ const discordProcesses = readyCallback => {
                             `Channel: \`${channel.name}\`\n` +
                             `Pruning: \`${guildConfig.pruning ? 'on' : 'off'}\`\n` +
                             `Embeds: \`${!(guildConfig.embeds === false) ? 'on' : 'off'}\`\n` +
-                            `Password: ${guildConfig.password ? `\`${guildConfig.password}\`` : 'Disabled'}` +
+                            `Password: ${guildConfig.password ? `\`${guildConfig.password}\`` : 'Disabled'}\n` +
                             `Role: ${guildConfig.role ? `\`${guildConfig.role}\`` : 'All Roles'}`
                         );
                     message.author.send(embed);
