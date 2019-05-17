@@ -15,9 +15,9 @@
 <%- include('menu', { config: config, user: account.user }); %>
 <div class="container">
     <h6 class="breadcrumbs">
-        <% if (user) { %>
-        <a href="<%= config.urls.game.dashboard %>">My Games</a>
-        <span class="breadcrumb-divider">/</span>
+        <% if (account.user) { %>
+            <a href="<%= config.urls.game.dashboard %>">My Games</a>
+            <span class="breadcrumb-divider">/</span>
         <% } %>
         <%= title %>
     </h6>
