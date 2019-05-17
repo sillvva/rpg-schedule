@@ -86,13 +86,15 @@
                             (Slot #<%= game.slot %>)
                         <% } %>
                     </div>
-                    <div class="buttons">
-                        <% if (!game.signedup && !game.waitlisted) { %>
-                            <a href="<%= config.urls.game.rsvp %>?g=<%= game._id %>" class="btn btn-success btn-sm">Sign Up</a>
-                        <% } else { %>
-                            <a href="<%= config.urls.game.rsvp %>?g=<%= game._id %>" class="btn btn-danger btn-sm">Drop Out</a>
-                        <% } %>
-                    </div>
+                    <% if (game.method === "automated") { %>
+                        <div class="buttons">
+                            <% if (!game.signedup && !game.waitlisted) { %>
+                                <a href="<%= config.urls.game.rsvp %>?g=<%= game._id %>" class="btn btn-success btn-sm">Sign Up</a>
+                            <% } else { %>
+                                <a href="<%= config.urls.game.rsvp %>?g=<%= game._id %>" class="btn btn-danger btn-sm">Drop Out</a>
+                            <% } %>
+                        </div>
+                    <% } %>
                 </div>
             <% } %>
         <% }); %>
