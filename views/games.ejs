@@ -36,6 +36,15 @@
         <% } %>
     </h2>
     <div class="games">
+        <% if (guild.games.length === 0) { %>
+            <div class="no-games">
+                <% if (dashboard) { %>
+                    There are no games on this server right now
+                <% } else if (games) { %>
+                    There are no upcoming games on this server right now
+                <% } %>
+            </div>
+        <% } %>
         <% guild.games.forEach(game => { %>
             <% if (dashboard && (user.tag === game.dm || user.tag === config.author)) { %>
                 <a class="game" href="<%= config.urls.game.create %>?g=<%= game._id %>">
