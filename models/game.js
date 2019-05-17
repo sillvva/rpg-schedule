@@ -197,7 +197,7 @@ module.exports = class Game {
     }
 
     static ISOGameDate(game) {
-        return `${game.date.replace(/-/g, '')}T${game.time.replace(/:/g, '')}:00${game.timezone >= 0 ? '+' : '-'}${parseTimeZoneISO(game.timezone)}`;
+        return `${game.date.replace(/-/g, '')}T${game.time.replace(/:/g, '')}00${game.timezone >= 0 ? '+' : '-'}${parseTimeZoneISO(game.timezone)}`;
     }
 };
 
