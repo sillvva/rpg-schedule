@@ -20,10 +20,11 @@
 <div class="container">
     <h6 class="breadcrumbs">
         <% if (games) { %>
-            Games
-            <a href="<%= config.urls.dashboard %>" class="btn btn-primary btn-sm float-right">New Game</a>
+            Upcoming Games
+            <a href="<%= config.urls.game.dashboard %>" class="btn btn-primary btn-sm float-right">My Games</a>
         <% } else if (dashboard) { %>
             My Games
+            <a href="<%= config.urls.game.games %>" class="btn btn-primary btn-sm float-right">Upcoming Games</a>
         <% } %>
     </h6>
     <% guilds.filter(guild => guild.permission).forEach(guild => { %>
@@ -39,7 +40,7 @@
         <% if (guild.games.length === 0) { %>
             <div class="no-games">
                 <% if (dashboard) { %>
-                    There are no games on this server right now
+                    You are not dming or playing in any games on this server right now
                 <% } else if (games) { %>
                     There are no upcoming games on this server right now
                 <% } %>
