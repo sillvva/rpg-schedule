@@ -31,7 +31,16 @@
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="menu">
-            <ul class="navbar-nav ml-auto">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item active">
+                    <a class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" href="#">Games</a>
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" href="<%= config.urls.game.games %>">All Games</a>
+                        <a class="dropdown-item" href="<%= config.urls.game.dashboard %>">My Games</a>
+                    </div>
+                </li>
+            </ul>
+            <ul class="navbar-nav">
                 <li class="nav-item">
                     <a class="nav-link" href="#">
                         <img class="guild-icon" src="<%= account.user.avatarURL %>" alt="" />
@@ -51,7 +60,7 @@
 <div class="container">
     <h6 class="breadcrumbs">
         <% if (account) { %>
-        <a href="<%= config.urls.game.dashboard %>">Games</a>
+        <a href="<%= config.urls.game.dashboard %>">My Games</a>
         <span class="breadcrumb-divider">/</span>
         <% } %>
         <%= title %>
@@ -268,7 +277,7 @@
         });
     <% } %>
 
-    const getURLs = (date, time, gmtOffset) => {
+    const getTZUrls = (date, time, gmtOffset) => {
         const d = new Date(`${date} ${time} GMT${gmtOffset < 0 ? '-' : '+'}${Math.abs(gmtOffset)}`);
         const n = d.toISOString().replace(/-|:|\.\d+Z/g,'');
         d.setHours(d.getHours()+parseInt(gmtOffset))
@@ -320,19 +329,19 @@
     <% } %>
 
     $('#date').change(function() {
-        var link = getURLs($('#date').val(), $('#time').val(), $('#timezone').val());
+        var link = getTZUrls($('#date').val(), $('#time').val(), $('#timezone').val());
         $('#convertLink').html(`Time Zone Conversion: <a href="${link.convert}" target="_blank">${link.convert}</a>`);
         $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank">${link.countdown}</a>`);
     }).change();
 
     $('#time').change(function() {
-        var link = getURLs($('#date').val(), $('#time').val(), $('#timezone').val());
+        var link = getTZUrls($('#date').val(), $('#time').val(), $('#timezone').val());
         $('#convertLink').html(`Time Zone Conversion: <a href="${link.convert}" target="_blank">${link.convert}</a>`);
         $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank">${link.countdown}</a>`);
     }).change();
 
     $('#timezone').change(function() {
-        var link = getURLs($('#date').val(), $('#time').val(), $('#timezone').val());
+        var link = getTZUrls($('#date').val(), $('#time').val(), $('#timezone').val());
         $('#convertLink').html(`Time Zone Conversion: <a href="${link.convert}" target="_blank">${link.convert}</a>`);
         $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank">${link.countdown}</a>`);
     }).change();

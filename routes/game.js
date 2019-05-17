@@ -14,6 +14,7 @@ module.exports = (options) => {
     router.use('/', async (req, res, next) => {
         req.userData = null;
         const isGame = Object.values(config.urls.game).find(url => req.originalUrl.indexOf(url) === 0);
+        const isGames = req.originalUrl.indexOf(config.urls.game.games) === 0;
         const isDashboard = req.originalUrl.indexOf(config.urls.game.dashboard) === 0;
         if (!isGame) {
             next();
@@ -38,6 +39,8 @@ module.exports = (options) => {
 
                                 const data = {
                                     config: config,
+                                    games: isGames,
+                                    dashboard: isDashboard,
                                     user: {
                                         ...response,
                                         ...{
@@ -55,6 +58,7 @@ module.exports = (options) => {
                                                 id: guild.id,
                                                 name: guild.name,
                                                 icon: guild.iconURL,
+                                                channels: guild.channels,
                                                 games: []
                                             });
                                         }
@@ -70,8 +74,26 @@ module.exports = (options) => {
                                     }
                                 };
 
-                                if (tag !== 'Sillvva#2532') {
-                                    gameOptions.dm = tag;
+                                if (isDashboard && tag !== config.author) {
+                                    gameOptions.$or = [
+                                        {
+                                            dm: tag
+                                        },
+                                        {
+                                            reserved: {
+                                                $regex: tag.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')
+                                            }
+                                        }
+                                    ];
+                                }
+
+                                if (isGames) {
+                                    gameOptions.timestamp = {
+                                        $gt: new Date().getTime()
+                                    };
+                                    gameOptions.dm = {
+                                        $ne: tag
+                                    };
                                 }
 
                                 const games = await Game.fetchAllBy(gameOptions);
@@ -82,6 +104,8 @@ module.exports = (options) => {
                                         calendar: moment(date).utcOffset(parseInt(game.timezone)).calendar(),
                                         from: moment(date).utcOffset(parseInt(game.timezone)).fromNow()
                                     };
+
+                                    game.signedup = game.reserved.split("\n").find(t => t === tag);
 
                                     const gi = data.guilds.findIndex(g => g.id === game.s);
                                     data.guilds[gi].games.push(game);
@@ -118,6 +142,10 @@ module.exports = (options) => {
         catch(e) {
             res.render('error', { message: e.message });
         }
+    });
+
+    router.use(config.urls.game.games, async (req, res, next) => {
+        res.render('games', req.account);
     });
 
     router.use(config.urls.game.dashboard, async (req, res, next) => {
@@ -236,6 +264,32 @@ module.exports = (options) => {
         } catch(err) {
             res.render('error', { message: err });
         }
+    });
+
+    router.use(config.urls.game.rsvp, async (req, res, next) => {
+        if (req.query.g) {
+            const game = await Game.fetch(req.query.g);
+            if (game) {
+                const guild = req.account.guilds.find(s => s.id === game.s);
+                if (guild) {
+                    const channel = guild.channels.find(c => c.id === game.c);
+                    if (channel) {
+                        const reserved = game.reserved.split("\n");
+                        if (reserved.find(t => t === req.account.user.tag)) {
+                            reserved.splice(reserved.indexOf(req.account.user.tag), 1);
+                        } else {
+                            reserved.push(req.account.user.tag);
+                        }
+
+                        game.reserved = reserved;
+
+                        const result = await Game.save(channel, game);
+                    }
+                }
+            }
+        }
+
+        res.redirect(config.urls.game.games);
     });
 
     router.get(config.urls.game.delete, async (req, res, next) => {

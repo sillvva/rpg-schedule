@@ -26,7 +26,16 @@
         </button>
 
         <div class="collapse navbar-collapse" id="menu">
-            <ul class="navbar-nav ml-auto">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item active">
+                    <a class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" href="#">Games</a>
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" href="<%= config.urls.game.games %>">All Games</a>
+                        <a class="dropdown-item" href="<%= config.urls.game.dashboard %>">My Games</a>
+                    </div>
+                </li>
+            </ul>
+            <ul class="navbar-nav">
                 <li class="nav-item">
                     <a class="nav-link" href="#">
                         <img class="guild-icon" src="<%= user.avatarURL %>" alt="" />
@@ -44,30 +53,59 @@
 </nav>
 <div class="container">
     <h6 class="breadcrumbs">
-        Games
+        <% if (games) { %>
+            Games
+        <% } else if (dashboard) { %>
+            My Games
+        <% } %>
     </h6>
     <% guilds.forEach(guild => { %>
     <hr />
     <h2 class="guild-name">
-        <a href="<%= config.urls.game.create %>?s=<%= guild.id %>" class="btn btn-primary btn-sm float-right">New Game</a>
         <img class="guild-icon" src="<%= guild.icon %>" alt="" />
         <%= guild.name %>
+        <% if (dashboard) { %>
+            <a href="<%= config.urls.game.create %>?s=<%= guild.id %>" class="btn btn-primary btn-sm float-right">New Game</a>
+        <% } %>
     </h2>
     <div class="games">
         <% guild.games.forEach(game => { %>
-        <a class="game" href="<%= config.urls.game.create %>?g=<%= game._id %>">
-            <h4 class="game-name"><%= game.adventure %></h4>
-            <div class="game-time">
-                <strong>When:</strong>
-                <% if (game.timestamp > new Date().getTime()) {%>
-                <%= game.moment.calendar %> (<%= game.moment.from %>)
-                <% } else { %>
-                <span class="text-danger"><%= game.moment.date %> (<%= game.moment.from %>)</span>
-                <% } %>
-             </div>
-            <div class="game-reserved"><strong>Reserved:</strong> <%= Math.min(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0)%></div>
-            <div class="game-reserved"><strong>Waitlisted:</strong> <%= Math.max(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0) - parseInt(game.players)%></div>
-        </a>
+            <% if (dashboard) { %>
+                <a class="game" href="<%= config.urls.game.create %>?g=<%= game._id %>">
+                    <h4 class="game-name"><%= game.adventure %></h4>
+                    <div class="game-time">
+                        <strong>When:</strong>
+                        <% if (game.timestamp > new Date().getTime()) { %>
+                        <%= game.moment.calendar %> (<%= game.moment.from %>)
+                        <% } else { %>
+                        <span class="text-danger"><%= game.moment.date %> (<%= game.moment.from %>)</span>
+                        <% } %>
+                    </div>
+                    <div class="game-reserved"><strong>Reserved:</strong> <%= Math.min(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0)%></div>
+                    <div class="game-reserved"><strong>Waitlisted:</strong> <%= Math.max(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0) - parseInt(game.players)%></div>
+                </a>
+            <% } else if (games) { %>
+                <div class="game">
+                    <h4 class="game-name"><%= game.adventure %></h4>
+                    <div class="game-time">
+                        <strong>When:</strong>
+                        <% if (game.timestamp > new Date().getTime()) { %>
+                        <%= game.moment.calendar %> (<%= game.moment.from %>)
+                        <% } else { %>
+                        <span class="text-danger"><%= game.moment.date %> (<%= game.moment.from %>)</span>
+                        <% } %>
+                    </div>
+                    <div class="game-reserved"><strong>Reserved:</strong> <%= Math.min(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0)%></div>
+                    <div class="game-reserved"><strong>Waitlisted:</strong> <%= Math.max(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0) - parseInt(game.players)%></div>
+                    <div class="buttons">
+                        <% if (!game.signedup) { %>
+                            <a href="<%= config.urls.game.rsvp %>?g=<%= game._id %>" class="btn btn-success btn-sm">Sign Up</a>
+                        <% } else { %>
+                            <a href="<%= config.urls.game.rsvp %>?g=<%= game._id %>" class="btn btn-danger btn-sm">Drop Out</a>
+                        <% } %>
+                    </div>
+                </div>
+            <% } %>
         <% }); %>
     </div>
     <% }); %>

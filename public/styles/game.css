@@ -60,12 +60,16 @@ hr {
     margin-right: 5px;
 }
 
-nav .guild-name {
-    margin: 0 0 0 1rem; font-weight: normal;
-}
+@media (max-width: 767px) {
+    .navbar-nav.ml-auto {
+        border-top: 1px solid rgba(255,255,255,0.5);
+        padding-top: 10px;
+        margin-top: 10px;
+    }
 
-nav .guild-name img {
-    margin-right: 4px;
+    .guild-icon {
+        display: none;
+    }
 }
 
 .breadcrumbs {
@@ -125,4 +129,8 @@ nav .guild-name img {
 
 .game div {
     font-size: 12px;
+}
+
+.game .buttons {
+    margin-top: 10px;
 }
