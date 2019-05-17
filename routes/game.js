@@ -289,27 +289,30 @@ module.exports = (options) => {
     });
 
     router.use(config.urls.game.rsvp, async (req, res, next) => {
-        if (req.query.g) {
-            const game = await Game.fetch(req.query.g);
-            if (game) {
-                const guild = req.account.guilds.find(s => s.id === game.s);
-                if (guild) {
-                    const channel = guild.channels.find(c => c.id === game.c);
-                    if (channel) {
-                        console.log(game.reserved, typeof game.reserved);
-                        const reserved = (game.reserved || '').split("\n");
-                        if (reserved.find(t => t === req.account.user.tag)) {
-                            reserved.splice(reserved.indexOf(req.account.user.tag), 1);
-                        } else {
-                            reserved.push(req.account.user.tag);
+        try {
+            if (req.query.g) {
+                const game = await Game.fetch(req.query.g);
+                if (game) {
+                    const guild = req.account.guilds.find(s => s.id === game.s);
+                    if (guild) {
+                        const channel = guild.channels.find(c => c.id === game.c);
+                        if (channel) {
+                            const reserved = game.reserved.split(/\r?\n/);
+                            if (reserved.find(t => t === req.account.user.tag)) {
+                                reserved.splice(reserved.indexOf(req.account.user.tag), 1);
+                            } else {
+                                reserved.push(req.account.user.tag);
+                            }
+    
+                            game.reserved = reserved.join("\n");
+    
+                            const result = await Game.save(channel, game);
                         }
-
-                        game.reserved = reserved;
-
-                        const result = await Game.save(channel, game);
                     }
                 }
             }
+        } catch(err) {
+            console.log(err);
         }
 
         res.redirect(config.urls.game.games);
