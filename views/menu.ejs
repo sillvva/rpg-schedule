@@ -8,7 +8,7 @@
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="menu">
-            <% if (account) { %>
+            <% if (user) { %>
                 <ul class="navbar-nav mr-auto">
                     <li class="nav-item dropdown active">
                         <a class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" href="#">Games</a>
@@ -20,7 +20,7 @@
                 </ul>
             <% } %>
             <ul class="navbar-nav">
-                <% if (account) { %>
+                <% if (user) { %>
                     <li class="nav-item">
                         <a class="nav-link" href="#">
                             <img class="guild-icon" src="<%= user.avatarURL %>" alt="" />

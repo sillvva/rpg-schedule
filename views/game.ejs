@@ -12,10 +12,10 @@
     <% } %>
 </head>
 <body>
-<% include('menu', { account: account, config: config, user: user }) %>
+<% include('menu', { config: config, user: account.user }) %>
 <div class="container">
     <h6 class="breadcrumbs">
-        <% if (account) { %>
+        <% if (user) { %>
         <a href="<%= config.urls.game.dashboard %>">My Games</a>
         <span class="breadcrumb-divider">/</span>
         <% } %>
