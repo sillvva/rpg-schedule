@@ -291,7 +291,6 @@ module.exports = (options) => {
     });
 
     router.use(config.urls.game.rsvp, async (req, res, next) => {
-        console.log(req.headers);
         try {
             if (req.query.g) {
                 const game = await Game.fetch(req.query.g);
@@ -318,7 +317,7 @@ module.exports = (options) => {
             console.log(err);
         }
 
-        res.redirect(req.query.return ? req.query.return : config.urls.game.games);
+        res.redirect(req.headers.referer ? req.headers.referer : config.urls.game.games);
     });
 
     router.get(config.urls.game.delete, async (req, res, next) => {
