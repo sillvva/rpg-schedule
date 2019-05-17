@@ -101,7 +101,7 @@ module.exports = (options) => {
 
                                 const games = await Game.fetchAllBy(gameOptions);
                                 games.forEach(game => {
-                                    const date = `${game.date} ${game.time} GMT${game.timezone >= 0 ? '+' : '-'}${Math.abs(game.timezone)}`;
+                                    const date = Game.ISOGameDate(game);
                                     game.moment = {
                                         raw: date,
                                         date: moment(date).utcOffset(parseInt(game.timezone)).format(config.formats.dateLong),

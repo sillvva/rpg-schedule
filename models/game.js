@@ -195,6 +195,10 @@ module.exports = class Game {
             .collection(collection)
             .deleteOne({ _id: new ObjectId(game._id) });
     }
+
+    static ISOGameDate(game) {
+        return `${game.date.replace(/-/g, '')}T${game.time.replace(/:/g, '')}:00${game.timezone >= 0 ? '+' : '-'}${parseTimeZoneISO(game.timezone)}`;
+    }
 };
 
 const parseChannels = (text, channels) => {
@@ -210,4 +214,16 @@ const parseChannels = (text, channels) => {
         console.log(err);
     }
     return text;
+};
+
+const parseTimeZoneISO = (timezone) => {
+    const tz = Math.abs(timezone);
+    const hours = Math.floor(tz);
+    const minutes = (tz - hours) / 100 * 60;
+    const zeroPad = (n, width, z) => {
+        z = z || '0';
+        n = n + '';
+        return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
+    };
+    return zeroPad(hours, 2)+zeroPad(minutes, 2);
 };
