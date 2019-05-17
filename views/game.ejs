@@ -12,7 +12,7 @@
     <% } %>
 </head>
 <body>
-<% include('menu', { config: config, user: account.user }) %>
+<%- include('menu', { config: config, user: account.user }); %>
 <div class="container">
     <h6 class="breadcrumbs">
         <% if (user) { %>
