@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="/styles/game.css" />
 </head>
 <body>
-<% include menu.ejs %>
+<% include('menu', { account: account, config: config, user: user }) %>
 <div class="container">
     <h6 class="breadcrumbs">
         <% if (games) { %>
