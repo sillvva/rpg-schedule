@@ -21,6 +21,7 @@
     <h6 class="breadcrumbs">
         <% if (games) { %>
             Games
+            <a href="<%= config.urls.dashboard %>" class="btn btn-primary btn-sm float-right">New Game</a>
         <% } else if (dashboard) { %>
             My Games
         <% } %>
