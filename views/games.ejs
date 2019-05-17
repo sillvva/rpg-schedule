@@ -9,10 +9,10 @@
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js" integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k" crossorigin="anonymous"></script>
-
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
 
-    <link rel="stylesheet" href="/styles/game.css">
+    <script src="/scripts/moment.js"></script>
+    <link rel="stylesheet" href="/styles/game.css" />
 </head>
 <body>
 <nav class="navbar navbar-expand-md sticky-top navbar-dark bg-primary">
@@ -59,12 +59,12 @@
             My Games
         <% } %>
     </h6>
-    <% guilds.forEach(guild => { %>
+    <% guilds.filter(guild => guild.permission).forEach(guild => { %>
     <hr />
     <h2 class="guild-name">
         <img class="guild-icon" src="<%= guild.icon %>" alt="" />
         <%= guild.name %>
-        <% if (dashboard) { %>
+        <% if (dashboard && guild.permission) { %>
             <a href="<%= config.urls.game.create %>?s=<%= guild.id %>" class="btn btn-primary btn-sm float-right">New Game</a>
         <% } %>
     </h2>
@@ -75,10 +75,10 @@
                     <h4 class="game-name"><%= game.adventure %></h4>
                     <div class="game-time">
                         <strong>When:</strong>
-                        <% if (game.timestamp > new Date().getTime()) { %>
-                        <%= game.moment.calendar %> (<%= game.moment.from %>)
+                        <% if (game.timestamp > new Date().getTime()) {%>
+                            <span data-datetime="<%= game.moment.raw %>"><%= game.moment.calendar %> (<%= game.moment.from %>)</span>
                         <% } else { %>
-                        <span class="text-danger"><%= game.moment.date %> (<%= game.moment.from %>)</span>
+                            <span data-datetime="<%= game.moment.raw %>" class="text-danger"><%= game.moment.date %> (<%= game.moment.from %>)</span>
                         <% } %>
                     </div>
                     <div class="game-reserved"><strong>Reserved:</strong> <%= Math.min(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0)%></div>
@@ -89,10 +89,10 @@
                     <h4 class="game-name"><%= game.adventure %></h4>
                     <div class="game-time">
                         <strong>When:</strong>
-                        <% if (game.timestamp > new Date().getTime()) { %>
-                        <%= game.moment.calendar %> (<%= game.moment.from %>)
+                        <% if (game.timestamp > new Date().getTime()) {%>
+                            <span data-datetime="<%= game.moment.raw %>"><%= game.moment.calendar %> (<%= game.moment.from %>)</span>
                         <% } else { %>
-                        <span class="text-danger"><%= game.moment.date %> (<%= game.moment.from %>)</span>
+                            <span data-datetime="<%= game.moment.raw %>" class="text-danger"><%= game.moment.date %> (<%= game.moment.from %>)</span>
                         <% } %>
                     </div>
                     <div class="game-reserved"><strong>Reserved:</strong> <%= Math.min(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0)%></div>
@@ -109,11 +109,32 @@
         <% }); %>
     </div>
     <% }); %>
+    <% if (guilds.filter(guild => guild.permission).length === 0) { %>
+    <div class="no-guilds">
+        <p>You are not a member of a server that has granted you permission to post games. If you would like to use this bot on your own server, click the Invite button below.</p>
+        <a href="/invite" target="_blank" class="btn btn-primary btn-lg">Invite</a>
+    </div>
+    <% } %>
 </div>
 <script type="text/javascript">
-    $('[data-datetime]').each(function() {
-        console.log($(this).get(0))
-    });
+    const parseDates = () => {
+        $('[data-datetime]').each(function() {
+            const date = $(this).get(0).dataset.datetime;
+            const parsed = {
+                calendar: moment(date).utcOffset(moment().utcOffset()).calendar(),
+                from: moment(date).utcOffset(moment().utcOffset()).fromNow()
+            };
+            $(this).html(`${parsed.calendar} (${parsed.from})`);
+            if (new Date().getTime() >= new Date(date).getTime()) {
+                $(this).addClass('text-danger');
+            }
+        });
+    };
+
+    parseDates();
+    setInterval(() => {
+        parseDates();
+    }, 30 * 1000);
 </script>
 </body>
 </html>

@@ -1,5 +1,6 @@
 module.exports  = {
     urls: {
+        base: '/',
         game: {
             games: '/games',
             dashboard: '/my-games',

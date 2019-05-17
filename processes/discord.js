@@ -22,6 +22,7 @@ const discordProcesses = readyCallback => {
         if (message.content.startsWith(process.env.BOTCOMMAND_SCHEDULE)) {
             const parts = message.content.trim().split(' ').slice(1);
             const cmd = parts.reverse().pop();
+            parts.reverse();
 
             if (!message.channel.guild) {
                 message.reply('This command will only work in a server');
@@ -43,12 +44,13 @@ const discordProcesses = readyCallback => {
                         `\`${process.env.BOTCOMMAND_SCHEDULE}\` - Display this help window\n` +
                         `\`${process.env.BOTCOMMAND_SCHEDULE} help\` - Display this help window\n` +
                         (canConfigure ? `\nConfiguration\n` +
-                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} configuration\` - Get the bot configuration\n` : ``) +
-                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} channel #channel-name\` - Configure the channel where games are posted\n` : ``) +
-                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} pruning ${guildConfig.pruning ? 'on' : 'off'}\` - \`on/off\` - Automatically delete old announcements\n` : ``) +
-                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} embeds ${guildConfig.embeds || guildConfig.embeds == null ? 'on' : 'off'}\` - \`on/off\` - Use discord embeds for announcements\n` : ``) +
-                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} password password\` - Configure the password for posting games\n` : ``) +
-                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} password\` - Remove the password\n` : ``) : ``) +
+                            (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} configuration\` - Get the bot configuration\n` : ``) +
+                            (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} channel #channel-name\` - Configure the channel where games are posted\n` : ``) +
+                            (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} pruning ${guildConfig.pruning ? 'on' : 'off'}\` - \`on/off\` - Automatically delete old announcements\n` : ``) +
+                            (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} embeds ${guildConfig.embeds || guildConfig.embeds == null ? 'on' : 'off'}\` - \`on/off\` - Use discord embeds for announcements\n` : ``) +
+                            (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} role role name\` - Assign a role as a prerequisite for posting games\n` : ``) +
+                            (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} password password\` - Configure a password for posting games\n` : ``) +
+                            (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} password\` - Remove the password\n` : ``) : ``) +
                         `\nUsage\n` +
                         `\`${process.env.BOTCOMMAND_SCHEDULE} link\` - Retrieve link for posting games`
                     );
@@ -67,7 +69,8 @@ const discordProcesses = readyCallback => {
                             `Channel: \`${channel.name}\`\n` +
                             `Pruning: \`${guildConfig.pruning ? 'on' : 'off'}\`\n` +
                             `Embeds: \`${!(guildConfig.embeds === false) ? 'on' : 'off'}\`\n` +
-                            `Password: ${guildConfig.password ? `\`${guildConfig.password}\`` : 'disabled'}`
+                            `Password: ${guildConfig.password ? `\`${guildConfig.password}\`` : 'Disabled'}\n` +
+                            `Role: ${guildConfig.role ? `\`${guildConfig.role}\`` : 'All Roles'}`
                         );
                     message.author.send(embed);
                 }
@@ -105,6 +108,15 @@ const discordProcesses = readyCallback => {
                         password: parts.join(' ')
                     }).then(result => {
                         message.channel.send('Password updated!');
+                    });
+                }
+            } else if (cmd === 'role') {
+                if (canConfigure) {
+                    GuildConfig.save({
+                        guild: guildId,
+                        role: parts.join(' ')
+                    }).then(result => {
+                        message.channel.send(`Role set to \`${parts.join(' ')}\`!`);
                     });
                 }
             }

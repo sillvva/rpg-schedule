@@ -8,8 +8,15 @@ A discord bot for posting game announcements for RPGs. Features include:
 
 **Note:** Games are automatically pruned 48 - 72 hours after the scheduled time. Or you can delete them manually.
 
-<img src="http://rpg-schedule.herokuapp.com/images/screenshot.png" width="600">
-<img src="http://rpg-schedule.herokuapp.com/images/screenshot2.png" width="600">
+<details>
+  <summary style="font-size: 24px;">Screenshots</summary>
+  
+  <div style="display: grid; grid-template-columns: 1fr 1fr; grid-template-areas: &quot;three three&quot; &quot;one two&quot;;grid-gap: 10px;">
+  	<a href="http://rpg-schedule.herokuapp.com/images/screenshot3.png" target="_blank" style="grid-area: three;"><img src="http://rpg-schedule.herokuapp.com/images/screenshot3.png"></a>
+    <a href="http://rpg-schedule.herokuapp.com/images/screenshot.png" target="_blank" style="grid-area: one;"><img src="http://rpg-schedule.herokuapp.com/images/screenshot.png" width="600"></a>
+  	<a href="http://rpg-schedule.herokuapp.com/images/screenshot2.png" target="_blank" style="grid-area: two;"><img src="http://rpg-schedule.herokuapp.com/images/screenshot2.png" width="600"></a>
+  </div>
+</details>
 
 ## Inviting the discord bot
 
@@ -69,9 +76,14 @@ https://rpg-schedule.herokuapp.com
 <td>Use discord embeds for announcements</td>
 </tr>
 <tr>
+<td>!schedule role <code>role name</code></td>
+<td>All Roles</td>
+<td>Assign a role as a prerequisite for posting games</td>
+</tr>
+<tr>
 <td>!schedule password <code>password</code></td>
 <td>disabled</td>
-<td>Configure the password for posting games</td>
+<td>Configure a password for posting games</td>
 </tr>
 <tr>
 <td>!schedule password</td>
