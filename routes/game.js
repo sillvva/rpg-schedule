@@ -296,7 +296,8 @@ module.exports = (options) => {
                 if (guild) {
                     const channel = guild.channels.find(c => c.id === game.c);
                     if (channel) {
-                        const reserved = game.reserved.split("\n");
+                        console.log(game.reserved, typeof game.reserved);
+                        const reserved = (game.reserved || '').split("\n");
                         if (reserved.find(t => t === req.account.user.tag)) {
                             reserved.splice(reserved.indexOf(req.account.user.tag), 1);
                         } else {
