@@ -1,6 +1,6 @@
-const express = require('express');
+const express = require("express");
 
-const config = require('../models/config');
+const config = require("../models/config");
 
 module.exports = () => {
     const router = express.Router();

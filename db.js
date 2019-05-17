@@ -1,4 +1,4 @@
-const mongodb = require('mongodb');
+const mongodb = require("mongodb");
 
 let _db;
 
@@ -11,23 +11,22 @@ class database {
     async connect() {
         let result = false;
         try {
-            result = await this.client.connect(
-                process.env.MONGODB_URL,
-                { useNewUrlParser: true }
-            )
+            result = await this.client.connect(process.env.MONGODB_URL, { useNewUrlParser: true });
         } catch (err) {
             console.log(err);
         }
-        
+
         if (result) {
             this.connected = true;
             _db = result.db();
             return true;
         }
-        
+
         return false;
     }
 }
 
 exports.db = new database();
-exports.connection = () => { return _db };
+exports.connection = () => {
+    return _db;
+};
