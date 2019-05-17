@@ -1,75 +1,89 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Games Dashboard - RPG Schedule</title>
-    <link rel="icon" type="image/png" href="/images/rpg-schedule.png">
+    <title>
+        <% if (games) { %>
+            Games
+        <% } else if (dashboard) { %>
+            My Games
+        <% } %> 
+        - RPG Schedule
+    </title>
 
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js" integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k" crossorigin="anonymous"></script>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+    <% include head.ejs %>
 
     <script src="/scripts/moment.js"></script>
     <link rel="stylesheet" href="/styles/game.css" />
 </head>
 <body>
-<nav class="navbar navbar-expand-md sticky-top navbar-dark bg-primary">
-    <div class="container">
-        <a class="navbar-brand" href="#">
-            <img src="/images/rpg-schedule.png" class="navbar-icon" alt="" />
-            RPG Schedule
-        </a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#menu" aria-controls="menu" aria-expanded="false">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-
-        <div class="collapse navbar-collapse" id="menu">
-            <ul class="navbar-nav ml-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="#">
-                        <img class="guild-icon" src="<%= user.avatarURL %>" alt="" />
-                        <%= user.username %>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="<%= config.urls.logout %>">
-                        Logout
-                    </a>
-                </li>
-            </ul>
-        </div>
-    </div>
-</nav>
+<%- include('menu', { config: config, user: user }); %>
 <div class="container">
     <h6 class="breadcrumbs">
-        Games
+        <% if (games) { %>
+            Games
+        <% } else if (dashboard) { %>
+            My Games
+        <% } %>
     </h6>
     <% guilds.filter(guild => guild.permission).forEach(guild => { %>
     <hr />
     <h2 class="guild-name">
-        <% if (guild.permission) { %>
-        <a href="<%= config.urls.game.create %>?s=<%= guild.id %>" class="btn btn-primary btn-sm float-right">New Game</a>
-        <% } %>
         <img class="guild-icon" src="<%= guild.icon %>" alt="" />
         <%= guild.name %>
+        <% if (dashboard && guild.permission) { %>
+            <a href="<%= config.urls.game.create %>?s=<%= guild.id %>" class="btn btn-primary btn-sm float-right">New Game</a>
+        <% } %>
     </h2>
     <div class="games">
         <% guild.games.forEach(game => { %>
-        <a class="game" href="<%= config.urls.game.create %>?g=<%= game._id %>">
-            <h4 class="game-name"><%= game.adventure %></h4>
-            <div class="game-time">
-                <strong>When:</strong>
-                <% if (game.timestamp > new Date().getTime()) {%>
-                <span data-datetime="<%= game.moment.raw %>"><%= game.moment.calendar %> (<%= game.moment.from %>)</span>
-                <% } else { %>
-                <span data-datetime="<%= game.moment.raw %>" class="text-danger"><%= game.moment.date %> (<%= game.moment.from %>)</span>
-                <% } %>
-             </div>
-            <div class="game-reserved"><strong>Reserved:</strong> <%= Math.min(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0)%></div>
-            <div class="game-reserved"><strong>Waitlisted:</strong> <%= Math.max(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0) - parseInt(game.players)%></div>
-        </a>
+            <% if (dashboard && (user.tag === game.dm || user.tag === config.author)) { %>
+                <a class="game" href="<%= config.urls.game.create %>?g=<%= game._id %>">
+                    <h4 class="game-name"><%= game.adventure %></h4>
+                    <div class="game-time">
+                        <strong>When:</strong>
+                        <% if (game.timestamp > new Date().getTime()) {%>
+                            <span data-datetime="<%= game.moment.raw %>"><%= game.moment.calendar %> (<%= game.moment.from %>)</span>
+                        <% } else { %>
+                            <span data-datetime="<%= game.moment.raw %>" class="text-danger"><%= game.moment.date %> (<%= game.moment.from %>)</span>
+                        <% } %>
+                    </div>
+                    <div class="game-reserved"><strong>Reserved:</strong> <%= Math.min(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0)%></div>
+                    <div class="game-reserved"><strong>Waitlisted:</strong> <%= Math.max(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0) - parseInt(game.players)%></div>
+                </a>
+            <% } else if (games || game.signedup || game.waitlisted) { %>
+                <div class="game">
+                    <h4 class="game-name"><%= game.adventure %></h4>
+                    <div class="game-time">
+                        <strong>When:</strong>
+                        <% if (game.timestamp > new Date().getTime()) {%>
+                            <span data-datetime="<%= game.moment.raw %>"><%= game.moment.calendar %> (<%= game.moment.from %>)</span>
+                        <% } else { %>
+                            <span data-datetime="<%= game.moment.raw %>" class="text-danger"><%= game.moment.date %> (<%= game.moment.from %>)</span>
+                        <% } %>
+                    </div>
+                    <div class="game-reserved">
+                        <strong>Reserved:</strong>
+                        <%= Math.min(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0)%>
+                        <% if (game.signedup) { %>
+                            (Slot #<%= game.slot %>)
+                        <% } %>
+                    </div>
+                    <div class="game-reserved">
+                        <strong>Waitlisted:</strong>
+                        <%= Math.max(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0) - parseInt(game.players)%>
+                        <% if (game.waitlisted) { %>
+                            (Slot #<%= game.slot %>)
+                        <% } %>
+                    </div>
+                    <div class="buttons">
+                        <% if (!game.signedup && !game.waitlisted) { %>
+                            <a href="<%= config.urls.game.rsvp %>?g=<%= game._id %>" class="btn btn-success btn-sm">Sign Up</a>
+                        <% } else { %>
+                            <a href="<%= config.urls.game.rsvp %>?g=<%= game._id %>" class="btn btn-danger btn-sm">Drop Out</a>
+                        <% } %>
+                    </div>
+                </div>
+            <% } %>
         <% }); %>
     </div>
     <% }); %>

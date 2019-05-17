@@ -1,64 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><%= title %> - RPG Schedule</title>
-    <link rel="icon" type="image/png" href="/images/rpg-schedule.png">
-
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js" integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k" crossorigin="anonymous"></script>
-
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+    
+    <% include head.ejs %>
     
     <link rel="stylesheet" href="/styles/game.css">
-    
+
     <% if (is.editgame) { %>
         <script src="/scripts/socket.io.js"></script>
     <% } %>
 </head>
 <body>
-<nav class="navbar navbar-expand-md sticky-top navbar-dark bg-primary">
-    <div class="container">
-        <a class="navbar-brand" href="#">
-            <img src="/images/rpg-schedule.png" class="navbar-icon" alt="" />
-            RPG Schedule
-        </a>
-
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#menu" aria-controls="menu" aria-expanded="false">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="menu">
-            <ul class="navbar-nav ml-auto">
-                <% if (account) { %>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">
-                        <img class="guild-icon" src="<%= account.user.avatarURL %>" alt="" />
-                        <%= account.user.username %>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="<%= config.urls.logout %>">
-                        Logout
-                    </a>
-                </li>
-                <% } else { %>
-                <li class="nav-item">
-                    <a class="nav-link" href="<%= config.urls.login %>">
-                        Login
-                    </a>
-                </li>
-                <% } %>
-            </ul>
-        </div>
-    </div>
-</nav>
+<%- include('menu', { config: config, user: account.user }); %>
 <div class="container">
     <h6 class="breadcrumbs">
-        <% if (account) { %>
-        <a href="<%= config.urls.game.dashboard %>">Games</a>
-        <span class="breadcrumb-divider">/</span>
+        <% if (account.user) { %>
+            <a href="<%= config.urls.game.dashboard %>">My Games</a>
+            <span class="breadcrumb-divider">/</span>
         <% } %>
         <%= title %>
     </h6>
@@ -282,7 +241,7 @@
         });
     <% } %>
 
-    const getURLs = (date, time, gmtOffset) => {
+    const getTZUrls = (date, time, gmtOffset) => {
         const d = new Date(`${date} ${time} GMT${gmtOffset < 0 ? '-' : '+'}${Math.abs(gmtOffset)}`);
         const n = d.toISOString().replace(/-|:|\.\d+Z/g,'');
         d.setHours(d.getHours()+parseInt(gmtOffset))
@@ -334,19 +293,19 @@
     <% } %>
 
     $('#date').change(function() {
-        var link = getURLs($('#date').val(), $('#time').val(), $('#timezone').val());
+        var link = getTZUrls($('#date').val(), $('#time').val(), $('#timezone').val());
         $('#convertLink').html(`Time Zone Conversion: <a href="${link.convert}" target="_blank">${link.convert}</a>`);
         $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank">${link.countdown}</a>`);
     }).change();
 
     $('#time').change(function() {
-        var link = getURLs($('#date').val(), $('#time').val(), $('#timezone').val());
+        var link = getTZUrls($('#date').val(), $('#time').val(), $('#timezone').val());
         $('#convertLink').html(`Time Zone Conversion: <a href="${link.convert}" target="_blank">${link.convert}</a>`);
         $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank">${link.countdown}</a>`);
     }).change();
 
     $('#timezone').change(function() {
-        var link = getURLs($('#date').val(), $('#time').val(), $('#timezone').val());
+        var link = getTZUrls($('#date').val(), $('#time').val(), $('#timezone').val());
         $('#convertLink').html(`Time Zone Conversion: <a href="${link.convert}" target="_blank">${link.convert}</a>`);
         $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank">${link.countdown}</a>`);
     }).change();

@@ -14,6 +14,7 @@ module.exports = (options) => {
     router.use('/', async (req, res, next) => {
         req.userData = null;
         const isGame = Object.values(config.urls.game).find(url => req.originalUrl.indexOf(url) === 0);
+        const isGames = req.originalUrl.indexOf(config.urls.game.games) === 0;
         const isDashboard = req.originalUrl.indexOf(config.urls.game.dashboard) === 0;
         if (!isGame) {
             next();
@@ -39,6 +40,8 @@ module.exports = (options) => {
 
                                 const data = {
                                     config: config,
+                                    games: isGames,
+                                    dashboard: isDashboard,
                                     user: {
                                         ...response,
                                         ...{
@@ -57,7 +60,8 @@ module.exports = (options) => {
                                                 id: guild.id,
                                                 name: guild.name,
                                                 icon: guild.iconURL,
-                                                permission: guildConfig.role ? member.roles.find(r => r.name.toLowerCase().trim() === guildConfig.role.toLowerCase().trim()) : true,
+                                                permission: guildConfig.role ? member.roles.find(r => r.name.toLowerCase().trim() === guildConfig.role.toLowerCase().trim()) : true,                                                
+                                                channels: guild.channels,
                                                 games: []
                                             });
                                         }
@@ -73,19 +77,41 @@ module.exports = (options) => {
                                     }
                                 };
 
-                                if (tag !== 'Sillvva#2532') {
-                                    gameOptions.dm = tag;
+                                if (isDashboard && tag !== config.author) {
+                                    gameOptions.$or = [
+                                        {
+                                            dm: tag
+                                        },
+                                        {
+                                            reserved: {
+                                                $regex: tag.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')
+                                            }
+                                        }
+                                    ];
+                                }
+
+                                if (isGames) {
+                                    gameOptions.timestamp = {
+                                        $gt: new Date().getTime()
+                                    };
+                                    gameOptions.dm = {
+                                        $ne: tag
+                                    };
                                 }
 
                                 const games = await Game.fetchAllBy(gameOptions);
                                 games.forEach(game => {
-                                    const date = `${game.date} ${game.time} GMT${game.timezone >= 0 ? '+' : '-'}${Math.abs(game.timezone)}`;
+                                    const date = Game.ISOGameDate(game);
                                     game.moment = {
                                         raw: date,
                                         date: moment(date).utcOffset(parseInt(game.timezone)).format(config.formats.dateLong),
                                         calendar: moment(date).utcOffset(parseInt(game.timezone)).calendar(),
                                         from: moment(date).utcOffset(parseInt(game.timezone)).fromNow()
                                     };
+
+                                    game.slot = game.reserved.split(/\r?\n/).findIndex(t => t === tag) + 1;
+                                    game.signedup = game.slot > 0 && game.slot <= parseInt(game.players);
+                                    game.waitlisted = game.slot > parseInt(game.players);
 
                                     const gi = data.guilds.findIndex(g => g.id === game.s);
                                     data.guilds[gi].games.push(game);
@@ -122,6 +148,10 @@ module.exports = (options) => {
         catch(e) {
             res.render('error', { message: e.message });
         }
+    });
+
+    router.use(config.urls.game.games, async (req, res, next) => {
+        res.render('games', req.account);
     });
 
     router.use(config.urls.game.dashboard, async (req, res, next) => {
@@ -258,6 +288,36 @@ module.exports = (options) => {
         } catch(err) {
             res.render('error', { message: err });
         }
+    });
+
+    router.use(config.urls.game.rsvp, async (req, res, next) => {
+        try {
+            if (req.query.g) {
+                const game = await Game.fetch(req.query.g);
+                if (game) {
+                    const guild = req.account.guilds.find(s => s.id === game.s);
+                    if (guild) {
+                        const channel = guild.channels.find(c => c.id === game.c);
+                        if (channel) {
+                            const reserved = game.reserved.split(/\r?\n/);
+                            if (reserved.find(t => t === req.account.user.tag)) {
+                                reserved.splice(reserved.indexOf(req.account.user.tag), 1);
+                            } else {
+                                reserved.push(req.account.user.tag);
+                            }
+    
+                            game.reserved = reserved.join("\n");
+    
+                            const result = await Game.save(channel, game);
+                        }
+                    }
+                }
+            }
+        } catch(err) {
+            console.log(err);
+        }
+
+        res.redirect(req.headers.referer ? req.headers.referer : config.urls.game.games);
     });
 
     router.get(config.urls.game.delete, async (req, res, next) => {

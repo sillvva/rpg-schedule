@@ -2,11 +2,13 @@ module.exports  = {
     urls: {
         base: '/',
         game: {
-            dashboard: '/games',
+            games: '/games',
+            dashboard: '/my-games',
             create: '/game',
             delete: '/delete',
             password: '/password',
-            auth: '/authenticate'
+            auth: '/authenticate',
+            rsvp: '/rsvp'
         },
         invite: '/invite',
         login: '/login',
@@ -19,6 +21,7 @@ module.exports  = {
     formats: {
         dateLong: 'ddd, MMMM Do YYYY, h:mm a'
     },
+    author: 'Sillvva#2532',
     defaults: {
         sessionStatus: {
             access: {},
