@@ -50,7 +50,7 @@
                     <div class="game-reserved"><strong>Reserved:</strong> <%= Math.min(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0)%></div>
                     <div class="game-reserved"><strong>Waitlisted:</strong> <%= Math.max(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0) - parseInt(game.players)%></div>
                 </a>
-            <% } else if (games) { %>
+            <% } else if (games || game.signedup || game.waitlisted) { %>
                 <div class="game">
                     <h4 class="game-name"><%= game.adventure %></h4>
                     <div class="game-time">
