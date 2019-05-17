@@ -1,0 +1,45 @@
+<nav class="navbar navbar-expand-md sticky-top navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand" href="#">
+            <img src="/images/rpg-schedule.png" class="navbar-icon" alt="" />
+            RPG Schedule
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#menu" aria-controls="menu" aria-expanded="false">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="menu">
+            <% if (account) { %>
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item dropdown active">
+                        <a class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" href="#">Games</a>
+                        <div class="dropdown-menu">
+                            <a class="dropdown-item" href="<%= config.urls.game.games %>">All Games</a>
+                            <a class="dropdown-item" href="<%= config.urls.game.dashboard %>">My Games</a>
+                        </div>
+                    </li>
+                </ul>
+            <% } %>
+            <ul class="navbar-nav">
+                <% if (account) { %>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <img class="guild-icon" src="<%= user.avatarURL %>" alt="" />
+                            <%= user.username %>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="<%= config.urls.logout %>">
+                            Logout
+                        </a>
+                    </li>
+                <% } else { %>
+                    <li class="nav-item">
+                        <a class="nav-link" href="<%= config.urls.login %>">
+                            Login
+                        </a>
+                    </li>
+                <% } %>
+            </ul>
+        </div>
+    </div>
+</nav>
