@@ -36,7 +36,7 @@
     </h2>
     <div class="games">
         <% guild.games.forEach(game => { %>
-            <% if (dashboard) { %>
+            <% if (dashboard && (user.tag === game.dm || user.tag === config.author)) { %>
                 <a class="game" href="<%= config.urls.game.create %>?g=<%= game._id %>">
                     <h4 class="game-name"><%= game.adventure %></h4>
                     <div class="game-time">
@@ -61,13 +61,25 @@
                             <span data-datetime="<%= game.moment.raw %>" class="text-danger"><%= game.moment.date %> (<%= game.moment.from %>)</span>
                         <% } %>
                     </div>
-                    <div class="game-reserved"><strong>Reserved:</strong> <%= Math.min(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0)%></div>
-                    <div class="game-reserved"><strong>Waitlisted:</strong> <%= Math.max(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0) - parseInt(game.players)%></div>
+                    <div class="game-reserved">
+                        <strong>Reserved:</strong>
+                        <%= Math.min(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0)%>
+                        <% if (game.signedup) { %>
+                            (Slot #<%= game.slot %>)
+                        <% } %>
+                    </div>
+                    <div class="game-reserved">
+                        <strong>Waitlisted:</strong>
+                        <%= Math.max(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0) - parseInt(game.players)%>
+                        <% if (game.waitlisted) { %>
+                            (Slot #<%= game.slot %>)
+                        <% } %>
+                    </div>
                     <div class="buttons">
-                        <% if (!game.signedup) { %>
-                            <a href="<%= config.urls.game.rsvp %>?g=<%= game._id %>" class="btn btn-success btn-sm">Sign Up</a>
+                        <% if (!game.signedup && !game.waitlisted) { %>
+                            <a href="<%= config.urls.game.rsvp %>?g=<%= game._id %><%= dashboard ? '&return='+config.urls.game.dashboard : '' %>" class="btn btn-success btn-sm">Sign Up</a>
                         <% } else { %>
-                            <a href="<%= config.urls.game.rsvp %>?g=<%= game._id %>" class="btn btn-danger btn-sm">Drop Out</a>
+                            <a href="<%= config.urls.game.rsvp %>?g=<%= game._id %><%= dashboard ? '&return='+config.urls.game.dashboard : '' %>" class="btn btn-danger btn-sm">Drop Out</a>
                         <% } %>
                     </div>
                 </div>

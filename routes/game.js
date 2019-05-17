@@ -109,7 +109,9 @@ module.exports = (options) => {
                                         from: moment(date).utcOffset(parseInt(game.timezone)).fromNow()
                                     };
 
-                                    game.signedup = game.reserved.split("\n").find(t => t === tag);
+                                    game.slot = game.reserved.split(/\r?\n/).findIndex(t => t === tag) + 1;
+                                    game.signedup = game.slot > 0 && game.slot <= parseInt(game.players);
+                                    game.waitlisted = game.slot > parseInt(game.players);
 
                                     const gi = data.guilds.findIndex(g => g.id === game.s);
                                     data.guilds[gi].games.push(game);
@@ -289,6 +291,7 @@ module.exports = (options) => {
     });
 
     router.use(config.urls.game.rsvp, async (req, res, next) => {
+        console.log(req.headers);
         try {
             if (req.query.g) {
                 const game = await Game.fetch(req.query.g);
@@ -315,7 +318,7 @@ module.exports = (options) => {
             console.log(err);
         }
 
-        res.redirect(config.urls.game.games);
+        res.redirect(req.query.return ? req.query.return : config.urls.game.games);
     });
 
     router.get(config.urls.game.delete, async (req, res, next) => {
