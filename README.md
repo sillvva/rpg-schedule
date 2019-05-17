@@ -8,15 +8,11 @@ A discord bot for posting game announcements for RPGs. Features include:
 
 **Note:** Games are automatically pruned 48 - 72 hours after the scheduled time. Or you can delete them manually.
 
-<details>
-  <summary style="font-size: 24px;">Screenshots</summary>
-  
-  <div style="display: grid; grid-template-columns: 1fr 1fr; grid-template-areas: &quot;three three&quot; &quot;one two&quot;;grid-gap: 10px;">
-  	<a href="http://rpg-schedule.herokuapp.com/images/screenshot3.png" target="_blank" style="grid-area: three;"><img src="http://rpg-schedule.herokuapp.com/images/screenshot3.png"></a>
-    <a href="http://rpg-schedule.herokuapp.com/images/screenshot.png" target="_blank" style="grid-area: one;"><img src="http://rpg-schedule.herokuapp.com/images/screenshot.png" width="600"></a>
-  	<a href="http://rpg-schedule.herokuapp.com/images/screenshot2.png" target="_blank" style="grid-area: two;"><img src="http://rpg-schedule.herokuapp.com/images/screenshot2.png" width="600"></a>
-  </div>
-</details>
+## Screenshots
+<a href="http://rpg-schedule.herokuapp.com/images/screenshot3.png" target="_blank" style="display: inline-flex; height: 200px;"><img src="http://rpg-schedule.herokuapp.com/images/screenshot3.png" style="max-width: 100%; max-height: 100%;"></a>
+<a href="http://rpg-schedule.herokuapp.com/images/screenshot4.png" target="_blank" style="display: inline-flex; height: 200px;"><img src="http://rpg-schedule.herokuapp.com/images/screenshot4.png" style="max-width: 100%; max-height: 100%;"></a>
+<a href="http://rpg-schedule.herokuapp.com/images/screenshot.png" target="_blank" style="display: inline-flex; height: 200px;"><img src="http://rpg-schedule.herokuapp.com/images/screenshot.png" style="max-width: 100%; max-height: 100%;"></a>
+<a href="http://rpg-schedule.herokuapp.com/images/screenshot2.png" target="_blank" style="display: inline-flex; height: 200px;"><img src="http://rpg-schedule.herokuapp.com/images/screenshot2.png" style="max-width: 100%; max-height: 100%;"></a>
 
 ## Inviting the discord bot
 
