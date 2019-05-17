@@ -103,11 +103,21 @@ hr {
     .games {
         grid-template-columns: 1fr 1fr;
     }
+    
+    .no-games {
+        grid-column-start: 1;
+        grid-column-end: 3;
+    }
 }
 
 @media (min-width: 900px) {
     .games {
         grid-template-columns: 1fr 1fr 1fr;
+    }
+    
+    .no-games {
+        grid-column-start: 1;
+        grid-column-end: 4;
     }
 }
 
