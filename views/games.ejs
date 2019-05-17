@@ -27,7 +27,7 @@
             <a href="<%= config.urls.game.games %>" class="btn btn-primary btn-sm float-right">Upcoming Games</a>
         <% } %>
     </h6>
-    <% guilds.filter(guild => guild.permission).forEach(guild => { %>
+    <% guilds.filter(guild => games || (dashboard && guild.permission)).forEach(guild => { %>
     <hr />
     <h2 class="guild-name">
         <img class="guild-icon" src="<%= guild.icon %>" alt="" />
