@@ -76,7 +76,7 @@ module.exports = options => {
 
                                     req.account.guilds = req.account.guilds.filter(
                                         guild =>
-                                            !guild.hidden && (req.account.viewing.games || (req.account.viewing.dashboard && guild.permission))
+                                            !guild.config.hidden && (req.account.viewing.games || (req.account.viewing.dashboard && guild.permission))
                                     );
 
                                     const gameOptions = {
