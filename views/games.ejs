@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
     <title>
-        <% if (games) { %>
+        <% if (viewing.games) { %>
             Games
-        <% } else if (dashboard) { %>
+        <% } else if (viewing.dashboard) { %>
             My Games
         <% } %> 
         - RPG Schedule
@@ -19,10 +19,10 @@
 <%- include('menu', { config: config, user: user }); %>
 <div class="container">
     <h6 class="breadcrumbs">
-        <% if (games) { %>
+        <% if (viewing.games) { %>
             Upcoming Games
             <a href="<%= config.urls.game.dashboard %>" class="btn btn-primary btn-sm float-right">My Games</a>
-        <% } else if (dashboard) { %>
+        <% } else if (viewing.dashboard) { %>
             My Games
             <a href="<%= config.urls.game.games %>" class="btn btn-primary btn-sm float-right">Upcoming Games</a>
         <% } %>
@@ -32,22 +32,22 @@
     <h2 class="guild-name">
         <img class="guild-icon" src="<%= guild.icon %>" alt="" />
         <%= guild.name %>
-        <% if (dashboard && guild.permission) { %>
+        <% if viewing.dashboard && guild.permission) { %>
             <a href="<%= config.urls.game.create %>?s=<%= guild.id %>" class="btn btn-primary btn-sm float-right">New Game</a>
         <% } %>
     </h2>
     <div class="games">
         <% if (guild.games.length === 0) { %>
             <div class="no-games">
-                <% if (dashboard) { %>
+                <% if (viewing.dashboard) { %>
                     You are not dming or playing in any games on this server right now
-                <% } else if (games) { %>
+                <% } else if (viewing.games) { %>
                     There are no upcoming games on this server right now
                 <% } %>
             </div>
         <% } %>
         <% guild.games.forEach(game => { %>
-            <% if (dashboard && (user.tag === game.dm || user.tag === config.author)) { %>
+            <% if (viewing.dashboard && (user.tag === game.dm || user.tag === config.author)) { %>
                 <a class="game" href="<%= config.urls.game.create %>?g=<%= game._id %>">
                     <h4 class="game-name"><%= game.adventure %></h4>
                     <div class="game-time">
@@ -61,7 +61,7 @@
                     <div class="game-reserved"><strong>Reserved:</strong> <%= Math.min(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0)%></div>
                     <div class="game-reserved"><strong>Waitlisted:</strong> <%= Math.max(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0) - parseInt(game.players)%></div>
                 </a>
-            <% } else if (games || game.signedup || game.waitlisted) { %>
+            <% } else if (viewing.games || game.signedup || game.waitlisted) { %>
                 <div class="game">
                     <h4 class="game-name"><%= game.adventure %></h4>
                     <div class="game-time">

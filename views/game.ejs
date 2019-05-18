@@ -210,8 +210,8 @@
             return response.json();
         })
         .then(session => {
-            if (!session) window.location = '<%= config.urls.base %>';
-            if (!session.status) window.location = '<%= config.urls.base %>';
+            if (!session) passwordRedirect();;
+            if (!session.status) passwordRedirect();;
             if (!(session.status.loggedInTo || []).includes('<%= s %>')) {
                 const password = prompt('Enter the password provided by the server');
                 fetch('<%= config.urls.game.password %>?s=<%= s %>&p='+escape(password), { method: 'GET' })
@@ -220,25 +220,25 @@
                     })
                     .then(data => {
                         if (!data.result) {
-                            <% if (account) { %>
-                            window.location = '<%= config.urls.game.dashboard %>';
-                            <% } else { %>
-                            window.location = '<%= config.urls.base %>';
-                            <% } %>
+                            passwordRedirect();
                         }
                     })
                     .catch(err => {
-                        <% if (account) { %>
-                        window.location = '<%= config.urls.game.dashboard %>';
-                        <% } else { %>
-                        window.location = '<%= config.urls.base %>';
-                        <% } %>
+                        passwordRedirect();
                     });
             }
         })
         .catch(err => {
             console.log(err);
         });
+
+    const passwordRedirect = () => {
+        <% if (account.user) { %>
+        window.location = '<%= config.urls.game.dashboard %>';
+        <% } else { %>
+        window.location = '<%= config.urls.base %>';
+        <% } %>
+    };
     <% } %>
 
     const getTZUrls = (date, time, gmtOffset) => {

@@ -13,10 +13,19 @@ module.exports = options => {
 
     router.use("/", async (req, res, next) => {
         req.userData = null;
-        const isGame = Object.values(config.urls.game).find(url => req.originalUrl.indexOf(url) === 0);
-        const isGames = req.originalUrl.indexOf(config.urls.game.games) === 0;
-        const isDashboard = req.originalUrl.indexOf(config.urls.game.dashboard) === 0;
-        if (!isGame) {
+
+        req.account = {
+            config: config,
+            viewing: {
+                game: Object.values(config.urls.game).find(url => req.originalUrl.indexOf(url) === 0),
+                games: req.originalUrl.indexOf(config.urls.game.games) === 0,
+                dashboard: req.originalUrl.indexOf(config.urls.game.dashboard) === 0
+            },
+            guilds: [],
+            user: null
+        };
+
+        if (!account.viewing.game) {
             next();
             return;
         }
@@ -40,25 +49,19 @@ module.exports = options => {
                                     const tag = `${username}#${discriminator}`;
                                     const guildConfigs = await GuildConfig.fetchAll();
 
-                                    const data = {
-                                        config: config,
-                                        games: isGames,
-                                        dashboard: isDashboard,
-                                        user: {
-                                            ...response,
-                                            ...{
-                                                tag: tag,
-                                                avatarURL: `https://cdn.discordapp.com/avatars/${id}/${avatar}.png?size=128`
-                                            }
-                                        },
-                                        guilds: []
+                                    req.account.user = {
+                                        ...response,
+                                        ...{
+                                            tag: tag,
+                                            avatarURL: `https://cdn.discordapp.com/avatars/${id}/${avatar}.png?size=128`
+                                        }
                                     };
 
                                     client.guilds.forEach(guild => {
                                         const guildConfig = guildConfigs.find(gc => gc.guild === guild.id) || {};
                                         guild.members.forEach(member => {
-                                            if (member.id === id && !guildConfig.hidden) {
-                                                data.guilds.push({
+                                            if (member.id === id) {
+                                                req.account.guilds.push({
                                                     id: guild.id,
                                                     name: guild.name,
                                                     icon: guild.iconURL,
@@ -66,25 +69,28 @@ module.exports = options => {
                                                         ? member.roles.find(r => r.name.toLowerCase().trim() === guildConfig.role.toLowerCase().trim())
                                                         : true,
                                                     channels: guild.channels,
+                                                    config: guildConfig,
                                                     games: []
                                                 });
                                             }
                                         });
                                     });
 
-                                    data.guilds = data.guilds
-                                        .filter(guild => isGames || (isDashboard && guild.permission));
+                                    req.account.guilds = req.account.guilds.filter(
+                                        guild =>
+                                            !req.account.guilds.hidden && (req.account.viewing.games || (req.account.viewing.dashboard && guild.permission))
+                                    );
 
                                     const gameOptions = {
                                         s: {
-                                            $in: data.guilds.reduce((i, g) => {
+                                            $in: req.account.guilds.reduce((i, g) => {
                                                 i.push(g.id);
                                                 return i;
                                             }, [])
                                         }
                                     };
 
-                                    if (isDashboard && tag !== config.author) {
+                                    if (req.account.viewing.dashboard && tag !== config.author) {
                                         gameOptions.$or = [
                                             {
                                                 dm: tag
@@ -97,7 +103,7 @@ module.exports = options => {
                                         ];
                                     }
 
-                                    if (isGames) {
+                                    if (req.account.viewing.games) {
                                         gameOptions.timestamp = {
                                             $gt: new Date().getTime()
                                         };
@@ -126,11 +132,10 @@ module.exports = options => {
                                         game.signedup = game.slot > 0 && game.slot <= parseInt(game.players);
                                         game.waitlisted = game.slot > parseInt(game.players);
 
-                                        const gi = data.guilds.findIndex(g => g.id === game.s);
-                                        data.guilds[gi].games.push(game);
+                                        const gi = req.account.guilds.findIndex(g => g.id === game.s);
+                                        req.account.guilds[gi].games.push(game);
                                     });
 
-                                    req.account = data;
                                     next();
                                     return;
                                 }
@@ -145,14 +150,14 @@ module.exports = options => {
                         }
                     );
                 } else {
-                    if (isDashboard) {
+                    if (req.account.viewing.dashboard) {
                         res.redirect(config.urls.login);
                     } else {
                         next();
                     }
                 }
             } else {
-                if (isDashboard) {
+                if (req.account.viewing.dashboard) {
                     res.redirect(config.urls.login);
                 } else {
                     next();
