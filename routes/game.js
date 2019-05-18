@@ -12,8 +12,6 @@ module.exports = options => {
     const { client } = options;
 
     router.use("/", async (req, res, next) => {
-        req.userData = null;
-
         req.account = {
             config: config,
             viewing: {
@@ -25,7 +23,7 @@ module.exports = options => {
             user: null
         };
 
-        if (!account.viewing.game) {
+        if (!req.account.viewing.game) {
             next();
             return;
         }
