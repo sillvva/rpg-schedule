@@ -3,7 +3,7 @@ const discord = require("discord.js");
 
 const Game = require("../models/game");
 const GuildConfig = require("../models/guild-config");
-const { config } = require("../routes/init");
+const config = require("../models/config");
 
 module.exports = options => {
     const router = express.Router();
