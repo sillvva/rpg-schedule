@@ -160,4 +160,6 @@ module.exports = options => {
             res.render("error", { message: e.message });
         }
     });
+
+    return router;
 }

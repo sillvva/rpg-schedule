@@ -15,4 +15,6 @@ module.exports = options => {
             res.redirect(path.redirect+(params.length > 0 ? '?'+params : ''));
         });
     });
+
+    return router;
 };
