@@ -22,6 +22,7 @@ module.exports = options => {
         req.account = {
             config: config,
             viewing: {
+                home: req.originalUrl === config.urls.base.url,
                 games: req.originalUrl.startsWith(config.urls.game.games.url),
                 dashboard: req.originalUrl.startsWith(config.urls.game.dashboard.url),
                 game: req.originalUrl.startsWith(config.urls.game.create.url)
@@ -136,6 +137,11 @@ module.exports = options => {
                                         const gi = req.account.guilds.findIndex(g => g.id === game.s);
                                         req.account.guilds[gi].games.push(game);
                                     });
+
+                                    if (req.account.user && req.account.viewing.home) {
+                                        res.redirect(config.urls.game.dashboard.url);
+                                        return;
+                                    }
 
                                     next();
                                     return;

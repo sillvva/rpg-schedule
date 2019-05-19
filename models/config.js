@@ -1,6 +1,6 @@
 module.exports = {
     urls: {
-        base: { url: "/" },
+        base: { url: "/", session: true },
         redirects: {
             game: { url: '/game', redirect: '/games/edit' },
             upcoming: { url: '/games', redirect: '/games/upcoming' },
