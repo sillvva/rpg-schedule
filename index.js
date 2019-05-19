@@ -9,10 +9,12 @@ const { db } = require("./db");
 const discord = require("./processes/discord");
 const ws = require("./processes/socket");
 
+const initRoutes = require("./routes/init");
 const gameRoutes = require("./routes/game");
 const inviteRoute = require("./routes/invite");
 const timezoneRoutes = require("./routes/timezone");
 const loginRoutes = require("./routes/login");
+const redirectRoutes = require("./routes/redirects");
 
 const app = express();
 const store = new MongoDBStore({
@@ -78,10 +80,12 @@ app.use(
 /**
  * Routes
  */
+app.use(initRoutes({ client: client }));
 app.use(loginRoutes());
 app.use(gameRoutes({ client: client }));
 app.use(inviteRoute());
 app.use(timezoneRoutes());
+app.use(redirectRoutes());
 app.use("/", (req, res, next) => {
     res.render("home");
 });

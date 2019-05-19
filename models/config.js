@@ -1,21 +1,26 @@
 module.exports = {
     urls: {
-        base: "/",
-        game: {
-            games: "/games",
-            dashboard: "/my-games",
-            create: "/game",
-            delete: "/delete",
-            password: "/password",
-            auth: "/authenticate",
-            rsvp: "/rsvp"
+        base: { url: "/" },
+        redirects: {
+            game: { url: '/game', redirect: '/games/edit' },
+            upcoming: { url: '/games', redirect: '/games/upcoming' },
+            mygames: { url: '/my-games', redirect: '/games/my-games' }
         },
-        invite: "/invite",
-        login: "/login",
-        logout: "/logout",
+        game: {
+            games: { url: "/games/upcoming", session: true },
+            dashboard: { url: "/games/my-games", session: true },
+            create: { url: "/games/edit", session: true },
+            delete: { url: "/games/delete", session: true },
+            password: { url: "/games/password", session: true },
+            auth: { url: "/games/authenticate", session: true },
+            rsvp: { url: "/games/rsvp", session: true }
+        },
+        invite: { url: "/invite" },
+        login: { url: "/login" },
+        logout: { url: "/logout" },
         timezone: {
-            convert: "/tz/:time/:tz",
-            countdown: "/cd/:time/:tz"
+            convert: { url: "/tz/:time/:tz" },
+            countdown: { url: "/cd/:time/:tz" }
         }
     },
     formats: {

@@ -21,10 +21,10 @@
     <h6 class="breadcrumbs">
         <% if (viewing.games) { %>
             Upcoming Games
-            <a href="<%= config.urls.game.dashboard %>" class="btn btn-primary btn-sm float-right">My Games</a>
+            <a href="<%= config.urls.game.dashboard.url %>" class="btn btn-primary btn-sm float-right">My Games</a>
         <% } else if (viewing.dashboard) { %>
             My Games
-            <a href="<%= config.urls.game.games %>" class="btn btn-primary btn-sm float-right">Upcoming Games</a>
+            <a href="<%= config.urls.game.games.url %>" class="btn btn-primary btn-sm float-right">Upcoming Games</a>
         <% } %>
     </h6>
     <% guilds.forEach(guild => { %>
@@ -33,7 +33,7 @@
         <img class="guild-icon" src="<%= guild.icon %>" alt="" />
         <%= guild.name %>
         <% if (viewing.dashboard && guild.permission) { %>
-            <a href="<%= config.urls.game.create %>?s=<%= guild.id %>" class="btn btn-primary btn-sm float-right">New Game</a>
+            <a href="<%= config.urls.game.create.url %>?s=<%= guild.id %>" class="btn btn-primary btn-sm float-right">New Game</a>
         <% } %>
     </h2>
     <div class="games">
@@ -48,7 +48,7 @@
         <% } %>
         <% guild.games.forEach(game => { %>
             <% if (viewing.dashboard && (user.tag === game.dm || user.tag === config.author)) { %>
-                <a class="game" href="<%= config.urls.game.create %>?g=<%= game._id %>">
+                <a class="game" href="<%= config.urls.game.create.url %>?g=<%= game._id %>">
                     <h4 class="game-name"><%= game.adventure %></h4>
                     <div class="game-time">
                         <strong>When:</strong>
@@ -89,9 +89,9 @@
                     <% if (game.method === "automated") { %>
                         <div class="buttons">
                             <% if (!game.signedup && !game.waitlisted) { %>
-                                <a href="<%= config.urls.game.rsvp %>?g=<%= game._id %>" class="btn btn-success btn-sm">Sign Up</a>
+                                <a href="<%= config.urls.game.rsvp.url %>?g=<%= game._id %>" class="btn btn-success btn-sm">Sign Up</a>
                             <% } else { %>
-                                <a href="<%= config.urls.game.rsvp %>?g=<%= game._id %>" class="btn btn-danger btn-sm">Drop Out</a>
+                                <a href="<%= config.urls.game.rsvp.url %>?g=<%= game._id %>" class="btn btn-danger btn-sm">Drop Out</a>
                             <% } %>
                         </div>
                     <% } %>
