@@ -22,6 +22,8 @@ module.exports = options => {
             return;
         }
 
+        const guildPermission = parsedURLs.find(path => path.guildPermission && req._parsedOriginalUrl.pathname === path.url) ? true : false;
+
         req.account = {
             config: config,
             viewing: {
@@ -86,9 +88,11 @@ module.exports = options => {
                                         });
                                     });
 
-                                    req.account.guilds = req.account.guilds.filter(
-                                        guild => !guild.config.hidden && (req.account.viewing.games || (req.account.viewing.dashboard && guild.permission))
-                                    );
+                                    if (guildPermission) {
+                                        req.account.guilds = req.account.guilds.filter(
+                                            guild => !guild.config.hidden && (req.account.viewing.games || (req.account.viewing.dashboard && guild.permission))
+                                        );
+                                    }
 
                                     const gameOptions = {
                                         s: {
@@ -125,7 +129,8 @@ module.exports = options => {
                                     games.forEach(game => {
                                         const date = Game.ISOGameDate(game);
                                         game.moment = {
-                                            raw: date,
+                                            raw: `${game.date} ${game.time} GMT${game.timezone < 0 ? '-' : '+'}${Math.abs(game.timezone)}`,
+                                            iso: date,
                                             date: moment(date)
                                                 .utcOffset(parseInt(game.timezone))
                                                 .format(config.formats.dateLong),

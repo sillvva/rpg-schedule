@@ -7,8 +7,8 @@ module.exports = {
             mygames: { url: '/my-games', redirect: '/games/my-games' }
         },
         game: {
-            games: { url: "/games/upcoming", session: true },
-            dashboard: { url: "/games/my-games", session: true },
+            games: { url: "/games/upcoming", session: true, guildPermission: true },
+            dashboard: { url: "/games/my-games", session: true, guildPermission: true },
             create: { url: "/games/edit", session: true },
             delete: { url: "/games/delete", session: true },
             password: { url: "/games/password", session: true },
