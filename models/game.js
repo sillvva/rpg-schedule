@@ -57,7 +57,7 @@ module.exports = class Game {
 
         let when = '';
         if (game.when === 'datetime') {
-            const date = `${game.date} ${game.time} GMT${game.timezone >= 0 ? '+' : '-'}${Math.abs(game.timezone)}`;
+            const date = Game.ISOGameDate(game);
             when = moment(date).utcOffset(parseInt(game.timezone)).format(config.formats.dateLong)+` (${timezone})`;
             game.timestamp = new Date(date).getTime()
         }
