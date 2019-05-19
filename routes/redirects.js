@@ -2,9 +2,8 @@ const express = require("express");
 
 const config = require("../models/config");
 
-module.exports = options => {
+module.exports = () => {
     const router = express.Router();
-    const { client } = options;
 
     Object.values(config.urls.redirects).forEach(path => {
         router.use(path.url, async (req, res, next) => {
