@@ -7,6 +7,7 @@
     "body-parser": "^1.18.3",
     "connect-mongodb-session": "^2.1.1",
     "discord.js": "^11.4.2",
+    "dotenv": "^8.0.0",
     "ejs": "^2.6.1",
     "express": "^4.16.4",
     "express-handlebars": "^3.0.0",

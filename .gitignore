@@ -12,6 +12,7 @@ pids
 *.pid.lock
 
 .idea/
+bin/
 
 # Cloud9
 .c9/
@@ -63,6 +64,12 @@ typings/
 # dotenv environment variables file
 .env
 .env.test
+
+.devenv
+dev
+
+.prodenv
+prod
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
