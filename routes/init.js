@@ -5,33 +5,41 @@ const moment = require("moment");
 const Game = require("../models/game");
 const GuildConfig = require("../models/guild-config");
 const config = require("../models/config");
-const aux = require('../appaux');
+const aux = require("../appaux");
 
 const parsedURLs = aux.parseConfigURLs(config.urls);
+const { connection } = require("../db");
 
 module.exports = options => {
     const router = express.Router();
     const { client } = options;
 
     router.use("/", async (req, res, next) => {
-        if (!parsedURLs.find(path => path.session && req.originalUrl.startsWith(path.url))) {
+        console.log(req.originalUrl);
+
+        if (!parsedURLs.find(path => path.session && req._parsedOriginalUrl.pathname === path.url)) {
             next();
             return;
         }
-        
+
         req.account = {
             config: config,
             viewing: {
-                home: req.originalUrl === config.urls.base.url,
-                games: req.originalUrl.startsWith(config.urls.game.games.url),
-                dashboard: req.originalUrl.startsWith(config.urls.game.dashboard.url),
-                game: req.originalUrl.startsWith(config.urls.game.create.url)
+                home: req._parsedOriginalUrl.pathname === config.urls.base.url,
+                games: req._parsedOriginalUrl.pathname === config.urls.game.games.url,
+                dashboard: req._parsedOriginalUrl.pathname === config.urls.game.dashboard.url,
+                game: req._parsedOriginalUrl.pathname === config.urls.game.create.url
             },
             guilds: [],
             user: null
         };
 
         try {
+            const storedSession = await connection().collection("sessions").findOne({ _id: req.session.id });
+            if (storedSession) {
+                req.session.status = storedSession.session.status;
+            }
+
             if (req.session.status) {
                 const access = req.session.status.access;
                 if (access.token_type) {
@@ -79,8 +87,7 @@ module.exports = options => {
                                     });
 
                                     req.account.guilds = req.account.guilds.filter(
-                                        guild =>
-                                            !guild.config.hidden && (req.account.viewing.games || (req.account.viewing.dashboard && guild.permission))
+                                        guild => !guild.config.hidden && (req.account.viewing.games || (req.account.viewing.dashboard && guild.permission))
                                     );
 
                                     const gameOptions = {
@@ -138,7 +145,7 @@ module.exports = options => {
                                         req.account.guilds[gi].games.push(game);
                                     });
 
-                                    if (req.account.user && req.account.viewing.home) {
+                                    if (req.account.viewing.home) {
                                         res.redirect(config.urls.game.dashboard.url);
                                         return;
                                     }
@@ -157,10 +164,12 @@ module.exports = options => {
                         }
                     );
                 } else {
-                    res.redirect(config.urls.login.url);
+                    if (req.account.viewing.home) next();
+                    else res.redirect(config.urls.login.url);
                 }
             } else {
-                res.redirect(config.urls.login.url);
+                if (req.account.viewing.home) next();
+                else res.redirect(config.urls.login.url);
             }
         } catch (e) {
             res.render("error", { message: e.message });
@@ -168,4 +177,4 @@ module.exports = options => {
     });
 
     return router;
-}
+};

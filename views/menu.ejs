@@ -13,8 +13,8 @@
                     <li class="nav-item dropdown active">
                         <a class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" href="#">Games</a>
                         <div class="dropdown-menu bg-primary">
-                            <a class="dropdown-item bg-primary text-white" href="<%= config.urls.game.games %>">Upcoming Games</a>
-                            <a class="dropdown-item bg-primary text-white" href="<%= config.urls.game.dashboard %>">My Games</a>
+                            <a class="dropdown-item bg-primary text-white" href="<%= config.urls.game.games.url %>">Upcoming Games</a>
+                            <a class="dropdown-item bg-primary text-white" href="<%= config.urls.game.dashboard.url %>">My Games</a>
                         </div>
                     </li>
                 </ul>
@@ -28,13 +28,13 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="<%= config.urls.logout %>">
+                        <a class="nav-link" href="<%= config.urls.logout.url %>">
                             Logout
                         </a>
                     </li>
                 <% } else { %>
                     <li class="nav-item">
-                        <a class="nav-link" href="<%= config.urls.login %>">
+                        <a class="nav-link" href="<%= config.urls.login.url %>">
                             Login
                         </a>
                     </li>

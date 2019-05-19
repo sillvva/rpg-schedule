@@ -80,8 +80,8 @@ app.use(
 /**
  * Routes
  */
-app.use(initRoutes({ client: client }));
 app.use(loginRoutes());
+app.use(initRoutes({ client: client }));
 app.use(gameRoutes({ client: client }));
 app.use(inviteRoute());
 app.use(timezoneRoutes());
