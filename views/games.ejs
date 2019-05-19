@@ -47,7 +47,7 @@
             </div>
         <% } %>
         <% guild.games.forEach(game => { %>
-            <% if (viewing.dashboard && (user.tag === game.dm || user.tag === config.author)) { %>
+            <% if (guild.permission && viewing.dashboard && (user.tag === game.dm || user.tag === config.author)) { %>
                 <a class="game my-games" href="<%= config.urls.game.create.url %>?g=<%= game._id %>">
                     <h4 class="game-name"><%= game.adventure %></h4>
                     <div class="game-time">
