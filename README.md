@@ -104,3 +104,5 @@ https://rpg-schedule.herokuapp.com
 ## About the bot
 
 The discord bot is deployed with Heroku as a Node.js and discord.js application and MongoDB for data storage. When an update is pushed to this repository, the update is automatically deployed to Heroku.
+
+Donate: https://www.paypal.me/Sillvva
