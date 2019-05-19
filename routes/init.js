@@ -90,7 +90,7 @@ module.exports = options => {
 
                                     if (guildPermission) {
                                         req.account.guilds = req.account.guilds.filter(
-                                            guild => !guild.config.hidden && (req.account.viewing.games || (req.account.viewing.dashboard && guild.permission))
+                                            guild => !guild.config.hidden // && (req.account.viewing.games || req.account.viewing.dashboard))
                                         );
                                     }
 
