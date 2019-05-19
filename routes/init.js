@@ -137,7 +137,7 @@ module.exports = options => {
                                                 .fromNow()
                                         };
 
-                                        game.slot = game.reserved.split(/\r?\n/).findIndex(t => t === tag) + 1;
+                                        game.slot = game.reserved.split(/\r?\n/).findIndex(t => t.trim().replace('@', '') === tag) + 1;
                                         game.signedup = game.slot > 0 && game.slot <= parseInt(game.players);
                                         game.waitlisted = game.slot > parseInt(game.players);
 

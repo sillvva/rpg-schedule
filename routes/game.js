@@ -115,7 +115,7 @@ module.exports = options => {
                         data.runtime = req.body.runtime;
                         data.where = req.body.where;
                         data.description = req.body.description;
-                        data.reserved = req.body.reserved;
+                        data.reserved = req.body.reserved.replace(/@/g, '');
                         data.method = req.body.method;
                         data.customSignup = req.body.customSignup;
                         data.when = req.body.when;

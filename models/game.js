@@ -26,11 +26,11 @@ module.exports = class Game {
 
         let reserved = [];
         let waitlist = [];
-        game.reserved.split(/\r?\n/).forEach(res => {
+        game.reserved.replace(/@/g, '').split(/\r?\n/).forEach(res => {
             if (res.trim().length === 0) return;
-            let member = guild.members.array().find(mem => mem.user.tag === res.trim().replace('@',''));
+            let member = guild.members.array().find(mem => mem.user.tag === res.trim());
 
-            let name = res.trim().replace('@','').replace(/\#\d{4}/, '');
+            let name = res.trim().replace(/\#\d{4}/, '');
             if (member && guildConfig.embeds === false) name = member.user.toString();
 
             if (reserved.length < parseInt(game.players)) {
