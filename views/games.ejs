@@ -21,10 +21,10 @@
     <h6 class="breadcrumbs">
         <% if (viewing.games) { %>
             Upcoming Games
-            <a href="<%= config.urls.game.dashboard %>" class="btn btn-primary btn-sm float-right">My Games</a>
+            <a href="<%= config.urls.game.dashboard.url %>" class="btn btn-primary btn-sm float-right">My Games</a>
         <% } else if (viewing.dashboard) { %>
             My Games
-            <a href="<%= config.urls.game.games %>" class="btn btn-primary btn-sm float-right">Upcoming Games</a>
+            <a href="<%= config.urls.game.games.url %>" class="btn btn-primary btn-sm float-right">Upcoming Games</a>
         <% } %>
     </h6>
     <% guilds.forEach(guild => { %>
@@ -33,7 +33,7 @@
         <img class="guild-icon" src="<%= guild.icon %>" alt="" />
         <%= guild.name %>
         <% if (viewing.dashboard && guild.permission) { %>
-            <a href="<%= config.urls.game.create %>?s=<%= guild.id %>" class="btn btn-primary btn-sm float-right">New Game</a>
+            <a href="<%= config.urls.game.create.url %>?s=<%= guild.id %>" class="btn btn-primary btn-sm float-right">New Game</a>
         <% } %>
     </h2>
     <div class="games">
@@ -48,29 +48,37 @@
         <% } %>
         <% guild.games.forEach(game => { %>
             <% if (viewing.dashboard && (user.tag === game.dm || user.tag === config.author)) { %>
-                <a class="game" href="<%= config.urls.game.create %>?g=<%= game._id %>">
+                <a class="game my-games" href="<%= config.urls.game.create.url %>?g=<%= game._id %>">
                     <h4 class="game-name"><%= game.adventure %></h4>
                     <div class="game-time">
                         <strong>When:</strong>
                         <% if (game.timestamp > new Date().getTime()) {%>
-                            <span data-datetime="<%= game.moment.raw %>"><%= game.moment.calendar %> (<%= game.moment.from %>)</span>
+                            <span data-datetime="<%= game.moment.raw %>" data-iso="<%= game.moment.iso %>"><%= game.moment.calendar %> (<%= game.moment.from %>)</span>
                         <% } else { %>
-                            <span data-datetime="<%= game.moment.raw %>" class="text-danger"><%= game.moment.date %> (<%= game.moment.from %>)</span>
+                            <span data-datetime="<%= game.moment.raw %>" data-iso="<%= game.moment.iso %>" class="text-danger"><%= game.moment.date %> (<%= game.moment.from %>)</span>
                         <% } %>
                     </div>
                     <div class="game-reserved"><strong>Reserved:</strong> <%= Math.min(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0)%></div>
                     <div class="game-reserved"><strong>Waitlisted:</strong> <%= Math.max(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0) - parseInt(game.players)%></div>
                 </a>
             <% } else if (viewing.games || game.signedup || game.waitlisted) { %>
-                <div class="game">
+                <div class="game upcoming" id="<%= game._id %>">
                     <h4 class="game-name"><%= game.adventure %></h4>
+                    <div class="game-dm">
+                        <strong>DM:</strong>
+                        <%= game.dm.replace(/#\d{4}/g, '') %>
+                    </div>
                     <div class="game-time">
                         <strong>When:</strong>
                         <% if (game.timestamp > new Date().getTime()) {%>
-                            <span data-datetime="<%= game.moment.raw %>"><%= game.moment.calendar %> (<%= game.moment.from %>)</span>
+                            <span data-datetime="<%= game.moment.raw %>" data-iso="<%= game.moment.iso %>"><%= game.moment.calendar %> (<%= game.moment.from %>)</span>
                         <% } else { %>
-                            <span data-datetime="<%= game.moment.raw %>" class="text-danger"><%= game.moment.date %> (<%= game.moment.from %>)</span>
+                            <span data-datetime="<%= game.moment.raw %>" data-iso="<%= game.moment.iso %>" class="text-danger"><%= game.moment.date %> (<%= game.moment.from %>)</span>
                         <% } %>
+                    </div>
+                    <div class="where">
+                        <strong>Where:</strong>
+                        <%= game.where %>
                     </div>
                     <div class="game-reserved">
                         <strong>Reserved:</strong>
@@ -86,12 +94,13 @@
                             (Slot #<%= game.slot %>)
                         <% } %>
                     </div>
+                    <div class="game-description"><%= game.description %></div>
                     <% if (game.method === "automated") { %>
                         <div class="buttons">
                             <% if (!game.signedup && !game.waitlisted) { %>
-                                <a href="<%= config.urls.game.rsvp %>?g=<%= game._id %>" class="btn btn-success btn-sm">Sign Up</a>
+                                <a href="<%= config.urls.game.rsvp.url %>?g=<%= game._id %>" class="btn btn-success btn-sm">Sign Up</a>
                             <% } else { %>
-                                <a href="<%= config.urls.game.rsvp %>?g=<%= game._id %>" class="btn btn-danger btn-sm">Drop Out</a>
+                                <a href="<%= config.urls.game.rsvp.url %>?g=<%= game._id %>" class="btn btn-danger btn-sm">Drop Out</a>
                             <% } %>
                         </div>
                     <% } %>
@@ -111,9 +120,10 @@
     const parseDates = () => {
         $('[data-datetime]').each(function() {
             const date = $(this).get(0).dataset.datetime;
+            const iso = $(this).get(0).dataset.datetime;
             const parsed = {
-                calendar: moment(date).utcOffset(moment().utcOffset()).calendar(),
-                from: moment(date).utcOffset(moment().utcOffset()).fromNow()
+                calendar: moment(iso).utcOffset(moment().utcOffset()).calendar(),
+                from: moment(iso).utcOffset(moment().utcOffset()).fromNow()
             };
             $(this).html(`${parsed.calendar} (${parsed.from})`);
             if (new Date().getTime() >= new Date(date).getTime()) {
@@ -126,6 +136,21 @@
     setInterval(() => {
         parseDates();
     }, 30 * 1000);
+
+    $('.game.upcoming').each(function() {
+        $(this).click(() => {
+            const description = $(this).find('.game-description').html();
+            const md = new Remarkable({
+                html: false
+            });
+
+            alertify.alert('Game Description', md.render(description));
+        });
+
+        $(this).find('.btn').click((ev) => {
+            ev.stopPropagation();
+        });
+    });
 </script>
 </body>
 </html>

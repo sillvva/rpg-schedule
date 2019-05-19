@@ -6,7 +6,7 @@ const config = require("../models/config");
 module.exports = () => {
     const router = express.Router();
 
-    router.use(config.urls.login, (req, res, next) => {
+    router.use(config.urls.login.url, (req, res, next) => {
         if (req.query.code) {
             const headers = {
                 "Content-Type": "application/x-www-form-urlencoded"
@@ -22,7 +22,7 @@ module.exports = () => {
                         client_secret: process.env.CLIENT_SECRET,
                         grant_type: "authorization_code",
                         code: req.query.code,
-                        redirect_uri: process.env.HOST + config.urls.login,
+                        redirect_uri: process.env.HOST + config.urls.login.url,
                         scope: "identify guilds"
                     }
                 },
@@ -34,7 +34,7 @@ module.exports = () => {
                             ...req.session.status
                         };
                         req.session.status.access = token;
-                        res.redirect(config.urls.game.dashboard);
+                        res.redirect(config.urls.game.dashboard.url);
                         return;
                     }
                     console.log(error);
@@ -48,7 +48,7 @@ module.exports = () => {
         }
     });
 
-    router.use(config.urls.logout, (req, res, next) => {
+    router.use(config.urls.logout.url, (req, res, next) => {
         req.session.status = config.defaults.sessionStatus;
         res.redirect("/");
     });

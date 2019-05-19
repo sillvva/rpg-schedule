@@ -9,10 +9,12 @@ const { db } = require("./db");
 const discord = require("./processes/discord");
 const ws = require("./processes/socket");
 
+const initRoutes = require("./routes/init");
 const gameRoutes = require("./routes/game");
 const inviteRoute = require("./routes/invite");
 const timezoneRoutes = require("./routes/timezone");
 const loginRoutes = require("./routes/login");
+const redirectRoutes = require("./routes/redirects");
 
 const app = express();
 const store = new MongoDBStore({
@@ -34,18 +36,20 @@ const client = discord.processes(async () => {
         const server = http.createServer(app).listen(process.env.PORT || 5000);
         const io = ws.init(server);
 
-        discord.refreshMessages(client.guilds);
+        if (!process.env.DO_NOT_REFRESH) {
+            discord.refreshMessages(client.guilds);
 
-        // Once per day, prune games from the database that are more than 24 hours old
-        discord.pruneOldGames(client);
-        setInterval(() => {
+            // Once per day, prune games from the database that are more than 24 hours old
             discord.pruneOldGames(client);
-        }, 24 * 3600 * 1000); // 24 hours
+            setInterval(() => {
+                discord.pruneOldGames(client);
+            }, 24 * 3600 * 1000); // 24 hours
 
-        // Post Game Reminders
-        setInterval(() => {
-            discord.postReminders(client);
-        }, 60 * 1000); // 1 minute
+            // Post Game Reminders
+            setInterval(() => {
+                discord.postReminders(client);
+            }, 60 * 1000); // 1 minute
+        }
 
         // Stay awake...
         if (!process.env.SLEEP) {
@@ -79,9 +83,11 @@ app.use(
  * Routes
  */
 app.use(loginRoutes());
+app.use(initRoutes({ client: client }));
 app.use(gameRoutes({ client: client }));
 app.use(inviteRoute());
 app.use(timezoneRoutes());
+app.use(redirectRoutes());
 app.use("/", (req, res, next) => {
     res.render("home");
 });

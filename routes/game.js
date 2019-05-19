@@ -1,7 +1,5 @@
 const express = require("express");
-const request = require("request");
 const discord = require("discord.js");
-const moment = require("moment");
 
 const Game = require("../models/game");
 const GuildConfig = require("../models/guild-config");
@@ -11,170 +9,15 @@ module.exports = options => {
     const router = express.Router();
     const { client } = options;
 
-    router.use("/", async (req, res, next) => {
-        req.account = {
-            config: config,
-            viewing: {
-                game: Object.values(config.urls.game).find(url => req.originalUrl.indexOf(url) === 0),
-                games: req.originalUrl.indexOf(config.urls.game.games) === 0,
-                dashboard: req.originalUrl.indexOf(config.urls.game.dashboard) === 0
-            },
-            guilds: [],
-            user: null
-        };
-
-        if (!req.account.viewing.game) {
-            next();
-            return;
-        }
-        try {
-            if (req.session.status) {
-                const access = req.session.status.access;
-                if (access.token_type) {
-                    request(
-                        {
-                            url: "https://discordapp.com/api/users/@me",
-                            method: "GET",
-                            headers: {
-                                authorization: `${access.token_type} ${access.access_token}`
-                            }
-                        },
-                        async (error, response, body) => {
-                            try {
-                                if (!error && response.statusCode === 200) {
-                                    const response = JSON.parse(body);
-                                    const { username, discriminator, id, avatar } = response;
-                                    const tag = `${username}#${discriminator}`;
-                                    const guildConfigs = await GuildConfig.fetchAll();
-
-                                    req.account.user = {
-                                        ...response,
-                                        ...{
-                                            tag: tag,
-                                            avatarURL: `https://cdn.discordapp.com/avatars/${id}/${avatar}.png?size=128`
-                                        }
-                                    };
-
-                                    client.guilds.forEach(guild => {
-                                        const guildConfig = guildConfigs.find(gc => gc.guild === guild.id) || {};
-                                        guild.members.forEach(member => {
-                                            if (member.id === id) {
-                                                req.account.guilds.push({
-                                                    id: guild.id,
-                                                    name: guild.name,
-                                                    icon: guild.iconURL,
-                                                    permission: guildConfig.role
-                                                        ? member.roles.find(r => r.name.toLowerCase().trim() === guildConfig.role.toLowerCase().trim())
-                                                        : true,
-                                                    channels: guild.channels,
-                                                    config: guildConfig,
-                                                    games: []
-                                                });
-                                            }
-                                        });
-                                    });
-
-                                    req.account.guilds = req.account.guilds.filter(
-                                        guild =>
-                                            !guild.config.hidden && (req.account.viewing.games || (req.account.viewing.dashboard && guild.permission))
-                                    );
-
-                                    const gameOptions = {
-                                        s: {
-                                            $in: req.account.guilds.reduce((i, g) => {
-                                                i.push(g.id);
-                                                return i;
-                                            }, [])
-                                        }
-                                    };
-
-                                    if (req.account.viewing.dashboard && tag !== config.author) {
-                                        gameOptions.$or = [
-                                            {
-                                                dm: tag
-                                            },
-                                            {
-                                                reserved: {
-                                                    $regex: tag.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&")
-                                                }
-                                            }
-                                        ];
-                                    }
-
-                                    if (req.account.viewing.games) {
-                                        gameOptions.timestamp = {
-                                            $gt: new Date().getTime()
-                                        };
-                                        gameOptions.dm = {
-                                            $ne: tag
-                                        };
-                                    }
-
-                                    const games = await Game.fetchAllBy(gameOptions);
-                                    games.forEach(game => {
-                                        const date = Game.ISOGameDate(game);
-                                        game.moment = {
-                                            raw: date,
-                                            date: moment(date)
-                                                .utcOffset(parseInt(game.timezone))
-                                                .format(config.formats.dateLong),
-                                            calendar: moment(date)
-                                                .utcOffset(parseInt(game.timezone))
-                                                .calendar(),
-                                            from: moment(date)
-                                                .utcOffset(parseInt(game.timezone))
-                                                .fromNow()
-                                        };
-
-                                        game.slot = game.reserved.split(/\r?\n/).findIndex(t => t === tag) + 1;
-                                        game.signedup = game.slot > 0 && game.slot <= parseInt(game.players);
-                                        game.waitlisted = game.slot > parseInt(game.players);
-
-                                        const gi = req.account.guilds.findIndex(g => g.id === game.s);
-                                        req.account.guilds[gi].games.push(game);
-                                    });
-
-                                    next();
-                                    return;
-                                }
-                                throw new Error(error);
-                            } catch (err) {
-                                if (isDashboard) {
-                                    res.render("error", { message: err });
-                                } else {
-                                    next();
-                                }
-                            }
-                        }
-                    );
-                } else {
-                    if (req.account.viewing.dashboard) {
-                        res.redirect(config.urls.login);
-                    } else {
-                        next();
-                    }
-                }
-            } else {
-                if (req.account.viewing.dashboard) {
-                    res.redirect(config.urls.login);
-                } else {
-                    next();
-                }
-            }
-        } catch (e) {
-            res.render("error", { message: e.message });
-        }
-    });
-
-    router.use(config.urls.game.games, async (req, res, next) => {
+    router.use(config.urls.game.games.url, async (req, res, next) => {
         res.render("games", req.account);
     });
 
-    router.use(config.urls.game.dashboard, async (req, res, next) => {
+    router.use(config.urls.game.dashboard.url, async (req, res, next) => {
         res.render("games", req.account);
     });
 
-    router.use(config.urls.game.create, async (req, res, next) => {
+    router.use(config.urls.game.create.url, async (req, res, next) => {
         try {
             let game;
             let server = req.query.s;
@@ -200,17 +43,17 @@ module.exports = options => {
                         password = guildConfig.password;
                         if (guildConfig.role) {
                             if (!req.account) {
-                                res.redirect(config.urls.login);
+                                res.redirect(config.urls.login.url);
                                 return;
                             } else {
                                 const member = guild.members.find(m => m.id === req.account.user.id);
                                 if (member) {
                                     if (!member.roles.find(r => r.name.toLowerCase().trim() === guildConfig.role.toLowerCase().trim())) {
-                                        res.redirect(config.urls.game.dashboard);
+                                        res.redirect(config.urls.game.dashboard.url);
                                         return;
                                     }
                                 } else {
-                                    res.redirect(config.urls.game.dashboard);
+                                    res.redirect(config.urls.game.dashboard.url);
                                     return;
                                 }
                             }
@@ -255,7 +98,6 @@ module.exports = options => {
                             locked: password ? true : false
                         },
                         password: password ? password : false,
-                        config: config,
                         host: process.env.HOST,
                         account: req.account,
                         errors: {
@@ -273,7 +115,7 @@ module.exports = options => {
                         data.runtime = req.body.runtime;
                         data.where = req.body.where;
                         data.description = req.body.description;
-                        data.reserved = req.body.reserved;
+                        data.reserved = req.body.reserved.replace(/@/g, '');
                         data.method = req.body.method;
                         data.customSignup = req.body.customSignup;
                         data.when = req.body.when;
@@ -287,7 +129,7 @@ module.exports = options => {
                     if (req.method === "POST") {
                         Game.save(channel, { ...game, ...req.body })
                             .then(response => {
-                                if (response.modified) res.redirect(config.urls.game.create + "?g=" + response._id);
+                                if (response.modified) res.redirect(config.urls.game.create.url + "?g=" + response._id);
                                 else res.render("game", data);
                             })
                             .catch(err => {
@@ -308,7 +150,7 @@ module.exports = options => {
         }
     });
 
-    router.use(config.urls.game.rsvp, async (req, res, next) => {
+    router.use(config.urls.game.rsvp.url, async (req, res, next) => {
         try {
             if (req.query.g) {
                 const game = await Game.fetch(req.query.g);
@@ -335,10 +177,10 @@ module.exports = options => {
             console.log(err);
         }
 
-        res.redirect(req.headers.referer ? req.headers.referer : config.urls.game.games);
+        res.redirect(req.headers.referer ? req.headers.referer : config.urls.game.games.url);
     });
 
-    router.get(config.urls.game.delete, async (req, res, next) => {
+    router.get(config.urls.game.delete.url, async (req, res, next) => {
         try {
             if (req.query.g) {
                 const game = await Game.fetch(req.query.g);
@@ -353,9 +195,9 @@ module.exports = options => {
                     Game.delete(game, channel, { sendWS: false }).then(response => {
                         console.log(req.account);
                         if (req.account) {
-                            res.redirect(config.urls.game.dashboard);
+                            res.redirect(config.urls.game.dashboard.url);
                         } else {
-                            res.redirect(config.urls.game.create + "?s=" + serverId);
+                            res.redirect(config.urls.game.create.url + "?s=" + serverId);
                         }
                     });
                 } else {
@@ -369,7 +211,7 @@ module.exports = options => {
         }
     });
 
-    router.get(config.urls.game.password, async (req, res, next) => {
+    router.get(config.urls.game.password.url, async (req, res, next) => {
         try {
             const guildConfig = await GuildConfig.fetch(req.query.s);
             if (guildConfig) {
@@ -392,7 +234,7 @@ module.exports = options => {
         }
     });
 
-    router.get(config.urls.game.auth, (req, res, next) => {
+    router.get(config.urls.game.auth.url, (req, res, next) => {
         if (!req.session.status) {
             req.session.status = config.defaults.sessionStatus;
         } else {
