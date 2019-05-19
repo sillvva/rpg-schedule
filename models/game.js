@@ -41,6 +41,7 @@ module.exports = class Game {
             }
         });
 
+        const rawDate = `${game.date} ${game.time} GMT${game.timezone < 0 ? '-' : '+'}${Math.abs(game.timezone)}`;
         const timezone = 'GMT'+(game.timezone >=0 ? '+' : '')+game.timezone;
         const where = parseChannels(game.where, guild.channels);
         const description = parseChannels(game.description, guild.channels);
@@ -59,7 +60,7 @@ module.exports = class Game {
         if (game.when === 'datetime') {
             const date = Game.ISOGameDate(game);
             when = moment(date).utcOffset(parseInt(game.timezone)).format(config.formats.dateLong)+` (${timezone})`;
-            game.timestamp = new Date(date).getTime()
+            game.timestamp = new Date(rawDate).getTime()
         }
         else if (game.when === 'now') {
             when = 'Now';
