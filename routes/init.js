@@ -37,7 +37,9 @@ module.exports = options => {
         };
 
         try {
-            const storedSession = await connection().collection("sessions").findOne({ _id: req.session.id });
+            const storedSession = await connection()
+                .collection("sessions")
+                .findOne({ _id: req.session.id });
             if (storedSession) {
                 req.session.status = storedSession.session.status;
             }
@@ -129,7 +131,7 @@ module.exports = options => {
                                     games.forEach(game => {
                                         const date = Game.ISOGameDate(game);
                                         game.moment = {
-                                            raw: `${game.date} ${game.time} GMT${game.timezone < 0 ? '-' : '+'}${Math.abs(game.timezone)}`,
+                                            raw: `${game.date} ${game.time} GMT${game.timezone < 0 ? "-" : "+"}${Math.abs(game.timezone)}`,
                                             iso: date,
                                             date: moment(date)
                                                 .utcOffset(parseInt(game.timezone))
@@ -142,12 +144,31 @@ module.exports = options => {
                                                 .fromNow()
                                         };
 
-                                        game.slot = game.reserved.split(/\r?\n/).findIndex(t => t.trim().replace('@', '') === tag) + 1;
+                                        game.slot = game.reserved.split(/\r?\n/).findIndex(t => t.trim().replace("@", "") === tag) + 1;
                                         game.signedup = game.slot > 0 && game.slot <= parseInt(game.players);
                                         game.waitlisted = game.slot > parseInt(game.players);
 
                                         const gi = req.account.guilds.findIndex(g => g.id === game.s);
                                         req.account.guilds[gi].games.push(game);
+                                    });
+
+                                    if (req.account.viewing.games) {
+                                        req.account.guilds = req.account.guilds.filter(guild => guild.games.length > 0);
+                                    }
+
+                                    req.account.guilds = req.account.guilds.map(guild => {
+                                        guild.games.sort((a, b) => {
+                                            return a.timestamp < b.timestamp ? -1 : 1;
+                                        });
+                                        return guild;
+                                    });
+
+                                    req.account.guilds.sort((a, b) => {
+                                        if (a.games.length === 0 && b.games.length === 0) return a.name < b.name ? -1 : 1;
+                                        if (a.games.length === 0) return 1;
+                                        if (b.games.length === 0) return -1;
+
+                                        return a.games[0].timestamp < b.games[0].timestamp ? -1 : 1;
                                     });
 
                                     if (req.account.viewing.home) {

@@ -162,34 +162,43 @@ module.exports = class Game {
             sendWS = true
         } = options;
 
-        try {
-            if (channel) {
+        if (channel) {
+            try {
                 if (game.messageId) {
                     const message = await channel.fetchMessage(game.messageId);
+                    console.log(message);
                     if (message) {
                         message.delete().catch(console.log);
                     }
                 }
+            } catch(e) {
+                console.log('Announcement: ', e.message);
+            }
 
+            try {
                 if (game.reminderMessageId) {
                     const message = await channel.fetchMessage(game.reminderMessageId);
                     if (message) {
                         message.delete().catch(console.log);
                     }
                 }
+            } catch(e) {
+                console.log('Reminder: ', e.message);
+            }
 
+            try {
                 if (game.pm) {
                     const dm = channel.guild.members.array().find(m => m.user.tag === game.dm);
                     if (dm) {
                         const pm = dm.user.dmChannel.messages.get(game.pm);
                         if (pm) {
-                            pm.delete();
+                            pm.delete().catch(console.log);
                         }
                     }
                 }
+            } catch(e) {
+                console.log('DM: ', e.message);
             }
-        } catch(e) {
-
         }
         if(sendWS) ws.getIo().emit('game', { action: 'deleted', gameId: game._id });
         return await connection()

@@ -37,7 +37,7 @@
         </div>
         <div class="row">
             <div class="form-group col-sm-6">
-                <label for="adventure" class="col-form-label">Adventure</label>
+                <label for="adventure" class="col-form-label">Game / Adventure Name</label>
                 <input type="text" class="form-control" id="adventure" name="adventure" required value="<%= adventure %>">
             </div>
             <div class="form-group col-sm-3">
@@ -56,7 +56,7 @@
         </div>
         <div class="row">
             <div class="form-group col-sm-5">
-                <label for="dm" class="col-form-label">DM Discord Tag</label>
+                <label for="dm" class="col-form-label">GM Discord Tag</label>
                 <input type="text" class="form-control" id="dm" name="dm" placeholder="Username#1234" required value="<%= dm %>">
                 <% if (errors.dm) { %>
                     <small class="error"><%= errors.dm %></small>
