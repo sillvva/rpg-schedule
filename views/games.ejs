@@ -40,7 +40,7 @@
         <% if (guild.games.length === 0) { %>
             <div class="no-games">
                 <% if (viewing.dashboard) { %>
-                    You are not dming or playing in any games on this server right now
+                    You are not running or playing in any games on this server right now
                 <% } else if (viewing.games) { %>
                     There are no upcoming games on this server right now
                 <% } %>
@@ -65,7 +65,7 @@
                 <div class="game upcoming" id="<%= game._id %>">
                     <h4 class="game-name"><%= game.adventure %></h4>
                     <div class="game-dm">
-                        <strong>DM:</strong>
+                        <strong>GM:</strong>
                         <%= game.dm.replace(/#\d{4}/g, '') %>
                     </div>
                     <div class="game-time">
