@@ -152,25 +152,23 @@ module.exports = options => {
                                         req.account.guilds[gi].games.push(game);
                                     });
 
-                                    guilds = guilds.map(guild => {
+                                    if (req.account.viewing.games) {
+                                        req.account.guilds = req.account.guilds.filter(guild => guild.games.length > 0);
+                                    }
+
+                                    req.account.guilds = req.account.guilds.map(guild => {
                                         guild.games.sort((a, b) => {
-                                            return a.timestamp > b.timestamp ? -1 : 1;
+                                            return a.timestamp < b.timestamp ? -1 : 1;
                                         });
                                         return guild;
                                     });
 
-                                    guilds.sort((a, b) => {
-                                        const atime = a.games.reduce((i, game) => {
-                                            if (i < game.timestamp) return game.timestamp;
-                                            else return i;
-                                        }, 0);
+                                    req.account.guilds.sort((a, b) => {
+                                        if (a.games.length === 0 && b.games.length === 0) return a.name < b.name ? -1 : 1;
+                                        if (a.games.length === 0) return 1;
+                                        if (b.games.length === 0) return -1;
 
-                                        const btime = b.games.reduce((i, game) => {
-                                            if (i < game.timestamp) return game.timestamp;
-                                            else return i;
-                                        }, 0);
-
-                                        return atime > btime ? -1 : 1;
+                                        return a.games[0].timestamp < b.games[0].timestamp ? -1 : 1;
                                     });
 
                                     if (req.account.viewing.home) {
