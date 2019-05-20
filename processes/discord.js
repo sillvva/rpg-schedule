@@ -60,7 +60,7 @@ const discordProcesses = readyCallback => {
                     );
                 message.channel.send(embed);
             } else if (cmd === "link") {
-                message.channel.send(process.env.HOST + config.urls.game.create + "?s=" + guildId);
+                message.channel.send(process.env.HOST + config.urls.game.create.url + "?s=" + guildId);
             } else if (cmd === "configuration") {
                 if (canConfigure) {
                     const channel = guild.channels.get(guildConfig.channel) || guild.channels.array().find(c => c instanceof discord.TextChannel);
