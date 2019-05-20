@@ -13,6 +13,7 @@
     <% include head.ejs %>
 
     <script src="/scripts/moment.js"></script>
+    <script src="/scripts/socket.io.js"></script>
     <link rel="stylesheet" href="/styles/game.css" />
 </head>
 <body>
@@ -48,7 +49,7 @@
         <% } %>
         <% guild.games.forEach(game => { %>
             <% if (guild.permission && viewing.dashboard && (user.tag === game.dm || user.tag === config.author)) { %>
-                <a class="game my-games" href="<%= config.urls.game.create.url %>?g=<%= game._id %>">
+                <a class="game my-games" id="<%= game._id %>" href="<%= config.urls.game.create.url %>?g=<%= game._id %>">
                     <h4 class="game-name"><%= game.adventure %></h4>
                     <div class="game-time">
                         <strong>When:</strong>
@@ -150,6 +151,16 @@
         $(this).find('.btn').click((ev) => {
             ev.stopPropagation();
         });
+    });
+
+    const socket = io();
+
+    socket.on('game', response => {
+        if (response.action === 'updated') {
+            
+        } else if (response.action === 'deleted') {
+            $('#'+response.gameId+'.game').remove();
+        }
     });
 </script>
 </body>
