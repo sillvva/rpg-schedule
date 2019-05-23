@@ -1,83 +1,89 @@
-const mongodb = require('mongodb');
-const discord = require('discord.js');
-const moment = require('moment');
+const mongodb = require("mongodb");
+const discord = require("discord.js");
+const moment = require("moment");
 
-const { connection } = require('../db');
-const ws = require('../processes/socket');
-const GuildConfig = require('./guild-config');
-const config = require('./config');
+const { connection } = require("../db");
+const ws = require("../processes/socket");
+const GuildConfig = require("./guild-config");
+const config = require("./config");
 
 const ObjectId = mongodb.ObjectId;
-const collection = 'games';
+const collection = "games";
 const host = process.env.HOST;
 
 module.exports = class Game {
     static async save(channel, game) {
-        if (!connection()) throw new Error('No database connection');
+        if (!connection()) throw new Error("No database connection");
         const guild = channel.guild;
         const guildConfig = await GuildConfig.fetch(guild.id);
 
-        let dm = game.dm.trim().replace('@','').replace(/\#\d{4}/, '');
+        let dm = game.dm
+            .trim()
+            .replace("@", "")
+            .replace(/\#\d{4}/, "");
         let dmmember = guild.members.array().find(mem => {
-            return mem.user.tag === game.dm.trim().replace('@','');
+            return mem.user.tag === game.dm.trim().replace("@", "");
         });
-        if (!dmmember) throw new Error('DM must be a Discord tag');
+        if (!dmmember) throw new Error("DM must be a Discord tag");
         else if (guildConfig.embeds === false) dm = dmmember.user.toString();
 
         let reserved = [];
         let waitlist = [];
-        game.reserved.replace(/@/g, '').split(/\r?\n/).forEach(res => {
-            if (res.trim().length === 0) return;
-            let member = guild.members.array().find(mem => mem.user.tag === res.trim());
+        game.reserved
+            .replace(/@/g, "")
+            .split(/\r?\n/)
+            .forEach(res => {
+                if (res.trim().length === 0) return;
+                let member = guild.members.array().find(mem => mem.user.tag === res.trim());
 
-            let name = res.trim().replace(/\#\d{4}/, '');
-            if (member && guildConfig.embeds === false) name = member.user.toString();
+                let name = res.trim().replace(/\#\d{4}/, "");
+                if (member && guildConfig.embeds === false) name = member.user.toString();
 
-            if (reserved.length < parseInt(game.players)) {
-                reserved.push((reserved.length+1)+'. '+name);
-            }
-            else {
-                waitlist.push((reserved.length+waitlist.length+1)+'. '+name);
-            }
-        });
+                if (reserved.length < parseInt(game.players)) {
+                    reserved.push(reserved.length + 1 + ". " + name);
+                } else {
+                    waitlist.push(reserved.length + waitlist.length + 1 + ". " + name);
+                }
+            });
 
-        const rawDate = `${game.date} ${game.time} GMT${game.timezone < 0 ? '-' : '+'}${Math.abs(game.timezone)}`;
-        const timezone = 'GMT'+(game.timezone >=0 ? '+' : '')+game.timezone;
+        const rawDate = `${game.date} ${game.time} GMT${game.timezone < 0 ? "-" : "+"}${Math.abs(game.timezone)}`;
+        const timezone = "GMT" + (game.timezone >= 0 ? "+" : "") + game.timezone;
         const where = parseChannels(game.where, guild.channels);
         const description = parseChannels(game.description, guild.channels);
 
-        let signups = '';
-        if (game.method === 'automated') {
+        let signups = "";
+        if (game.method === "automated") {
             if (reserved.length > 0) signups += `\n**Sign Ups:**\n${reserved.join("\n")}\n`;
             if (waitlist.length > 0) signups += `\n**Waitlist:**\n${waitlist.join("\n")}\n`;
             signups += `\n(➕ Add Me | ➖ Remove Me)`;
-        }
-        else if (game.method === 'custom') {
+        } else if (game.method === "custom") {
             signups += `\n${game.customSignup}`;
         }
 
-        let when = '';
-        if (game.when === 'datetime') {
+        let when = "";
+        if (game.when === "datetime") {
             const date = Game.ISOGameDate(game);
-            when = moment(date).utcOffset(parseInt(game.timezone)).format(config.formats.dateLong)+` (${timezone})`;
-            game.timestamp = new Date(rawDate).getTime()
-        }
-        else if (game.when === 'now') {
-            when = 'Now';
+            when = moment(date)
+                    .utcOffset(parseInt(game.timezone))
+                    .format(config.formats.dateLong) + ` (${timezone})`;
+            game.timestamp = new Date(rawDate).getTime();
+        } else if (game.when === "now") {
+            when = "Now";
             game.timestamp = new Date.getTime();
         }
 
-        const msg = `\n**DM:** ${dm}` +
+        const msg =
+            `\n**DM:** ${dm}` +
             `\n**Adventure:** ${game.adventure}` +
             `\n**Runtime:** ${game.runtime} hours` +
-            `\n${description.length > 0 ? "**Description:**\n"+description+"\n" : description}` +
+            `\n${description.length > 0 ? "**Description:**\n" + description + "\n" : description}` +
             `\n**When:** ${when}` +
             `\n**Where:** ${where}` +
             `\n${signups}`;
 
         let embed = new discord.RichEmbed()
-            .setTitle('Game Announcement')
-            .setColor(0x2196F3)
+            .setTitle("Game Announcement")
+            .setColor(0x2196f3)
             .setDescription(msg);
 
         embed.setThumbnail(dmmember.user.avatarURL);
@@ -95,14 +101,9 @@ module.exports = class Game {
                     message = await message.edit(embed);
                 }
 
-                const updatedGame = {};
-                Object.entries(prev).forEach(([key, val]) => {
-                    if (game[key] !== val) updatedGame[key] = val;
-                });
-
-                ws.getIo().emit('game', { action: 'updated', gameId: game._id, game: updatedGame });
-            }
-            catch(err) {
+                const updatedGame = Object.fromEntries(Object.entries(prev).filter(([key, val]) => game[key] !== val));
+                ws.getIo().emit("game", { action: "updated", gameId: game._id, game: updatedGame });
+            } catch (err) {
                 Game.delete(game._id);
                 updated.modifiedCount = 0;
             }
@@ -119,9 +120,11 @@ module.exports = class Game {
             } else {
                 message = await channel.send(embed);
             }
-            if (game.method === 'automated') await message.react('➕');
-            if (game.method === 'automated') await message.react('➖');
-            const pm = await dmmember.send("You can edit your `"+guild.name+"` - `"+game.adventure+"` game here:\n"+host+config.urls.game.create.url+'?g='+inserted.insertedId);
+            if (game.method === "automated") await message.react("➕");
+            if (game.method === "automated") await message.react("➖");
+            const pm = await dmmember.send(
+                "You can edit your `" + guild.name + "` - `" + game.adventure + "` game here:\n" + host + config.urls.game.create.url + "?g=" + inserted.insertedId
+            );
             const updated = await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { messageId: message.id, pm: pm.id } });
             return {
                 message: message,
@@ -132,14 +135,14 @@ module.exports = class Game {
     }
 
     static async fetch(gameId) {
-        if (!connection()) throw new Error('No database connection');
+        if (!connection()) throw new Error("No database connection");
         return await connection()
             .collection(collection)
             .findOne({ _id: new ObjectId(gameId) });
     }
 
     static async fetchBy(key, value) {
-        if (!connection()) throw new Error('No database connection');
+        if (!connection()) throw new Error("No database connection");
         const query = {};
         query[key] = value;
         return await connection()
@@ -148,7 +151,7 @@ module.exports = class Game {
     }
 
     static async fetchAllBy(query) {
-        if (!connection()) throw new Error('No database connection');
+        if (!connection()) throw new Error("No database connection");
         return await connection()
             .collection(collection)
             .find(query)
@@ -156,18 +159,16 @@ module.exports = class Game {
     }
 
     static async deleteAllBy(query) {
-        if (!connection()) throw new Error('No database connection');
+        if (!connection()) throw new Error("No database connection");
         return await connection()
             .collection(collection)
             .deleteMany(query);
     }
 
     static async delete(game, channel, options = {}) {
-        if (!connection()) throw new Error('No database connection');
+        if (!connection()) throw new Error("No database connection");
 
-        const {
-            sendWS = true
-        } = options;
+        const { sendWS = true } = options;
 
         if (channel) {
             try {
@@ -178,8 +179,8 @@ module.exports = class Game {
                         message.delete().catch(console.log);
                     }
                 }
-            } catch(e) {
-                console.log('Announcement: ', e.message);
+            } catch (e) {
+                console.log("Announcement: ", e.message);
             }
 
             try {
@@ -189,8 +190,8 @@ module.exports = class Game {
                         message.delete().catch(console.log);
                     }
                 }
-            } catch(e) {
-                console.log('Reminder: ', e.message);
+            } catch (e) {
+                console.log("Reminder: ", e.message);
             }
 
             try {
@@ -203,18 +204,18 @@ module.exports = class Game {
                         }
                     }
                 }
-            } catch(e) {
-                console.log('DM: ', e.message);
+            } catch (e) {
+                console.log("DM: ", e.message);
             }
         }
-        if(sendWS) ws.getIo().emit('game', { action: 'deleted', gameId: game._id });
+        if (sendWS) ws.getIo().emit("game", { action: "deleted", gameId: game._id });
         return await connection()
             .collection(collection)
             .deleteOne({ _id: new ObjectId(game._id) });
     }
 
     static ISOGameDate(game) {
-        return `${game.date.replace(/-/g, '')}T${game.time.replace(/:/g, '')}00${game.timezone >= 0 ? '+' : '-'}${parseTimeZoneISO(game.timezone)}`;
+        return `${game.date.replace(/-/g, "")}T${game.time.replace(/:/g, "")}00${game.timezone >= 0 ? "+" : "-"}${parseTimeZoneISO(game.timezone)}`;
     }
 };
 
@@ -223,24 +224,23 @@ const parseChannels = (text, channels) => {
         (text.match(/#[a-z0-9\-_]+/g) || []).forEach(m => {
             const chan = channels.array().find(c => c.name === m.substr(1));
             if (chan) {
-                text = text.replace(new RegExp(m, 'g'), chan.toString())
+                text = text.replace(new RegExp(m, "g"), chan.toString());
             }
         });
-    }
-    catch(err) {
+    } catch (err) {
         console.log(err);
     }
     return text;
 };
 
-const parseTimeZoneISO = (timezone) => {
+const parseTimeZoneISO = timezone => {
     const tz = Math.abs(timezone);
     const hours = Math.floor(tz);
-    const minutes = (tz - hours) / 100 * 60;
+    const minutes = ((tz - hours) / 100) * 60;
     const zeroPad = (n, width, z) => {
-        z = z || '0';
-        n = n + '';
+        z = z || "0";
+        n = n + "";
         return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
     };
-    return zeroPad(hours, 2)+zeroPad(minutes, 2);
+    return zeroPad(hours, 2) + zeroPad(minutes, 2);
 };
