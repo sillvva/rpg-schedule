@@ -84,6 +84,7 @@ module.exports = class Game {
 
         const dbCollection = connection().collection(collection);
         if (game._id) {
+            const prev = await Game.fetch(game._id);
             const updated = await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: game });
             let message;
             try {
@@ -93,7 +94,13 @@ module.exports = class Game {
                 } else {
                     message = await message.edit(embed);
                 }
-                ws.getIo().emit('game', { action: 'updated', gameId: game._id, game: game });
+
+                const updated = {};
+                Object.entries(prev).forEach(([key, val]) => {
+                    if (game[key] !== val) updated[key] = val;
+                });
+
+                ws.getIo().emit('game', { action: 'updated', gameId: game._id, game: updated });
             }
             catch(err) {
                 Game.delete(game._id);
