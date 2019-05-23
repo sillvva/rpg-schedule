@@ -95,12 +95,12 @@ module.exports = class Game {
                     message = await message.edit(embed);
                 }
 
-                const updated = {};
+                const updatedGame = {};
                 Object.entries(prev).forEach(([key, val]) => {
-                    if (game[key] !== val) updated[key] = val;
+                    if (game[key] !== val) updatedGame[key] = val;
                 });
 
-                ws.getIo().emit('game', { action: 'updated', gameId: game._id, game: updated });
+                ws.getIo().emit('game', { action: 'updated', gameId: game._id, game: updatedGame });
             }
             catch(err) {
                 Game.delete(game._id);
