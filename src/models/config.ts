@@ -1,4 +1,4 @@
-module.exports = {
+export = {
     urls: {
         base: { url: "/", session: true },
         redirects: {

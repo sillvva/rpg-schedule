@@ -1,77 +1,75 @@
-const express = require("express");
-const discord = require("discord.js");
-
-const Game = require("../models/game");
-const GuildConfig = require("../models/guild-config");
-const config = require("../models/config");
-
-module.exports = options => {
-    const router = express.Router();
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = __importDefault(require("express"));
+const discord_js_1 = __importDefault(require("discord.js"));
+const game_1 = require("../models/game");
+const guild_config_1 = require("../models/guild-config");
+const config_1 = __importDefault(require("../models/config"));
+exports.default = (options) => {
+    const router = express_1.default.Router();
     const { client } = options;
-
-    router.use(config.urls.game.games.url, async (req, res, next) => {
+    router.use(config_1.default.urls.game.games.url, async (req, res, next) => {
         res.render("games", req.account);
     });
-
-    router.use(config.urls.game.dashboard.url, async (req, res, next) => {
+    router.use(config_1.default.urls.game.dashboard.url, async (req, res, next) => {
         res.render("games", req.account);
     });
-
-    router.use(config.urls.game.create.url, async (req, res, next) => {
+    router.use(config_1.default.urls.game.create.url, async (req, res, next) => {
         try {
             let game;
             let server = req.query.s;
-
             if (req.query.g) {
-                game = await Game.fetch(req.query.g);
+                game = await game_1.Game.fetch(req.query.g);
                 if (game) {
                     server = game.s;
-                } else {
+                }
+                else {
                     throw new Error("Game not found");
                 }
             }
-
             if (server) {
                 const guild = client.guilds.get(server);
-
                 if (guild) {
                     let channelId;
                     let password;
-
-                    const guildConfig = await GuildConfig.fetch(guild.id);
+                    const guildConfig = await guild_config_1.GuildConfig.fetch(guild.id);
                     if (guildConfig) {
                         password = guildConfig.password;
                         if (guildConfig.role) {
                             if (!req.account) {
-                                res.redirect(config.urls.login.url);
+                                res.redirect(config_1.default.urls.login.url);
                                 return;
-                            } else {
+                            }
+                            else {
                                 const member = guild.members.find(m => m.id === req.account.user.id);
                                 if (member) {
                                     if (!member.roles.find(r => r.name.toLowerCase().trim() === guildConfig.role.toLowerCase().trim())) {
-                                        res.redirect(config.urls.game.dashboard.url);
+                                        res.redirect(config_1.default.urls.game.dashboard.url);
                                         return;
                                     }
-                                } else {
-                                    res.redirect(config.urls.game.dashboard.url);
+                                }
+                                else {
+                                    res.redirect(config_1.default.urls.game.dashboard.url);
                                     return;
                                 }
                             }
                         }
                     }
-
                     if (req.query.g) {
                         channelId = game.c;
-                    } else {
-                        if (guildConfig) channelId = guildConfig.channel;
                     }
-
-                    const channel = guild.channels.get(channelId) || guild.channels.array().find(c => c instanceof discord.TextChannel);
-
+                    else {
+                        if (guildConfig)
+                            channelId = guildConfig.channel;
+                    }
+                    const textChannels = guild.channels.array().filter(c => c instanceof discord_js_1.default.TextChannel);
+                    const channel = textChannels.find(c => c.id === channelId) || textChannels[0];
                     if (!channel) {
                         throw new Error("Discord channel not found");
                     }
-
                     let data = {
                         title: req.query.g ? "Edit Game" : "New Game",
                         guild: guild.name,
@@ -104,11 +102,9 @@ module.exports = options => {
                             dm: false
                         }
                     };
-
                     if (req.query.g) {
                         data = { ...data, ...game };
                     }
-
                     if (req.method === "POST") {
                         data.dm = req.body.dm;
                         data.adventure = req.body.adventure;
@@ -125,123 +121,128 @@ module.exports = options => {
                         data.reminder = req.body.reminder;
                         data.players = req.body.players;
                     }
-
                     if (req.method === "POST") {
-                        Game.save(channel, { ...game, ...req.body })
+                        game_1.Game.save(channel, { ...game, ...req.body })
                             .then(response => {
-                                if (response.modified) res.redirect(config.urls.game.create.url + "?g=" + response._id);
-                                else res.render("game", data);
-                            })
-                            .catch(err => {
-                                data.errors.dm = err.message.startsWith("DM") ? err.message : false;
+                            if (response.modified)
+                                res.redirect(config_1.default.urls.game.create.url + "?g=" + response._id);
+                            else
                                 res.render("game", data);
-                            });
-                    } else {
+                        })
+                            .catch(err => {
+                            data.errors.dm = err.message.startsWith("DM") ? err.message : false;
+                            res.render("game", data);
+                        });
+                    }
+                    else {
                         res.render("game", data);
                     }
-                } else {
+                }
+                else {
                     throw new Error("Discord server not found");
                 }
-            } else {
+            }
+            else {
                 throw new Error("Discord server not specified");
             }
-        } catch (err) {
+        }
+        catch (err) {
             res.render("error", { message: err });
         }
     });
-
-    router.use(config.urls.game.rsvp.url, async (req, res, next) => {
+    router.use(config_1.default.urls.game.rsvp.url, async (req, res, next) => {
         try {
             if (req.query.g) {
-                const game = await Game.fetch(req.query.g);
+                const game = await game_1.Game.fetch(req.query.g);
                 if (game) {
                     const guild = req.account.guilds.find(s => s.id === game.s);
                     if (guild) {
-                        const channel = guild.channels.find(c => c.id === game.c);
+                        const channel = guild.channels.find(c => c.id === game.c && c instanceof discord_js_1.default.TextChannel);
                         if (channel) {
                             const reserved = game.reserved.split(/\r?\n/);
                             if (reserved.find(t => t === req.account.user.tag)) {
                                 reserved.splice(reserved.indexOf(req.account.user.tag), 1);
-                            } else {
+                            }
+                            else {
                                 reserved.push(req.account.user.tag);
                             }
-
                             game.reserved = reserved.join("\n");
-
-                            const result = await Game.save(channel, game);
+                            const result = await game_1.Game.save(channel, game);
                         }
                     }
                 }
             }
-        } catch (err) {
+        }
+        catch (err) {
             console.log(err);
         }
-
-        res.redirect(req.headers.referer ? req.headers.referer : config.urls.game.games.url);
+        res.redirect(req.headers.referer ? req.headers.referer : config_1.default.urls.game.games.url);
     });
-
-    router.get(config.urls.game.delete.url, async (req, res, next) => {
+    router.get(config_1.default.urls.game.delete.url, async (req, res, next) => {
         try {
             if (req.query.g) {
-                const game = await Game.fetch(req.query.g);
-                if (!game) throw new Error("Game not found");
+                const game = await game_1.Game.fetch(req.query.g);
+                if (!game)
+                    throw new Error("Game not found");
                 const serverId = game.s;
                 const channelId = game.c;
-
                 const guild = client.guilds.get(serverId);
                 if (guild) {
                     const channel = guild.channels.get(channelId);
-
-                    Game.delete(game, channel, { sendWS: false }).then(response => {
-                        console.log(req.account);
+                    game_1.Game.delete(game, channel, { sendWS: false }).then(response => {
                         if (req.account) {
-                            res.redirect(config.urls.game.dashboard.url);
-                        } else {
-                            res.redirect(config.urls.game.create.url + "?s=" + serverId);
+                            res.redirect(config_1.default.urls.game.dashboard.url);
+                        }
+                        else {
+                            res.redirect(config_1.default.urls.game.create.url + "?s=" + serverId);
                         }
                     });
-                } else {
+                }
+                else {
                     throw new Error("Server not found");
                 }
-            } else {
+            }
+            else {
                 throw new Error("Game not found");
             }
-        } catch (err) {
+        }
+        catch (err) {
             res.render("error", { message: err });
         }
     });
-
-    router.get(config.urls.game.password.url, async (req, res, next) => {
+    router.get(config_1.default.urls.game.password.url, async (req, res, next) => {
         try {
-            const guildConfig = await GuildConfig.fetch(req.query.s);
+            const guildConfig = await guild_config_1.GuildConfig.fetch(req.query.s);
             if (guildConfig) {
                 const result = guildConfig.password === req.query.p;
                 req.session.status = {
-                    ...config.defaults.sessionStatus,
+                    ...config_1.default.defaults.sessionStatus,
                     ...req.session.status
                 };
                 if (result) {
                     req.session.status.loggedInTo.push(req.query.s);
-                } else {
+                }
+                else {
                     req.session.status.loggedInTo = req.session.status.loggedInTo.filter(s => s !== req.query.s);
                 }
                 res.status(200).json({ result: result });
-            } else {
+            }
+            else {
                 throw new Error("Server not found");
             }
-        } catch (err) {
+        }
+        catch (err) {
             res.render("error", { message: err });
         }
     });
-
-    router.get(config.urls.game.auth.url, (req, res, next) => {
+    router.get(config_1.default.urls.game.auth.url, (req, res, next) => {
         if (!req.session.status) {
-            req.session.status = config.defaults.sessionStatus;
-        } else {
-            req.session.status = { ...config.defaults.sessionStatus, ...req.session.status };
+            req.session.status = config_1.default.defaults.sessionStatus;
+        }
+        else {
+            req.session.status = { ...config_1.default.defaults.sessionStatus, ...req.session.status };
         }
         res.status(200).json({ status: req.session.status });
     });
-
     return router;
 };

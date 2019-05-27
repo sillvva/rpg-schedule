@@ -1,20 +1,22 @@
-const express = require("express");
-const request = require("request");
-const moment = require("moment");
+import express from "express";
+import request from "request";
+import moment from "moment";
+import discord from "discord.js";
 
-const Game = require("../models/game");
-const GuildConfig = require("../models/guild-config");
-const config = require("../models/config");
-const aux = require("../appaux");
+import { Game } from "../models/game";
+import { GuildConfig } from "../models/guild-config";
+import config from "../models/config";
+import aux from "../appaux";
+import db from "../db";
 
 const parsedURLs = aux.parseConfigURLs(config.urls);
-const { connection } = require("../db");
+const connection = db.connection;
 
-module.exports = options => {
+export default (options: any) => {
     const router = express.Router();
-    const { client } = options;
+    const client: discord.Client = options.client;
 
-    router.use("/", async (req, res, next) => {
+    router.use("/", async (req: any, res, next) => {
         console.log(req.originalUrl);
 
         if (!parsedURLs.find(path => path.session && req._parsedOriginalUrl.pathname === path.url)) {
@@ -72,7 +74,7 @@ module.exports = options => {
                                     };
 
                                     client.guilds.forEach(guild => {
-                                        const guildConfig = guildConfigs.find(gc => gc.guild === guild.id) || {};
+                                        const guildConfig = guildConfigs.find(gc => gc.guild === guild.id) || GuildConfig.defaultConfig(guild.id);
                                         guild.members.forEach(member => {
                                             if (member.id === id) {
                                                 req.account.guilds.push({
@@ -96,7 +98,7 @@ module.exports = options => {
                                         );
                                     }
 
-                                    const gameOptions = {
+                                    const gameOptions: any = {
                                         s: {
                                             $in: req.account.guilds.reduce((i, g) => {
                                                 i.push(g.id);
@@ -127,7 +129,7 @@ module.exports = options => {
                                         };
                                     }
 
-                                    const games = await Game.fetchAllBy(gameOptions);
+                                    const games: any[] = await Game.fetchAllBy(gameOptions);
                                     games.forEach(game => {
                                         const date = Game.ISOGameDate(game);
                                         game.moment = {

@@ -1,0 +1,13 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "lib": ["es2017.object"],
+        "outDir": "./app",
+        "allowJs": true,
+        "esModuleInterop": true,
+        "target": "esnext"
+    },
+    "include": [
+        "./src/**/*"
+    ]
+}

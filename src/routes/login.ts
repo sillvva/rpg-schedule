@@ -1,9 +1,9 @@
-const express = require("express");
-const request = require("request");
+import express from "express";
+import request from "request";
 
-const config = require("../models/config");
+import config from "../models/config";
 
-module.exports = () => {
+export default () => {
     const router = express.Router();
 
     router.use(config.urls.login.url, (req, res, next) => {

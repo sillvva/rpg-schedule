@@ -1,0 +1,248 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const mongodb_1 = __importDefault(require("mongodb"));
+const discord_js_1 = __importDefault(require("discord.js"));
+const moment_1 = __importDefault(require("moment"));
+const object_fromEntries_1 = __importDefault(require("object.fromEntries"));
+const db_1 = __importDefault(require("../db"));
+const socket_1 = __importDefault(require("../processes/socket"));
+const guild_config_1 = require("./guild-config");
+const config_1 = __importDefault(require("./config"));
+const connection = db_1.default.connection;
+const ObjectId = mongodb_1.default.ObjectId;
+const collection = "games";
+const host = process.env.HOST;
+class Game {
+    static async save(channel, game) {
+        if (!connection())
+            throw new Error("No database connection");
+        const guild = channel.guild;
+        const guildConfig = await guild_config_1.GuildConfig.fetch(guild.id);
+        let dm = game.dm
+            .trim()
+            .replace("@", "")
+            .replace(/\#\d{4}/, "");
+        let dmmember = guild.members.array().find(mem => {
+            return mem.user.tag === game.dm.trim().replace("@", "");
+        });
+        if (!dmmember)
+            throw new Error("DM must be a Discord tag");
+        else if (guildConfig.embeds === false)
+            dm = dmmember.user.toString();
+        let reserved = [];
+        let waitlist = [];
+        game.reserved
+            .replace(/@/g, "")
+            .split(/\r?\n/)
+            .forEach((res) => {
+            if (res.trim().length === 0)
+                return;
+            let member = guild.members.array().find(mem => mem.user.tag === res.trim());
+            let name = res.trim().replace(/\#\d{4}/, "");
+            if (member && guildConfig.embeds === false)
+                name = member.user.toString();
+            if (reserved.length < parseInt(game.players)) {
+                reserved.push(reserved.length + 1 + ". " + name);
+            }
+            else {
+                waitlist.push(reserved.length + waitlist.length + 1 + ". " + name);
+            }
+        });
+        const rawDate = `${game.date} ${game.time} GMT${game.timezone < 0 ? "-" : "+"}${Math.abs(game.timezone)}`;
+        const timezone = "GMT" + (game.timezone >= 0 ? "+" : "") + game.timezone;
+        const where = parseChannels(game.where, guild.channels);
+        const description = parseChannels(game.description, guild.channels);
+        let signups = "";
+        if (game.method === "automated") {
+            if (reserved.length > 0)
+                signups += `\n**Sign Ups:**\n${reserved.join("\n")}\n`;
+            if (waitlist.length > 0)
+                signups += `\n**Waitlist:**\n${waitlist.join("\n")}\n`;
+            signups += `\n(➕ Add Me | ➖ Remove Me)`;
+        }
+        else if (game.method === "custom") {
+            signups += `\n${game.customSignup}`;
+        }
+        let when = "";
+        if (game.when === "datetime") {
+            const date = Game.ISOGameDate(game);
+            when = moment_1.default(date)
+                .utcOffset(game.timezone)
+                .format(config_1.default.formats.dateLong) + ` (${timezone})`;
+            game.timestamp = new Date(rawDate).getTime();
+        }
+        else if (game.when === "now") {
+            when = "Now";
+            game.timestamp = new Date().getTime();
+        }
+        const msg = `\n**DM:** ${dm}` +
+            `\n**Adventure:** ${game.adventure}` +
+            `\n**Runtime:** ${game.runtime} hours` +
+            `\n${description.length > 0 ? "**Description:**\n" + description + "\n" : description}` +
+            `\n**When:** ${when}` +
+            `\n**Where:** ${where}` +
+            `\n${signups}`;
+        let embed = new discord_js_1.default.RichEmbed()
+            .setTitle("Game Announcement")
+            .setColor(0x2196f3)
+            .setDescription(msg);
+        embed.setThumbnail(dmmember.user.avatarURL);
+        const dbCollection = connection().collection(collection);
+        if (game._id) {
+            const prev = await Game.fetch(game._id);
+            const updated = await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: game });
+            let message;
+            try {
+                message = await channel.fetchMessage(game.messageId);
+                if (guildConfig.embeds === false) {
+                    message = await message.edit(msg, { embed: {} });
+                }
+                else {
+                    message = await message.edit(embed);
+                }
+                const updatedGame = object_fromEntries_1.default(Object.entries(prev).filter(([key, val]) => game[key] !== val));
+                socket_1.default.io().emit("game", { action: "updated", gameId: game._id, game: updatedGame });
+            }
+            catch (err) {
+                Game.delete(game);
+                updated.modifiedCount = 0;
+            }
+            return {
+                message: message,
+                _id: game._id,
+                modified: updated.modifiedCount > 0
+            };
+        }
+        else {
+            const inserted = await dbCollection.insertOne(game);
+            let message;
+            if (guildConfig.embeds === false) {
+                message = await channel.send(msg);
+            }
+            else {
+                message = await channel.send(embed);
+            }
+            if (game.method === "automated")
+                await message.react("➕");
+            if (game.method === "automated")
+                await message.react("➖");
+            const pm = await dmmember.send("You can edit your `" + guild.name + "` - `" + game.adventure + "` game here:\n" + host + config_1.default.urls.game.create.url + "?g=" + inserted.insertedId);
+            const updated = await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { messageId: message.id, pm: pm.id } });
+            return {
+                message: message,
+                _id: inserted.insertedId,
+                modified: updated.modifiedCount > 0
+            };
+        }
+    }
+    static async fetch(gameId) {
+        if (!connection())
+            throw new Error("No database connection");
+        return await connection()
+            .collection(collection)
+            .findOne({ _id: new ObjectId(gameId) });
+    }
+    static async fetchBy(key, value) {
+        if (!connection())
+            throw new Error("No database connection");
+        const query = object_fromEntries_1.default([[key, value]]);
+        return await connection()
+            .collection(collection)
+            .findOne(query);
+    }
+    static async fetchAllBy(query) {
+        if (!connection())
+            throw new Error("No database connection");
+        return await connection()
+            .collection(collection)
+            .find(query)
+            .toArray();
+    }
+    static async deleteAllBy(query) {
+        if (!connection())
+            throw new Error("No database connection");
+        return await connection()
+            .collection(collection)
+            .deleteMany(query);
+    }
+    static async delete(game, channel = null, options = {}) {
+        if (!connection())
+            throw new Error("No database connection");
+        const { sendWS = true } = options;
+        if (channel) {
+            try {
+                if (game.messageId) {
+                    const message = await channel.fetchMessage(game.messageId);
+                    if (message) {
+                        message.delete().catch(console.log);
+                    }
+                }
+            }
+            catch (e) {
+                console.log("Announcement: ", e.message);
+            }
+            try {
+                if (game.reminderMessageId) {
+                    const message = await channel.fetchMessage(game.reminderMessageId);
+                    if (message) {
+                        message.delete().catch(console.log);
+                    }
+                }
+            }
+            catch (e) {
+                console.log("Reminder: ", e.message);
+            }
+            try {
+                if (game.pm) {
+                    const dm = channel.guild.members.array().find(m => m.user.tag === game.dm);
+                    if (dm) {
+                        const pm = dm.user.dmChannel.messages.get(game.pm);
+                        if (pm) {
+                            pm.delete().catch(console.log);
+                        }
+                    }
+                }
+            }
+            catch (e) {
+                console.log("DM: ", e.message);
+            }
+        }
+        if (sendWS)
+            socket_1.default.io().emit("game", { action: "deleted", gameId: game._id });
+        return await connection()
+            .collection(collection)
+            .deleteOne({ _id: new ObjectId(game._id) });
+    }
+    static ISOGameDate(game) {
+        return `${game.date.replace(/-/g, "")}T${game.time.replace(/:/g, "")}00${game.timezone >= 0 ? "+" : "-"}${parseTimeZoneISO(game.timezone)}`;
+    }
+}
+exports.Game = Game;
+;
+const parseChannels = (text, channels) => {
+    try {
+        (text.match(/#[a-z0-9\-_]+/g) || []).forEach(m => {
+            const chan = channels.array().find(c => c.name === m.substr(1));
+            if (chan) {
+                text = text.replace(new RegExp(m, "g"), chan.toString());
+            }
+        });
+    }
+    catch (err) {
+        console.log(err);
+    }
+    return text;
+};
+const parseTimeZoneISO = timezone => {
+    const tz = Math.abs(timezone);
+    const hours = Math.floor(tz);
+    const minutes = ((tz - hours) / 100) * 60;
+    const zeroPad = (n, width, z = "0") => {
+        n = n + "";
+        return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
+    };
+    return zeroPad(hours, 2) + zeroPad(minutes, 2);
+};

@@ -1,22 +1,23 @@
-const http = require("http");
-const bodyParser = require("body-parser");
-const express = require("express");
-const path = require("path");
-const session = require("express-session");
-const MongoDBStore = require("connect-mongodb-session")(session);
+import http from "http";
+import bodyParser from "body-parser";
+import express from "express";
+import path from "path";
+import session from "express-session";
+import connect from "connect-mongodb-session";
 
-const { db } = require("./db");
-const discord = require("./processes/discord");
-const ws = require("./processes/socket");
+import db from "./db";
+import discord from "./processes/discord";
+import ws from "./processes/socket";
 
-const initRoutes = require("./routes/init");
-const gameRoutes = require("./routes/game");
-const inviteRoute = require("./routes/invite");
-const timezoneRoutes = require("./routes/timezone");
-const loginRoutes = require("./routes/login");
-const redirectRoutes = require("./routes/redirects");
+import initRoutes from "./routes/init";
+import gameRoutes from "./routes/game";
+import inviteRoute from "./routes/invite";
+import timezoneRoutes from "./routes/timezone";
+import loginRoutes from "./routes/login";
+import redirectRoutes from "./routes/redirects";
 
 const app = express();
+const MongoDBStore = connect(session);
 const store = new MongoDBStore({
     uri: process.env.MONGODB_URL,
     collection: "sessions",
@@ -28,7 +29,7 @@ const store = new MongoDBStore({
 // Return the client to pass to the app routing logic.
 const client = discord.processes(async () => {
     // Create the database connection
-    let connected = await db.connect();
+    let connected = await db.database.connect();
     if (connected) {
         console.log("Database connected!");
 
@@ -69,7 +70,7 @@ app.set("view engine", "ejs");
 app.set("views", "views");
 
 app.use(bodyParser.urlencoded());
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(__dirname, '..', "public")));
 app.use(
     session({
         secret: process.env.TOKEN,

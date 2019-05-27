@@ -1,10 +1,10 @@
-const discord = require("discord.js");
+import discord, { TextChannel } from "discord.js";
 
-const GuildConfig = require("../models/guild-config");
-const Game = require("../models/game");
-const config = require("../models/config");
+import { GuildConfig } from "../models/guild-config";
+import { Game } from "../models/game";
+import config from "../models/config";
 
-const discordProcesses = readyCallback => {
+const discordProcesses = (readyCallback: () => {}) => {
     const client = new discord.Client();
 
     /**
@@ -19,7 +19,7 @@ const discordProcesses = readyCallback => {
      * Discord.JS - message
      */
     client.on("message", async message => {
-        if (message.content.startsWith(process.env.BOTCOMMAND_SCHEDULE)) {
+        if (message.content.startsWith(process.env.BOTCOMMAND_SCHEDULE) && message.channel instanceof discord.TextChannel) {
             const parts = message.content
                 .trim()
                 .split(" ")
@@ -135,7 +135,7 @@ const discordProcesses = readyCallback => {
     client.on("messageReactionAdd", async (reaction, user) => {
         const message = reaction.message;
         const game = await Game.fetchBy("messageId", message.id);
-        if (game && user.id !== message.author.id) {
+        if (game && user.id !== message.author.id && message.channel instanceof discord.TextChannel) {
             const channel = message.channel;
             if (reaction.emoji.name === "➕") {
                 if (game.reserved.indexOf(user.tag) < 0) {
@@ -163,7 +163,7 @@ const discordProcesses = readyCallback => {
      */
     client.on("messageDelete", async message => {
         const game = await Game.fetchBy("messageId", message.id);
-        if (game) {
+        if (game && message.channel instanceof TextChannel) {
             Game.delete(game, message.channel).then(result => {
                 console.log("Game deleted");
             });
@@ -178,12 +178,12 @@ const discordProcesses = readyCallback => {
         MESSAGE_REACTION_REMOVE: "messageReactionRemove"
     };
 
-    client.on("raw", async event => {
+    client.on("raw", async (event: any) => {
         if (!events.hasOwnProperty(event.t)) return;
 
         const { d: data } = event;
         const user = client.users.get(data.user_id);
-        const channel = client.channels.get(data.channel_id) || (await user.createDM());
+        const channel = <discord.TextChannel>client.channels.get(data.channel_id) || (await user.createDM());
 
         if (channel.messages.has(data.message_id)) return;
 
@@ -321,7 +321,7 @@ const postReminders = async client => {
     });
 };
 
-module.exports = {
+export = {
     processes: discordProcesses,
     login: discordLogin,
     refreshMessages: refreshMessages,

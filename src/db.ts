@@ -1,15 +1,13 @@
-const mongodb = require("mongodb");
+import mongodb from "mongodb";
 
-let _db;
+let _db: mongodb.Db;
 
 class database {
-    constructor() {
-        this.client = mongodb.MongoClient;
-        this.connected = false;
-    }
+    client = mongodb.MongoClient;
+    connected = false;
 
     async connect() {
-        let result = false;
+        let result: mongodb.MongoClient;
         try {
             result = await this.client.connect(process.env.MONGODB_URL, { useNewUrlParser: true });
         } catch (err) {
@@ -26,7 +24,9 @@ class database {
     }
 }
 
-exports.db = new database();
-exports.connection = () => {
-    return _db;
+export = {
+    database: new database(),
+    connection: () => {
+        return _db;
+    }
 };
