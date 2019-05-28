@@ -133,17 +133,17 @@ export class Game {
                 updated.modifiedCount = 0;
             }
             return {
-                message: message,
                 _id: game._id,
+                message: message,
                 modified: updated.modifiedCount > 0
             };
         } else {
             const inserted = await dbCollection.insertOne(game);
-            let message: any;
+            let message: discord.Message;
             if (guildConfig.embeds === false) {
-                message = await channel.send(msg);
+                message = <discord.Message>(await channel.send(msg));
             } else {
-                message = await channel.send(embed);
+                message = <discord.Message>(await channel.send(embed));
             }
             if (game.method === "automated") await message.react("➕");
             if (game.method === "automated") await message.react("➖");
@@ -152,8 +152,8 @@ export class Game {
             );
             const updated = await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { messageId: message.id, pm: pm.id } });
             return {
-                message: message,
                 _id: inserted.insertedId,
+                message: message,
                 modified: updated.modifiedCount > 0
             };
         }
@@ -168,13 +168,13 @@ export class Game {
 
     static async fetchBy(key: string, value: any): Promise<GameModel> {
         if (!connection()) throw new Error("No database connection");
-        const query = aux.fromEntries([[key, value]]);
+        const query: mongodb.FilterQuery<any> = aux.fromEntries([[key, value]]);
         return await connection()
             .collection(collection)
             .findOne(query);
     }
 
-    static async fetchAllBy(query: any): Promise<GameModel[]> {
+    static async fetchAllBy(query: mongodb.FilterQuery<any>): Promise<GameModel[]> {
         if (!connection()) throw new Error("No database connection");
         return await connection()
             .collection(collection)
@@ -182,7 +182,7 @@ export class Game {
             .toArray();
     }
 
-    static async deleteAllBy(query: any) {
+    static async deleteAllBy(query: mongodb.FilterQuery<any>) {
         if (!connection()) throw new Error("No database connection");
         return await connection()
             .collection(collection)

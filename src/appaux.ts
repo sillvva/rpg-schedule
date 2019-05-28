@@ -5,6 +5,7 @@ interface Path {
     session: boolean;
     redirect: string;
     guildPermission: boolean;
+    hidden: boolean;
 }
 
 const parseConfigURLs = (paths: Object) => {

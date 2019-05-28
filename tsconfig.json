@@ -1,11 +1,8 @@
 {
     "compilerOptions": {
-        "baseUrl": ".",
-        "paths": { "*": ["types/*"] },
         "outDir": "./app",
         "allowJs": true,
         "esModuleInterop": true,
-        "moduleResolution": "node",
         "target": "es5"
     },
     "include": [
