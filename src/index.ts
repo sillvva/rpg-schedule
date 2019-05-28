@@ -7,7 +7,7 @@ import connect from "connect-mongodb-session";
 
 import db from "./db";
 import discord from "./processes/discord";
-import ws from "./processes/socket";
+import { socket } from "./processes/socket";
 
 import initRoutes from "./routes/init";
 import gameRoutes from "./routes/game";
@@ -35,7 +35,7 @@ const client = discord.processes(async () => {
 
         // Start the http server
         const server = http.createServer(app).listen(process.env.PORT || 5000);
-        const io = ws.init(server);
+        const io = socket(server);
 
         if (!process.env.DO_NOT_REFRESH) {
             discord.refreshMessages(client.guilds);

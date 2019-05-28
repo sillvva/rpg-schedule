@@ -1,12 +1,12 @@
 import mongodb from "mongodb";
 import discord from "discord.js";
 import moment from "moment";
-import fromEntries from "object.fromEntries";
 
 import db from "../db";
-import socket from "../processes/socket";
+import { io } from "../processes/socket";
 import { GuildConfig } from "./guild-config";
 import config from "./config";
+import aux from "../appaux";
 
 const connection = db.connection;
 const ObjectId = mongodb.ObjectId;
@@ -116,7 +116,6 @@ export class Game {
 
         const dbCollection = connection().collection(collection);
         if (game._id) {
-            const prev = await Game.fetch(game._id);
             const updated = await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: game });
             let message: discord.Message;
             try {
@@ -127,8 +126,8 @@ export class Game {
                     message = await message.edit(embed);
                 }
 
-                const updatedGame = fromEntries(Object.entries(prev).filter(([key, val]) => game[key] !== val));
-                socket.io().emit("game", { action: "updated", gameId: game._id, game: updatedGame });
+                const updatedGame = aux.objectChanges(await Game.fetch(game._id), game);
+                io().emit("game", { action: "updated", gameId: game._id, game: updatedGame });
             } catch (err) {
                 Game.delete(game);
                 updated.modifiedCount = 0;
@@ -169,7 +168,7 @@ export class Game {
 
     static async fetchBy(key: string, value: any): Promise<GameModel> {
         if (!connection()) throw new Error("No database connection");
-        const query = fromEntries([[key, value]]);
+        const query = aux.fromEntries([[key, value]]);
         return await connection()
             .collection(collection)
             .findOne(query);
@@ -232,7 +231,7 @@ export class Game {
                 console.log("DM: ", e.message);
             }
         }
-        if (sendWS) socket.io().emit("game", { action: "deleted", gameId: game._id });
+        if (sendWS) io().emit("game", { action: "deleted", gameId: game._id });
         return await connection()
             .collection(collection)
             .deleteOne({ _id: new ObjectId(game._id) });

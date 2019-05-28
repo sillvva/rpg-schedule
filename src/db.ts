@@ -24,7 +24,7 @@ class database {
     }
 }
 
-export = {
+export default {
     database: new database(),
     connection: () => {
         return _db;

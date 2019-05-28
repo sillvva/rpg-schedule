@@ -1,16 +1,27 @@
 "use strict";
+var __assign = (this && this.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = __importDefault(require("express"));
-const request_1 = __importDefault(require("request"));
-const config_1 = __importDefault(require("../models/config"));
-exports.default = () => {
-    const router = express_1.default.Router();
-    router.use(config_1.default.urls.login.url, (req, res, next) => {
+var express_1 = __importDefault(require("express"));
+var request_1 = __importDefault(require("request"));
+var config_1 = __importDefault(require("../models/config"));
+exports.default = (function () {
+    var router = express_1.default.Router();
+    router.use(config_1.default.urls.login.url, function (req, res, next) {
         if (req.query.code) {
-            const headers = {
+            var headers = {
                 "Content-Type": "application/x-www-form-urlencoded"
             };
             request_1.default({
@@ -27,11 +38,8 @@ exports.default = () => {
                 }
             }, function (error, response, body) {
                 if (!error && response.statusCode === 200) {
-                    const token = JSON.parse(body);
-                    req.session.status = {
-                        ...config_1.default.defaults.sessionStatus,
-                        ...req.session.status
-                    };
+                    var token = JSON.parse(body);
+                    req.session.status = __assign({}, config_1.default.defaults.sessionStatus, req.session.status);
                     req.session.status.access = token;
                     res.redirect(config_1.default.urls.game.dashboard.url);
                     return;
@@ -47,9 +55,9 @@ exports.default = () => {
             res.redirect(process.env.AUTH_URL);
         }
     });
-    router.use(config_1.default.urls.logout.url, (req, res, next) => {
+    router.use(config_1.default.urls.logout.url, function (req, res, next) {
         req.session.status = config_1.default.defaults.sessionStatus;
         res.redirect("/");
     });
     return router;
-};
+});

@@ -1,9 +1,11 @@
+import fromEntries from "object.fromEntries";
+
 interface Path {
     url: string;
     session: boolean;
     redirect: string;
     guildPermission: boolean;
-};
+}
 
 const parseConfigURLs = (paths: Object) => {
     let urls: Path[] = [];
@@ -19,6 +21,17 @@ const parseConfigURLs = (paths: Object) => {
     return urls;
 };
 
-export = {
-    parseConfigURLs: parseConfigURLs
+const objectChanges = (before: {}, after: {}) => {
+    return Object.entries(after).reduce((result, [key, value]) => {
+        if (before[key] !== value) {
+            result[key] = (value instanceof Object && before[key] instanceof Object) ? objectChanges(value, before[key]) : value;
+        }
+        return result;
+    }, {});
+};
+
+export default {
+    parseConfigURLs: parseConfigURLs,
+    objectChanges: objectChanges,
+    fromEntries: fromEntries
 };

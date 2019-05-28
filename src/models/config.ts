@@ -1,4 +1,4 @@
-export = {
+export default {
     urls: {
         base: { url: "/", session: true },
         redirects: {

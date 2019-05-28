@@ -202,11 +202,11 @@ const discordProcesses = (readyCallback: () => {}) => {
     return client;
 };
 
-const discordLogin = client => {
+const discordLogin = (client) => {
     client.login(process.env.TOKEN);
 };
 
-const refreshMessages = async guilds => {
+const refreshMessages = async (guilds) => {
     const guildConfigs = await GuildConfig.fetchAll();
     guilds.array().forEach(async guild => {
         const channel = guild.channels.array().find(c => guildConfigs.find(gc => gc.guild === guild.id && gc.channel === c.id));
@@ -224,7 +224,7 @@ const refreshMessages = async guilds => {
     });
 };
 
-const pruneOldGames = async client => {
+const pruneOldGames = async (client) => {
     let result;
     console.log("Pruning old games");
     const query = {
@@ -267,7 +267,7 @@ const pruneOldGames = async client => {
     return result;
 };
 
-const postReminders = async client => {
+const postReminders = async (client) => {
     let games = await Game.fetchAllBy({ when: "datetime", reminder: { $in: ["15", "30", "60"] } });
     games.forEach(async game => {
         if (game.timestamp - parseInt(game.reminder) * 60 * 1000 > new Date().getTime()) return;
@@ -321,7 +321,7 @@ const postReminders = async client => {
     });
 };
 
-export = {
+export default {
     processes: discordProcesses,
     login: discordLogin,
     refreshMessages: refreshMessages,
