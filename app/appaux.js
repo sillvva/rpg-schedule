@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var object_fromEntries_1 = __importDefault(require("object.fromEntries"));
+var object_fromentries_1 = __importDefault(require("object.fromentries"));
 var parseConfigURLs = function (paths) {
     var urls = [];
     Object.entries(paths).forEach(function (entry) {
@@ -30,5 +30,5 @@ var objectChanges = function (before, after) {
 exports.default = {
     parseConfigURLs: parseConfigURLs,
     objectChanges: objectChanges,
-    fromEntries: object_fromEntries_1.default
+    fromEntries: object_fromentries_1.default
 };

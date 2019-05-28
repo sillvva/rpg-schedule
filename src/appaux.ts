@@ -1,4 +1,4 @@
-import fromEntries from "object.fromEntries";
+import fromEntries from "object.fromentries";
 
 interface Path {
     url: string;
