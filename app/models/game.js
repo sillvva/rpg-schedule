@@ -37,34 +37,101 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 var mongodb_1 = __importDefault(require("mongodb"));
-var discord_js_1 = __importDefault(require("discord.js"));
+var discord_js_1 = __importStar(require("discord.js"));
 var moment_1 = __importDefault(require("moment"));
 var db_1 = __importDefault(require("../db"));
+var appaux_1 = __importDefault(require("../appaux"));
+var discord_1 = require("../processes/discord");
 var socket_1 = require("../processes/socket");
 var guild_config_1 = require("./guild-config");
 var config_1 = __importDefault(require("./config"));
-var appaux_1 = __importDefault(require("../appaux"));
 var connection = db_1.default.connection;
 var ObjectId = mongodb_1.default.ObjectId;
 var collection = "games";
 var host = process.env.HOST;
-var Game = /** @class */ (function () {
-    function Game() {
+var Game = (function () {
+    function Game(game) {
+        var _this = this;
+        Object.entries(game).forEach(function (_a) {
+            var key = _a[0], value = _a[1];
+            _this[key] = value;
+        });
+        this._guild = discord_1.discordClient().guilds.get(this.s);
+        if (this._guild) {
+            this._guild.channels.forEach(function (c) {
+                if (!_this._channel && c instanceof discord_js_1.TextChannel) {
+                    _this._channel = c;
+                }
+                if (c.id === _this.c && c instanceof discord_js_1.TextChannel) {
+                    _this._channel = c;
+                }
+            });
+        }
     }
-    Game.save = function (channel, game) {
+    Object.defineProperty(Game.prototype, "discordGuild", {
+        get: function () { return this._guild; },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Game.prototype, "discordChannel", {
+        get: function () { return this._channel; },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Game.prototype, "data", {
+        get: function () {
+            return {
+                _id: this._id,
+                s: this.s,
+                c: this.c,
+                guild: this.guild,
+                channel: this.channel,
+                adventure: this.adventure,
+                runtime: this.runtime,
+                players: this.players,
+                dm: this.dm,
+                where: this.where,
+                description: this.description,
+                reserved: this.reserved,
+                method: this.method,
+                customSignup: this.customSignup,
+                when: this.when,
+                date: this.date,
+                time: this.time,
+                timezone: this.timezone,
+                timestamp: this.timestamp,
+                reminder: this.reminder,
+                messageId: this.messageId,
+                reminderMessageId: this.reminderMessageId,
+                pm: this.pm
+            };
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Game.prototype.save = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var guild, guildConfig, dm, dmmember, reserved, waitlist, rawDate, timezone, where, description, signups, when, date, msg, embed, dbCollection, updated, message, updatedGame, _a, _b, err_1, inserted, message, pm, updated;
-            return __generator(this, function (_c) {
-                switch (_c.label) {
+            var channel, guild, guildConfig, game, dm, dmmember, reserved, waitlist, rawDate, timezone, where, description, signups, when, date, msg, embed, dbCollection, prev, updated, message, updatedGame, err_1, saved, inserted, message, pm, updated, saved;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
                     case 0:
                         if (!connection())
                             throw new Error("No database connection");
+                        channel = this._channel;
                         guild = channel.guild;
-                        return [4 /*yield*/, guild_config_1.GuildConfig.fetch(guild.id)];
+                        return [4, guild_config_1.GuildConfig.fetch(guild.id)];
                     case 1:
-                        guildConfig = _c.sent();
+                        guildConfig = _a.sent();
+                        game = this.data;
                         dm = game.dm
                             .trim()
                             .replace("@", "")
@@ -135,127 +202,134 @@ var Game = /** @class */ (function () {
                             .setDescription(msg);
                         embed.setThumbnail(dmmember.user.avatarURL);
                         dbCollection = connection().collection(collection);
-                        if (!game._id) return [3 /*break*/, 12];
-                        return [4 /*yield*/, dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: game })];
+                        if (!game._id) return [3, 12];
+                        return [4, Game.fetch(game._id)];
                     case 2:
-                        updated = _c.sent();
-                        message = void 0;
-                        _c.label = 3;
+                        prev = (_a.sent()).data;
+                        return [4, dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: game })];
                     case 3:
-                        _c.trys.push([3, 10, , 11]);
-                        return [4 /*yield*/, channel.fetchMessage(game.messageId)];
-                    case 4:
-                        message = _c.sent();
-                        if (!(guildConfig.embeds === false)) return [3 /*break*/, 6];
-                        return [4 /*yield*/, message.edit(msg, { embed: {} })];
-                    case 5:
-                        message = _c.sent();
-                        return [3 /*break*/, 8];
-                    case 6: return [4 /*yield*/, message.edit(embed)];
-                    case 7:
-                        message = _c.sent();
-                        _c.label = 8;
-                    case 8:
-                        _b = (_a = appaux_1.default).objectChanges;
-                        return [4 /*yield*/, Game.fetch(game._id)];
-                    case 9:
-                        updatedGame = _b.apply(_a, [_c.sent(), game]);
-                        socket_1.io().emit("game", { action: "updated", gameId: game._id, game: updatedGame });
-                        return [3 /*break*/, 11];
-                    case 10:
-                        err_1 = _c.sent();
-                        Game.delete(game);
-                        updated.modifiedCount = 0;
-                        return [3 /*break*/, 11];
-                    case 11: return [2 /*return*/, {
-                            message: message,
-                            _id: game._id,
-                            modified: updated.modifiedCount > 0
-                        }];
-                    case 12: return [4 /*yield*/, dbCollection.insertOne(game)];
-                    case 13:
-                        inserted = _c.sent();
+                        updated = _a.sent();
                         message = void 0;
-                        if (!(guildConfig.embeds === false)) return [3 /*break*/, 15];
-                        return [4 /*yield*/, channel.send(msg)];
+                        _a.label = 4;
+                    case 4:
+                        _a.trys.push([4, 10, , 11]);
+                        return [4, channel.fetchMessage(game.messageId)];
+                    case 5:
+                        message = _a.sent();
+                        if (!(guildConfig.embeds === false)) return [3, 7];
+                        return [4, message.edit(msg, { embed: {} })];
+                    case 6:
+                        message = _a.sent();
+                        return [3, 9];
+                    case 7: return [4, message.edit(embed)];
+                    case 8:
+                        message = _a.sent();
+                        _a.label = 9;
+                    case 9:
+                        prev._id = prev._id.toString();
+                        game._id = game._id.toString();
+                        updatedGame = appaux_1.default.objectChanges(prev, game);
+                        socket_1.io().emit("game", { action: "updated", gameId: game._id, game: updatedGame });
+                        return [3, 11];
+                    case 10:
+                        err_1 = _a.sent();
+                        this.delete();
+                        updated.modifiedCount = 0;
+                        return [3, 11];
+                    case 11:
+                        saved = {
+                            _id: game._id,
+                            message: message,
+                            modified: updated.modifiedCount > 0
+                        };
+                        return [2, saved];
+                    case 12: return [4, dbCollection.insertOne(game)];
+                    case 13:
+                        inserted = _a.sent();
+                        message = void 0;
+                        if (!(guildConfig.embeds === false)) return [3, 15];
+                        return [4, channel.send(msg)];
                     case 14:
-                        message = _c.sent();
-                        return [3 /*break*/, 17];
-                    case 15: return [4 /*yield*/, channel.send(embed)];
+                        message = (_a.sent());
+                        return [3, 17];
+                    case 15: return [4, channel.send(embed)];
                     case 16:
-                        message = _c.sent();
-                        _c.label = 17;
+                        message = (_a.sent());
+                        _a.label = 17;
                     case 17:
-                        if (!(game.method === "automated")) return [3 /*break*/, 19];
-                        return [4 /*yield*/, message.react("➕")];
+                        if (!(game.method === "automated")) return [3, 19];
+                        return [4, message.react("➕")];
                     case 18:
-                        _c.sent();
-                        _c.label = 19;
+                        _a.sent();
+                        _a.label = 19;
                     case 19:
-                        if (!(game.method === "automated")) return [3 /*break*/, 21];
-                        return [4 /*yield*/, message.react("➖")];
+                        if (!(game.method === "automated")) return [3, 21];
+                        return [4, message.react("➖")];
                     case 20:
-                        _c.sent();
-                        _c.label = 21;
-                    case 21: return [4 /*yield*/, dmmember.send("You can edit your `" + guild.name + "` - `" + game.adventure + "` game here:\n" + host + config_1.default.urls.game.create.url + "?g=" + inserted.insertedId)];
+                        _a.sent();
+                        _a.label = 21;
+                    case 21: return [4, dmmember.send("You can edit your `" + guild.name + "` - `" + game.adventure + "` game here:\n" + host + config_1.default.urls.game.create.url + "?g=" + inserted.insertedId)];
                     case 22:
-                        pm = _c.sent();
-                        return [4 /*yield*/, dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { messageId: message.id, pm: pm.id } })];
+                        pm = _a.sent();
+                        return [4, dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { messageId: message.id, pm: pm.id } })];
                     case 23:
-                        updated = _c.sent();
-                        return [2 /*return*/, {
-                                message: message,
-                                _id: inserted.insertedId,
-                                modified: updated.modifiedCount > 0
-                            }];
+                        updated = _a.sent();
+                        saved = {
+                            _id: inserted.insertedId.toString(),
+                            message: message,
+                            modified: updated.modifiedCount > 0
+                        };
+                        return [2, saved];
                 }
             });
         });
     };
     Game.fetch = function (gameId) {
         return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                switch (_a.label) {
+            var _a;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
                     case 0:
                         if (!connection())
                             throw new Error("No database connection");
-                        return [4 /*yield*/, connection()
-                                .collection(collection)
-                                .findOne({ _id: new ObjectId(gameId) })];
-                    case 1: return [2 /*return*/, _a.sent()];
+                        _a = Game.bind;
+                        return [4, connection().collection(collection).findOne({ _id: new ObjectId(gameId) })];
+                    case 1: return [2, new (_a.apply(Game, [void 0, _b.sent()]))()];
                 }
             });
         });
     };
     Game.fetchBy = function (key, value) {
         return __awaiter(this, void 0, void 0, function () {
-            var query;
+            var query, game;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         if (!connection())
                             throw new Error("No database connection");
                         query = appaux_1.default.fromEntries([[key, value]]);
-                        return [4 /*yield*/, connection()
-                                .collection(collection)
-                                .findOne(query)];
-                    case 1: return [2 /*return*/, _a.sent()];
+                        return [4, connection().collection(collection).findOne(query)];
+                    case 1:
+                        game = _a.sent();
+                        return [2, game ? new Game(game) : null];
                 }
             });
         });
     };
     Game.fetchAllBy = function (query) {
         return __awaiter(this, void 0, void 0, function () {
+            var games;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         if (!connection())
                             throw new Error("No database connection");
-                        return [4 /*yield*/, connection()
-                                .collection(collection)
-                                .find(query)
-                                .toArray()];
-                    case 1: return [2 /*return*/, _a.sent()];
+                        return [4, connection().collection(collection).find(query).toArray()];
+                    case 1:
+                        games = _a.sent();
+                        return [2, games.map(function (game) {
+                                return new Game(game);
+                            })];
                 }
             });
         });
@@ -267,57 +341,56 @@ var Game = /** @class */ (function () {
                     case 0:
                         if (!connection())
                             throw new Error("No database connection");
-                        return [4 /*yield*/, connection()
-                                .collection(collection)
-                                .deleteMany(query)];
-                    case 1: return [2 /*return*/, _a.sent()];
+                        return [4, connection().collection(collection).deleteMany(query)];
+                    case 1: return [2, _a.sent()];
                 }
             });
         });
     };
-    Game.delete = function (game, channel, options) {
-        if (channel === void 0) { channel = null; }
+    Game.prototype.delete = function (options) {
         if (options === void 0) { options = {}; }
         return __awaiter(this, void 0, void 0, function () {
-            var _a, sendWS, message, e_1, message, e_2, dm, pm;
+            var _a, sendWS, game, channel, message, e_1, message, e_2, dm, pm;
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
                         if (!connection())
                             throw new Error("No database connection");
                         _a = options.sendWS, sendWS = _a === void 0 ? true : _a;
-                        if (!channel) return [3 /*break*/, 10];
+                        game = this;
+                        channel = this._channel;
+                        if (!channel) return [3, 10];
                         _b.label = 1;
                     case 1:
                         _b.trys.push([1, 4, , 5]);
-                        if (!game.messageId) return [3 /*break*/, 3];
-                        return [4 /*yield*/, channel.fetchMessage(game.messageId)];
+                        if (!game.messageId) return [3, 3];
+                        return [4, channel.fetchMessage(game.messageId)];
                     case 2:
                         message = _b.sent();
                         if (message) {
                             message.delete().catch(console.log);
                         }
                         _b.label = 3;
-                    case 3: return [3 /*break*/, 5];
+                    case 3: return [3, 5];
                     case 4:
                         e_1 = _b.sent();
                         console.log("Announcement: ", e_1.message);
-                        return [3 /*break*/, 5];
+                        return [3, 5];
                     case 5:
                         _b.trys.push([5, 8, , 9]);
-                        if (!game.reminderMessageId) return [3 /*break*/, 7];
-                        return [4 /*yield*/, channel.fetchMessage(game.reminderMessageId)];
+                        if (!game.reminderMessageId) return [3, 7];
+                        return [4, channel.fetchMessage(game.reminderMessageId)];
                     case 6:
                         message = _b.sent();
                         if (message) {
                             message.delete().catch(console.log);
                         }
                         _b.label = 7;
-                    case 7: return [3 /*break*/, 9];
+                    case 7: return [3, 9];
                     case 8:
                         e_2 = _b.sent();
                         console.log("Reminder: ", e_2.message);
-                        return [3 /*break*/, 9];
+                        return [3, 9];
                     case 9:
                         try {
                             if (game.pm) {
@@ -337,10 +410,10 @@ var Game = /** @class */ (function () {
                     case 10:
                         if (sendWS)
                             socket_1.io().emit("game", { action: "deleted", gameId: game._id });
-                        return [4 /*yield*/, connection()
+                        return [4, connection()
                                 .collection(collection)
                                 .deleteOne({ _id: new ObjectId(game._id) })];
-                    case 11: return [2 /*return*/, _b.sent()];
+                    case 11: return [2, _b.sent()];
                 }
             });
         });

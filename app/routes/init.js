@@ -72,7 +72,7 @@ exports.default = (function (options) {
                     console.log(req.originalUrl);
                     if (!parsedURLs.find(function (path) { return path.session && req._parsedOriginalUrl.pathname === path.url; })) {
                         next();
-                        return [2 /*return*/];
+                        return [2];
                     }
                     guildPermission = parsedURLs.find(function (path) { return path.guildPermission && req._parsedOriginalUrl.pathname === path.url; }) ? true : false;
                     req.account = {
@@ -89,7 +89,7 @@ exports.default = (function (options) {
                     _a.label = 1;
                 case 1:
                     _a.trys.push([1, 3, , 4]);
-                    return [4 /*yield*/, connection()
+                    return [4, connection()
                             .collection("sessions")
                             .findOne({ _id: req.session.id })];
                 case 2:
@@ -112,11 +112,11 @@ exports.default = (function (options) {
                                     switch (_a.label) {
                                         case 0:
                                             _a.trys.push([0, 4, , 5]);
-                                            if (!(!error && response.statusCode === 200)) return [3 /*break*/, 3];
+                                            if (!(!error && response.statusCode === 200)) return [3, 3];
                                             response_1 = JSON.parse(body);
                                             username = response_1.username, discriminator = response_1.discriminator, id_1 = response_1.id, avatar = response_1.avatar;
                                             tag_1 = username + "#" + discriminator;
-                                            return [4 /*yield*/, guild_config_1.GuildConfig.fetchAll()];
+                                            return [4, guild_config_1.GuildConfig.fetchAll()];
                                         case 1:
                                             guildConfigs_1 = _a.sent();
                                             req.account.user = __assign({}, response_1, {
@@ -124,7 +124,7 @@ exports.default = (function (options) {
                                                 avatarURL: "https://cdn.discordapp.com/avatars/" + id_1 + "/" + avatar + ".png?size=128"
                                             });
                                             client.guilds.forEach(function (guild) {
-                                                var guildConfig = guildConfigs_1.find(function (gc) { return gc.guild === guild.id; }) || guild_config_1.GuildConfig.defaultConfig(guild.id);
+                                                var guildConfig = guildConfigs_1.find(function (gc) { return gc.guild === guild.id; }) || new guild_config_1.GuildConfig({ guild: guild.id });
                                                 guild.members.forEach(function (member) {
                                                     if (member.id === id_1) {
                                                         req.account.guilds.push({
@@ -142,8 +142,7 @@ exports.default = (function (options) {
                                                 });
                                             });
                                             if (guildPermission) {
-                                                req.account.guilds = req.account.guilds.filter(function (guild) { return !guild.config.hidden; } // && (req.account.viewing.games || req.account.viewing.dashboard))
-                                                );
+                                                req.account.guilds = req.account.guilds.filter(function (guild) { return !guild.config.hidden; });
                                             }
                                             gameOptions = {
                                                 s: {
@@ -173,10 +172,12 @@ exports.default = (function (options) {
                                                     $ne: tag_1
                                                 };
                                             }
-                                            return [4 /*yield*/, game_1.Game.fetchAllBy(gameOptions)];
+                                            return [4, game_1.Game.fetchAllBy(gameOptions)];
                                         case 2:
                                             games = _a.sent();
                                             games.forEach(function (game) {
+                                                if (!game.discordGuild)
+                                                    return;
                                                 var date = game_1.Game.ISOGameDate(game);
                                                 game.moment = {
                                                     raw: game.date + " " + game.time + " GMT" + (game.timezone < 0 ? "-" : "+") + Math.abs(game.timezone),
@@ -217,10 +218,10 @@ exports.default = (function (options) {
                                             });
                                             if (req.account.viewing.home) {
                                                 res.redirect(config_1.default.urls.game.dashboard.url);
-                                                return [2 /*return*/];
+                                                return [2];
                                             }
                                             next();
-                                            return [2 /*return*/];
+                                            return [2];
                                         case 3: throw new Error(error);
                                         case 4:
                                             err_1 = _a.sent();
@@ -230,8 +231,8 @@ exports.default = (function (options) {
                                             else {
                                                 next();
                                             }
-                                            return [3 /*break*/, 5];
-                                        case 5: return [2 /*return*/];
+                                            return [3, 5];
+                                        case 5: return [2];
                                     }
                                 });
                             }); });
@@ -249,12 +250,12 @@ exports.default = (function (options) {
                         else
                             res.redirect(config_1.default.urls.login.url);
                     }
-                    return [3 /*break*/, 4];
+                    return [3, 4];
                 case 3:
                     e_1 = _a.sent();
                     res.render("error", { message: e_1.message });
-                    return [3 /*break*/, 4];
-                case 4: return [2 /*return*/];
+                    return [3, 4];
+                case 4: return [2];
             }
         });
     }); });

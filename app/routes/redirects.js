@@ -53,7 +53,7 @@ exports.default = (function () {
                     return i;
                 }, []).join('&');
                 res.redirect(path.redirect + (params.length > 0 ? '?' + params : ''));
-                return [2 /*return*/];
+                return [2];
             });
         }); });
     });

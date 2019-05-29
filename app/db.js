@@ -40,7 +40,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var mongodb_1 = __importDefault(require("mongodb"));
 var _db;
-var database = /** @class */ (function () {
+var database = (function () {
     function database() {
         this.client = mongodb_1.default.MongoClient;
         this.connected = false;
@@ -52,21 +52,21 @@ var database = /** @class */ (function () {
                 switch (_a.label) {
                     case 0:
                         _a.trys.push([0, 2, , 3]);
-                        return [4 /*yield*/, this.client.connect(process.env.MONGODB_URL, { useNewUrlParser: true })];
+                        return [4, this.client.connect(process.env.MONGODB_URL, { useNewUrlParser: true })];
                     case 1:
                         result = _a.sent();
-                        return [3 /*break*/, 3];
+                        return [3, 3];
                     case 2:
                         err_1 = _a.sent();
                         console.log(err_1);
-                        return [3 /*break*/, 3];
+                        return [3, 3];
                     case 3:
                         if (result) {
                             this.connected = true;
                             _db = result.db();
-                            return [2 /*return*/, true];
+                            return [2, true];
                         }
-                        return [2 /*return*/, false];
+                        return [2, false];
                 }
             });
         });

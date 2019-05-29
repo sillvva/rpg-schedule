@@ -52,21 +52,23 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var db_1 = __importDefault(require("../db"));
 var connection = db_1.default.connection;
 var collection = "guildConfig";
-var GuildConfig = /** @class */ (function () {
-    function GuildConfig() {
+var GuildConfig = (function () {
+    function GuildConfig(guildConfig) {
+        var _this = this;
+        if (guildConfig === void 0) { guildConfig = {}; }
+        this.guild = null;
+        this.channel = null;
+        this.pruning = false;
+        this.embeds = true;
+        this.password = "";
+        this.role = null;
+        this.hidden = false;
+        Object.entries(guildConfig).forEach(function (_a) {
+            var key = _a[0], value = _a[1];
+            _this[key] = value;
+        });
     }
-    GuildConfig.defaultConfig = function (guildId) {
-        if (guildId === void 0) { guildId = null; }
-        return {
-            guild: guildId,
-            channel: null,
-            pruning: false,
-            embeds: true,
-            password: "",
-            role: null
-        };
-    };
-    GuildConfig.save = function (data) {
+    GuildConfig.prototype.save = function (data) {
         return __awaiter(this, void 0, void 0, function () {
             var config, col;
             return __generator(this, function (_a) {
@@ -74,32 +76,32 @@ var GuildConfig = /** @class */ (function () {
                     case 0:
                         if (!connection())
                             throw new Error("No database connection");
-                        if (!data.guild)
+                        if (!data.guild && !this.guild)
                             throw new Error("Guild ID not specified");
-                        return [4 /*yield*/, GuildConfig.fetch(data.guild)];
-                    case 1:
-                        config = _a.sent();
+                        config = this;
                         col = connection().collection(collection);
-                        if (!config) return [3 /*break*/, 3];
-                        return [4 /*yield*/, col.updateOne({ guild: data.guild }, { $set: __assign({}, config, data) })];
-                    case 2: return [2 /*return*/, _a.sent()];
-                    case 3: return [4 /*yield*/, col.insertOne(data)];
-                    case 4: return [2 /*return*/, _a.sent()];
+                        if (!config) return [3, 2];
+                        return [4, col.updateOne({ guild: data.guild }, { $set: __assign({}, config, data) })];
+                    case 1: return [2, _a.sent()];
+                    case 2: return [4, col.insertOne(data)];
+                    case 3: return [2, _a.sent()];
                 }
             });
         });
     };
     GuildConfig.fetch = function (guildId) {
         return __awaiter(this, void 0, void 0, function () {
-            var _a;
+            var guildConfig, _a;
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
                         if (!connection())
                             throw new Error("No database connection");
-                        _a = [{}, GuildConfig.defaultConfig(guildId)];
-                        return [4 /*yield*/, connection().collection(collection).findOne({ guild: guildId })];
-                    case 1: return [2 /*return*/, __assign.apply(void 0, _a.concat([_b.sent()]))];
+                        _a = GuildConfig.bind;
+                        return [4, connection().collection(collection).findOne({ guild: guildId })];
+                    case 1:
+                        guildConfig = new (_a.apply(GuildConfig, [void 0, _b.sent()]))();
+                        return [2, guildConfig];
                 }
             });
         });
@@ -112,11 +114,11 @@ var GuildConfig = /** @class */ (function () {
                     case 0:
                         if (!connection())
                             throw new Error("No database connection");
-                        return [4 /*yield*/, connection().collection(collection).find().toArray()];
+                        return [4, connection().collection(collection).find().toArray()];
                     case 1:
                         guildConfigs = _a.sent();
-                        return [2 /*return*/, guildConfigs.map(function (gc) {
-                                return __assign({}, GuildConfig.defaultConfig(), gc);
+                        return [2, guildConfigs.map(function (gc) {
+                                return new GuildConfig(gc);
                             })];
                 }
             });

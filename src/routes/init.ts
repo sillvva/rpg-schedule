@@ -1,7 +1,7 @@
 import express from "express";
 import request from "request";
 import moment from "moment";
-import discord from "discord.js";
+import { Client } from "discord.js";
 
 import { Game } from "../models/game";
 import { GuildConfig } from "../models/guild-config";
@@ -14,7 +14,7 @@ const connection = db.connection;
 
 export default (options: any) => {
     const router = express.Router();
-    const client: discord.Client = options.client;
+    const client: Client = options.client;
 
     router.use("/", async (req: any, res, next) => {
         console.log(req.originalUrl);
@@ -74,7 +74,7 @@ export default (options: any) => {
                                     };
 
                                     client.guilds.forEach(guild => {
-                                        const guildConfig = guildConfigs.find(gc => gc.guild === guild.id) || GuildConfig.defaultConfig(guild.id);
+                                        const guildConfig = guildConfigs.find(gc => gc.guild === guild.id) || new GuildConfig({ guild: guild.id });
                                         guild.members.forEach(member => {
                                             if (member.id === id) {
                                                 req.account.guilds.push({
@@ -131,6 +131,8 @@ export default (options: any) => {
 
                                     const games: any[] = await Game.fetchAllBy(gameOptions);
                                     games.forEach(game => {
+                                        if (!game.discordGuild) return;
+                                        
                                         const date = Game.ISOGameDate(game);
                                         game.moment = {
                                             raw: `${game.date} ${game.time} GMT${game.timezone < 0 ? "-" : "+"}${Math.abs(game.timezone)}`,

@@ -17,12 +17,33 @@ import loginRoutes from "./routes/login";
 import redirectRoutes from "./routes/redirects";
 
 const app = express();
+
+app.use(bodyParser.urlencoded());
+app.use(express.static(path.join(__dirname, '..', "public")));
+
+/**
+ * EJS
+ */
+app.set("view engine", "ejs");
+app.set("views", "views");
+
+/**
+ * Session
+ */
 const MongoDBStore = connect(session);
 const store = new MongoDBStore({
     uri: process.env.MONGODB_URL,
     collection: "sessions",
     expires: 1000 * 60 * 60 * 6 // 6 hours
 });
+app.use(
+    session({
+        secret: process.env.TOKEN,
+        resave: false,
+        saveUninitialized: false,
+        store: store
+    })
+);
 
 // Initialize the Discord event handlers and then call a
 // callback function when the bot has logged in.
@@ -38,17 +59,17 @@ const client = discord.processes(async () => {
         const io = socket(server);
 
         if (!process.env.DO_NOT_REFRESH) {
-            discord.refreshMessages(client.guilds);
+            discord.refreshMessages();
 
             // Once per day, prune games from the database that are more than 24 hours old
-            discord.pruneOldGames(client);
+            discord.pruneOldGames();
             setInterval(() => {
-                discord.pruneOldGames(client);
+                discord.pruneOldGames();
             }, 24 * 3600 * 1000); // 24 hours
 
             // Post Game Reminders
             setInterval(() => {
-                discord.postReminders(client);
+                discord.postReminders();
             }, 60 * 1000); // 1 minute
         }
 
@@ -62,23 +83,6 @@ const client = discord.processes(async () => {
         console.log("Database not connected!");
     }
 });
-
-/**
- * EJS
- */
-app.set("view engine", "ejs");
-app.set("views", "views");
-
-app.use(bodyParser.urlencoded());
-app.use(express.static(path.join(__dirname, '..', "public")));
-app.use(
-    session({
-        secret: process.env.TOKEN,
-        resave: false,
-        saveUninitialized: false,
-        store: store
-    })
-);
 
 /**
  * Routes

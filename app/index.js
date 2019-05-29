@@ -55,20 +55,27 @@ var timezone_1 = __importDefault(require("./routes/timezone"));
 var login_1 = __importDefault(require("./routes/login"));
 var redirects_1 = __importDefault(require("./routes/redirects"));
 var app = express_1.default();
+app.use(body_parser_1.default.urlencoded());
+app.use(express_1.default.static(path_1.default.join(__dirname, '..', "public")));
+app.set("view engine", "ejs");
+app.set("views", "views");
 var MongoDBStore = connect_mongodb_session_1.default(express_session_1.default);
 var store = new MongoDBStore({
     uri: process.env.MONGODB_URL,
     collection: "sessions",
-    expires: 1000 * 60 * 60 * 6 // 6 hours
+    expires: 1000 * 60 * 60 * 6
 });
-// Initialize the Discord event handlers and then call a
-// callback function when the bot has logged in.
-// Return the client to pass to the app routing logic.
+app.use(express_session_1.default({
+    secret: process.env.TOKEN,
+    resave: false,
+    saveUninitialized: false,
+    store: store
+}));
 var client = discord_1.default.processes(function () { return __awaiter(_this, void 0, void 0, function () {
     var connected, server, io;
     return __generator(this, function (_a) {
         switch (_a.label) {
-            case 0: return [4 /*yield*/, db_1.default.database.connect()];
+            case 0: return [4, db_1.default.database.connect()];
             case 1:
                 connected = _a.sent();
                 if (connected) {
@@ -76,47 +83,28 @@ var client = discord_1.default.processes(function () { return __awaiter(_this, v
                     server = http_1.default.createServer(app).listen(process.env.PORT || 5000);
                     io = socket_1.socket(server);
                     if (!process.env.DO_NOT_REFRESH) {
-                        discord_1.default.refreshMessages(client.guilds);
-                        // Once per day, prune games from the database that are more than 24 hours old
-                        discord_1.default.pruneOldGames(client);
+                        discord_1.default.refreshMessages();
+                        discord_1.default.pruneOldGames();
                         setInterval(function () {
-                            discord_1.default.pruneOldGames(client);
-                        }, 24 * 3600 * 1000); // 24 hours
-                        // Post Game Reminders
+                            discord_1.default.pruneOldGames();
+                        }, 24 * 3600 * 1000);
                         setInterval(function () {
-                            discord_1.default.postReminders(client);
-                        }, 60 * 1000); // 1 minute
+                            discord_1.default.postReminders();
+                        }, 60 * 1000);
                     }
-                    // Stay awake...
                     if (!process.env.SLEEP) {
                         setInterval(function () {
                             http_1.default.get(process.env.HOST.replace("https", "http"));
-                        }, 5 * 60 * 1000); // 5 minutes
+                        }, 5 * 60 * 1000);
                     }
                 }
                 else {
                     console.log("Database not connected!");
                 }
-                return [2 /*return*/];
+                return [2];
         }
     });
 }); });
-/**
- * EJS
- */
-app.set("view engine", "ejs");
-app.set("views", "views");
-app.use(body_parser_1.default.urlencoded());
-app.use(express_1.default.static(path_1.default.join(__dirname, '..', "public")));
-app.use(express_session_1.default({
-    secret: process.env.TOKEN,
-    resave: false,
-    saveUninitialized: false,
-    store: store
-}));
-/**
- * Routes
- */
 app.use(login_1.default());
 app.use(init_1.default({ client: client }));
 app.use(game_1.default({ client: client }));
@@ -126,5 +114,4 @@ app.use(redirects_1.default());
 app.use("/", function (req, res, next) {
     res.render("home");
 });
-// Login the Discord bot
 discord_1.default.login(client);
