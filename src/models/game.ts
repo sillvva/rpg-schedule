@@ -1,12 +1,13 @@
-import mongodb from "mongodb";
-import discord from "discord.js";
+import mongodb, { ObjectID } from "mongodb";
+import discord, { Message, Guild, TextChannel, GuildChannel, Collection } from "discord.js";
 import moment from "moment";
 
 import db from "../db";
+import aux from "../appaux";
+import { discordClient } from "../processes/discord";
 import { io } from "../processes/socket";
 import { GuildConfig } from "./guild-config";
 import config from "./config";
-import aux from "../appaux";
 
 const connection = db.connection;
 const ObjectId = mongodb.ObjectId;
@@ -14,34 +15,118 @@ const collection = "games";
 const host = process.env.HOST;
 
 export interface GameModel {
-    _id: string | number | mongodb.ObjectID;
-    s: string,
-    c: string,
-    adventure: string,
-    runtime: string,
-    players: string,
-    dm: string,
-    where: string,
-    description: string,
-    reserved: string,
-    method: string,
-    customSignup: string,
-    when: string,
-    date: string,
-    time: string,
-    timezone: number,
-    timestamp: number,
-    reminder: string,
-    messageId: string,
-    reminderMessageId: string,
-    pm: string
+    _id: string | number | ObjectID;
+    s: string;
+    c: string;
+    guild: string;
+    channel: string;
+    adventure: string;
+    runtime: string;
+    players: string;
+    dm: string;
+    where: string;
+    description: string;
+    reserved: string;
+    method: string;
+    customSignup: string;
+    when: string;
+    date: string;
+    time: string;
+    timezone: number;
+    timestamp: number;
+    reminder: string;
+    messageId: string;
+    reminderMessageId: string;
+    pm: string;
 }
 
-export class Game {
-    static async save(channel: discord.TextChannel, game: GameModel) {
+interface GameSaveData {
+    _id: string | number | ObjectID;
+    message: Message;
+    modified: boolean;
+}
+
+export class Game implements GameModel {
+    _id: string | number | ObjectID;
+    s: string;
+    c: string;
+    guild: string;
+    channel: string;
+    adventure: string;
+    runtime: string;
+    players: string;
+    dm: string;
+    where: string;
+    description: string;
+    reserved: string;
+    method: string;
+    customSignup: string;
+    when: string;
+    date: string;
+    time: string;
+    timezone: number;
+    timestamp: number;
+    reminder: string;
+    messageId: string;
+    reminderMessageId: string;
+    pm: string;
+
+    private _guild: Guild;
+    get discordGuild() { return this._guild; }
+    private _channel: TextChannel;
+    get discordChannel() { return this._channel; }
+
+    constructor(game: GameModel) {
+        Object.entries(game).forEach(([key, value]) => {
+            this[key] = value;
+        });
+        this._guild = discordClient().guilds.get(this.s);
+        if (this._guild) {
+            this._guild.channels.forEach(c => {
+                if (!this._channel && c instanceof TextChannel) {
+                    this._channel = c;
+                }
+                if (c.id === this.c && c instanceof TextChannel) {
+                    this._channel = c;
+                }
+            });
+        }
+    }
+
+    get data(): GameModel {
+        return {
+            _id: this._id,
+            s: this.s,
+            c: this.c,
+            guild: this.guild,
+            channel: this.channel,
+            adventure: this.adventure,
+            runtime: this.runtime,
+            players: this.players,
+            dm: this.dm,
+            where: this.where,
+            description: this.description,
+            reserved: this.reserved,
+            method: this.method,
+            customSignup: this.customSignup,
+            when: this.when,
+            date: this.date,
+            time: this.time,
+            timezone: this.timezone,
+            timestamp: this.timestamp,
+            reminder: this.reminder,
+            messageId: this.messageId,
+            reminderMessageId: this.reminderMessageId,
+            pm: this.pm
+        };
+    }
+
+    async save() {
         if (!connection()) throw new Error("No database connection");
+        const channel = this._channel;
         const guild = channel.guild;
         const guildConfig = await GuildConfig.fetch(guild.id);
+        const game: GameModel = this.data;
 
         let dm: string = game.dm
             .trim()
@@ -116,8 +201,9 @@ export class Game {
 
         const dbCollection = connection().collection(collection);
         if (game._id) {
+            const prev = (await Game.fetch(game._id)).data;
             const updated = await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: game });
-            let message: discord.Message;
+            let message: Message;
             try {
                 message = await channel.fetchMessage(game.messageId);
                 if (guildConfig.embeds === false) {
@@ -126,24 +212,28 @@ export class Game {
                     message = await message.edit(embed);
                 }
 
-                const updatedGame = aux.objectChanges(await Game.fetch(game._id), game);
+                prev._id = prev._id.toString();
+                game._id = game._id.toString();
+                
+                const updatedGame = aux.objectChanges(prev, game);
                 io().emit("game", { action: "updated", gameId: game._id, game: updatedGame });
             } catch (err) {
-                Game.delete(game);
+                this.delete();
                 updated.modifiedCount = 0;
             }
-            return {
+            const saved: GameSaveData = {
                 _id: game._id,
                 message: message,
                 modified: updated.modifiedCount > 0
             };
+            return saved;
         } else {
             const inserted = await dbCollection.insertOne(game);
-            let message: discord.Message;
+            let message: Message;
             if (guildConfig.embeds === false) {
-                message = <discord.Message>(await channel.send(msg));
+                message = <Message>(await channel.send(msg));
             } else {
-                message = <discord.Message>(await channel.send(embed));
+                message = <Message>(await channel.send(embed));
             }
             if (game.method === "automated") await message.react("➕");
             if (game.method === "automated") await message.react("➖");
@@ -151,48 +241,46 @@ export class Game {
                 "You can edit your `" + guild.name + "` - `" + game.adventure + "` game here:\n" + host + config.urls.game.create.url + "?g=" + inserted.insertedId
             );
             const updated = await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { messageId: message.id, pm: pm.id } });
-            return {
-                _id: inserted.insertedId,
+            const saved: GameSaveData = {
+                _id: inserted.insertedId.toString(),
                 message: message,
                 modified: updated.modifiedCount > 0
             };
+            return saved;
         }
     }
 
-    static async fetch(gameId: string | number | mongodb.ObjectID): Promise<GameModel> {
+    static async fetch(gameId: string | number | ObjectID): Promise<Game> {
         if (!connection()) throw new Error("No database connection");
-        return await connection()
-            .collection(collection)
-            .findOne({ _id: new ObjectId(gameId) });
+        return new Game(await connection().collection(collection).findOne({ _id: new ObjectId(gameId) }));
     }
 
-    static async fetchBy(key: string, value: any): Promise<GameModel> {
+    static async fetchBy(key: string, value: any): Promise<Game> {
         if (!connection()) throw new Error("No database connection");
         const query: mongodb.FilterQuery<any> = aux.fromEntries([[key, value]]);
-        return await connection()
-            .collection(collection)
-            .findOne(query);
+        const game: GameModel = await connection().collection(collection).findOne(query);
+        return game ? new Game(game) : null;
     }
 
-    static async fetchAllBy(query: mongodb.FilterQuery<any>): Promise<GameModel[]> {
+    static async fetchAllBy(query: mongodb.FilterQuery<any>): Promise<Game[]> {
         if (!connection()) throw new Error("No database connection");
-        return await connection()
-            .collection(collection)
-            .find(query)
-            .toArray();
+        const games: GameModel[] = await connection().collection(collection).find(query).toArray()
+        return games.map(game => {
+            return new Game(game);
+        });
     }
 
     static async deleteAllBy(query: mongodb.FilterQuery<any>) {
         if (!connection()) throw new Error("No database connection");
-        return await connection()
-            .collection(collection)
-            .deleteMany(query);
+        return await connection().collection(collection).deleteMany(query);
     }
 
-    static async delete(game: GameModel, channel: discord.TextChannel = null, options: any = {}) {
+    async delete(options: any = {}) {
         if (!connection()) throw new Error("No database connection");
         
         const { sendWS = true } = options;
+        const game: GameModel = this;
+        const channel = this._channel;
 
         if (channel) {
             try {
@@ -242,7 +330,7 @@ export class Game {
     }
 };
 
-const parseChannels = (text: string, channels: discord.Collection<string, discord.GuildChannel>) => {
+const parseChannels = (text: string, channels: Collection<string, GuildChannel>) => {
     try {
         (text.match(/#[a-z0-9\-_]+/g) || []).forEach(m => {
             const chan = channels.array().find(c => c.name === m.substr(1));

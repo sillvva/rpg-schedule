@@ -1,7 +1,7 @@
 import express from "express";
-import discord from "discord.js";
+import { Guild, TextChannel } from "discord.js";
 
-import { GameModel, Game } from "../models/game";
+import { Game } from "../models/game";
 import { GuildConfig } from "../models/guild-config";
 import config from "../models/config";
 
@@ -19,7 +19,7 @@ export default (options: any) => {
 
     router.use(config.urls.game.create.url, async (req: any, res, next) => {
         try {
-            let game: GameModel;
+            let game: Game;
             let server: string = req.query.s;
 
             if (req.query.g) {
@@ -31,8 +31,15 @@ export default (options: any) => {
                 }
             }
 
+            if (req.method === "POST") {
+                req.body.reserved = req.body.reserved.replace(/@/g, '');
+                if (req.query.s) {
+                    game = new Game(req.body);
+                }
+            }
+
             if (server) {
-                const guild: discord.Guild = client.guilds.get(server);
+                const guild: Guild = client.guilds.get(server);
 
                 if (guild) {
                     let channelId: string;
@@ -66,7 +73,7 @@ export default (options: any) => {
                         if (guildConfig) channelId = guildConfig.channel;
                     }
 
-                    const textChannels = <discord.TextChannel[]>guild.channels.array().filter(c => c instanceof discord.TextChannel);
+                    const textChannels = <TextChannel[]>guild.channels.array().filter(c => c instanceof TextChannel);
                     const channel = textChannels.find(c => c.id === channelId) || textChannels[0];
 
                     if (!channel) {
@@ -111,24 +118,15 @@ export default (options: any) => {
                     }
 
                     if (req.method === "POST") {
-                        data.dm = req.body.dm;
-                        data.adventure = req.body.adventure;
-                        data.runtime = req.body.runtime;
-                        data.where = req.body.where;
-                        data.description = req.body.description;
-                        data.reserved = req.body.reserved.replace(/@/g, '');
-                        data.method = req.body.method;
-                        data.customSignup = req.body.customSignup;
-                        data.when = req.body.when;
-                        data.date = req.body.date;
-                        data.time = req.body.time;
-                        data.timezone = req.body.timezone;
-                        data.reminder = req.body.reminder;
-                        data.players = req.body.players;
+                        data = Object.assign(data, req.body);
                     }
 
                     if (req.method === "POST") {
-                        Game.save(channel, { ...game, ...req.body })
+                        Object.entries(req.body).forEach(([key, value]) => {
+                            game[key] = value;
+                        });
+
+                        game.save()
                             .then(response => {
                                 if (response.modified) res.redirect(config.urls.game.create.url + "?g=" + response._id);
                                 else res.render("game", data);
@@ -156,22 +154,16 @@ export default (options: any) => {
             if (req.query.g) {
                 const game = await Game.fetch(req.query.g);
                 if (game) {
-                    const guild: discord.Guild = req.account.guilds.find(s => s.id === game.s);
-                    if (guild) {
-                        const channel = <discord.TextChannel>guild.channels.find(c => c.id === game.c && c instanceof discord.TextChannel);
-                        if (channel) {
-                            const reserved = game.reserved.split(/\r?\n/);
-                            if (reserved.find(t => t === req.account.user.tag)) {
-                                reserved.splice(reserved.indexOf(req.account.user.tag), 1);
-                            } else {
-                                reserved.push(req.account.user.tag);
-                            }
-
-                            game.reserved = reserved.join("\n");
-
-                            const result = await Game.save(channel, game);
-                        }
+                    const reserved = game.reserved.split(/\r?\n/);
+                    if (reserved.find(t => t === req.account.user.tag)) {
+                        reserved.splice(reserved.indexOf(req.account.user.tag), 1);
+                    } else {
+                        reserved.push(req.account.user.tag);
                     }
+
+                    game.reserved = reserved.join("\n");
+
+                    const result = await game.save();
                 }
             }
         } catch (err) {
@@ -186,23 +178,13 @@ export default (options: any) => {
             if (req.query.g) {
                 const game = await Game.fetch(req.query.g);
                 if (!game) throw new Error("Game not found");
-                const serverId = game.s;
-                const channelId = game.c;
-
-                const guild: discord.Guild = client.guilds.get(serverId);
-                if (guild) {
-                    const channel: any = guild.channels.get(channelId);
-
-                    Game.delete(game, channel, { sendWS: false }).then(response => {
-                        if (req.account) {
-                            res.redirect(config.urls.game.dashboard.url);
-                        } else {
-                            res.redirect(config.urls.game.create.url + "?s=" + serverId);
-                        }
-                    });
-                } else {
-                    throw new Error("Server not found");
-                }
+                game.delete({ sendWS: false }).then(response => {
+                    if (req.account) {
+                        res.redirect(config.urls.game.dashboard.url);
+                    } else {
+                        res.redirect(config.urls.game.create.url + "?s=" + game.s);
+                    }
+                });
             } else {
                 throw new Error("Game not found");
             }

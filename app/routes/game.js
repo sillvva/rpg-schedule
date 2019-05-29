@@ -51,7 +51,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 var _this = this;
 Object.defineProperty(exports, "__esModule", { value: true });
 var express_1 = __importDefault(require("express"));
-var discord_js_1 = __importDefault(require("discord.js"));
+var discord_js_1 = require("discord.js");
 var game_1 = require("../models/game");
 var guild_config_1 = require("../models/guild-config");
 var config_1 = __importDefault(require("../models/config"));
@@ -61,40 +61,45 @@ exports.default = (function (options) {
     router.use(config_1.default.urls.game.games.url, function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
         return __generator(this, function (_a) {
             res.render("games", req.account);
-            return [2 /*return*/];
+            return [2];
         });
     }); });
     router.use(config_1.default.urls.game.dashboard.url, function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
         return __generator(this, function (_a) {
             res.render("games", req.account);
-            return [2 /*return*/];
+            return [2];
         });
     }); });
     router.use(config_1.default.urls.game.create.url, function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
-        var game, server, guild, channelId_1, password, guildConfig_1, member, textChannels, channel, data_1, err_1;
+        var game_2, server, guild, channelId_1, password, guildConfig_1, member, textChannels, channel, data_1, err_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     _a.trys.push([0, 8, , 9]);
-                    game = void 0;
                     server = req.query.s;
-                    if (!req.query.g) return [3 /*break*/, 2];
-                    return [4 /*yield*/, game_1.Game.fetch(req.query.g)];
+                    if (!req.query.g) return [3, 2];
+                    return [4, game_1.Game.fetch(req.query.g)];
                 case 1:
-                    game = _a.sent();
-                    if (game) {
-                        server = game.s;
+                    game_2 = _a.sent();
+                    if (game_2) {
+                        server = game_2.s;
                     }
                     else {
                         throw new Error("Game not found");
                     }
                     _a.label = 2;
                 case 2:
-                    if (!server) return [3 /*break*/, 6];
+                    if (req.method === "POST") {
+                        req.body.reserved = req.body.reserved.replace(/@/g, '');
+                        if (req.query.s) {
+                            game_2 = new game_1.Game(req.body);
+                        }
+                    }
+                    if (!server) return [3, 6];
                     guild = client.guilds.get(server);
-                    if (!guild) return [3 /*break*/, 4];
+                    if (!guild) return [3, 4];
                     password = void 0;
-                    return [4 /*yield*/, guild_config_1.GuildConfig.fetch(guild.id)];
+                    return [4, guild_config_1.GuildConfig.fetch(guild.id)];
                 case 3:
                     guildConfig_1 = _a.sent();
                     if (guildConfig_1) {
@@ -102,31 +107,31 @@ exports.default = (function (options) {
                         if (guildConfig_1.role) {
                             if (!req.account) {
                                 res.redirect(config_1.default.urls.login.url);
-                                return [2 /*return*/];
+                                return [2];
                             }
                             else {
                                 member = guild.members.find(function (m) { return m.id === req.account.user.id; });
                                 if (member) {
                                     if (!member.roles.find(function (r) { return r.name.toLowerCase().trim() === guildConfig_1.role.toLowerCase().trim(); })) {
                                         res.redirect(config_1.default.urls.game.dashboard.url);
-                                        return [2 /*return*/];
+                                        return [2];
                                     }
                                 }
                                 else {
                                     res.redirect(config_1.default.urls.game.dashboard.url);
-                                    return [2 /*return*/];
+                                    return [2];
                                 }
                             }
                         }
                     }
                     if (req.query.g) {
-                        channelId_1 = game.c;
+                        channelId_1 = game_2.c;
                     }
                     else {
                         if (guildConfig_1)
                             channelId_1 = guildConfig_1.channel;
                     }
-                    textChannels = guild.channels.array().filter(function (c) { return c instanceof discord_js_1.default.TextChannel; });
+                    textChannels = guild.channels.array().filter(function (c) { return c instanceof discord_js_1.TextChannel; });
                     channel = textChannels.find(function (c) { return c.id === channelId_1; }) || textChannels[0];
                     if (!channel) {
                         throw new Error("Discord channel not found");
@@ -164,26 +169,17 @@ exports.default = (function (options) {
                         }
                     };
                     if (req.query.g) {
-                        data_1 = __assign({}, data_1, game);
+                        data_1 = __assign({}, data_1, game_2);
                     }
                     if (req.method === "POST") {
-                        data_1.dm = req.body.dm;
-                        data_1.adventure = req.body.adventure;
-                        data_1.runtime = req.body.runtime;
-                        data_1.where = req.body.where;
-                        data_1.description = req.body.description;
-                        data_1.reserved = req.body.reserved.replace(/@/g, '');
-                        data_1.method = req.body.method;
-                        data_1.customSignup = req.body.customSignup;
-                        data_1.when = req.body.when;
-                        data_1.date = req.body.date;
-                        data_1.time = req.body.time;
-                        data_1.timezone = req.body.timezone;
-                        data_1.reminder = req.body.reminder;
-                        data_1.players = req.body.players;
+                        data_1 = Object.assign(data_1, req.body);
                     }
                     if (req.method === "POST") {
-                        game_1.Game.save(channel, __assign({}, game, req.body))
+                        Object.entries(req.body).forEach(function (_a) {
+                            var key = _a[0], value = _a[1];
+                            game_2[key] = value;
+                        });
+                        game_2.save()
                             .then(function (response) {
                             if (response.modified)
                                 res.redirect(config_1.default.urls.game.create.url + "?g=" + response._id);
@@ -198,94 +194,81 @@ exports.default = (function (options) {
                     else {
                         res.render("game", data_1);
                     }
-                    return [3 /*break*/, 5];
+                    return [3, 5];
                 case 4: throw new Error("Discord server not found");
-                case 5: return [3 /*break*/, 7];
+                case 5: return [3, 7];
                 case 6: throw new Error("Discord server not specified");
-                case 7: return [3 /*break*/, 9];
+                case 7: return [3, 9];
                 case 8:
                     err_1 = _a.sent();
                     res.render("error", { message: err_1 });
-                    return [3 /*break*/, 9];
-                case 9: return [2 /*return*/];
+                    return [3, 9];
+                case 9: return [2];
             }
         });
     }); });
     router.use(config_1.default.urls.game.rsvp.url, function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
-        var game_2, guild, channel, reserved, result, err_2;
+        var game, reserved, result, err_2;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     _a.trys.push([0, 4, , 5]);
-                    if (!req.query.g) return [3 /*break*/, 3];
-                    return [4 /*yield*/, game_1.Game.fetch(req.query.g)];
+                    if (!req.query.g) return [3, 3];
+                    return [4, game_1.Game.fetch(req.query.g)];
                 case 1:
-                    game_2 = _a.sent();
-                    if (!game_2) return [3 /*break*/, 3];
-                    guild = req.account.guilds.find(function (s) { return s.id === game_2.s; });
-                    if (!guild) return [3 /*break*/, 3];
-                    channel = guild.channels.find(function (c) { return c.id === game_2.c && c instanceof discord_js_1.default.TextChannel; });
-                    if (!channel) return [3 /*break*/, 3];
-                    reserved = game_2.reserved.split(/\r?\n/);
+                    game = _a.sent();
+                    if (!game) return [3, 3];
+                    reserved = game.reserved.split(/\r?\n/);
                     if (reserved.find(function (t) { return t === req.account.user.tag; })) {
                         reserved.splice(reserved.indexOf(req.account.user.tag), 1);
                     }
                     else {
                         reserved.push(req.account.user.tag);
                     }
-                    game_2.reserved = reserved.join("\n");
-                    return [4 /*yield*/, game_1.Game.save(channel, game_2)];
+                    game.reserved = reserved.join("\n");
+                    return [4, game.save()];
                 case 2:
                     result = _a.sent();
                     _a.label = 3;
-                case 3: return [3 /*break*/, 5];
+                case 3: return [3, 5];
                 case 4:
                     err_2 = _a.sent();
                     console.log(err_2);
-                    return [3 /*break*/, 5];
+                    return [3, 5];
                 case 5:
                     res.redirect(req.headers.referer ? req.headers.referer : config_1.default.urls.game.games.url);
-                    return [2 /*return*/];
+                    return [2];
             }
         });
     }); });
     router.get(config_1.default.urls.game.delete.url, function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
-        var game, serverId_1, channelId, guild, channel, err_3;
+        var game_3, err_3;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     _a.trys.push([0, 4, , 5]);
-                    if (!req.query.g) return [3 /*break*/, 2];
-                    return [4 /*yield*/, game_1.Game.fetch(req.query.g)];
+                    if (!req.query.g) return [3, 2];
+                    return [4, game_1.Game.fetch(req.query.g)];
                 case 1:
-                    game = _a.sent();
-                    if (!game)
+                    game_3 = _a.sent();
+                    if (!game_3)
                         throw new Error("Game not found");
-                    serverId_1 = game.s;
-                    channelId = game.c;
-                    guild = client.guilds.get(serverId_1);
-                    if (guild) {
-                        channel = guild.channels.get(channelId);
-                        game_1.Game.delete(game, channel, { sendWS: false }).then(function (response) {
-                            if (req.account) {
-                                res.redirect(config_1.default.urls.game.dashboard.url);
-                            }
-                            else {
-                                res.redirect(config_1.default.urls.game.create.url + "?s=" + serverId_1);
-                            }
-                        });
-                    }
-                    else {
-                        throw new Error("Server not found");
-                    }
-                    return [3 /*break*/, 3];
+                    game_3.delete({ sendWS: false }).then(function (response) {
+                        if (req.account) {
+                            res.redirect(config_1.default.urls.game.dashboard.url);
+                        }
+                        else {
+                            res.redirect(config_1.default.urls.game.create.url + "?s=" + game_3.s);
+                        }
+                    });
+                    return [3, 3];
                 case 2: throw new Error("Game not found");
-                case 3: return [3 /*break*/, 5];
+                case 3: return [3, 5];
                 case 4:
                     err_3 = _a.sent();
                     res.render("error", { message: err_3 });
-                    return [3 /*break*/, 5];
-                case 5: return [2 /*return*/];
+                    return [3, 5];
+                case 5: return [2];
             }
         });
     }); });
@@ -295,7 +278,7 @@ exports.default = (function (options) {
             switch (_a.label) {
                 case 0:
                     _a.trys.push([0, 2, , 3]);
-                    return [4 /*yield*/, guild_config_1.GuildConfig.fetch(req.query.s)];
+                    return [4, guild_config_1.GuildConfig.fetch(req.query.s)];
                 case 1:
                     guildConfig = _a.sent();
                     if (guildConfig) {
@@ -312,12 +295,12 @@ exports.default = (function (options) {
                     else {
                         throw new Error("Server not found");
                     }
-                    return [3 /*break*/, 3];
+                    return [3, 3];
                 case 2:
                     err_4 = _a.sent();
                     res.render("error", { message: err_4 });
-                    return [3 /*break*/, 3];
-                case 3: return [2 /*return*/];
+                    return [3, 3];
+                case 3: return [2];
             }
         });
     }); });

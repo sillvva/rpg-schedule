@@ -50,24 +50,19 @@ var discord_js_1 = __importStar(require("discord.js"));
 var guild_config_1 = require("../models/guild-config");
 var game_1 = require("../models/game");
 var config_1 = __importDefault(require("../models/config"));
+var client;
 var discordProcesses = function (readyCallback) {
-    var client = new discord_js_1.default.Client();
-    /**
-     * Discord.JS - ready
-     */
+    client = new discord_js_1.default.Client();
     client.on("ready", function () {
         console.log("Logged in as " + client.user.username + "!");
         readyCallback();
     });
-    /**
-     * Discord.JS - message
-     */
     client.on("message", function (message) { return __awaiter(_this, void 0, void 0, function () {
         var parts_1, cmd, guild, guildId, guildConfig, member, canConfigure, embed, channel, embed;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    if (!(message.content.startsWith(process.env.BOTCOMMAND_SCHEDULE) && message.channel instanceof discord_js_1.default.TextChannel)) return [3 /*break*/, 2];
+                    if (!(message.content.startsWith(process.env.BOTCOMMAND_SCHEDULE) && message.channel instanceof discord_js_1.TextChannel)) return [3, 2];
                     parts_1 = message.content
                         .trim()
                         .split(" ")
@@ -76,11 +71,11 @@ var discordProcesses = function (readyCallback) {
                     parts_1.reverse();
                     if (!message.channel.guild) {
                         message.reply("This command will only work in a server");
-                        return [2 /*return*/];
+                        return [2];
                     }
                     guild = message.channel.guild;
                     guildId = guild.id;
-                    return [4 /*yield*/, guild_config_1.GuildConfig.fetch(guildId)];
+                    return [4, guild_config_1.GuildConfig.fetch(guildId)];
                 case 1:
                     guildConfig = _a.sent();
                     member = message.channel.guild.members.array().find(function (m) { return m.user.id === message.author.id; });
@@ -109,7 +104,7 @@ var discordProcesses = function (readyCallback) {
                     }
                     else if (cmd === "configuration") {
                         if (canConfigure) {
-                            channel = guild.channels.get(guildConfig.channel) || guild.channels.array().find(function (c) { return c instanceof discord_js_1.default.TextChannel; });
+                            channel = guild.channels.get(guildConfig.channel) || guild.channels.array().find(function (c) { return c instanceof discord_js_1.TextChannel; });
                             embed = new discord_js_1.default.RichEmbed()
                                 .setTitle("RPG Schedule Configuration")
                                 .setColor(0x2196f3)
@@ -124,8 +119,7 @@ var discordProcesses = function (readyCallback) {
                     }
                     else if (cmd === "channel") {
                         if (canConfigure) {
-                            guild_config_1.GuildConfig.save({
-                                guild: guildId,
+                            guildConfig.save({
                                 channel: parts_1[0].replace(/\<\#|\>/g, "")
                             }).then(function (result) {
                                 message.channel.send("Channel updated! Make sure the bot has permissions in the designated channel.");
@@ -134,8 +128,7 @@ var discordProcesses = function (readyCallback) {
                     }
                     else if (cmd === "pruning") {
                         if (canConfigure) {
-                            guild_config_1.GuildConfig.save({
-                                guild: guildId,
+                            guildConfig.save({
                                 pruning: parts_1[0] === "on"
                             }).then(function (result) {
                                 message.channel.send("Configuration updated! Pruning was turned " + (parts_1[0] === "on" ? "on" : "off"));
@@ -144,8 +137,7 @@ var discordProcesses = function (readyCallback) {
                     }
                     else if (cmd === "embeds") {
                         if (canConfigure) {
-                            guild_config_1.GuildConfig.save({
-                                guild: guildId,
+                            guildConfig.save({
                                 embeds: !(parts_1[0] === "off")
                             }).then(function (result) {
                                 message.channel.send("Configuration updated! Embeds were turned " + (!(parts_1[0] === "off") ? "on" : "off"));
@@ -154,8 +146,7 @@ var discordProcesses = function (readyCallback) {
                     }
                     else if (cmd === "password") {
                         if (canConfigure) {
-                            guild_config_1.GuildConfig.save({
-                                guild: guildId,
+                            guildConfig.save({
                                 password: parts_1.join(" ")
                             }).then(function (result) {
                                 message.channel.send("Password updated!");
@@ -164,8 +155,7 @@ var discordProcesses = function (readyCallback) {
                     }
                     else if (cmd === "role") {
                         if (canConfigure) {
-                            guild_config_1.GuildConfig.save({
-                                guild: guildId,
+                            guildConfig.save({
                                 role: parts_1.join(" ")
                             }).then(function (result) {
                                 message.channel.send("Role set to `" + parts_1.join(" ") + "`!");
@@ -174,30 +164,26 @@ var discordProcesses = function (readyCallback) {
                     }
                     message.delete();
                     _a.label = 2;
-                case 2: return [2 /*return*/];
+                case 2: return [2];
             }
         });
     }); });
-    /**
-     * Discord.JS - messageReactionAdd
-     */
     client.on("messageReactionAdd", function (reaction, user) { return __awaiter(_this, void 0, void 0, function () {
-        var message, game, channel;
+        var message, game;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     message = reaction.message;
-                    return [4 /*yield*/, game_1.Game.fetchBy("messageId", message.id)];
+                    return [4, game_1.Game.fetchBy("messageId", message.id)];
                 case 1:
                     game = _a.sent();
-                    if (game && user.id !== message.author.id && message.channel instanceof discord_js_1.default.TextChannel) {
-                        channel = message.channel;
+                    if (game && user.id !== message.author.id) {
                         if (reaction.emoji.name === "➕") {
                             if (game.reserved.indexOf(user.tag) < 0) {
                                 game.reserved = game.reserved.trim().split(/\r?\n/).concat([user.tag]).join("\n");
                                 if (game.reserved.startsWith("\n"))
                                     game.reserved = game.reserved.substr(1);
-                                game_1.Game.save(channel, game);
+                                game.save();
                             }
                         }
                         else if (reaction.emoji.name === "➖") {
@@ -206,38 +192,31 @@ var discordProcesses = function (readyCallback) {
                                     .split(/\r?\n/)
                                     .filter(function (tag) { return tag !== user.tag; })
                                     .join("\n");
-                                game_1.Game.save(channel, game);
+                                game.save();
                             }
                         }
                         reaction.remove(user);
                     }
-                    return [2 /*return*/];
+                    return [2];
             }
         });
     }); });
-    /**
-     * Discord.JS - messageDelete
-     * Delete the game from the database when the announcement message is deleted
-     */
     client.on("messageDelete", function (message) { return __awaiter(_this, void 0, void 0, function () {
         var game;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, game_1.Game.fetchBy("messageId", message.id)];
+                case 0: return [4, game_1.Game.fetchBy("messageId", message.id)];
                 case 1:
                     game = _a.sent();
                     if (game && message.channel instanceof discord_js_1.TextChannel) {
-                        game_1.Game.delete(game, message.channel).then(function (result) {
+                        game.delete().then(function (result) {
                             console.log("Game deleted");
                         });
                     }
-                    return [2 /*return*/];
+                    return [2];
             }
         });
     }); });
-    /**
-     * Add events to non-cached messages
-     */
     var events = {
         MESSAGE_REACTION_ADD: "messageReactionAdd",
         MESSAGE_REACTION_REMOVE: "messageReactionRemove"
@@ -248,20 +227,20 @@ var discordProcesses = function (readyCallback) {
             switch (_b.label) {
                 case 0:
                     if (!events.hasOwnProperty(event.t))
-                        return [2 /*return*/];
+                        return [2];
                     data = event.d;
                     user = client.users.get(data.user_id);
                     _a = client.channels.get(data.channel_id);
-                    if (_a) return [3 /*break*/, 2];
-                    return [4 /*yield*/, user.createDM()];
+                    if (_a) return [3, 2];
+                    return [4, user.createDM()];
                 case 1:
                     _a = (_b.sent());
                     _b.label = 2;
                 case 2:
                     channel = _a;
                     if (channel.messages.has(data.message_id))
-                        return [2 /*return*/];
-                    return [4 /*yield*/, channel.fetchMessage(data.message_id)];
+                        return [2];
+                    return [4, channel.fetchMessage(data.message_id)];
                 case 3:
                     message = _b.sent();
                     emojiKey = data.emoji.id ? data.emoji.name + ":" + data.emoji.id : data.emoji.name;
@@ -271,7 +250,7 @@ var discordProcesses = function (readyCallback) {
                         reaction = new discord_js_1.default.MessageReaction(message, emoji, 1, data.user_id === client.user.id);
                     }
                     client.emit(events[event.t], reaction, user);
-                    return [2 /*return*/];
+                    return [2];
             }
         });
     }); });
@@ -280,61 +259,40 @@ var discordProcesses = function (readyCallback) {
 var discordLogin = function (client) {
     client.login(process.env.TOKEN);
 };
-var refreshMessages = function (guilds) { return __awaiter(_this, void 0, void 0, function () {
-    var guildConfigs;
+var refreshMessages = function () { return __awaiter(_this, void 0, void 0, function () {
+    var games;
     var _this = this;
     return __generator(this, function (_a) {
         switch (_a.label) {
-            case 0: return [4 /*yield*/, guild_config_1.GuildConfig.fetchAll()];
+            case 0: return [4, game_1.Game.fetchAllBy({ when: "datetime", method: "automated", timestamp: { $gte: new Date().getTime() } })];
             case 1:
-                guildConfigs = _a.sent();
-                guilds.array().forEach(function (guild) { return __awaiter(_this, void 0, void 0, function () {
-                    var channel, games;
-                    var _this = this;
+                games = _a.sent();
+                games.forEach(function (game) { return __awaiter(_this, void 0, void 0, function () {
+                    var message, err_1;
                     return __generator(this, function (_a) {
                         switch (_a.label) {
                             case 0:
-                                channel = guild.channels.array().find(function (c) { return guildConfigs.find(function (gc) { return gc.guild === guild.id && gc.channel === c.id; }); });
-                                if (!channel) return [3 /*break*/, 2];
-                                return [4 /*yield*/, game_1.Game.fetchAllBy({ s: guild.id, c: channel.id, when: "datetime", method: "automated", timestamp: { $gte: new Date().getTime() } })];
+                                if (!game.discordGuild)
+                                    return [2];
+                                _a.label = 1;
                             case 1:
-                                games = _a.sent();
-                                games.forEach(function (game) { return __awaiter(_this, void 0, void 0, function () {
-                                    var message, err_1;
-                                    return __generator(this, function (_a) {
-                                        switch (_a.label) {
-                                            case 0:
-                                                _a.trys.push([0, 5, , 6]);
-                                                return [4 /*yield*/, channel.fetchMessage(game.messageId)];
-                                            case 1:
-                                                message = _a.sent();
-                                                return [4 /*yield*/, message.clearReactions()];
-                                            case 2:
-                                                _a.sent();
-                                                return [4 /*yield*/, message.react("➕")];
-                                            case 3:
-                                                _a.sent();
-                                                return [4 /*yield*/, message.react("➖")];
-                                            case 4:
-                                                _a.sent();
-                                                return [3 /*break*/, 6];
-                                            case 5:
-                                                err_1 = _a.sent();
-                                                return [3 /*break*/, 6];
-                                            case 6: return [2 /*return*/];
-                                        }
-                                    });
-                                }); });
-                                _a.label = 2;
-                            case 2: return [2 /*return*/];
+                                _a.trys.push([1, 3, , 4]);
+                                return [4, game.discordChannel.fetchMessage(game.messageId)];
+                            case 2:
+                                message = _a.sent();
+                                return [3, 4];
+                            case 3:
+                                err_1 = _a.sent();
+                                return [3, 4];
+                            case 4: return [2];
                         }
                     });
                 }); });
-                return [2 /*return*/];
+                return [2];
         }
     });
 }); };
-var pruneOldGames = function (client) { return __awaiter(_this, void 0, void 0, function () {
+var pruneOldGames = function () { return __awaiter(_this, void 0, void 0, function () {
     var result, query, games, guildConfigs, err_2;
     var _this = this;
     return __generator(this, function (_a) {
@@ -342,91 +300,86 @@ var pruneOldGames = function (client) { return __awaiter(_this, void 0, void 0, 
             case 0:
                 console.log("Pruning old games");
                 query = {
-                    /*s: {
-                        $nin: [] // not in these specific servers
-                    },*/
                     timestamp: {
-                        $lt: new Date().getTime() - 48 * 3600 * 1000 // timestamp lower than 48 hours ago
+                        $lt: new Date().getTime() - 48 * 3600 * 1000
                     }
                 };
-                return [4 /*yield*/, game_1.Game.fetchAllBy(query)];
+                return [4, game_1.Game.fetchAllBy(query)];
             case 1:
                 games = _a.sent();
-                return [4 /*yield*/, guild_config_1.GuildConfig.fetchAll()];
+                return [4, guild_config_1.GuildConfig.fetchAll()];
             case 2:
                 guildConfigs = _a.sent();
                 games.forEach(function (game) { return __awaiter(_this, void 0, void 0, function () {
-                    var guildConfig, guild, channel, message, reminder, err_3;
+                    var guildConfig, message, reminder, err_3;
                     return __generator(this, function (_a) {
                         switch (_a.label) {
                             case 0:
-                                _a.trys.push([0, 4, , 5]);
-                                guildConfig = guildConfigs.find(function (gc) { return gc.guild === game.s; });
-                                if (!guildConfig) return [3 /*break*/, 3];
-                                if (!guildConfig.pruning) return [3 /*break*/, 3];
-                                guild = client.guilds.get(game.s);
-                                if (!guild) return [3 /*break*/, 3];
-                                channel = guild.channels.get(game.c);
-                                if (!channel) return [3 /*break*/, 3];
-                                return [4 /*yield*/, channel.fetchMessage(game.messageId)];
+                                if (!game.discordGuild)
+                                    return [2];
+                                _a.label = 1;
                             case 1:
+                                _a.trys.push([1, 5, , 6]);
+                                guildConfig = guildConfigs.find(function (gc) { return gc.guild === game.s; });
+                                if (!((guildConfig ? guildConfig.pruning : new guild_config_1.GuildConfig().pruning) && game.discordChannel)) return [3, 4];
+                                return [4, game.discordChannel.fetchMessage(game.messageId)];
+                            case 2:
                                 message = _a.sent();
                                 if (message)
                                     message.delete();
-                                return [4 /*yield*/, channel.fetchMessage(game.reminderMessageId)];
-                            case 2:
+                                return [4, game.discordChannel.fetchMessage(game.reminderMessageId)];
+                            case 3:
                                 reminder = _a.sent();
                                 if (reminder)
                                     reminder.delete();
-                                _a.label = 3;
-                            case 3: return [3 /*break*/, 5];
-                            case 4:
+                                _a.label = 4;
+                            case 4: return [3, 6];
+                            case 5:
                                 err_3 = _a.sent();
-                                return [3 /*break*/, 5];
-                            case 5: return [2 /*return*/];
+                                return [3, 6];
+                            case 6: return [2];
                         }
                     });
                 }); });
                 _a.label = 3;
             case 3:
                 _a.trys.push([3, 5, , 6]);
-                return [4 /*yield*/, game_1.Game.deleteAllBy(query)];
+                return [4, game_1.Game.deleteAllBy(query)];
             case 4:
                 result = _a.sent();
                 console.log(result.deletedCount + " old games successfully pruned");
-                return [3 /*break*/, 6];
+                return [3, 6];
             case 5:
                 err_2 = _a.sent();
                 console.log(err_2);
-                return [3 /*break*/, 6];
-            case 6: return [2 /*return*/, result];
+                return [3, 6];
+            case 6: return [2, result];
         }
     });
 }); };
-var postReminders = function (client) { return __awaiter(_this, void 0, void 0, function () {
+var postReminders = function () { return __awaiter(_this, void 0, void 0, function () {
     var games;
     var _this = this;
     return __generator(this, function (_a) {
         switch (_a.label) {
-            case 0: return [4 /*yield*/, game_1.Game.fetchAllBy({ when: "datetime", reminder: { $in: ["15", "30", "60"] } })];
+            case 0: return [4, game_1.Game.fetchAllBy({ when: "datetime", reminder: { $in: ["15", "30", "60"] } })];
             case 1:
                 games = _a.sent();
                 games.forEach(function (game) { return __awaiter(_this, void 0, void 0, function () {
-                    var guild, channel, reserved_1, member, dm, channels, message, sent;
+                    var reserved_1, member, dm, channels, message, sent;
                     return __generator(this, function (_a) {
                         switch (_a.label) {
                             case 0:
                                 if (game.timestamp - parseInt(game.reminder) * 60 * 1000 > new Date().getTime())
-                                    return [2 /*return*/];
-                                guild = client.guilds.get(game.s);
-                                if (!guild) return [3 /*break*/, 2];
-                                channel = guild.channels.get(game.c);
-                                if (!channel) return [3 /*break*/, 2];
+                                    return [2];
+                                if (!game.discordGuild)
+                                    return [2];
+                                if (!game.discordChannel) return [3, 2];
                                 reserved_1 = [];
                                 game.reserved.split(/\r?\n/).forEach(function (res) {
                                     if (res.trim().length === 0)
                                         return;
-                                    var member = guild.members.array().find(function (mem) { return mem.user.tag === res.trim().replace("@", ""); });
+                                    var member = game.discordGuild.members.array().find(function (mem) { return mem.user.tag === res.trim().replace("@", ""); });
                                     var name = res.trim().replace("@", "");
                                     if (member)
                                         name = member.user.toString();
@@ -434,15 +387,15 @@ var postReminders = function (client) { return __awaiter(_this, void 0, void 0, 
                                         reserved_1.push(name);
                                     }
                                 });
-                                member = guild.members.array().find(function (mem) { return mem.user.tag === game.dm.trim().replace("@", ""); });
+                                member = game.discordGuild.members.array().find(function (mem) { return mem.user.tag === game.dm.trim().replace("@", ""); });
                                 dm = game.dm.trim().replace("@", "");
                                 if (member)
                                     dm = member.user.toString();
-                                if (!(reserved_1.length > 0)) return [3 /*break*/, 2];
+                                if (!(reserved_1.length > 0)) return [3, 2];
                                 channels = game.where.match(/#[a-z0-9\-_]+/gi);
                                 if (channels) {
                                     channels.forEach(function (chan) {
-                                        var guildChannel = guild.channels.find(function (c) { return c.name === chan.replace(/#/, ""); });
+                                        var guildChannel = game.discordGuild.channels.find(function (c) { return c.name === chan.replace(/#/, ""); });
                                         if (guildChannel) {
                                             game.where = game.where.replace(chan, guildChannel.toString());
                                         }
@@ -454,18 +407,18 @@ var postReminders = function (client) { return __awaiter(_this, void 0, void 0, 
                                 message += "**DM:** " + dm + "\n";
                                 message += "**Players:**\n";
                                 message += "" + reserved_1.join("\n");
-                                return [4 /*yield*/, channel.send(message)];
+                                return [4, game.discordChannel.send(message)];
                             case 1:
-                                sent = _a.sent();
+                                sent = (_a.sent());
                                 game.reminder = "0";
                                 game.reminderMessageId = sent.id;
-                                game_1.Game.save(channel, game);
+                                game.save();
                                 _a.label = 2;
-                            case 2: return [2 /*return*/];
+                            case 2: return [2];
                         }
                     });
                 }); });
-                return [2 /*return*/];
+                return [2];
         }
     });
 }); };
@@ -474,5 +427,9 @@ exports.default = {
     login: discordLogin,
     refreshMessages: refreshMessages,
     pruneOldGames: pruneOldGames,
-    postReminders: postReminders
+    postReminders: postReminders,
 };
+function discordClient() {
+    return client;
+}
+exports.discordClient = discordClient;

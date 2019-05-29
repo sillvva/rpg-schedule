@@ -1,11 +1,14 @@
-import discord, { TextChannel } from "discord.js";
+import discord, { TextChannel, Client, Message } from "discord.js";
+import { DeleteWriteOpResultObject } from "mongodb";
 
 import { GuildConfig } from "../models/guild-config";
 import { Game } from "../models/game";
 import config from "../models/config";
 
+let client: Client;
+
 const discordProcesses = (readyCallback: () => {}) => {
-    const client = new discord.Client();
+    client = new discord.Client();
 
     /**
      * Discord.JS - ready
@@ -19,7 +22,7 @@ const discordProcesses = (readyCallback: () => {}) => {
      * Discord.JS - message
      */
     client.on("message", async message => {
-        if (message.content.startsWith(process.env.BOTCOMMAND_SCHEDULE) && message.channel instanceof discord.TextChannel) {
+        if (message.content.startsWith(process.env.BOTCOMMAND_SCHEDULE) && message.channel instanceof TextChannel) {
             const parts = message.content
                 .trim()
                 .split(" ")
@@ -63,7 +66,7 @@ const discordProcesses = (readyCallback: () => {}) => {
                 message.channel.send(process.env.HOST + config.urls.game.create.url + "?s=" + guildId);
             } else if (cmd === "configuration") {
                 if (canConfigure) {
-                    const channel = guild.channels.get(guildConfig.channel) || guild.channels.array().find(c => c instanceof discord.TextChannel);
+                    const channel = guild.channels.get(guildConfig.channel) || guild.channels.array().find(c => c instanceof TextChannel);
 
                     let embed = new discord.RichEmbed()
                         .setTitle("RPG Schedule Configuration")
@@ -80,8 +83,7 @@ const discordProcesses = (readyCallback: () => {}) => {
                 }
             } else if (cmd === "channel") {
                 if (canConfigure) {
-                    GuildConfig.save({
-                        guild: guildId,
+                    guildConfig.save({
                         channel: parts[0].replace(/\<\#|\>/g, "")
                     }).then(result => {
                         message.channel.send("Channel updated! Make sure the bot has permissions in the designated channel.");
@@ -89,8 +91,7 @@ const discordProcesses = (readyCallback: () => {}) => {
                 }
             } else if (cmd === "pruning") {
                 if (canConfigure) {
-                    GuildConfig.save({
-                        guild: guildId,
+                    guildConfig.save({
                         pruning: parts[0] === "on"
                     }).then(result => {
                         message.channel.send("Configuration updated! Pruning was turned " + (parts[0] === "on" ? "on" : "off"));
@@ -98,8 +99,7 @@ const discordProcesses = (readyCallback: () => {}) => {
                 }
             } else if (cmd === "embeds") {
                 if (canConfigure) {
-                    GuildConfig.save({
-                        guild: guildId,
+                    guildConfig.save({
                         embeds: !(parts[0] === "off")
                     }).then(result => {
                         message.channel.send("Configuration updated! Embeds were turned " + (!(parts[0] === "off") ? "on" : "off"));
@@ -107,8 +107,7 @@ const discordProcesses = (readyCallback: () => {}) => {
                 }
             } else if (cmd === "password") {
                 if (canConfigure) {
-                    GuildConfig.save({
-                        guild: guildId,
+                    guildConfig.save({
                         password: parts.join(" ")
                     }).then(result => {
                         message.channel.send("Password updated!");
@@ -116,8 +115,7 @@ const discordProcesses = (readyCallback: () => {}) => {
                 }
             } else if (cmd === "role") {
                 if (canConfigure) {
-                    GuildConfig.save({
-                        guild: guildId,
+                    guildConfig.save({
                         role: parts.join(" ")
                     }).then(result => {
                         message.channel.send(`Role set to \`${parts.join(" ")}\`!`);
@@ -135,13 +133,12 @@ const discordProcesses = (readyCallback: () => {}) => {
     client.on("messageReactionAdd", async (reaction, user) => {
         const message = reaction.message;
         const game = await Game.fetchBy("messageId", message.id);
-        if (game && user.id !== message.author.id && message.channel instanceof discord.TextChannel) {
-            const channel = message.channel;
+        if (game && user.id !== message.author.id) {
             if (reaction.emoji.name === "➕") {
                 if (game.reserved.indexOf(user.tag) < 0) {
                     game.reserved = [...game.reserved.trim().split(/\r?\n/), user.tag].join("\n");
                     if (game.reserved.startsWith("\n")) game.reserved = game.reserved.substr(1);
-                    Game.save(channel, game);
+                    game.save();
                 }
             } else if (reaction.emoji.name === "➖") {
                 if (game.reserved.indexOf(user.tag) >= 0) {
@@ -149,7 +146,7 @@ const discordProcesses = (readyCallback: () => {}) => {
                         .split(/\r?\n/)
                         .filter(tag => tag !== user.tag)
                         .join("\n");
-                    Game.save(channel, game);
+                    game.save();
                 }
             }
 
@@ -164,7 +161,7 @@ const discordProcesses = (readyCallback: () => {}) => {
     client.on("messageDelete", async message => {
         const game = await Game.fetchBy("messageId", message.id);
         if (game && message.channel instanceof TextChannel) {
-            Game.delete(game, message.channel).then(result => {
+            game.delete().then(result => {
                 console.log("Game deleted");
             });
         }
@@ -183,7 +180,7 @@ const discordProcesses = (readyCallback: () => {}) => {
 
         const { d: data } = event;
         const user = client.users.get(data.user_id);
-        const channel = <discord.TextChannel>client.channels.get(data.channel_id) || (await user.createDM());
+        const channel = <TextChannel>client.channels.get(data.channel_id) || (await user.createDM());
 
         if (channel.messages.has(data.message_id)) return;
 
@@ -206,26 +203,22 @@ const discordLogin = (client) => {
     client.login(process.env.TOKEN);
 };
 
-const refreshMessages = async (guilds) => {
-    const guildConfigs = await GuildConfig.fetchAll();
-    guilds.array().forEach(async guild => {
-        const channel = guild.channels.array().find(c => guildConfigs.find(gc => gc.guild === guild.id && gc.channel === c.id));
-        if (channel) {
-            let games = await Game.fetchAllBy({ s: guild.id, c: channel.id, when: "datetime", method: "automated", timestamp: { $gte: new Date().getTime() } });
-            games.forEach(async game => {
-                try {
-                    const message = await channel.fetchMessage(game.messageId);
-                    await message.clearReactions();
-                    await message.react("➕");
-                    await message.react("➖");
-                } catch (err) {}
-            });
-        }
+const refreshMessages = async () => {
+    let games = await Game.fetchAllBy({ when: "datetime", method: "automated", timestamp: { $gte: new Date().getTime() } });
+    games.forEach(async game => {
+        if (!game.discordGuild) return;
+        
+        try {
+            const message = await game.discordChannel.fetchMessage(game.messageId);
+            // await message.clearReactions();
+            // await message.react("➕");
+            // await message.react("➖");
+        } catch (err) {}
     });
 };
 
-const pruneOldGames = async (client) => {
-    let result;
+const pruneOldGames = async () => {
+    let result: DeleteWriteOpResultObject;
     console.log("Pruning old games");
     const query = {
         /*s: {
@@ -239,21 +232,15 @@ const pruneOldGames = async (client) => {
     const games = await Game.fetchAllBy(query);
     const guildConfigs = await GuildConfig.fetchAll();
     games.forEach(async game => {
+        if (!game.discordGuild) return;
+
         try {
             const guildConfig = guildConfigs.find(gc => gc.guild === game.s);
-            if (guildConfig) {
-                if (guildConfig.pruning) {
-                    const guild = client.guilds.get(game.s);
-                    if (guild) {
-                        const channel = guild.channels.get(game.c);
-                        if (channel) {
-                            const message = await channel.fetchMessage(game.messageId);
-                            if (message) message.delete();
-                            const reminder = await channel.fetchMessage(game.reminderMessageId);
-                            if (reminder) reminder.delete();
-                        }
-                    }
-                }
+            if ((guildConfig ? guildConfig.pruning : new GuildConfig().pruning) && game.discordChannel) {
+                const message = await game.discordChannel.fetchMessage(game.messageId);
+                if (message) message.delete();
+                const reminder = await game.discordChannel.fetchMessage(game.reminderMessageId);
+                if (reminder) reminder.delete();
             }
         } catch (err) {}
     });
@@ -267,55 +254,53 @@ const pruneOldGames = async (client) => {
     return result;
 };
 
-const postReminders = async (client) => {
+const postReminders = async () => {
     let games = await Game.fetchAllBy({ when: "datetime", reminder: { $in: ["15", "30", "60"] } });
     games.forEach(async game => {
         if (game.timestamp - parseInt(game.reminder) * 60 * 1000 > new Date().getTime()) return;
-        const guild = client.guilds.get(game.s);
-        if (guild) {
-            const channel = guild.channels.get(game.c);
-            if (channel) {
-                const reserved = [];
-                game.reserved.split(/\r?\n/).forEach(res => {
-                    if (res.trim().length === 0) return;
-                    let member = guild.members.array().find(mem => mem.user.tag === res.trim().replace("@", ""));
+        if (!game.discordGuild) return;
+        
+        if (game.discordChannel) {
+            const reserved = [];
+            game.reserved.split(/\r?\n/).forEach(res => {
+                if (res.trim().length === 0) return;
+                let member = game.discordGuild.members.array().find(mem => mem.user.tag === res.trim().replace("@", ""));
 
-                    let name = res.trim().replace("@", "");
-                    if (member) name = member.user.toString();
+                let name = res.trim().replace("@", "");
+                if (member) name = member.user.toString();
 
-                    if (reserved.length < parseInt(game.players)) {
-                        reserved.push(name);
-                    }
-                });
-
-                const member = guild.members.array().find(mem => mem.user.tag === game.dm.trim().replace("@", ""));
-                let dm = game.dm.trim().replace("@", "");
-                if (member) dm = member.user.toString();
-
-                if (reserved.length > 0) {
-                    const channels = game.where.match(/#[a-z0-9\-_]+/gi);
-                    if (channels) {
-                        channels.forEach(chan => {
-                            const guildChannel = guild.channels.find(c => c.name === chan.replace(/#/, ""));
-                            if (guildChannel) {
-                                game.where = game.where.replace(chan, guildChannel.toString());
-                            }
-                        });
-                    }
-
-                    let message = `Reminder for **${game.adventure}**\n`;
-                    message += `**When:** Starting in ${game.reminder} minutes\n`;
-                    message += `**Where:** ${game.where}\n\n`;
-                    message += `**DM:** ${dm}\n`;
-                    message += `**Players:**\n`;
-                    message += `${reserved.join(`\n`)}`;
-
-                    const sent = await channel.send(message);
-
-                    game.reminder = "0";
-                    game.reminderMessageId = sent.id;
-                    Game.save(channel, game);
+                if (reserved.length < parseInt(game.players)) {
+                    reserved.push(name);
                 }
+            });
+
+            const member = game.discordGuild.members.array().find(mem => mem.user.tag === game.dm.trim().replace("@", ""));
+            let dm = game.dm.trim().replace("@", "");
+            if (member) dm = member.user.toString();
+
+            if (reserved.length > 0) {
+                const channels = game.where.match(/#[a-z0-9\-_]+/gi);
+                if (channels) {
+                    channels.forEach(chan => {
+                        const guildChannel = game.discordGuild.channels.find(c => c.name === chan.replace(/#/, ""));
+                        if (guildChannel) {
+                            game.where = game.where.replace(chan, guildChannel.toString());
+                        }
+                    });
+                }
+
+                let message = `Reminder for **${game.adventure}**\n`;
+                message += `**When:** Starting in ${game.reminder} minutes\n`;
+                message += `**Where:** ${game.where}\n\n`;
+                message += `**DM:** ${dm}\n`;
+                message += `**Players:**\n`;
+                message += `${reserved.join(`\n`)}`;
+
+                const sent = <Message>(await game.discordChannel.send(message));
+
+                game.reminder = "0";
+                game.reminderMessageId = sent.id;
+                game.save();
             }
         }
     });
@@ -326,5 +311,9 @@ export default {
     login: discordLogin,
     refreshMessages: refreshMessages,
     pruneOldGames: pruneOldGames,
-    postReminders: postReminders
+    postReminders: postReminders,
 };
+
+export function discordClient() {
+    return client;
+}
