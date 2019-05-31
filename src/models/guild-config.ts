@@ -5,7 +5,7 @@ const collection = "guildConfig";
 
 export interface GuildConfigModel {
     guild?: string;
-    channel?: string;
+    channel?: string | string[];
     pruning?: boolean;
     embeds?: boolean;
     password?: string;
@@ -15,7 +15,7 @@ export interface GuildConfigModel {
 
 export class GuildConfig implements GuildConfigModel {
     guild: string = null;
-    channel: string = null;
+    channel: string | string[] = null;
     pruning: boolean = false;
     embeds: boolean = true;
     password: string = "";
@@ -38,6 +38,16 @@ export class GuildConfig implements GuildConfigModel {
         } else {
             return await col.insertOne(data);
         }
+    }
+
+    get channels(): string[] {
+        let channels: string[] = [];
+        if (this.channel instanceof Array) {
+            channels = this.channel;
+        } else {
+            channels.push(this.channel);
+        }
+        return channels;
     }
 
     static async fetch(guildId: string): Promise<GuildConfig> {

@@ -23,16 +23,25 @@
     </h6>
     <hr />
     <form method="post">
-        <input type="hidden" name="s" value="<%= s %>">
-        <input type="hidden" name="c" value="<%= c %>">
         <div class="row">
             <div class="form-group col-sm-6">
                 <label for="guild" class="col-form-label">Server</label>
                 <input type="text" readonly class="form-control" id="guild" name="guild" value="<%= guild %>">
+                <input type="hidden" name="s" value="<%= s %>">
             </div>
             <div class="form-group col-sm-6">
                 <label for="channel" class="col-form-label">Channel</label>
-                <input type="text" readonly class="form-control" id="channel" name="channel" value="<%= channel %>">
+                <% if (channels.length === 1) { %>
+                    <input type="text" readonly class="form-control" id="channel" name="channel" value="<%= channels[0].name %>">
+                    <input type="hidden" name="c" value="<%= channels[0].id %>">
+                <% } else { %>
+                    <select class="form-control" id="c" name="c">
+                        <% channels.forEach(c => {
+                            %><option value="<%= c.id %>"><%= c.name %></option><%
+                        }) %>
+                    </select>
+                    <input type="hidden" name="channel" value="<%= channels[0].name %>">
+                <% } %>
             </div>
         </div>
         <div class="row">
@@ -202,6 +211,10 @@
         } else if (sel === 'now') {
             $('#method').val('custom').change();
         }
+    }).change();
+
+    $('#c').change(function() {
+        $('#channel').val($('#c option:selected').text())
     }).change();
 
     <% if (password) { %>

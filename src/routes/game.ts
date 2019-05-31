@@ -1,5 +1,5 @@
 import express from "express";
-import { Guild, TextChannel } from "discord.js";
+import { Guild, TextChannel, GuildChannel } from "discord.js";
 
 import { Game } from "../models/game";
 import { GuildConfig } from "../models/guild-config";
@@ -70,22 +70,29 @@ export default (options: any) => {
                     if (req.query.g) {
                         channelId = game.c;
                     } else {
-                        if (guildConfig) channelId = guildConfig.channel;
+                        if (guildConfig) {
+                            channelId = guildConfig.channels
+                                .filter(c => guild.channels.array().find(gc => gc.id == c))
+                                .find(c => c === req.body.c);
+                        }
                     }
 
                     const textChannels = <TextChannel[]>guild.channels.array().filter(c => c instanceof TextChannel);
-                    const channel = textChannels.find(c => c.id === channelId) || textChannels[0];
+                    const channels = guildConfig.channels
+                        .filter(c => guild.channels.array().find(gc => gc.id == c))
+                        .map(c => guild.channels.get(c));
+                    if (channels.length === 0 && textChannels.length > 0) channels.push(textChannels[0]);
 
-                    if (!channel) {
-                        throw new Error("Discord channel not found");
+                    if (channels.length === 0) {
+                        throw new Error("Discord channel not found. Make sure your server has a text channel.");
                     }
 
                     let data: any = {
                         title: req.query.g ? "Edit Game" : "New Game",
                         guild: guild.name,
-                        channel: channel.name,
+                        channels: channels,
                         s: server,
-                        c: channel.id,
+                        c: channels[0].id,
                         dm: req.account ? req.account.user.tag : "",
                         adventure: "",
                         runtime: "",

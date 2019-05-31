@@ -52,7 +52,8 @@ const discordProcesses = (readyCallback: () => {}) => {
                             `\`${process.env.BOTCOMMAND_SCHEDULE} help\` - Display this help window\n` +
                             (canConfigure ? `\nConfiguration\n` +
                                 (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} configuration\` - Get the bot configuration\n` : ``) +
-                                (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} channel #channel-name\` - Configure the channel where games are posted\n` : ``) +
+                                (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} add-channel #channel-name\` - Add a channel where games are posted\n` : ``) +
+                                (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} remove-channel #channel-name\` - Remove a channel where games are posted\n` : ``) +
                                 (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} pruning ${guildConfig.pruning ? 'on' : 'off'}\` - \`on/off\` - Automatically delete old announcements\n` : ``) +
                                 (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} embeds ${guildConfig.embeds || guildConfig.embeds == null ? 'on' : 'off'}\` - \`on/off\` - Use discord embeds for announcements\n` : ``) +
                                 (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} role role name\` - Assign a role as a prerequisite for posting games\n` : ``) +
@@ -66,14 +67,16 @@ const discordProcesses = (readyCallback: () => {}) => {
                 message.channel.send(process.env.HOST + config.urls.game.create.url + "?s=" + guildId);
             } else if (cmd === "configuration") {
                 if (canConfigure) {
-                    const channel = guild.channels.get(guildConfig.channel) || guild.channels.array().find(c => c instanceof TextChannel);
+                    const channel = guildConfig.channels.map(c => {
+                        return guild.channels.get(c);
+                    }) || ([ guild.channels.array().find(c => c instanceof TextChannel) ]);
 
                     let embed = new discord.RichEmbed()
                         .setTitle("RPG Schedule Configuration")
                         .setColor(0x2196f3)
                         .setDescription(
                             `Guild: \`${guild.name}\`\n` +
-                            `Channel: \`${channel.name}\`\n` +
+                            `Channels: \`${channel.filter(c => c).map(c => c.name).join(' | ')}\`\n` +
                             `Pruning: \`${guildConfig.pruning ? "on" : "off"}\`\n` +
                             `Embeds: \`${!(guildConfig.embeds === false) ? "on" : "off"}\`\n` +
                             `Password: ${guildConfig.password ? `\`${guildConfig.password}\`` : "Disabled"}\n` +
@@ -81,12 +84,28 @@ const discordProcesses = (readyCallback: () => {}) => {
                         );
                     message.author.send(embed);
                 }
-            } else if (cmd === "channel") {
+            } else if (cmd === "add-channel") {
                 if (canConfigure) {
+                    const channel: string = parts[0].replace(/\<\#|\>/g, "");
+                    const channels = guildConfig.channels;
+                    channels.push(channel);
                     guildConfig.save({
-                        channel: parts[0].replace(/\<\#|\>/g, "")
+                        channel: channels
                     }).then(result => {
-                        message.channel.send("Channel updated! Make sure the bot has permissions in the designated channel.");
+                        message.channel.send("Channel added! Make sure the bot has permissions in the designated channel.");
+                    });
+                }
+            } else if (cmd === "remove-channel") {
+                if (canConfigure) {
+                    const channel: string = parts[0].replace(/\<\#|\>/g, "");
+                    const channels = guildConfig.channels;
+                    if (channels.indexOf(channel) >= 0) {
+                        channels.splice(channels.indexOf(channel), 1);
+                    }
+                    guildConfig.save({
+                        channel: channels
+                    }).then(result => {
+                        message.channel.send("Channel removed!");
                     });
                 }
             } else if (cmd === "pruning") {
