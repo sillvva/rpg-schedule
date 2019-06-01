@@ -31,7 +31,10 @@
             </div>
             <div class="form-group col-sm-6">
                 <label for="channel" class="col-form-label">Channel</label>
-                <% if (channels.length === 1) { %>
+                <% if (is.editgame) { %>
+                    <input type="text" readonly class="form-control" id="channel" name="channel" value="<%= channel %>">
+                    <input type="hidden" name="c" value="<%= c %>">
+                <% } else if (channels.length === 1) { %>
                     <input type="text" readonly class="form-control" id="channel" name="channel" value="<%= channels[0].name %>">
                     <input type="hidden" name="c" value="<%= channels[0].id %>">
                 <% } else { %>
