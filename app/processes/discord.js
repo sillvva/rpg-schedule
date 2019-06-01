@@ -67,6 +67,7 @@ var discordProcesses = function (readyCallback) {
                     parts_1 = message.content
                         .trim()
                         .split(" ")
+                        .filter(function (part) { return part.length > 0; })
                         .slice(1);
                     cmd = parts_1.reverse().pop();
                     parts_1.reverse();
