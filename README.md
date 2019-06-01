@@ -59,9 +59,14 @@ https://rpg-schedule.herokuapp.com
 <td>Get the bot configuration</td>
 </tr>
 <tr>
-<td>!schedule channel <code>#channel-name</code></td>
+<td>!schedule add-channel <code>#channel-name</code></td>
 <td>first text channel</td>
-<td>Configure the channel where games are posted (recommended)</td>
+<td>Add a channel where games are posted (recommended)</td>
+</tr>
+<tr>
+<td>!schedule remove-channel <code>#channel-name</code></td>
+<td></td>
+<td>Remove a channel where games are posted</td>
 </tr>
 <tr>
 <td>!schedule pruning <code>on/off</code></td>
