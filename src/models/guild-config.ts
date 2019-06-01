@@ -21,7 +21,7 @@ interface GuildConfigDataModel extends GuildConfigModel {
 export class GuildConfig implements GuildConfigDataModel {
     _id: string | number | ObjectID;
     guild: string = null;
-    channel: string | string[] = null;
+    channel: string | string[] = [];
     pruning: boolean = false;
     embeds: boolean = true;
     password: string = "";
