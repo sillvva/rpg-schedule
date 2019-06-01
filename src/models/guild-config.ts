@@ -1,4 +1,5 @@
 import db from "../db";
+import { ObjectID, ObjectId } from "mongodb";
 
 const connection = db.connection;
 const collection = "guildConfig";
@@ -13,7 +14,12 @@ export interface GuildConfigModel {
     hidden?: boolean;
 }
 
-export class GuildConfig implements GuildConfigModel {
+interface GuildConfigDataModel extends GuildConfigModel {
+    _id?: string | number | ObjectID;
+}
+
+export class GuildConfig implements GuildConfigDataModel {
+    _id: string | number | ObjectID;
     guild: string = null;
     channel: string | string[] = null;
     pruning: boolean = false;
@@ -22,7 +28,8 @@ export class GuildConfig implements GuildConfigModel {
     role: string = null;
     hidden: boolean = false;
 
-    constructor(guildConfig: GuildConfigModel = {}) {
+    constructor(guildConfig: GuildConfigDataModel = {}) {
+        if (!guildConfig._id) this._id = new ObjectId();
         Object.entries(guildConfig).forEach(([key, value]) => {
             this[key] = value;
         });
@@ -31,23 +38,30 @@ export class GuildConfig implements GuildConfigModel {
     async save(data: GuildConfigModel) {
         if (!connection()) throw new Error("No database connection");
         if (!data.guild && !this.guild) throw new Error("Guild ID not specified");
-        const config: GuildConfigModel = this;
+        const config: GuildConfigDataModel = this.data;
         const col = connection().collection(collection);
-        if (config) {
-            return await col.updateOne({ guild: data.guild }, { $set: { ...config, ...data } });
-        } else {
-            return await col.insertOne(data);
-        }
+        return await col.updateOne({ _id: this._id }, { $set: { ...config, ...data } }, { upsert: true });
+    }
+
+    get data(): GuildConfigDataModel {
+        return {
+            _id: this._id,
+            guild: this.guild,
+            channel: this.channel,
+            pruning: this.pruning,
+            embeds: this.embeds,
+            password: this.password,
+            role: this.role,
+            hidden: this.hidden
+        };
     }
 
     get channels(): string[] {
-        let channels: string[] = [];
         if (this.channel instanceof Array) {
-            channels = this.channel;
+            return this.channel;
         } else {
-            channels.push(this.channel);
+            return [ this.channel ];
         }
-        return channels;
     }
 
     static async fetch(guildId: string): Promise<GuildConfig> {

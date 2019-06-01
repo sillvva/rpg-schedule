@@ -50,6 +50,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var db_1 = __importDefault(require("../db"));
+var mongodb_1 = require("mongodb");
 var connection = db_1.default.connection;
 var collection = "guildConfig";
 var GuildConfig = (function () {
@@ -63,6 +64,8 @@ var GuildConfig = (function () {
         this.password = "";
         this.role = null;
         this.hidden = false;
+        if (!guildConfig._id)
+            this._id = new mongodb_1.ObjectId();
         Object.entries(guildConfig).forEach(function (_a) {
             var key = _a[0], value = _a[1];
             _this[key] = value;
@@ -78,17 +81,42 @@ var GuildConfig = (function () {
                             throw new Error("No database connection");
                         if (!data.guild && !this.guild)
                             throw new Error("Guild ID not specified");
-                        config = this;
+                        config = this.data;
                         col = connection().collection(collection);
-                        if (!config) return [3, 2];
-                        return [4, col.updateOne({ guild: data.guild }, { $set: __assign({}, config, data) })];
+                        return [4, col.updateOne({ _id: this._id }, { $set: __assign({}, config, data) }, { upsert: true })];
                     case 1: return [2, _a.sent()];
-                    case 2: return [4, col.insertOne(data)];
-                    case 3: return [2, _a.sent()];
                 }
             });
         });
     };
+    Object.defineProperty(GuildConfig.prototype, "data", {
+        get: function () {
+            return {
+                _id: this._id,
+                guild: this.guild,
+                channel: this.channel,
+                pruning: this.pruning,
+                embeds: this.embeds,
+                password: this.password,
+                role: this.role,
+                hidden: this.hidden
+            };
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(GuildConfig.prototype, "channels", {
+        get: function () {
+            if (this.channel instanceof Array) {
+                return this.channel;
+            }
+            else {
+                return [this.channel];
+            }
+        },
+        enumerable: true,
+        configurable: true
+    });
     GuildConfig.fetch = function (guildId) {
         return __awaiter(this, void 0, void 0, function () {
             var guildConfig, _a;

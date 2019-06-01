@@ -58,10 +58,11 @@ var discordProcesses = function (readyCallback) {
         readyCallback();
     });
     client.on("message", function (message) { return __awaiter(_this, void 0, void 0, function () {
-        var parts_1, cmd, guild, guildId, guildConfig, member, canConfigure, embed, channel, embed;
+        var parts_1, cmd, guild_1, guildId, guildConfig, member, canConfigure, embed, channel, embed, channel, channels, channel, channels, err_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
+                    _a.trys.push([0, 3, , 4]);
                     if (!(message.content.startsWith(process.env.BOTCOMMAND_SCHEDULE) && message.channel instanceof discord_js_1.TextChannel)) return [3, 2];
                     parts_1 = message.content
                         .trim()
@@ -73,8 +74,8 @@ var discordProcesses = function (readyCallback) {
                         message.reply("This command will only work in a server");
                         return [2];
                     }
-                    guild = message.channel.guild;
-                    guildId = guild.id;
+                    guild_1 = message.channel.guild;
+                    guildId = guild_1.id;
                     return [4, guild_config_1.GuildConfig.fetch(guildId)];
                 case 1:
                     guildConfig = _a.sent();
@@ -89,7 +90,8 @@ var discordProcesses = function (readyCallback) {
                             ("`" + process.env.BOTCOMMAND_SCHEDULE + " help` - Display this help window\n") +
                             (canConfigure ? "\nConfiguration\n" +
                                 (canConfigure ? "`" + process.env.BOTCOMMAND_SCHEDULE + " configuration` - Get the bot configuration\n" : "") +
-                                (canConfigure ? "`" + process.env.BOTCOMMAND_SCHEDULE + " channel #channel-name` - Configure the channel where games are posted\n" : "") +
+                                (canConfigure ? "`" + process.env.BOTCOMMAND_SCHEDULE + " add-channel #channel-name` - Add a channel where games are posted\n" : "") +
+                                (canConfigure ? "`" + process.env.BOTCOMMAND_SCHEDULE + " remove-channel #channel-name` - Remove a channel where games are posted\n" : "") +
                                 (canConfigure ? "`" + process.env.BOTCOMMAND_SCHEDULE + " pruning " + (guildConfig.pruning ? 'on' : 'off') + "` - `on/off` - Automatically delete old announcements\n" : "") +
                                 (canConfigure ? "`" + process.env.BOTCOMMAND_SCHEDULE + " embeds " + (guildConfig.embeds || guildConfig.embeds == null ? 'on' : 'off') + "` - `on/off` - Use discord embeds for announcements\n" : "") +
                                 (canConfigure ? "`" + process.env.BOTCOMMAND_SCHEDULE + " role role name` - Assign a role as a prerequisite for posting games\n" : "") +
@@ -104,12 +106,14 @@ var discordProcesses = function (readyCallback) {
                     }
                     else if (cmd === "configuration") {
                         if (canConfigure) {
-                            channel = guild.channels.get(guildConfig.channel) || guild.channels.array().find(function (c) { return c instanceof discord_js_1.TextChannel; });
+                            channel = guildConfig.channels.map(function (c) {
+                                return guild_1.channels.get(c);
+                            }) || ([guild_1.channels.array().find(function (c) { return c instanceof discord_js_1.TextChannel; })]);
                             embed = new discord_js_1.default.RichEmbed()
                                 .setTitle("RPG Schedule Configuration")
                                 .setColor(0x2196f3)
-                                .setDescription("Guild: `" + guild.name + "`\n" +
-                                ("Channel: `" + channel.name + "`\n") +
+                                .setDescription("Guild: `" + guild_1.name + "`\n" +
+                                ("Channels: `" + channel.filter(function (c) { return c; }).map(function (c) { return c.name; }).join(' | ') + "`\n") +
                                 ("Pruning: `" + (guildConfig.pruning ? "on" : "off") + "`\n") +
                                 ("Embeds: `" + (!(guildConfig.embeds === false) ? "on" : "off") + "`\n") +
                                 ("Password: " + (guildConfig.password ? "`" + guildConfig.password + "`" : "Disabled") + "\n") +
@@ -117,12 +121,33 @@ var discordProcesses = function (readyCallback) {
                             message.author.send(embed);
                         }
                     }
-                    else if (cmd === "channel") {
+                    else if (cmd === "add-channel") {
                         if (canConfigure) {
+                            channel = parts_1[0].replace(/\<\#|\>/g, "");
+                            channels = guildConfig.channels;
+                            channels.push(channel);
                             guildConfig.save({
-                                channel: parts_1[0].replace(/\<\#|\>/g, "")
+                                channel: channels
                             }).then(function (result) {
-                                message.channel.send("Channel updated! Make sure the bot has permissions in the designated channel.");
+                                message.channel.send("Channel added! Make sure the bot has permissions in the designated channel.");
+                            }).catch(function (err) {
+                                console.log(err);
+                            });
+                        }
+                    }
+                    else if (cmd === "remove-channel") {
+                        if (canConfigure) {
+                            channel = parts_1[0].replace(/\<\#|\>/g, "");
+                            channels = guildConfig.channels;
+                            if (channels.indexOf(channel) >= 0) {
+                                channels.splice(channels.indexOf(channel), 1);
+                            }
+                            guildConfig.save({
+                                channel: channels
+                            }).then(function (result) {
+                                message.channel.send("Channel removed!");
+                            }).catch(function (err) {
+                                console.log(err);
                             });
                         }
                     }
@@ -132,6 +157,8 @@ var discordProcesses = function (readyCallback) {
                                 pruning: parts_1[0] === "on"
                             }).then(function (result) {
                                 message.channel.send("Configuration updated! Pruning was turned " + (parts_1[0] === "on" ? "on" : "off"));
+                            }).catch(function (err) {
+                                console.log(err);
                             });
                         }
                     }
@@ -141,6 +168,8 @@ var discordProcesses = function (readyCallback) {
                                 embeds: !(parts_1[0] === "off")
                             }).then(function (result) {
                                 message.channel.send("Configuration updated! Embeds were turned " + (!(parts_1[0] === "off") ? "on" : "off"));
+                            }).catch(function (err) {
+                                console.log(err);
                             });
                         }
                     }
@@ -150,6 +179,8 @@ var discordProcesses = function (readyCallback) {
                                 password: parts_1.join(" ")
                             }).then(function (result) {
                                 message.channel.send("Password updated!");
+                            }).catch(function (err) {
+                                console.log(err);
                             });
                         }
                     }
@@ -159,12 +190,18 @@ var discordProcesses = function (readyCallback) {
                                 role: parts_1.join(" ")
                             }).then(function (result) {
                                 message.channel.send("Role set to `" + parts_1.join(" ") + "`!");
+                            }).catch(function (err) {
+                                console.log(err);
                             });
                         }
                     }
-                    message.delete();
                     _a.label = 2;
-                case 2: return [2];
+                case 2: return [3, 4];
+                case 3:
+                    err_1 = _a.sent();
+                    console.log(err_1);
+                    return [3, 4];
+                case 4: return [2];
             }
         });
     }); });
@@ -268,7 +305,7 @@ var refreshMessages = function () { return __awaiter(_this, void 0, void 0, func
             case 1:
                 games = _a.sent();
                 games.forEach(function (game) { return __awaiter(_this, void 0, void 0, function () {
-                    var message, err_1;
+                    var message, err_2;
                     return __generator(this, function (_a) {
                         switch (_a.label) {
                             case 0:
@@ -282,7 +319,7 @@ var refreshMessages = function () { return __awaiter(_this, void 0, void 0, func
                                 message = _a.sent();
                                 return [3, 4];
                             case 3:
-                                err_1 = _a.sent();
+                                err_2 = _a.sent();
                                 return [3, 4];
                             case 4: return [2];
                         }
@@ -293,7 +330,7 @@ var refreshMessages = function () { return __awaiter(_this, void 0, void 0, func
     });
 }); };
 var pruneOldGames = function () { return __awaiter(_this, void 0, void 0, function () {
-    var result, query, games, guildConfigs, err_2;
+    var result, query, games, guildConfigs, err_3;
     var _this = this;
     return __generator(this, function (_a) {
         switch (_a.label) {
@@ -311,7 +348,7 @@ var pruneOldGames = function () { return __awaiter(_this, void 0, void 0, functi
             case 2:
                 guildConfigs = _a.sent();
                 games.forEach(function (game) { return __awaiter(_this, void 0, void 0, function () {
-                    var guildConfig, message, reminder, err_3;
+                    var guildConfig, message, reminder, err_4;
                     return __generator(this, function (_a) {
                         switch (_a.label) {
                             case 0:
@@ -335,7 +372,7 @@ var pruneOldGames = function () { return __awaiter(_this, void 0, void 0, functi
                                 _a.label = 4;
                             case 4: return [3, 6];
                             case 5:
-                                err_3 = _a.sent();
+                                err_4 = _a.sent();
                                 return [3, 6];
                             case 6: return [2];
                         }
@@ -350,8 +387,8 @@ var pruneOldGames = function () { return __awaiter(_this, void 0, void 0, functi
                 console.log(result.deletedCount + " old games successfully pruned");
                 return [3, 6];
             case 5:
-                err_2 = _a.sent();
-                console.log(err_2);
+                err_3 = _a.sent();
+                console.log(err_3);
                 return [3, 6];
             case 6: return [2, result];
         }

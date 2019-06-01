@@ -22,127 +22,145 @@ const discordProcesses = (readyCallback: () => {}) => {
      * Discord.JS - message
      */
     client.on("message", async message => {
-        if (message.content.startsWith(process.env.BOTCOMMAND_SCHEDULE) && message.channel instanceof TextChannel) {
-            const parts = message.content
-                .trim()
-                .split(" ")
-                .slice(1);
-            const cmd = parts.reverse().pop();
-            parts.reverse();
-
-            if (!message.channel.guild) {
-                message.reply("This command will only work in a server");
-                return;
-            }
-
-            const guild = message.channel.guild;
-            const guildId = guild.id;
-            const guildConfig = await GuildConfig.fetch(guildId);
-
-            const member = message.channel.guild.members.array().find(m => m.user.id === message.author.id);
-            const canConfigure = member ? member.hasPermission(discord.Permissions.FLAGS.MANAGE_GUILD) : false;
-
-            if (cmd === "help" || message.content.trim().split(" ").length === 1) {
-                let embed = new discord.RichEmbed()
-                    .setTitle("RPG Schedule Help")
-                    .setColor(0x2196f3)
-                    .setDescription(
-                        `__**Command List**__\n` +
-                            `\`${process.env.BOTCOMMAND_SCHEDULE}\` - Display this help window\n` +
-                            `\`${process.env.BOTCOMMAND_SCHEDULE} help\` - Display this help window\n` +
-                            (canConfigure ? `\nConfiguration\n` +
-                                (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} configuration\` - Get the bot configuration\n` : ``) +
-                                (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} add-channel #channel-name\` - Add a channel where games are posted\n` : ``) +
-                                (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} remove-channel #channel-name\` - Remove a channel where games are posted\n` : ``) +
-                                (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} pruning ${guildConfig.pruning ? 'on' : 'off'}\` - \`on/off\` - Automatically delete old announcements\n` : ``) +
-                                (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} embeds ${guildConfig.embeds || guildConfig.embeds == null ? 'on' : 'off'}\` - \`on/off\` - Use discord embeds for announcements\n` : ``) +
-                                (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} role role name\` - Assign a role as a prerequisite for posting games\n` : ``) +
-                                (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} password password\` - Configure a password for posting games\n` : ``) +
-                                (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} password\` - Remove the password\n` : ``) : ``) +
-                            `\nUsage\n` +
-                            `\`${process.env.BOTCOMMAND_SCHEDULE} link\` - Retrieve link for posting games`
-                    );
-                message.channel.send(embed);
-            } else if (cmd === "link") {
-                message.channel.send(process.env.HOST + config.urls.game.create.url + "?s=" + guildId);
-            } else if (cmd === "configuration") {
-                if (canConfigure) {
-                    const channel = guildConfig.channels.map(c => {
-                        return guild.channels.get(c);
-                    }) || ([ guild.channels.array().find(c => c instanceof TextChannel) ]);
-
+        try {
+            if (message.content.startsWith(process.env.BOTCOMMAND_SCHEDULE) && message.channel instanceof TextChannel) {
+                const parts = message.content
+                    .trim()
+                    .split(" ")
+                    .filter(part => part.length > 0)
+                    .slice(1);
+                const cmd = parts.reverse().pop();
+                parts.reverse();
+    
+                if (!message.channel.guild) {
+                    message.reply("This command will only work in a server");
+                    return;
+                }
+    
+                const guild = message.channel.guild;
+                const guildId = guild.id;
+                const guildConfig = await GuildConfig.fetch(guildId);
+    
+                const member = message.channel.guild.members.array().find(m => m.user.id === message.author.id);
+                const canConfigure = member ? member.hasPermission(discord.Permissions.FLAGS.MANAGE_GUILD) : false;
+    
+                if (cmd === "help" || message.content.trim().split(" ").length === 1) {
                     let embed = new discord.RichEmbed()
-                        .setTitle("RPG Schedule Configuration")
+                        .setTitle("RPG Schedule Help")
                         .setColor(0x2196f3)
                         .setDescription(
-                            `Guild: \`${guild.name}\`\n` +
-                            `Channels: \`${channel.filter(c => c).map(c => c.name).join(' | ')}\`\n` +
-                            `Pruning: \`${guildConfig.pruning ? "on" : "off"}\`\n` +
-                            `Embeds: \`${!(guildConfig.embeds === false) ? "on" : "off"}\`\n` +
-                            `Password: ${guildConfig.password ? `\`${guildConfig.password}\`` : "Disabled"}\n` +
-                            `Role: ${guildConfig.role ? `\`${guildConfig.role}\`` : "All Roles"}`
+                            `__**Command List**__\n` +
+                                `\`${process.env.BOTCOMMAND_SCHEDULE}\` - Display this help window\n` +
+                                `\`${process.env.BOTCOMMAND_SCHEDULE} help\` - Display this help window\n` +
+                                (canConfigure ? `\nConfiguration\n` +
+                                    (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} configuration\` - Get the bot configuration\n` : ``) +
+                                    (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} add-channel #channel-name\` - Add a channel where games are posted\n` : ``) +
+                                    (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} remove-channel #channel-name\` - Remove a channel where games are posted\n` : ``) +
+                                    (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} pruning ${guildConfig.pruning ? 'on' : 'off'}\` - \`on/off\` - Automatically delete old announcements\n` : ``) +
+                                    (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} embeds ${guildConfig.embeds || guildConfig.embeds == null ? 'on' : 'off'}\` - \`on/off\` - Use discord embeds for announcements\n` : ``) +
+                                    (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} role role name\` - Assign a role as a prerequisite for posting games\n` : ``) +
+                                    (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} password password\` - Configure a password for posting games\n` : ``) +
+                                    (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} password\` - Remove the password\n` : ``) : ``) +
+                                `\nUsage\n` +
+                                `\`${process.env.BOTCOMMAND_SCHEDULE} link\` - Retrieve link for posting games`
                         );
-                    message.author.send(embed);
-                }
-            } else if (cmd === "add-channel") {
-                if (canConfigure) {
-                    const channel: string = parts[0].replace(/\<\#|\>/g, "");
-                    const channels = guildConfig.channels;
-                    channels.push(channel);
-                    guildConfig.save({
-                        channel: channels
-                    }).then(result => {
-                        message.channel.send("Channel added! Make sure the bot has permissions in the designated channel.");
-                    });
-                }
-            } else if (cmd === "remove-channel") {
-                if (canConfigure) {
-                    const channel: string = parts[0].replace(/\<\#|\>/g, "");
-                    const channels = guildConfig.channels;
-                    if (channels.indexOf(channel) >= 0) {
-                        channels.splice(channels.indexOf(channel), 1);
+                    message.channel.send(embed);
+                } else if (cmd === "link") {
+                    message.channel.send(process.env.HOST + config.urls.game.create.url + "?s=" + guildId);
+                } else if (cmd === "configuration") {
+                    if (canConfigure) {
+                        const channel = guildConfig.channels.map(c => {
+                            return guild.channels.get(c);
+                        }) || ([ guild.channels.array().find(c => c instanceof TextChannel) ]);
+    
+                        let embed = new discord.RichEmbed()
+                            .setTitle("RPG Schedule Configuration")
+                            .setColor(0x2196f3)
+                            .setDescription(
+                                `Guild: \`${guild.name}\`\n` +
+                                `Channels: \`${channel.filter(c => c).map(c => c.name).join(' | ')}\`\n` +
+                                `Pruning: \`${guildConfig.pruning ? "on" : "off"}\`\n` +
+                                `Embeds: \`${!(guildConfig.embeds === false) ? "on" : "off"}\`\n` +
+                                `Password: ${guildConfig.password ? `\`${guildConfig.password}\`` : "Disabled"}\n` +
+                                `Role: ${guildConfig.role ? `\`${guildConfig.role}\`` : "All Roles"}`
+                            );
+                        message.author.send(embed);
                     }
-                    guildConfig.save({
-                        channel: channels
-                    }).then(result => {
-                        message.channel.send("Channel removed!");
-                    });
+                } else if (cmd === "add-channel") {
+                    if (canConfigure) {
+                        const channel: string = parts[0].replace(/\<\#|\>/g, "");
+                        const channels = guildConfig.channels;
+                        channels.push(channel);
+                        guildConfig.save({
+                            channel: channels
+                        }).then(result => {
+                            message.channel.send("Channel added! Make sure the bot has permissions in the designated channel.");
+                        }).catch(err => {
+                            console.log(err);
+                        });
+                    }
+                } else if (cmd === "remove-channel") {
+                    if (canConfigure) {
+                        const channel: string = parts[0].replace(/\<\#|\>/g, "");
+                        const channels = guildConfig.channels;
+                        if (channels.indexOf(channel) >= 0) {
+                            channels.splice(channels.indexOf(channel), 1);
+                        }
+                        guildConfig.save({
+                            channel: channels
+                        }).then(result => {
+                            message.channel.send("Channel removed!");
+                        }).catch(err => {
+                            console.log(err);
+                        });
+                    }
+                } else if (cmd === "pruning") {
+                    if (canConfigure) {
+                        guildConfig.save({
+                            pruning: parts[0] === "on"
+                        }).then(result => {
+                            message.channel.send("Configuration updated! Pruning was turned " + (parts[0] === "on" ? "on" : "off"));
+                        }).catch(err => {
+                            console.log(err);
+                        });
+                    }
+                } else if (cmd === "embeds") {
+                    if (canConfigure) {
+                        guildConfig.save({
+                            embeds: !(parts[0] === "off")
+                        }).then(result => {
+                            message.channel.send("Configuration updated! Embeds were turned " + (!(parts[0] === "off") ? "on" : "off"));
+                        }).catch(err => {
+                            console.log(err);
+                        });
+                    }
+                } else if (cmd === "password") {
+                    if (canConfigure) {
+                        guildConfig.save({
+                            password: parts.join(" ")
+                        }).then(result => {
+                            message.channel.send("Password updated!");
+                        }).catch(err => {
+                            console.log(err);
+                        });
+                    }
+                } else if (cmd === "role") {
+                    if (canConfigure) {
+                        guildConfig.save({
+                            role: parts.join(" ")
+                        }).then(result => {
+                            message.channel.send(`Role set to \`${parts.join(" ")}\`!`);
+                        }).catch(err => {
+                            console.log(err);
+                        });
+                    }
                 }
-            } else if (cmd === "pruning") {
-                if (canConfigure) {
-                    guildConfig.save({
-                        pruning: parts[0] === "on"
-                    }).then(result => {
-                        message.channel.send("Configuration updated! Pruning was turned " + (parts[0] === "on" ? "on" : "off"));
-                    });
-                }
-            } else if (cmd === "embeds") {
-                if (canConfigure) {
-                    guildConfig.save({
-                        embeds: !(parts[0] === "off")
-                    }).then(result => {
-                        message.channel.send("Configuration updated! Embeds were turned " + (!(parts[0] === "off") ? "on" : "off"));
-                    });
-                }
-            } else if (cmd === "password") {
-                if (canConfigure) {
-                    guildConfig.save({
-                        password: parts.join(" ")
-                    }).then(result => {
-                        message.channel.send("Password updated!");
-                    });
-                }
-            } else if (cmd === "role") {
-                if (canConfigure) {
-                    guildConfig.save({
-                        role: parts.join(" ")
-                    }).then(result => {
-                        message.channel.send(`Role set to \`${parts.join(" ")}\`!`);
-                    });
-                }
+    
+                // message.delete();
             }
-
-            message.delete();
+        }
+        catch(err) {
+            console.log(err);
         }
     });
 

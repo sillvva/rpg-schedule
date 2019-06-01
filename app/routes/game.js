@@ -71,7 +71,7 @@ exports.default = (function (options) {
         });
     }); });
     router.use(config_1.default.urls.game.create.url, function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
-        var game_2, server, guild, channelId_1, password, guildConfig_1, member, textChannels, channel, data_1, err_1;
+        var game_2, server, guild_1, channelId, password, guildConfig_1, member, textChannels, channels, data_1, err_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -96,10 +96,11 @@ exports.default = (function (options) {
                         }
                     }
                     if (!server) return [3, 6];
-                    guild = client.guilds.get(server);
-                    if (!guild) return [3, 4];
+                    guild_1 = client.guilds.get(server);
+                    if (!guild_1) return [3, 4];
+                    channelId = void 0;
                     password = void 0;
-                    return [4, guild_config_1.GuildConfig.fetch(guild.id)];
+                    return [4, guild_config_1.GuildConfig.fetch(guild_1.id)];
                 case 3:
                     guildConfig_1 = _a.sent();
                     if (guildConfig_1) {
@@ -110,7 +111,7 @@ exports.default = (function (options) {
                                 return [2];
                             }
                             else {
-                                member = guild.members.find(function (m) { return m.id === req.account.user.id; });
+                                member = guild_1.members.find(function (m) { return m.id === req.account.user.id; });
                                 if (member) {
                                     if (!member.roles.find(function (r) { return r.name.toLowerCase().trim() === guildConfig_1.role.toLowerCase().trim(); })) {
                                         res.redirect(config_1.default.urls.game.dashboard.url);
@@ -125,23 +126,30 @@ exports.default = (function (options) {
                         }
                     }
                     if (req.query.g) {
-                        channelId_1 = game_2.c;
+                        channelId = game_2.c;
                     }
                     else {
-                        if (guildConfig_1)
-                            channelId_1 = guildConfig_1.channel;
+                        if (guildConfig_1) {
+                            channelId = guildConfig_1.channels
+                                .filter(function (c) { return guild_1.channels.array().find(function (gc) { return gc.id == c; }); })
+                                .find(function (c) { return c === req.body.c; });
+                        }
                     }
-                    textChannels = guild.channels.array().filter(function (c) { return c instanceof discord_js_1.TextChannel; });
-                    channel = textChannels.find(function (c) { return c.id === channelId_1; }) || textChannels[0];
-                    if (!channel) {
-                        throw new Error("Discord channel not found");
+                    textChannels = guild_1.channels.array().filter(function (c) { return c instanceof discord_js_1.TextChannel; });
+                    channels = guildConfig_1.channels
+                        .filter(function (c) { return guild_1.channels.array().find(function (gc) { return gc.id == c; }); })
+                        .map(function (c) { return guild_1.channels.get(c); });
+                    if (channels.length === 0 && textChannels.length > 0)
+                        channels.push(textChannels[0]);
+                    if (channels.length === 0) {
+                        throw new Error("Discord channel not found. Make sure your server has a text channel.");
                     }
                     data_1 = {
                         title: req.query.g ? "Edit Game" : "New Game",
-                        guild: guild.name,
-                        channel: channel.name,
+                        guild: guild_1.name,
+                        channels: channels,
                         s: server,
-                        c: channel.id,
+                        c: channels[0].id,
                         dm: req.account ? req.account.user.tag : "",
                         adventure: "",
                         runtime: "",
