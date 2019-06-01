@@ -4,9 +4,16 @@
   "description": "A discord bot for announcing RPG games with automated sign up",
   "main": "index.js",
   "dependencies": {
+    "@types/body-parser": "^1.17.0",
+    "@types/connect-mongodb-session": "0.0.0",
+    "@types/express": "^4.16.1",
+    "@types/express-session": "^1.15.12",
+    "@types/moment": "^2.13.0",
+    "@types/request": "^2.48.1",
+    "@types/socket.io": "^2.1.2",
     "body-parser": "^1.18.3",
     "connect-mongodb-session": "^2.1.1",
-    "discord.js": "^11.4.2",
+    "discord.js": "^11.5.1",
     "dotenv": "^8.0.0",
     "ejs": "^2.6.1",
     "express": "^4.16.4",
@@ -15,6 +22,7 @@
     "moment": "^2.24.0",
     "mongodb": "^3.1.10",
     "nodemon": "^1.18.9",
+    "object.fromentries": "^2.0.0",
     "request": "^2.88.0",
     "socket.io": "^2.2.0",
     "socket.io-client": "^2.2.0"
@@ -22,7 +30,9 @@
   "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js"
+    "start": "node ./app/index.js",
+    "prod": "node prod",
+    "dev": "node dev"
   },
   "repository": {
     "type": "git",

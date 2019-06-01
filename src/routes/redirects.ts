@@ -1,13 +1,13 @@
-const express = require("express");
+import express from "express";
 
-const config = require("../models/config");
+import config from "../models/config";
 
-module.exports = () => {
+export default () => {
     const router = express.Router();
 
     Object.values(config.urls.redirects).forEach(path => {
         router.use(path.url, async (req, res, next) => {
-            const params = Object.entries(req.query).reduce((i, [key, value]) => {
+            const params = Object.entries(req.query).reduce((i, [key, value]: [string, string]) => {
                 i.push(key+'='+escape(value));
                 return i;
             }, []).join('&');

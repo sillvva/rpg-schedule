@@ -1,23 +1,134 @@
-const mongodb = require("mongodb");
-const discord = require("discord.js");
-const moment = require("moment");
+import mongodb, { ObjectID } from "mongodb";
+import discord, { Message, Guild, TextChannel, GuildChannel, Collection } from "discord.js";
+import moment from "moment";
 
-const { connection } = require("../db");
-const ws = require("../processes/socket");
-const GuildConfig = require("./guild-config");
-const config = require("./config");
+import db from "../db";
+import aux from "../appaux";
+import { discordClient } from "../processes/discord";
+import { io } from "../processes/socket";
+import { GuildConfig } from "./guild-config";
+import config from "./config";
 
+const connection = db.connection;
 const ObjectId = mongodb.ObjectId;
 const collection = "games";
 const host = process.env.HOST;
 
-module.exports = class Game {
-    static async save(channel, game) {
+export interface GameModel {
+    _id: string | number | ObjectID;
+    s: string;
+    c: string;
+    guild: string;
+    channel: string;
+    adventure: string;
+    runtime: string;
+    players: string;
+    dm: string;
+    where: string;
+    description: string;
+    reserved: string;
+    method: string;
+    customSignup: string;
+    when: string;
+    date: string;
+    time: string;
+    timezone: number;
+    timestamp: number;
+    reminder: string;
+    messageId: string;
+    reminderMessageId: string;
+    pm: string;
+}
+
+interface GameSaveData {
+    _id: string | number | ObjectID;
+    message: Message;
+    modified: boolean;
+}
+
+export class Game implements GameModel {
+    _id: string | number | ObjectID;
+    s: string;
+    c: string;
+    guild: string;
+    channel: string;
+    adventure: string;
+    runtime: string;
+    players: string;
+    dm: string;
+    where: string;
+    description: string;
+    reserved: string;
+    method: string;
+    customSignup: string;
+    when: string;
+    date: string;
+    time: string;
+    timezone: number;
+    timestamp: number;
+    reminder: string;
+    messageId: string;
+    reminderMessageId: string;
+    pm: string;
+
+    private _guild: Guild;
+    get discordGuild() { return this._guild; }
+    private _channel: TextChannel;
+    get discordChannel() { return this._channel; }
+
+    constructor(game: GameModel) {
+        Object.entries(game).forEach(([key, value]) => {
+            this[key] = value;
+        });
+        this._guild = discordClient().guilds.get(this.s);
+        if (this._guild) {
+            this._guild.channels.forEach(c => {
+                if (!this._channel && c instanceof TextChannel) {
+                    this._channel = c;
+                }
+                if (c.id === this.c && c instanceof TextChannel) {
+                    this._channel = c;
+                }
+            });
+        }
+    }
+
+    get data(): GameModel {
+        return {
+            _id: this._id,
+            s: this.s,
+            c: this.c,
+            guild: this.guild,
+            channel: this.channel,
+            adventure: this.adventure,
+            runtime: this.runtime,
+            players: this.players,
+            dm: this.dm,
+            where: this.where,
+            description: this.description,
+            reserved: this.reserved,
+            method: this.method,
+            customSignup: this.customSignup,
+            when: this.when,
+            date: this.date,
+            time: this.time,
+            timezone: this.timezone,
+            timestamp: this.timestamp,
+            reminder: this.reminder,
+            messageId: this.messageId,
+            reminderMessageId: this.reminderMessageId,
+            pm: this.pm
+        };
+    }
+
+    async save() {
         if (!connection()) throw new Error("No database connection");
+        const channel = this._channel;
         const guild = channel.guild;
         const guildConfig = await GuildConfig.fetch(guild.id);
+        const game: GameModel = this.data;
 
-        let dm = game.dm
+        let dm: string = game.dm
             .trim()
             .replace("@", "")
             .replace(/\#\d{4}/, "");
@@ -27,16 +138,16 @@ module.exports = class Game {
         if (!dmmember) throw new Error("DM must be a Discord tag");
         else if (guildConfig.embeds === false) dm = dmmember.user.toString();
 
-        let reserved = [];
-        let waitlist = [];
+        let reserved: string[] = [];
+        let waitlist: string[] = [];
         game.reserved
             .replace(/@/g, "")
             .split(/\r?\n/)
-            .forEach(res => {
+            .forEach((res: string) => {
                 if (res.trim().length === 0) return;
                 let member = guild.members.array().find(mem => mem.user.tag === res.trim());
 
-                let name = res.trim().replace(/\#\d{4}/, "");
+                let name: string = res.trim().replace(/\#\d{4}/, "");
                 if (member && guildConfig.embeds === false) name = member.user.toString();
 
                 if (reserved.length < parseInt(game.players)) {
@@ -64,12 +175,12 @@ module.exports = class Game {
         if (game.when === "datetime") {
             const date = Game.ISOGameDate(game);
             when = moment(date)
-                    .utcOffset(parseInt(game.timezone))
+                    .utcOffset(game.timezone)
                     .format(config.formats.dateLong) + ` (${timezone})`;
             game.timestamp = new Date(rawDate).getTime();
         } else if (game.when === "now") {
             when = "Now";
-            game.timestamp = new Date.getTime();
+            game.timestamp = new Date().getTime();
         }
 
         const msg =
@@ -90,9 +201,9 @@ module.exports = class Game {
 
         const dbCollection = connection().collection(collection);
         if (game._id) {
-            const prev = await Game.fetch(game._id);
+            const prev = (await Game.fetch(game._id)).data;
             const updated = await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: game });
-            let message;
+            let message: Message;
             try {
                 message = await channel.fetchMessage(game.messageId);
                 if (guildConfig.embeds === false) {
@@ -101,80 +212,80 @@ module.exports = class Game {
                     message = await message.edit(embed);
                 }
 
-                const updatedGame = Object.fromEntries(Object.entries(prev).filter(([key, val]) => game[key] !== val));
-                ws.getIo().emit("game", { action: "updated", gameId: game._id, game: updatedGame });
+                prev._id = prev._id.toString();
+                game._id = game._id.toString();
+                
+                const updatedGame = aux.objectChanges(prev, game);
+                io().emit("game", { action: "updated", gameId: game._id, game: updatedGame });
             } catch (err) {
-                Game.delete(game._id);
+                this.delete();
                 updated.modifiedCount = 0;
             }
-            return {
-                message: message,
+            const saved: GameSaveData = {
                 _id: game._id,
+                message: message,
                 modified: updated.modifiedCount > 0
             };
+            return saved;
         } else {
             const inserted = await dbCollection.insertOne(game);
-            let message;
+            let message: Message;
             if (guildConfig.embeds === false) {
-                message = await channel.send(msg);
+                message = <Message>(await channel.send(msg));
             } else {
-                message = await channel.send(embed);
+                message = <Message>(await channel.send(embed));
             }
             if (game.method === "automated") await message.react("➕");
             if (game.method === "automated") await message.react("➖");
-            const pm = await dmmember.send(
+            const pm: any = await dmmember.send(
                 "You can edit your `" + guild.name + "` - `" + game.adventure + "` game here:\n" + host + config.urls.game.create.url + "?g=" + inserted.insertedId
             );
             const updated = await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { messageId: message.id, pm: pm.id } });
-            return {
+            const saved: GameSaveData = {
+                _id: inserted.insertedId.toString(),
                 message: message,
-                _id: inserted.insertedId,
                 modified: updated.modifiedCount > 0
             };
+            return saved;
         }
     }
 
-    static async fetch(gameId) {
+    static async fetch(gameId: string | number | ObjectID): Promise<Game> {
         if (!connection()) throw new Error("No database connection");
-        return await connection()
-            .collection(collection)
-            .findOne({ _id: new ObjectId(gameId) });
+        return new Game(await connection().collection(collection).findOne({ _id: new ObjectId(gameId) }));
     }
 
-    static async fetchBy(key, value) {
+    static async fetchBy(key: string, value: any): Promise<Game> {
         if (!connection()) throw new Error("No database connection");
-        const query = {};
-        query[key] = value;
-        return await connection()
-            .collection(collection)
-            .findOne(query);
+        const query: mongodb.FilterQuery<any> = aux.fromEntries([[key, value]]);
+        const game: GameModel = await connection().collection(collection).findOne(query);
+        return game ? new Game(game) : null;
     }
 
-    static async fetchAllBy(query) {
+    static async fetchAllBy(query: mongodb.FilterQuery<any>): Promise<Game[]> {
         if (!connection()) throw new Error("No database connection");
-        return await connection()
-            .collection(collection)
-            .find(query)
-            .toArray();
+        const games: GameModel[] = await connection().collection(collection).find(query).toArray()
+        return games.map(game => {
+            return new Game(game);
+        });
     }
 
-    static async deleteAllBy(query) {
+    static async deleteAllBy(query: mongodb.FilterQuery<any>) {
         if (!connection()) throw new Error("No database connection");
-        return await connection()
-            .collection(collection)
-            .deleteMany(query);
+        return await connection().collection(collection).deleteMany(query);
     }
 
-    static async delete(game, channel, options = {}) {
+    async delete(options: any = {}) {
         if (!connection()) throw new Error("No database connection");
-
+        
         const { sendWS = true } = options;
+        const game: GameModel = this;
+        const channel = this._channel;
 
         if (channel) {
             try {
                 if (game.messageId) {
                     const message = await channel.fetchMessage(game.messageId);
-                    console.log(message);
                     if (message) {
                         message.delete().catch(console.log);
                     }
@@ -208,18 +319,18 @@ module.exports = class Game {
                 console.log("DM: ", e.message);
             }
         }
-        if (sendWS) ws.getIo().emit("game", { action: "deleted", gameId: game._id });
+        if (sendWS) io().emit("game", { action: "deleted", gameId: game._id });
         return await connection()
             .collection(collection)
             .deleteOne({ _id: new ObjectId(game._id) });
     }
 
-    static ISOGameDate(game) {
+    static ISOGameDate(game: GameModel) {
         return `${game.date.replace(/-/g, "")}T${game.time.replace(/:/g, "")}00${game.timezone >= 0 ? "+" : "-"}${parseTimeZoneISO(game.timezone)}`;
     }
 };
 
-const parseChannels = (text, channels) => {
+const parseChannels = (text: string, channels: Collection<string, GuildChannel>) => {
     try {
         (text.match(/#[a-z0-9\-_]+/g) || []).forEach(m => {
             const chan = channels.array().find(c => c.name === m.substr(1));
@@ -237,8 +348,7 @@ const parseTimeZoneISO = timezone => {
     const tz = Math.abs(timezone);
     const hours = Math.floor(tz);
     const minutes = ((tz - hours) / 100) * 60;
-    const zeroPad = (n, width, z) => {
-        z = z || "0";
+    const zeroPad = (n: any, width: number, z = "0"): string => {
         n = n + "";
         return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
     };

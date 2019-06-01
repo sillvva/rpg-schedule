@@ -1,26 +1,26 @@
-const express = require("express");
-const discord = require("discord.js");
+import express from "express";
+import { Guild, TextChannel, GuildChannel } from "discord.js";
 
-const Game = require("../models/game");
-const GuildConfig = require("../models/guild-config");
-const config = require("../models/config");
+import { Game } from "../models/game";
+import { GuildConfig } from "../models/guild-config";
+import config from "../models/config";
 
-module.exports = options => {
+export default (options: any) => {
     const router = express.Router();
     const { client } = options;
 
-    router.use(config.urls.game.games.url, async (req, res, next) => {
+    router.use(config.urls.game.games.url, async (req: any, res, next) => {
         res.render("games", req.account);
     });
 
-    router.use(config.urls.game.dashboard.url, async (req, res, next) => {
+    router.use(config.urls.game.dashboard.url, async (req: any, res, next) => {
         res.render("games", req.account);
     });
 
-    router.use(config.urls.game.create.url, async (req, res, next) => {
+    router.use(config.urls.game.create.url, async (req: any, res, next) => {
         try {
-            let game;
-            let server = req.query.s;
+            let game: Game;
+            let server: string = req.query.s;
 
             if (req.query.g) {
                 game = await Game.fetch(req.query.g);
@@ -31,12 +31,19 @@ module.exports = options => {
                 }
             }
 
+            if (req.method === "POST") {
+                req.body.reserved = req.body.reserved.replace(/@/g, '');
+                if (req.query.s) {
+                    game = new Game(req.body);
+                }
+            }
+
             if (server) {
-                const guild = client.guilds.get(server);
+                const guild: Guild = client.guilds.get(server);
 
                 if (guild) {
-                    let channelId;
-                    let password;
+                    let channelId: string;
+                    let password: string;
 
                     const guildConfig = await GuildConfig.fetch(guild.id);
                     if (guildConfig) {
@@ -63,21 +70,29 @@ module.exports = options => {
                     if (req.query.g) {
                         channelId = game.c;
                     } else {
-                        if (guildConfig) channelId = guildConfig.channel;
+                        if (guildConfig) {
+                            channelId = guildConfig.channels
+                                .filter(c => guild.channels.array().find(gc => gc.id == c))
+                                .find(c => c === req.body.c);
+                        }
                     }
 
-                    const channel = guild.channels.get(channelId) || guild.channels.array().find(c => c instanceof discord.TextChannel);
+                    const textChannels = <TextChannel[]>guild.channels.array().filter(c => c instanceof TextChannel);
+                    const channels = guildConfig.channels
+                        .filter(c => guild.channels.array().find(gc => gc.id == c))
+                        .map(c => guild.channels.get(c));
+                    if (channels.length === 0 && textChannels.length > 0) channels.push(textChannels[0]);
 
-                    if (!channel) {
-                        throw new Error("Discord channel not found");
+                    if (channels.length === 0) {
+                        throw new Error("Discord channel not found. Make sure your server has a text channel.");
                     }
 
-                    let data = {
+                    let data: any = {
                         title: req.query.g ? "Edit Game" : "New Game",
                         guild: guild.name,
-                        channel: channel.name,
+                        channels: channels,
                         s: server,
-                        c: channel.id,
+                        c: channels[0].id,
                         dm: req.account ? req.account.user.tag : "",
                         adventure: "",
                         runtime: "",
@@ -110,24 +125,15 @@ module.exports = options => {
                     }
 
                     if (req.method === "POST") {
-                        data.dm = req.body.dm;
-                        data.adventure = req.body.adventure;
-                        data.runtime = req.body.runtime;
-                        data.where = req.body.where;
-                        data.description = req.body.description;
-                        data.reserved = req.body.reserved.replace(/@/g, '');
-                        data.method = req.body.method;
-                        data.customSignup = req.body.customSignup;
-                        data.when = req.body.when;
-                        data.date = req.body.date;
-                        data.time = req.body.time;
-                        data.timezone = req.body.timezone;
-                        data.reminder = req.body.reminder;
-                        data.players = req.body.players;
+                        data = Object.assign(data, req.body);
                     }
 
                     if (req.method === "POST") {
-                        Game.save(channel, { ...game, ...req.body })
+                        Object.entries(req.body).forEach(([key, value]) => {
+                            game[key] = value;
+                        });
+
+                        game.save()
                             .then(response => {
                                 if (response.modified) res.redirect(config.urls.game.create.url + "?g=" + response._id);
                                 else res.render("game", data);
@@ -150,27 +156,21 @@ module.exports = options => {
         }
     });
 
-    router.use(config.urls.game.rsvp.url, async (req, res, next) => {
+    router.use(config.urls.game.rsvp.url, async (req: any, res, next) => {
         try {
             if (req.query.g) {
                 const game = await Game.fetch(req.query.g);
                 if (game) {
-                    const guild = req.account.guilds.find(s => s.id === game.s);
-                    if (guild) {
-                        const channel = guild.channels.find(c => c.id === game.c);
-                        if (channel) {
-                            const reserved = game.reserved.split(/\r?\n/);
-                            if (reserved.find(t => t === req.account.user.tag)) {
-                                reserved.splice(reserved.indexOf(req.account.user.tag), 1);
-                            } else {
-                                reserved.push(req.account.user.tag);
-                            }
-
-                            game.reserved = reserved.join("\n");
-
-                            const result = await Game.save(channel, game);
-                        }
+                    const reserved = game.reserved.split(/\r?\n/);
+                    if (reserved.find(t => t === req.account.user.tag)) {
+                        reserved.splice(reserved.indexOf(req.account.user.tag), 1);
+                    } else {
+                        reserved.push(req.account.user.tag);
                     }
+
+                    game.reserved = reserved.join("\n");
+
+                    const result = await game.save();
                 }
             }
         } catch (err) {
@@ -180,29 +180,18 @@ module.exports = options => {
         res.redirect(req.headers.referer ? req.headers.referer : config.urls.game.games.url);
     });
 
-    router.get(config.urls.game.delete.url, async (req, res, next) => {
+    router.get(config.urls.game.delete.url, async (req: any, res, next) => {
         try {
             if (req.query.g) {
                 const game = await Game.fetch(req.query.g);
                 if (!game) throw new Error("Game not found");
-                const serverId = game.s;
-                const channelId = game.c;
-
-                const guild = client.guilds.get(serverId);
-                if (guild) {
-                    const channel = guild.channels.get(channelId);
-
-                    Game.delete(game, channel, { sendWS: false }).then(response => {
-                        console.log(req.account);
-                        if (req.account) {
-                            res.redirect(config.urls.game.dashboard.url);
-                        } else {
-                            res.redirect(config.urls.game.create.url + "?s=" + serverId);
-                        }
-                    });
-                } else {
-                    throw new Error("Server not found");
-                }
+                game.delete({ sendWS: false }).then(response => {
+                    if (req.account) {
+                        res.redirect(config.urls.game.dashboard.url);
+                    } else {
+                        res.redirect(config.urls.game.create.url + "?s=" + game.s);
+                    }
+                });
             } else {
                 throw new Error("Game not found");
             }

@@ -1,0 +1,12 @@
+{
+    "compilerOptions": {
+        "outDir": "./app",
+        "target": "es5",
+        "allowJs": true,
+        "esModuleInterop": true,
+        "removeComments": true
+    },
+    "include": [
+        "./src/**/*"
+    ]
+}
