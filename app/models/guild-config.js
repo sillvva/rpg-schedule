@@ -58,7 +58,7 @@ var GuildConfig = (function () {
         var _this = this;
         if (guildConfig === void 0) { guildConfig = {}; }
         this.guild = null;
-        this.channel = null;
+        this.channel = [];
         this.pruning = false;
         this.embeds = true;
         this.password = "";
