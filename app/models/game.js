@@ -180,11 +180,9 @@ var Game = (function () {
                         when = "";
                         if (game.when === "datetime") {
                             date = Game.ISOGameDate(game);
-                            console.log(date, game.timezone);
                             when = moment_1.default(date)
                                 .utcOffset(parseInt(game.timezone.toString()))
                                 .format(config_1.default.formats.dateLong) + (" (" + timezone + ")");
-                            console.log(when);
                             game.timestamp = new Date(rawDate).getTime();
                         }
                         else if (game.when === "now") {

@@ -2,6 +2,7 @@ body {
     background-color: #2f3236;
     color: #fff;
     overflow-x: hidden;
+    overflow-y: scroll !important;
 }
 
 @-ms-viewport{
@@ -158,4 +159,12 @@ hr {
 
 .game-description {
     display: none;
+}
+
+.ajs-content p {
+    margin: 5px;
+}
+
+.ajs-no-overflow {
+    overflow: scroll !important;
 }

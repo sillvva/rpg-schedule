@@ -95,7 +95,15 @@
                             (Slot #<%= game.slot %>)
                         <% } %>
                     </div>
-                    <div class="game-description"><%= game.description %></div>
+                    <div class="game-description" data-iso="<%= game.moment.iso %>">
+                        **Date:** %DATE%
+
+                        **Runtime:** <%= game.runtime %> hours
+
+                        **Description:**
+
+                        <%= game.description %>
+                    </div>
                     <% if (game.method === "automated") { %>
                         <div class="buttons">
                             <% if (!game.signedup && !game.waitlisted) { %>
@@ -121,7 +129,7 @@
     const parseDates = () => {
         $('[data-datetime]').each(function() {
             const date = $(this).get(0).dataset.datetime;
-            const iso = $(this).get(0).dataset.datetime;
+            const iso = $(this).get(0).dataset.iso;
             const parsed = {
                 calendar: moment(iso).utcOffset(moment().utcOffset()).calendar(),
                 from: moment(iso).utcOffset(moment().utcOffset()).fromNow()
@@ -140,7 +148,14 @@
 
     $('.game.upcoming').each(function() {
         $(this).click(() => {
-            const description = $(this).find('.game-description').html();
+            const desc = $(this).find('.game-description');
+            let description = desc
+                .html()
+                .split("\n").map(l => l.trim()).join("\n");
+            
+            const iso = desc.get(0).dataset.iso;
+            description = description.replace(/%DATE%/gi, moment(iso).format('<%= config.formats.dateLong %>'));
+
             const md = new Remarkable({
                 html: false
             });
