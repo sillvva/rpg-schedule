@@ -37,21 +37,25 @@ exports.default = (function () {
                     scope: "identify guilds"
                 }
             }, function (error, response, body) {
-                if (!error && response.statusCode === 200) {
-                    var token = JSON.parse(body);
-                    req.session.status = __assign({}, config_1.default.defaults.sessionStatus, req.session.status);
-                    req.session.status.access = token;
-                    res.redirect(config_1.default.urls.game.dashboard.url);
-                    return;
+                if (error || response.statusCode !== 200) {
+                    console.log(error);
+                    res.render("error", { message: "Response: " + response.statusCode + "<br />" + error });
                 }
-                console.log(error);
-                res.render("error", { message: error });
+                var token = JSON.parse(body);
+                req.session.status = __assign({}, config_1.default.defaults.sessionStatus, req.session.status);
+                req.session.status.access = token;
+                res.redirect(req.session.redirect || config_1.default.urls.game.games.url);
+                delete req.session.redirect;
             });
         }
         else if (req.query.error) {
             res.redirect("/");
         }
         else {
+            delete req.session.redirect;
+            if (req.query.redirect) {
+                req.session.redirect = req.query.redirect;
+            }
             res.redirect(process.env.AUTH_URL);
         }
     });
