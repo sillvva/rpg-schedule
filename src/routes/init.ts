@@ -195,11 +195,11 @@ export default (options: any) => {
                     );
                 } else {
                     if (req.account.viewing.home) next();
-                    else res.redirect(config.urls.login.url);
+                    else res.redirect(config.urls.login.url+'?redirect='+escape(req.originalUrl));
                 }
             } else {
                 if (req.account.viewing.home) next();
-                else res.redirect(config.urls.login.url);
+                else res.redirect(config.urls.login.url+'?redirect='+escape(req.originalUrl));
             }
         } catch (e) {
             res.render("error", { message: e.message });

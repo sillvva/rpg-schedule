@@ -27,23 +27,28 @@ export default () => {
                     }
                 },
                 function(error, response, body) {
-                    if (!error && response.statusCode === 200) {
-                        const token = JSON.parse(body);
-                        req.session.status = {
-                            ...config.defaults.sessionStatus,
-                            ...req.session.status
-                        };
-                        req.session.status.access = token;
-                        res.redirect(config.urls.game.dashboard.url);
-                        return;
+                    if (error || response.statusCode !== 200) {
+                        console.log(error);
+                        res.render("error", { message: `Response: ${response.statusCode}<br />${error}` });
                     }
-                    console.log(error);
-                    res.render("error", { message: error });
+
+                    const token = JSON.parse(body);
+                    req.session.status = {
+                        ...config.defaults.sessionStatus,
+                        ...req.session.status
+                    };
+                    req.session.status.access = token;
+                    res.redirect(req.session.redirect || config.urls.game.games.url);
+                    delete req.session.redirect;
                 }
             );
         } else if (req.query.error) {
             res.redirect("/");
         } else {
+            delete req.session.redirect;
+            if (req.query.redirect) {
+                req.session.redirect = req.query.redirect;
+            }
             res.redirect(process.env.AUTH_URL);
         }
     });

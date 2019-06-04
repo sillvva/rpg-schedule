@@ -241,14 +241,14 @@ exports.default = (function (options) {
                             if (req.account.viewing.home)
                                 next();
                             else
-                                res.redirect(config_1.default.urls.login.url);
+                                res.redirect(config_1.default.urls.login.url + '?redirect=' + escape(req.originalUrl));
                         }
                     }
                     else {
                         if (req.account.viewing.home)
                             next();
                         else
-                            res.redirect(config_1.default.urls.login.url);
+                            res.redirect(config_1.default.urls.login.url + '?redirect=' + escape(req.originalUrl));
                     }
                     return [3, 4];
                 case 3:

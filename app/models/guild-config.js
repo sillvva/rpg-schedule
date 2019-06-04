@@ -119,17 +119,16 @@ var GuildConfig = (function () {
     });
     GuildConfig.fetch = function (guildId) {
         return __awaiter(this, void 0, void 0, function () {
-            var guildConfig, _a;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
+            var data;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
                     case 0:
                         if (!connection())
                             throw new Error("No database connection");
-                        _a = GuildConfig.bind;
                         return [4, connection().collection(collection).findOne({ guild: guildId })];
                     case 1:
-                        guildConfig = new (_a.apply(GuildConfig, [void 0, _b.sent()]))();
-                        return [2, guildConfig];
+                        data = _a.sent();
+                        return [2, new GuildConfig(data || { guild: guildId })];
                 }
             });
         });
