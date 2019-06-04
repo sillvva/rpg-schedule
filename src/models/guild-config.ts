@@ -66,8 +66,8 @@ export class GuildConfig implements GuildConfigDataModel {
 
     static async fetch(guildId: string): Promise<GuildConfig> {
         if (!connection()) throw new Error("No database connection");
-        const guildConfig = new GuildConfig(await connection().collection(collection).findOne({ guild: guildId }));
-        return guildConfig;
+        const data = await connection().collection(collection).findOne({ guild: guildId });
+        return new GuildConfig(data || { guild: guildId });
     }
 
     static async fetchAll(): Promise<GuildConfig[]> {
