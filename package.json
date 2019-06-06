@@ -31,10 +31,9 @@
   "devDependencies": {},
   "scripts": {
     "build": "tsc",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "tsc && node ./app/index.js",
-    "prod": "tsc && node prod",
-    "dev": "tsc && node dev"
+    "start": "npm run build && node ./app/index.js",
+    "prod": "npm run build && node prod",
+    "dev": "npm run build && node dev"
   },
   "repository": {
     "type": "git",
