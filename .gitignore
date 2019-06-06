@@ -71,6 +71,9 @@ dev
 .prodenv
 prod
 
+# TypeScript Compiled Files
+app/
+
 # parcel-bundler cache (https://parceljs.org/)
 .cache
 
