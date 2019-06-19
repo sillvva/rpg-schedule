@@ -77,7 +77,7 @@ export class Game implements GameModel {
     get discordChannel() { return this._channel; }
 
     constructor(game: GameModel) {
-        Object.entries(game).forEach(([key, value]) => {
+        Object.entries(game || {}).forEach(([key, value]) => {
             this[key] = value;
         });
         this._guild = discordClient().guilds.get(this.s);
@@ -252,7 +252,8 @@ export class Game implements GameModel {
 
     static async fetch(gameId: string | number | ObjectID): Promise<Game> {
         if (!connection()) throw new Error("No database connection");
-        return new Game(await connection().collection(collection).findOne({ _id: new ObjectId(gameId) }));
+        const game = await connection().collection(collection).findOne({ _id: new ObjectId(gameId) });
+        return game ? new Game(game) : null;
     }
 
     static async fetchBy(key: string, value: any): Promise<Game> {

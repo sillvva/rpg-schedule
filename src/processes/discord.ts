@@ -273,20 +273,22 @@ const pruneOldGames = async () => {
 
         try {
             const guildConfig = guildConfigs.find(gc => gc.guild === game.s);
-            if ((guildConfig ? guildConfig.pruning : new GuildConfig().pruning) && game.discordChannel) {
+            if ((guildConfig || new GuildConfig()).pruning && game.discordChannel) {
                 const message = await game.discordChannel.fetchMessage(game.messageId);
                 if (message) message.delete();
                 const reminder = await game.discordChannel.fetchMessage(game.reminderMessageId);
                 if (reminder) reminder.delete();
             }
-        } catch (err) {}
+        } catch (err) {
+            console.log('MessagePruningError:', err);
+        }
     });
 
     try {
         result = await Game.deleteAllBy(query);
         console.log(`${result.deletedCount} old games successfully pruned`);
     } catch (err) {
-        console.log(err);
+        console.log('GamePruningError:', err);
     }
     return result;
 };
