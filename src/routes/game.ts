@@ -21,7 +21,6 @@ export default (options: any) => {
         try {
             let game: Game;
             let server: string = req.query.s;
-
             if (req.query.g) {
                 game = await Game.fetch(req.query.g);
                 if (game) {
@@ -30,7 +29,7 @@ export default (options: any) => {
                     throw new Error("Game not found");
                 }
             }
-
+            
             if (req.method === "POST") {
                 req.body.reserved = req.body.reserved.replace(/@/g, '');
                 if (req.query.s) {
@@ -66,7 +65,7 @@ export default (options: any) => {
                             }
                         }
                     }
-
+                    
                     if (req.query.g) {
                         channelId = game.c;
                     } else {
@@ -86,7 +85,7 @@ export default (options: any) => {
                     if (channels.length === 0) {
                         throw new Error("Discord channel not found. Make sure your server has a text channel.");
                     }
-
+                    
                     let data: any = {
                         title: req.query.g ? "Edit Game" : "New Game",
                         guild: guild.name,
@@ -119,7 +118,7 @@ export default (options: any) => {
                             dm: false
                         }
                     };
-
+                    
                     if (req.query.g) {
                         data = { ...data, ...game };
                     }
@@ -152,7 +151,7 @@ export default (options: any) => {
                 throw new Error("Discord server not specified");
             }
         } catch (err) {
-            res.render("error", { message: err });
+            res.render("error", { message: 'routes/game.ts:1:<br />'+err });
         }
     });
 
@@ -196,7 +195,7 @@ export default (options: any) => {
                 throw new Error("Game not found");
             }
         } catch (err) {
-            res.render("error", { message: err });
+            res.render("error", { message: 'routes/game.ts:2:<br />'+err });
         }
     });
 
@@ -219,7 +218,7 @@ export default (options: any) => {
                 throw new Error("Server not found");
             }
         } catch (err) {
-            res.render("error", { message: err });
+            res.render("error", { message: 'routes/game.ts:3:<br />'+err });
         }
     });
 

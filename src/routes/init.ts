@@ -37,7 +37,7 @@ export default (options: any) => {
             guilds: [],
             user: null
         };
-
+        
         try {
             const storedSession = await connection()
                 .collection("sessions")
@@ -45,7 +45,7 @@ export default (options: any) => {
             if (storedSession) {
                 req.session.status = storedSession.session.status;
             }
-
+            
             if (req.session.status) {
                 const access = req.session.status.access;
                 if (access.token_type) {
@@ -64,7 +64,6 @@ export default (options: any) => {
                                     const { username, discriminator, id, avatar } = response;
                                     const tag = `${username}#${discriminator}`;
                                     const guildConfigs = await GuildConfig.fetchAll();
-
                                     req.account.user = {
                                         ...response,
                                         ...{
@@ -97,7 +96,7 @@ export default (options: any) => {
                                             guild => !guild.config.hidden // && (req.account.viewing.games || req.account.viewing.dashboard))
                                         );
                                     }
-
+                                    
                                     const gameOptions: any = {
                                         s: {
                                             $in: req.account.guilds.reduce((i, g) => {
@@ -106,7 +105,7 @@ export default (options: any) => {
                                             }, [])
                                         }
                                     };
-
+                                    
                                     if (req.account.viewing.dashboard && tag !== config.author) {
                                         gameOptions.$or = [
                                             {
@@ -128,7 +127,7 @@ export default (options: any) => {
                                             $ne: tag
                                         };
                                     }
-
+                                    
                                     const games: any[] = await Game.fetchAllBy(gameOptions);
                                     games.forEach(game => {
                                         if (!game.discordGuild) return;
@@ -186,7 +185,7 @@ export default (options: any) => {
                                 throw new Error(error);
                             } catch (err) {
                                 if (req.account.viewing.dashboard) {
-                                    res.render("error", { message: err });
+                                    res.render("error", { message: 'init.ts:1:<br />'+err });
                                 } else {
                                     next();
                                 }
@@ -202,7 +201,7 @@ export default (options: any) => {
                 else res.redirect(config.urls.login.url+'?redirect='+escape(req.originalUrl));
             }
         } catch (e) {
-            res.render("error", { message: e.message });
+            res.render("error", { message: 'init.ts:2:<br />'+e.message });
         }
     });
 
