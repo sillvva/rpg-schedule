@@ -174,8 +174,9 @@ export class Game implements GameModel {
         let when = "";
         if (game.when === "datetime") {
             const date = Game.ISOGameDate(game);
+            const tz = (Math.round(parseFloat(game.timezone.toString()) * 4) / 4)
             when = moment(date)
-                    .utcOffset(parseInt(game.timezone.toString()))
+                    .utcOffset(tz)
                     .format(config.formats.dateLong) + ` (${timezone})`;
             game.timestamp = new Date(rawDate).getTime();
         } else if (game.when === "now") {
