@@ -185,7 +185,7 @@ const discordProcesses = (readyCallback: () => {}) => {
                         });
                     }
                 } else if (cmd === "role") {
-                    const mentioned = parts[0].match(/(\d+)/);
+                    const mentioned = (parts[0] || '').match(/(\d+)/);
                     let roleName = parts.join(' ');
                     if (mentioned) {
                         const roleId = mentioned[0];
@@ -194,9 +194,9 @@ const discordProcesses = (readyCallback: () => {}) => {
                     }
                     if (canConfigure) {
                         guildConfig.save({
-                            role: roleName
+                            role: roleName == '' ? null : roleName
                         }).then(result => {
-                            message.channel.send(`Role set to \`${roleName}\`!`);
+                            message.channel.send(roleName.length > 0 ? `Role set to \`${roleName}\`!` : `Role cleared!`);
                         }).catch(err => {
                             console.log(err);
                         });
