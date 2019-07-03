@@ -169,6 +169,7 @@ const discordProcesses = (readyCallback: () => {}) => {
                             let embed = new discord.RichEmbed()
                             .setColor('#'+color.match(/[0-9a-f]{6}/i)[0])
                             .setDescription("Configuration updated! Embed color was set to \`#"+color.match(/[0-9a-f]{6}/i)[0]+"\`.");
+                            message.channel.send(embed);
                         }).catch(err => {
                             console.log(err);
                         });
