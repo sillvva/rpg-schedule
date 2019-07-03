@@ -196,7 +196,7 @@ const discordProcesses = (readyCallback: () => {}) => {
                         guildConfig.save({
                             role: roleName == '' ? null : roleName
                         }).then(result => {
-                            message.channel.send(`Role set to \`${roleName}\`!`);
+                            message.channel.send(roleName.length > 0 ? `Role set to \`${roleName}\`!` : `Role cleared!`);
                         }).catch(err => {
                             console.log(err);
                         });
