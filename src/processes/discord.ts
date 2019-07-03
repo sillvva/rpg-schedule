@@ -145,11 +145,18 @@ const discordProcesses = (readyCallback: () => {}) => {
                         });
                     }
                 } else if (cmd === "role") {
+                    const mentioned = parts[0].match(/(\d+)/);
+                    let roleName = parts.join(' ');
+                    if (mentioned) {
+                        const roleId = mentioned[0];
+                        const role = guild.roles.get(roleId);
+                        if (role) roleName = role.name;
+                    }
                     if (canConfigure) {
                         guildConfig.save({
-                            role: parts.join(" ")
+                            role: roleName
                         }).then(result => {
-                            message.channel.send(`Role set to \`${parts.join(" ")}\`!`);
+                            message.channel.send(`Role set to \`${roleName}\`!`);
                         }).catch(err => {
                             console.log(err);
                         });
@@ -258,11 +265,8 @@ const pruneOldGames = async () => {
     let result: DeleteWriteOpResultObject;
     console.log("Pruning old games");
     const query = {
-        /*s: {
-            $nin: [] // not in these specific servers
-        },*/
-        timestamp: {
-            $lt: new Date().getTime() - 48 * 3600 * 1000 // timestamp lower than 48 hours ago
+        timestamp: { // timestamp lower than 48 hours ago
+            $lt: new Date().getTime() - 48 * 3600 * 1000
         }
     };
 
