@@ -47,7 +47,7 @@ const discordProcesses = (readyCallback: () => {}) => {
                 if (cmd === "help" || message.content.trim().split(" ").length === 1) {
                     let embed = new discord.RichEmbed()
                         .setTitle("RPG Schedule Help")
-                        .setColor(0x2196f3)
+                        .setColor(guildConfig.embedColor)
                         .setDescription(
                             `__**Command List**__\n` +
                                 `\`${process.env.BOTCOMMAND_SCHEDULE}\` - Display this help window\n` +
@@ -58,7 +58,7 @@ const discordProcesses = (readyCallback: () => {}) => {
                                     (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} remove-channel #channel-name\` - Remove a channel where games are posted\n` : ``) +
                                     (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} pruning ${guildConfig.pruning ? 'on' : 'off'}\` - \`on/off\` - Automatically delete old announcements\n` : ``) +
                                     (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} embeds ${guildConfig.embeds || guildConfig.embeds == null ? 'on' : 'off'}\` - \`on/off\` - Use discord embeds for announcements\n` : ``) +
-                                    (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} embed-color \`#2196f3\` - Discord embed color\n` : ``) +
+                                    (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} embed-color \`${guildConfig.embedColor}\` - Discord embed color\n` : ``) +
                                     (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} role role name\` - Assign a role as a prerequisite for posting games\n` : ``) +
                                     (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} password password\` - Configure a password for posting games\n` : ``) +
                                     (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} password\` - Remove the password\n` : ``) : ``) +
