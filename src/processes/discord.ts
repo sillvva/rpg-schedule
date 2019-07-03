@@ -185,7 +185,7 @@ const discordProcesses = (readyCallback: () => {}) => {
                         });
                     }
                 } else if (cmd === "role") {
-                    const mentioned = parts[0].match(/(\d+)/);
+                    const mentioned = (parts[0] || '').match(/(\d+)/);
                     let roleName = parts.join(' ');
                     if (mentioned) {
                         const roleId = mentioned[0];
