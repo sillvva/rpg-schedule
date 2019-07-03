@@ -349,7 +349,7 @@ const parseChannels = (text: string, channels: Collection<string, GuildChannel>)
 const parseTimeZoneISO = timezone => {
     const tz = Math.abs(timezone);
     const hours = Math.floor(tz);
-    const minutes = ((tz - hours) / 100) * 60;
+    const minutes = ((tz - hours)) * 60;
     const zeroPad = (n: any, width: number, z = "0"): string => {
         n = n + "";
         return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
