@@ -9,6 +9,7 @@ export interface GuildConfigModel {
     channel?: string | string[];
     pruning?: boolean;
     embeds?: boolean;
+    embedColor?: string;
     password?: string;
     role?: string;
     hidden?: boolean;
@@ -24,6 +25,7 @@ export class GuildConfig implements GuildConfigDataModel {
     channel: string | string[] = [];
     pruning: boolean = false;
     embeds: boolean = true;
+    embedColor: string = '#2196f3';
     password: string = "";
     role: string = null;
     hidden: boolean = false;
@@ -50,6 +52,7 @@ export class GuildConfig implements GuildConfigDataModel {
             channel: this.channel,
             pruning: this.pruning,
             embeds: this.embeds,
+            embedColor: this.embedColor,
             password: this.password,
             role: this.role,
             hidden: this.hidden

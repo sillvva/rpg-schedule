@@ -58,6 +58,7 @@ const discordProcesses = (readyCallback: () => {}) => {
                                     (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} remove-channel #channel-name\` - Remove a channel where games are posted\n` : ``) +
                                     (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} pruning ${guildConfig.pruning ? 'on' : 'off'}\` - \`on/off\` - Automatically delete old announcements\n` : ``) +
                                     (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} embeds ${guildConfig.embeds || guildConfig.embeds == null ? 'on' : 'off'}\` - \`on/off\` - Use discord embeds for announcements\n` : ``) +
+                                    (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} embed-color \`#2196f3\` - Discord embed color\n` : ``) +
                                     (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} role role name\` - Assign a role as a prerequisite for posting games\n` : ``) +
                                     (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} password password\` - Configure a password for posting games\n` : ``) +
                                     (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} password\` - Remove the password\n` : ``) : ``) +
@@ -75,12 +76,13 @@ const discordProcesses = (readyCallback: () => {}) => {
     
                         let embed = new discord.RichEmbed()
                             .setTitle("RPG Schedule Configuration")
-                            .setColor(0x2196f3)
+                            .setColor(guildConfig.embedColor)
                             .setDescription(
                                 `Guild: \`${guild.name}\`\n` +
                                 `Channels: \`${channel.filter(c => c).map(c => c.name).join(' | ')}\`\n` +
                                 `Pruning: \`${guildConfig.pruning ? "on" : "off"}\`\n` +
                                 `Embeds: \`${!(guildConfig.embeds === false) ? "on" : "off"}\`\n` +
+                                `Embed Color: \`${guildConfig.embedColor}\`\n` +
                                 `Password: ${guildConfig.password ? `\`${guildConfig.password}\`` : "Disabled"}\n` +
                                 `Role: ${guildConfig.role ? `\`${guildConfig.role}\`` : "All Roles"}`
                             );
@@ -130,6 +132,21 @@ const discordProcesses = (readyCallback: () => {}) => {
                             embeds: !(parts[0] === "off")
                         }).then(result => {
                             message.channel.send("Configuration updated! Embeds were turned " + (!(parts[0] === "off") ? "on" : "off"));
+                        }).catch(err => {
+                            console.log(err);
+                        });
+                    }
+                } else if (cmd === "embed-color") {
+                    if (canConfigure) {
+                        let color = parts[0];
+                        if (!color.match(/[0-9a-f]{6}/i)) {
+                            message.channel.send("Embed color must use hexadecimal format. Example: \`#2196f3\` See https://www.color-hex.com/ for more information.")
+                            return;
+                        }
+                        guildConfig.save({
+                            embedColor: '#'+color.match(/[0-9a-f]{6}/i)[0]
+                        }).then(result => {
+                            message.channel.send("Configuration updated! Embed color was set to \`#"+color.match(/[0-9a-f]{6}/i)[0]+"\`.");
                         }).catch(err => {
                             console.log(err);
                         });

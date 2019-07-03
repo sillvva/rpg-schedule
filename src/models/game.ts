@@ -195,7 +195,7 @@ export class Game implements GameModel {
 
         let embed = new discord.RichEmbed()
             .setTitle("Game Announcement")
-            .setColor(0x2196f3)
+            .setColor(guildConfig.embedColor)
             .setDescription(msg);
 
         embed.setThumbnail(dmmember.user.avatarURL);
