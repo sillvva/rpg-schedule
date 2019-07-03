@@ -79,6 +79,11 @@ https://rpg-schedule.herokuapp.com
 <td>Use discord embeds for announcements</td>
 </tr>
 <tr>
+<td>!schedule embed-color <code>color</code></td>
+<td>#2196f3</td>
+<td>Set a discord embed color. Can be a color name like <code>red</code> or a hexadecimal color like <code>#2196f3</code></td>
+</tr>
+<tr>
 <td>!schedule role <code>role name</code></td>
 <td>All Roles</td>
 <td>Assign a role as a prerequisite for posting games</td>
