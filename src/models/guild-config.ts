@@ -10,6 +10,8 @@ export interface GuildConfigModel {
     pruning?: boolean;
     embeds?: boolean;
     embedColor?: string;
+    emojiAdd?: string;
+    emojiRemove?: string;
     password?: string;
     role?: string;
     hidden?: boolean;
@@ -26,6 +28,8 @@ export class GuildConfig implements GuildConfigDataModel {
     pruning: boolean = false;
     embeds: boolean = true;
     embedColor: string = '#2196f3';
+    emojiAdd: string = '✅';
+    emojiRemove: string = '❎';
     password: string = "";
     role: string = null;
     hidden: boolean = false;
@@ -53,6 +57,8 @@ export class GuildConfig implements GuildConfigDataModel {
             pruning: this.pruning,
             embeds: this.embeds,
             embedColor: this.embedColor,
+            emojiAdd: this.emojiAdd,
+            emojiRemove: this.emojiRemove,
             password: this.password,
             role: this.role,
             hidden: this.hidden

@@ -59,6 +59,8 @@ const discordProcesses = (readyCallback: () => {}) => {
                         (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} pruning ${guildConfig.pruning ? 'on' : 'off'}\` - \`on/off\` - Automatically delete old announcements\n` : ``) +
                         (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} embeds ${guildConfig.embeds || guildConfig.embeds == null ? 'on' : 'off'}\` - \`on/off\` - Use discord embeds for announcements\n` : ``) +
                         (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} embed-color ${guildConfig.embedColor}\` - Set a discord embed color\n` : ``) +
+                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} emoji-sign-up ${guildConfig.emojiAdd}\` - Set the emoji used for automated sign up\n` : ``) +
+                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} emoji-drop-out ${guildConfig.emojiRemove}\` - Set the emoji used for automated sign up\n` : ``) +
                         (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} role role name\` - Assign a role as a prerequisite for posting games\n` : ``) +
                         (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} password password\` - Configure a password for posting games\n` : ``) +
                         (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} password\` - Remove the password\n` : ``) : ``) +
@@ -83,6 +85,8 @@ const discordProcesses = (readyCallback: () => {}) => {
                             `Pruning: \`${guildConfig.pruning ? "on" : "off"}\`\n` +
                             `Embeds: \`${!(guildConfig.embeds === false) ? "on" : "off"}\`\n` +
                             `Embed Color: \`${guildConfig.embedColor}\`\n` +
+                            `Emoji (Sign Up): \`${guildConfig.emojiAdd}\`\n` +
+                            `Emoji (Drop Out): \`${guildConfig.emojiRemove}\`\n` +
                             `Password: ${guildConfig.password ? `\`${guildConfig.password}\`` : "Disabled"}\n` +
                             `Role: ${guildConfig.role ? `\`${guildConfig.role}\`` : "All Roles"}`
                         );
@@ -174,6 +178,36 @@ const discordProcesses = (readyCallback: () => {}) => {
                             console.log(err);
                         });
                     }
+                } else if (cmd === "emoji-sign-up") {
+                    if (canConfigure) {
+                        const emoji = parts.join(" ");
+                        if (emoji.length > 2 && emoji.match(/\:[^\:]+\:/)) { 
+                            message.channel.send("Emoji must be a unicode emoji character. You entered `"+emoji.replace(/\<|\>/g,"")+"`. See https://www.unicode.org/emoji/charts/full-emoji-list.html for a full list of emoji. Use the browser version.")
+                            return;
+                        }
+                        guildConfig.save({
+                            emojiAdd: emoji
+                        }).then(result => {
+                            message.channel.send("Sign up emoji updated!");
+                        }).catch(err => {
+                            console.log(err);
+                        });
+                    }
+                } else if (cmd === "emoji-drop-out") {
+                    if (canConfigure) {
+                        const emoji = parts.join(" ");
+                        if (emoji.length > 2 && emoji.match(/\:[^\:]+\:/)) { 
+                            message.channel.send("Emoji must be a unicode emoji character. You entered `"+emoji.replace(/\<|\>/g,"")+"`. See https://www.unicode.org/emoji/charts/full-emoji-list.html for a full list of emoji. Use the browser version.")
+                            return;
+                        }
+                        guildConfig.save({
+                            emojiRemove: emoji
+                        }).then(result => {
+                            message.channel.send("Drop out emoji updated!");
+                        }).catch(err => {
+                            console.log(err);
+                        });
+                    }
                 } else if (cmd === "password") {
                     if (canConfigure) {
                         guildConfig.save({
@@ -216,13 +250,14 @@ const discordProcesses = (readyCallback: () => {}) => {
         const message = reaction.message;
         const game = await Game.fetchBy("messageId", message.id);
         if (game && user.id !== message.author.id) {
-            if (reaction.emoji.name === "➕") {
+            const guildConfig = await GuildConfig.fetch(game.s);
+            if (reaction.emoji.name === guildConfig.emojiAdd) {
                 if (game.reserved.indexOf(user.tag) < 0) {
                     game.reserved = [...game.reserved.trim().split(/\r?\n/), user.tag].join("\n");
                     if (game.reserved.startsWith("\n")) game.reserved = game.reserved.substr(1);
                     game.save();
                 }
-            } else if (reaction.emoji.name === "➖") {
+            } else if (reaction.emoji.name === guildConfig.emojiRemove) {
                 if (game.reserved.indexOf(user.tag) >= 0) {
                     game.reserved = game.reserved
                     .split(/\r?\n/)
