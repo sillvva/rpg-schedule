@@ -85,6 +85,8 @@ const discordProcesses = (readyCallback: () => {}) => {
                             `Pruning: \`${guildConfig.pruning ? "on" : "off"}\`\n` +
                             `Embeds: \`${!(guildConfig.embeds === false) ? "on" : "off"}\`\n` +
                             `Embed Color: \`${guildConfig.embedColor}\`\n` +
+                            `Emoji (Sign Up): \`${guildConfig.emojiAdd}\`\n` +
+                            `Emoji (Drop Out): \`${guildConfig.emojiRemove}\`\n` +
                             `Password: ${guildConfig.password ? `\`${guildConfig.password}\`` : "Disabled"}\n` +
                             `Role: ${guildConfig.role ? `\`${guildConfig.role}\`` : "All Roles"}`
                         );
