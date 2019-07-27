@@ -251,13 +251,13 @@ const discordProcesses = (readyCallback: () => {}) => {
         const game = await Game.fetchBy("messageId", message.id);
         if (game && user.id !== message.author.id) {
             const guildConfig = await GuildConfig.fetch(game.s);
-            if (reaction.emoji.name === guildConfig.emojiAdd) {
+            if (reaction.emoji.name === guildConfig.emojiAdd || reaction.emoji.name === "➕") {
                 if (game.reserved.indexOf(user.tag) < 0) {
                     game.reserved = [...game.reserved.trim().split(/\r?\n/), user.tag].join("\n");
                     if (game.reserved.startsWith("\n")) game.reserved = game.reserved.substr(1);
                     game.save();
                 }
-            } else if (reaction.emoji.name === guildConfig.emojiRemove) {
+            } else if (reaction.emoji.name === guildConfig.emojiRemove || reaction.emoji.name === "➖") {
                 if (game.reserved.indexOf(user.tag) >= 0) {
                     game.reserved = game.reserved
                     .split(/\r?\n/)
