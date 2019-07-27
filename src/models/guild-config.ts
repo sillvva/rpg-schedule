@@ -28,8 +28,8 @@ export class GuildConfig implements GuildConfigDataModel {
     pruning: boolean = false;
     embeds: boolean = true;
     embedColor: string = '#2196f3';
-    emojiAdd: string = '✅';
-    emojiRemove: string = '❎';
+    emojiAdd: string = '➕';
+    emojiRemove: string = '➖';
     password: string = "";
     role: string = null;
     hidden: boolean = false;
