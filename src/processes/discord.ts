@@ -216,13 +216,13 @@ const discordProcesses = (readyCallback: () => {}) => {
         const message = reaction.message;
         const game = await Game.fetchBy("messageId", message.id);
         if (game && user.id !== message.author.id) {
-            if (reaction.emoji.name === "➕") {
+            if (reaction.emoji.name === "✅") {
                 if (game.reserved.indexOf(user.tag) < 0) {
                     game.reserved = [...game.reserved.trim().split(/\r?\n/), user.tag].join("\n");
                     if (game.reserved.startsWith("\n")) game.reserved = game.reserved.substr(1);
                     game.save();
                 }
-            } else if (reaction.emoji.name === "➖") {
+            } else if (reaction.emoji.name === "❎") {
                 if (game.reserved.indexOf(user.tag) >= 0) {
                     game.reserved = game.reserved
                     .split(/\r?\n/)
