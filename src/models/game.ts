@@ -237,7 +237,7 @@ export class Game implements GameModel {
                 message = <Message>(await channel.send(embed));
             }
             if (game.method === "automated") await message.react(guildConfig.emojiAdd);
-            if (game.method === "automated") await message.react(guildConfig.emojiRemove);
+            if (game.method === "automated" && guildConfig.dropOut) await message.react(guildConfig.emojiRemove);
             const pm: any = await dmmember.send(
                 "You can edit your `" + guild.name + "` - `" + game.adventure + "` game here:\n" + host + config.urls.game.create.url + "?g=" + inserted.insertedId
             );
