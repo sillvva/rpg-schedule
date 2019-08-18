@@ -15,6 +15,7 @@ export interface GuildConfigModel {
     password?: string;
     role?: string;
     hidden?: boolean;
+    dropOut?: boolean;
 }
 
 interface GuildConfigDataModel extends GuildConfigModel {
@@ -33,6 +34,7 @@ export class GuildConfig implements GuildConfigDataModel {
     password: string = "";
     role: string = null;
     hidden: boolean = false;
+    dropOut: boolean = true;
 
     constructor(guildConfig: GuildConfigDataModel = {}) {
         if (!guildConfig._id) this._id = new ObjectId();
@@ -61,7 +63,8 @@ export class GuildConfig implements GuildConfigDataModel {
             emojiRemove: this.emojiRemove,
             password: this.password,
             role: this.role,
-            hidden: this.hidden
+            hidden: this.hidden,
+            dropOut: this.dropOut
         };
     }
 

@@ -63,7 +63,8 @@ const discordProcesses = (readyCallback: () => {}) => {
                         (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} emoji-drop-out ${guildConfig.emojiRemove}\` - Set the emoji used for automated sign up\n` : ``) +
                         (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} role role name\` - Assign a role as a prerequisite for posting games\n` : ``) +
                         (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} password password\` - Configure a password for posting games\n` : ``) +
-                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} password\` - Remove the password\n` : ``) : ``) +
+                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} password\` - Remove the password\n` : ``) +
+                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} toggle-drop-out\` - Enable/disable the ability for players to drop out\n` : ``) : ``) +
                         `\nUsage\n` +
                         `\`${process.env.BOTCOMMAND_SCHEDULE} link\` - Retrieve link for posting games`
                     );
@@ -88,7 +89,8 @@ const discordProcesses = (readyCallback: () => {}) => {
                             `Emoji (Sign Up): \`${guildConfig.emojiAdd}\`\n` +
                             `Emoji (Drop Out): \`${guildConfig.emojiRemove}\`\n` +
                             `Password: ${guildConfig.password ? `\`${guildConfig.password}\`` : "Disabled"}\n` +
-                            `Role: ${guildConfig.role ? `\`${guildConfig.role}\`` : "All Roles"}`
+                            `Role: ${guildConfig.role ? `\`${guildConfig.role}\`` : "All Roles"}` +
+                            `Drop Outs: ${guildConfig.dropOut ? `Enabled` : "Disabled"}`
                         );
                         message.author.send(embed);
                     }
@@ -214,6 +216,16 @@ const discordProcesses = (readyCallback: () => {}) => {
                             password: parts.join(" ")
                         }).then(result => {
                             message.channel.send("Password updated!");
+                        }).catch(err => {
+                            console.log(err);
+                        });
+                    }
+                } else if (cmd === "toggle-drop-out") {
+                    if (canConfigure) {
+                        guildConfig.save({
+                            dropOut: !guildConfig.dropOut
+                        }).then(result => {
+                            message.channel.send("Drop outs are now `"+(guildConfig.dropOut ? "disabled" : "enabled")+"` for new games.");
                         }).catch(err => {
                             console.log(err);
                         });

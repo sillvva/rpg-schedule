@@ -166,7 +166,7 @@ export class Game implements GameModel {
         if (game.method === "automated") {
             if (reserved.length > 0) signups += `\n**Sign Ups:**\n${reserved.join("\n")}\n`;
             if (waitlist.length > 0) signups += `\n**Waitlist:**\n${waitlist.join("\n")}\n`;
-            signups += `\n(${guildConfig.emojiAdd} Add Me | ${guildConfig.emojiRemove} Remove Me)`;
+            signups += `\n(${guildConfig.emojiAdd} Add Me${guildConfig.dropOut ? ` | ${guildConfig.emojiRemove} Remove Me` : ""})`;
         } else if (game.method === "custom") {
             signups += `\n${game.customSignup}`;
         }
@@ -237,7 +237,7 @@ export class Game implements GameModel {
                 message = <Message>(await channel.send(embed));
             }
             if (game.method === "automated") await message.react(guildConfig.emojiAdd);
-            if (game.method === "automated") await message.react(guildConfig.emojiRemove);
+            if (game.method === "automated" && guildConfig.dropOut) await message.react(guildConfig.emojiRemove);
             const pm: any = await dmmember.send(
                 "You can edit your `" + guild.name + "` - `" + game.adventure + "` game here:\n" + host + config.urls.game.create.url + "?g=" + inserted.insertedId
             );
