@@ -89,8 +89,8 @@ const discordProcesses = (readyCallback: () => {}) => {
                             `Emoji (Sign Up): \`${guildConfig.emojiAdd}\`\n` +
                             `Emoji (Drop Out): \`${guildConfig.emojiRemove}\`\n` +
                             `Password: ${guildConfig.password ? `\`${guildConfig.password}\`` : "Disabled"}\n` +
-                            `Role: ${guildConfig.role ? `\`${guildConfig.role}\`` : "All Roles"}` +
-                            `Drop Outs: ${guildConfig.dropOut ? `Enabled` : "Disabled"}`
+                            `Role: ${guildConfig.role ? `\`${guildConfig.role}\`` : "All Roles"}\n` +
+                            `Drop Outs: ${guildConfig.dropOut ? `Enabled` : "Disabled"}\n`
                         );
                         message.author.send(embed);
                     }
