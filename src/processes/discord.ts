@@ -288,7 +288,7 @@ const discordProcesses = (readyCallback: () => {}) => {
                     game.save();
                 }
             }
-            
+            reaction.remove(user);
         }
     });
     
