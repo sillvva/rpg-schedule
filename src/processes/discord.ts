@@ -264,11 +264,14 @@ const discordProcesses = (readyCallback: () => {}) => {
         if (game && user.id !== message.author.id) {
             const guildConfig = await GuildConfig.fetch(game.s);
             if (reaction.emoji.name !== guildConfig.emojiAdd && reaction.emoji.name !== guildConfig.emojiRemove) {
-                await message.clearReactions();
-                await message.react(guildConfig.emojiAdd);
-                await message.react(guildConfig.emojiRemove);
-                game.save();
-                return;
+                return reaction.remove(user);
+                // await message.clearReactions();
+                // await message.react(guildConfig.emojiAdd);
+                // if (guildConfig.dropOut) {
+                //     await message.react(guildConfig.emojiRemove);
+                // }
+                // game.save();
+                // return;
             }
             if (reaction.emoji.name === guildConfig.emojiAdd) {
                 if (game.reserved.indexOf(user.tag) < 0) {
@@ -286,7 +289,6 @@ const discordProcesses = (readyCallback: () => {}) => {
                 }
             }
             
-            reaction.remove(user);
         }
     });
     
