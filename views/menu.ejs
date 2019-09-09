@@ -2,19 +2,19 @@
     <div class="container">
         <a class="navbar-brand" href="#">
             <img src="/images/rpg-schedule.png" class="navbar-icon" alt="" />
-            RPG Schedule
+            <%= config.title %>
         </a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#menu" aria-controls="menu" aria-expanded="false">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="menu">
-            <% if (user) { %>
+            <% if (account.user) { %>
                 <ul class="navbar-nav mr-auto">
                     <li class="nav-item dropdown active">
-                        <a class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" href="#">Games</a>
+                        <a class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" href="#"><%= lang.nav.GAMES %></a>
                         <div class="dropdown-menu bg-primary">
-                            <a class="dropdown-item bg-primary text-white" href="<%= config.urls.game.games.url %>">Upcoming Games</a>
-                            <a class="dropdown-item bg-primary text-white" href="<%= config.urls.game.dashboard.url %>">My Games</a>
+                            <a class="dropdown-item bg-primary text-white" href="<%= config.urls.game.games.url %>"><%= lang.nav.UPCOMING_GAMES %></a>
+                            <a class="dropdown-item bg-primary text-white" href="<%= config.urls.game.dashboard.url %>"><%= lang.nav.MY_GAMES %></a>
                         </div>
                     </li>
                 </ul>
@@ -22,25 +22,35 @@
             <ul class="navbar-nav">
                 <li class="nav-item">
                     <a class="nav-link" href="<%= config.urls.invite.url %>">
-                        Invite
+                        <%= lang.nav.INVITE %>
                     </a>
                 </li>
-                <% if (user) { %>
+                <% if (account.user) { %>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="langDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <%= lang.name %>
+                        </a>
+                        <div class="dropdown-menu bg-primary" aria-labelledby="langDropdown">
+                            <% langs.forEach(l => { %>
+                                <a class="dropdown-item bg-primary text-white" href="/lang/<%= l.code %>?returnTo=<%= escape(locals.url) %>"><%= l.name %></a>
+                            <% }); %>
+                        </div>
+                    </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#">
-                            <img class="guild-icon" src="<%= user.avatarURL %>" alt="" />
-                            <%= user.username %>
+                            <img class="guild-icon" src="<%= account.user.avatarURL %>" alt="" />
+                            <%= account.user.username %>
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="<%= config.urls.logout.url %>">
-                            Logout
+                            <%= lang.nav.LOGOUT %>
                         </a>
                     </li>
                 <% } else { %>
                     <li class="nav-item">
                         <a class="nav-link" href="<%= config.urls.login.url %>">
-                            Login
+                            <%= lang.nav.LOGIN %>
                         </a>
                     </li>
                 <% } %>

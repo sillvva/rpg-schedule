@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title><%= title %> - RPG Schedule</title>
+    <title><%= title %> - <%= config.title %></title>
     
     <% include head.ejs %>
     
@@ -12,11 +12,11 @@
     <% } %>
 </head>
 <body>
-<%- include('menu', { config: account.config, user: account.user }); %>
+<%- include('menu'); %>
 <div class="container">
     <h6 class="breadcrumbs">
         <% if (account.user) { %>
-            <a href="<%= account.config.urls.game.dashboard.url %>">My Games</a>
+            <a href="<%= config.urls.game.dashboard.url %>"><%= lang.nav.MY_GAMES %></a>
             <span class="breadcrumb-divider">/</span>
         <% } %>
         <%= title %>
@@ -25,12 +25,12 @@
     <form method="post">
         <div class="row">
             <div class="form-group col-sm-6">
-                <label for="guild" class="col-form-label">Server</label>
+                <label for="guild" class="col-form-label"><%= lang.game.SERVER %></label>
                 <input type="text" readonly class="form-control" id="guild" name="guild" value="<%= guild %>">
                 <input type="hidden" name="s" value="<%= s %>">
             </div>
             <div class="form-group col-sm-6">
-                <label for="channel" class="col-form-label">Channel</label>
+                <label for="channel" class="col-form-label"><%= lang.game.CHANNEL %></label>
                 <% if (is.editgame) { %>
                     <input type="text" readonly class="form-control" id="channel" name="channel" value="<%= channel %>">
                     <input type="hidden" name="c" value="<%= c %>">
@@ -49,53 +49,53 @@
         </div>
         <div class="row">
             <div class="form-group col-sm-6">
-                <label for="adventure" class="col-form-label">Game / Adventure Name</label>
+                <label for="adventure" class="col-form-label"><%= lang.game.GAME_NAME %></label>
                 <input type="text" class="form-control" id="adventure" name="adventure" required value="<%= adventure %>">
             </div>
             <div class="form-group col-sm-3">
-                <label for="runtime" class="col-form-label">Run Time</label>
+                <label for="runtime" class="col-form-label"><%= lang.game.RUN_TIME %></label>
                 <div class="input-group">
                     <input type="text" class="form-control" id="runtime" name="runtime" value="<%= runtime %>">
                     <div class="input-group-append">
-                        <div class="input-group-text">hours</div>
+                        <div class="input-group-text"><%= lang.game.labels.HOURS %></div>
                     </div>
                 </div>
             </div>
             <div class="form-group col-sm-3">
-                <label for="players" class="col-form-label">Max Players</label>
+                <label for="players" class="col-form-label"><%= lang.game.MAX_PLAYERS %></label>
                 <input type="number" min="1" class="form-control" id="players" name="players" required value="<%= players %>">
             </div>
         </div>
         <div class="row">
             <div class="form-group col-sm-5">
-                <label for="dm" class="col-form-label">GM Discord Tag</label>
+                <label for="dm" class="col-form-label"><%= lang.game.GM_DISCORD_TAG %></label>
                 <input type="text" class="form-control" id="dm" name="dm" placeholder="Username#1234" required value="<%= dm %>">
                 <% if (errors.dm) { %>
                     <small class="error"><%= errors.dm %></small>
                 <% } else { %>
-                    <small>Discord tags are case sensitive</small>
+                    <small><%= lang.game.labels.DISCORD_TAGS %></small>
                 <% } %>
             </div>
             <div class="form-group col-sm-7">
-                <label for="where" class="col-form-label">Where</label>
+                <label for="where" class="col-form-label"><%= lang.game.WHERE %></label>
                 <input type="text" class="form-control" id="where" name="where" required value="<%= where %>">
             </div>
         </div>
         <% if (is.newgame) { %>
             <div class="row">
                 <div class="form-group col-sm-6">
-                    <label for="method" class="col-form-label">Sign Up Method</label>
+                    <label for="method" class="col-form-label"><%= lang.game.SIGN_UP_METHOD %></label>
                     <select class="form-control" name="method" id="method">
-                        <option value="automated" <%= method === "automated" ? 'selected' : '' %>>Automated Signup</option>
-                        <option value="custom" <%= method === "custom" ? 'selected' : '' %>>Custom Signup Instructions</option>
+                        <option value="automated" <%= method === "automated" ? 'selected' : '' %>><%= lang.game.options.AUTOMATED_SIGNUP %></option>
+                        <option value="custom" <%= method === "custom" ? 'selected' : '' %>><%= lang.game.options.CUSTOM_SIGNUP_INSTRUCTIONS %></option>
                     </select>
                     <small id="method-desc"></small>
                 </div>
                 <div class="form-group col-sm-6">
-                    <label for="when" class="col-form-label">When</label>
+                    <label for="when" class="col-form-label"><%= lang.game.WHEN %></label>
                     <select class="form-control" name="when" id="when">
-                        <option value="datetime" <%= when === 'datetime' ? 'selected' : '' %>>Date/Time</option>
-                        <option value="now" <%= when === 'now' ? 'selected' : '' %>>Now</option>
+                        <option value="datetime" <%= when === 'datetime' ? 'selected' : '' %>><%= lang.game.options.DATE_TIME %></option>
+                        <option value="now" <%= when === 'now' ? 'selected' : '' %>><%= lang.game.options.NOW %></option>
                     </select>
                 </div>
             </div>
@@ -105,21 +105,21 @@
         <% } %>
         <div id="method__custom">
             <div class="form-group">
-                <label for="customSignup" class="col-form-label">Custom Signup Instructions</label>
+                <label for="customSignup" class="col-form-label"><%= lang.game.CUSTOM_SIGNUP_INSTRUCTIONS %></label>
                 <input type="text" class="form-control" id="customSignup" name="customSignup" value="<%= customSignup %>">
             </div>
         </div>
         <div id="when__datetime" class="row">
             <div class="form-group col-sm-6 col-md-3">
-                <label for="date" class="col-form-label">Date</label>
+                <label for="date" class="col-form-label"><%= lang.game.DATE %></label>
                 <input type="date" class="form-control" id="date" name="date" value="<%= date %>">
             </div>
             <div class="form-group col-sm-6 col-md-3">
-                <label for="time" class="col-form-label">Time</label>
+                <label for="time" class="col-form-label"><%= lang.game.TIME %></label>
                 <input type="time" class="form-control" id="time" name="time" value="<%= time %>">
             </div>
             <div class="form-group col-sm-6 col-md-3">
-                <label for="timezone" class="col-form-label">Time Zone</label>
+                <label for="timezone" class="col-form-label"><%= lang.game.TIME_ZONE %></label>
                 <div class="input-group">
                     <div class="input-group-prepend">
                         <div class="input-group-text">GMT</div>
@@ -128,12 +128,12 @@
                 </div>
             </div>
             <div class="form-group col-sm-6 col-md-3">
-                <label for="reminder" class="col-form-label">Reminder</label>
+                <label for="reminder" class="col-form-label"><%= lang.game.REMINDER %></label>
                 <select class="form-control" id="reminder" name="reminder">
-                    <option value="0" <%= reminder === '0' ? 'selected' : '' %>>No Reminder</option>
-                    <option value="15" <%= reminder === '15' ? 'selected' : '' %>>15 minutes</option>
-                    <option value="30" <%= reminder === '30' ? 'selected' : '' %>>30 minutes</option>
-                    <option value="60" <%= reminder === '60' ? 'selected' : '' %>>1 hour</option>
+                    <option value="0" <%= reminder === '0' ? 'selected' : '' %>><%= lang.game.options.NO_REMINDER %></option>
+                    <option value="15" <%= reminder === '15' ? 'selected' : '' %>><%= lang.game.options.MINUTES_15 %></option>
+                    <option value="30" <%= reminder === '30' ? 'selected' : '' %>><%= lang.game.options.MINUTES_30 %></option>
+                    <option value="60" <%= reminder === '60' ? 'selected' : '' %>><%= lang.game.options.MINUTES_60 %></option>
                 </select>
             </div>
             <div class="col-12">
@@ -146,15 +146,15 @@
         <div class="row">
             <div class="col-sm-5">
                 <div class="form-group">
-                    <label for="reserved" class="col-form-label">Reserved Slots (1 per line)</label>
+                    <label for="reserved" class="col-form-label"><%= lang.game.RESERVED_SLOTS %></label>
                     <textarea class="form-control" id="reserved" name="reserved" rows="7" placeholder="Username#1234"><%= reserved %></textarea>
                 </div>
             </div>
             <div class="col-sm-7">
                 <div class="form-group">
-                    <label for="description" class="col-form-label">Description</label>
+                    <label for="description" class="col-form-label"><%= lang.game.DESCRIPTION %></label>
                     <textarea class="form-control" id="description" name="description" rows="7"><%= description %></textarea>
-                    <small>Discord formatting allowed</small>
+                    <small><%= lang.game.labels.DISCORD_FORMATTING %></small>
                 </div>
             </div>
         </div>
@@ -164,20 +164,20 @@
         <% if (is.newgame) { %>
             <div class="form-group row">
                 <p class="col-sm-6 mx-auto">
-                    <button type="submit" class="btn btn-primary col-12">Submit</button>
+                    <button type="submit" class="btn btn-primary col-12"><%= lang.buttons.SUBMIT %></button>
                 </p>
             </div>
         <% } %>
         <% if (is.editgame) { %>
             <div class="form-group row">
                 <p class="col-sm-6">
-                    <button type="submit" class="btn btn-primary col-12">Save</button>
+                    <button type="submit" class="btn btn-primary col-12"><%= lang.buttons.SAVE %></button>
                 </p>
                 <p class="col-sm-3">
-                    <a href="<%= account.config.urls.game.delete.url %>?g=<%= _id %>" class="btn btn-danger col-12">Delete Game</a>
+                    <a href="<%= config.urls.game.delete.url %>?g=<%= _id %>" class="btn btn-danger col-12"><%= lang.buttons.DELETE_GAME %></a>
                 </p>
                 <p class="col-sm-3">
-                    <a href="<%= account.config.urls.game.create.url %>?s=<%= s %>" class="btn btn-light col-12">New Game</a>
+                    <a href="<%= config.urls.game.create.url %>?s=<%= s %>" class="btn btn-light col-12"><%= lang.buttons.NEW_GAME %></a>
                 </p>
             </div>
         <% } %>
@@ -191,7 +191,7 @@
         $('#method-desc').html('');
 
         if (sel === 'automated') {
-            $('#method-desc').html('Uses discord reaction buttons on the game announcement to allow users to sign up or cancel');
+            $('#method-desc').html('<%= lang.game.labels.AUTOMATED_SIGNUP_DESC %>');
             $('#when').val('datetime').change();
         } else  if (sel === 'custom') {
             $('#method__custom').removeClass('d-none');
@@ -221,7 +221,7 @@
     }).change();
 
     <% if (password) { %>
-    fetch('<%= account.config.urls.game.auth.url %>?s=<%= s %>', { method: 'GET' })
+    fetch('<%= config.urls.game.auth.url %>?s=<%= s %>', { method: 'GET' })
         .then(response => {
             return response.json();
         })
@@ -229,8 +229,8 @@
             if (!session) passwordRedirect();;
             if (!session.status) passwordRedirect();;
             if (!(session.status.loggedInTo || []).includes('<%= s %>')) {
-                const password = prompt('Enter the password provided by the server');
-                fetch('<%= account.config.urls.game.password.url %>?s=<%= s %>&p='+escape(password), { method: 'GET' })
+                const password = prompt('<%= lang.game.labels.REQUEST_SERVER_PASS %>');
+                fetch('<%= config.urls.game.password.url %>?s=<%= s %>&p='+escape(password), { method: 'GET' })
                     .then(response => {
                         return response.json();
                     })
@@ -250,9 +250,9 @@
 
     const passwordRedirect = () => {
         <% if (account.user) { %>
-        window.location = '<%= account.config.urls.game.dashboard.url %>';
+        window.location = '<%= config.urls.game.dashboard.url %>';
         <% } else { %>
-        window.location = '<%= account.config.urls.base.url %>';
+        window.location = '<%= config.urls.base.url %>';
         <% } %>
     };
     <% } %>
@@ -337,8 +337,8 @@
                 if ($('#'+key).length > 0) $('#'+key).val(response.game[key]);
             });
         } else if (response.action === 'deleted') {
-            alert('This game has been deleted');
-            window.location = '<%= account.config.urls.game.create.url %>?s=<%= s %>';
+            alert('<%= lang.game.labels.GAME_DELETED %>');
+            window.location = '<%= config.urls.game.create.url %>?s=<%= s %>';
         }
     });
     <% } %>

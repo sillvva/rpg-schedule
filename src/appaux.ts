@@ -1,4 +1,4 @@
-import fromEntries from "object.fromentries";
+import _ from "lodash";
 
 interface Path {
     url: string;
@@ -10,7 +10,7 @@ interface Path {
 
 const parseConfigURLs = (paths: Object) => {
     let urls: Path[] = [];
-    Object.entries(paths).forEach((entry: any) => {
+    _.toPairs(paths).forEach((entry: any) => {
         const [ id, path ] = entry;
         if (path.hasOwnProperty('url')) {
             urls.push(path);
@@ -22,8 +22,21 @@ const parseConfigURLs = (paths: Object) => {
     return urls;
 };
 
+const parseConfigParam: any = (paths: Object, param: String, value: String) => {
+    const parsedPaths = _.cloneDeep(paths);
+    return _.fromPairs(_.toPairs(parsedPaths).map((entry: any) => {
+        let [ id, path ] = entry;
+        if (path.hasOwnProperty('url')) {
+            path.url = path.url.replace(`:${param}`, value);
+        } else if (path instanceof Object) {
+            path = parseConfigParam(path, param, value);
+        }
+        return [id, path];
+    }));
+};
+
 const objectChanges = (before: {}, after: {}) => {
-    return Object.entries(after).reduce((result, [key, value]) => {
+    return _.toPairs(after).reduce((result, [key, value]) => {
         if (before[key] !== value) {
             result[key] = (value instanceof Object && before[key] instanceof Object) ? objectChanges(value, before[key]) : value;
         }
@@ -33,6 +46,7 @@ const objectChanges = (before: {}, after: {}) => {
 
 export default {
     parseConfigURLs: parseConfigURLs,
+    parseConfigParam: parseConfigParam,
     objectChanges: objectChanges,
-    fromEntries: fromEntries
+    fromEntries: _.fromPairs
 };

@@ -128,6 +128,18 @@ export class Game implements GameModel {
         const guildConfig = await GuildConfig.fetch(guild.id);
         const game: GameModel = this.data;
 
+        const supportedLanguages = require("../../lang/langs.json");
+        const languages = supportedLanguages.langs
+            .map((lang: String) => {
+                return {
+                    code: lang,
+                    ...require(`../../lang/${lang}.json`),
+                    selected: lang === guildConfig.lang
+                };
+            })
+            .sort((a: any, b: any) => (a.name > b.name ? 1 : -1));
+        const lang = languages.find(l => l.selected || l.code === "en");
+
         let dm: string = game.dm
             .trim()
             .replace("@", "")
@@ -135,7 +147,7 @@ export class Game implements GameModel {
         let dmmember = guild.members.array().find(mem => {
             return mem.user.tag === game.dm.trim().replace("@", "");
         });
-        if (!dmmember) throw new Error("DM must be a Discord tag");
+        if (!dmmember) throw new Error(lang.game.GM_ERROR);
         else if (guildConfig.embeds === false) dm = dmmember.user.toString();
 
         let reserved: string[] = [];
@@ -164,9 +176,9 @@ export class Game implements GameModel {
 
         let signups = "";
         if (game.method === "automated") {
-            if (reserved.length > 0) signups += `\n**Sign Ups:**\n${reserved.join("\n")}\n`;
-            if (waitlist.length > 0) signups += `\n**Waitlist:**\n${waitlist.join("\n")}\n`;
-            signups += `\n(${guildConfig.emojiAdd} Add Me${guildConfig.dropOut ? ` | ${guildConfig.emojiRemove} Remove Me` : ""})`;
+            if (reserved.length > 0) signups += `\n**${lang.game.RESERVED}:**\n${reserved.join("\n")}\n`;
+            if (waitlist.length > 0) signups += `\n**${lang.game.WAITLISTED}:**\n${waitlist.join("\n")}\n`;
+            signups += `\n(${guildConfig.emojiAdd} ${lang.buttons.SIGN_UP}${guildConfig.dropOut ? ` | ${guildConfig.emojiRemove} ${lang.buttons.DROP_OUT}` : ""})`;
         } else if (game.method === "custom") {
             signups += `\n${game.customSignup}`;
         }
@@ -180,21 +192,20 @@ export class Game implements GameModel {
                     .format(config.formats.dateLong) + ` (${timezone})`;
             game.timestamp = new Date(rawDate).getTime();
         } else if (game.when === "now") {
-            when = "Now";
+            when = lang.game.options.NOW;
             game.timestamp = new Date().getTime();
         }
 
         const msg =
-            `\n**DM:** ${dm}` +
-            `\n**Adventure:** ${game.adventure}` +
-            `\n**Runtime:** ${game.runtime} hours` +
-            `\n${description.length > 0 ? "**Description:**\n" + description + "\n" : description}` +
-            `\n**When:** ${when}` +
-            `\n**Where:** ${where}` +
+            `\n**${lang.game.GM}:** ${dm}` +
+            `\n**${lang.game.GAME_NAME}:** ${game.adventure}` +
+            `\n**${lang.game.RUN_TIME}:** ${game.runtime} ${lang.game.labels.HOURS}` +
+            `\n${description.length > 0 ? `**${lang.game.DESCRIPTION}:**\n${description}\n` : description}` +
+            `\n**${lang.game.WHEN}:** ${when}` +
+            `\n**${lang.game.WHERE}:** ${where}` +
             `\n${signups}`;
 
         let embed = new discord.RichEmbed()
-            .setTitle("Game Announcement")
             .setColor(guildConfig.embedColor)
             .setDescription(msg);
 
@@ -239,7 +250,7 @@ export class Game implements GameModel {
             if (game.method === "automated") await message.react(guildConfig.emojiAdd);
             if (game.method === "automated" && guildConfig.dropOut) await message.react(guildConfig.emojiRemove);
             const pm: any = await dmmember.send(
-                "You can edit your `" + guild.name + "` - `" + game.adventure + "` game here:\n" + host + config.urls.game.create.url + "?g=" + inserted.insertedId
+                lang.game.EDIT_LINK.replace(/\:server_name/gi, guild.name).replace(/\:game_name/gi, game.adventure) + "\n" + host + config.urls.game.create.url + "?g=" + inserted.insertedId
             );
             const updated = await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { messageId: message.id, pm: pm.id } });
             const saved: GameSaveData = {

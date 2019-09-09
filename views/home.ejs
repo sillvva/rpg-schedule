@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>RPG Schedule</title>
+    <title><%= config.title %></title>
     <% include head.ejs %>
     <link rel="stylesheet" href="/styles/home.css">
 </head>
@@ -9,15 +9,15 @@
 <div class="content">
     <h1>
         <img src="/images/rpg-schedule.png">
-        RPG Schedule
+        <%= config.title %>
     </h1>
     <hr />
     <div class="row">
         <div class="col-xs-12 col-6">
-            <a href="/invite" class="btn btn-primary btn-lg">Invite</a>
+            <a href="/invite" class="btn btn-primary btn-lg"><%= lang.nav.INVITE %></a>
         </div>
         <div class="col-xs-12 col-6">
-            <a href="/login" class="btn btn-dark btn-lg">Login</a>
+            <a href="/login" class="btn btn-dark btn-lg"><%= lang.nav.LOGIN %></a>
         </div>
     </div>
 </div>
