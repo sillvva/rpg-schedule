@@ -34,9 +34,10 @@ export default (options: any) => {
       selected: merge(languages.find((lang: any) => lang.code === "en"), languages.find((lang: any) => lang.selected)),
       list: languages.map((lang: any) => ({ code: lang.code, name: lang.name, selected: lang.selected }))
     };
-    
+
     res.locals.lang = req.lang.selected;
     res.locals.langs = req.lang.list;
+    res.locals.url = req._parsedOriginalUrl.pathname;
 
     const parsedURLs = aux.parseConfigURLs(config.urls);
     if (!parsedURLs.find(path => path.session && req._parsedOriginalUrl.pathname === path.url)) {
@@ -48,14 +49,13 @@ export default (options: any) => {
 
     req.account = {
       viewing: {
-        home: req._parsedOriginalUrl.pathname === config.urls.base.url,
-        games: req._parsedOriginalUrl.pathname === config.urls.game.games.url,
-        dashboard: req._parsedOriginalUrl.pathname === config.urls.game.dashboard.url,
-        game: req._parsedOriginalUrl.pathname === config.urls.game.create.url
+        home: res.locals.url === config.urls.base.url,
+        games: res.locals.url === config.urls.game.games.url,
+        dashboard: res.locals.url === config.urls.game.dashboard.url,
+        game: res.locals.url === config.urls.game.create.url
       },
       guilds: [],
-      user: null,
-      url: req._parsedOriginalUrl.pathname
+      user: null
     };
 
     res.locals.account = req.account;
