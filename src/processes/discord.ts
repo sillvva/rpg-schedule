@@ -32,14 +32,26 @@ const discordProcesses = (readyCallback: () => {}) => {
                 const cmd = parts.reverse().pop();
                 parts.reverse();
                 
-                if (!message.channel.guild) {
-                    message.reply("This command will only work in a server");
-                    return;
-                }
-                
                 const guild = message.channel.guild;
                 const guildId = guild.id;
                 const guildConfig = await GuildConfig.fetch(guildId);
+
+                const supportedLanguages = require("../../lang/langs.json");
+                const languages = supportedLanguages.langs
+                    .map((lang: String) => {
+                        return {
+                            code: lang,
+                            ...require(`../../lang/${lang}.json`),
+                            selected: lang === guildConfig.lang
+                        };
+                    })
+                    .sort((a: any, b: any) => (a.name > b.name ? 1 : -1));
+                const lang = languages.find(l => l.selected || l.code === "en");
+                
+                if (!message.channel.guild) {
+                    message.reply(lang.config.desc.SERVER_COMMAND);
+                    return;
+                }
                 
                 const member = message.channel.guild.members.array().find(m => m.user.id === message.author.id);
                 const canConfigure = member ? member.hasPermission(discord.Permissions.FLAGS.MANAGE_GUILD) : false;
@@ -49,28 +61,30 @@ const discordProcesses = (readyCallback: () => {}) => {
                     .setTitle("RPG Schedule Help")
                     .setColor(guildConfig.embedColor)
                     .setDescription(
-                        `__**Command List**__\n` +
-                        `\`${process.env.BOTCOMMAND_SCHEDULE}\` - Display this help window\n` +
-                        `\`${process.env.BOTCOMMAND_SCHEDULE} help\` - Display this help window\n` +
-                        (canConfigure ? `\nConfiguration\n` +
-                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} configuration\` - Get the bot configuration\n` : ``) +
-                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} add-channel #channel-name\` - Add a channel where games are posted\n` : ``) +
-                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} remove-channel #channel-name\` - Remove a channel where games are posted\n` : ``) +
-                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} pruning ${guildConfig.pruning ? 'on' : 'off'}\` - \`on/off\` - Automatically delete old announcements\n` : ``) +
-                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} embeds ${guildConfig.embeds || guildConfig.embeds == null ? 'on' : 'off'}\` - \`on/off\` - Use discord embeds for announcements\n` : ``) +
-                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} embed-color ${guildConfig.embedColor}\` - Set a discord embed color\n` : ``) +
-                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} emoji-sign-up ${guildConfig.emojiAdd}\` - Set the emoji used for automated sign up\n` : ``) +
-                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} emoji-drop-out ${guildConfig.emojiRemove}\` - Set the emoji used for automated sign up\n` : ``) +
-                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} role role name\` - Assign a role as a prerequisite for posting games\n` : ``) +
-                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} password password\` - Configure a password for posting games\n` : ``) +
-                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} password\` - Remove the password\n` : ``) +
-                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} toggle-drop-out\` - Enable/disable the ability for players to drop out\n` : ``) : ``) +
-                        `\nUsage\n` +
-                        `\`${process.env.BOTCOMMAND_SCHEDULE} link\` - Retrieve link for posting games`
+                        `__**${lang.config.COMMAND_LIST}**__\n` +
+                        `\`${process.env.BOTCOMMAND_SCHEDULE}\` - ${lang.config.desc.HELP}\n` +
+                        `\`${process.env.BOTCOMMAND_SCHEDULE} help\` - ${lang.config.desc.HELP}\n` +
+                        (canConfigure ? `\n${lang.config.CONFIGURATION}\n` +
+                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} configuration\` - ${lang.config.desc.CONFIGURATION}\n` : ``) +
+                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} add-channel #channel-name\` - ${lang.config.desc.ADD_CHANNEL}\n` : ``) +
+                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} remove-channel #channel-name\` - ${lang.config.desc.REMOVE_CHANNEL}\n` : ``) +
+                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} pruning ${guildConfig.pruning ? 'on' : 'off'}\` - \`on/off\` - ${lang.config.desc.PRUNING}\n` : ``) +
+                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} embeds ${guildConfig.embeds || guildConfig.embeds == null ? 'on' : 'off'}\` - \`on/off\` - ${lang.config.desc.EMBEDS}\n` : ``) +
+                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} embed-color ${guildConfig.embedColor}\` - ${lang.config.desc.EMBED_COLOR}\n` : ``) +
+                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} emoji-sign-up ${guildConfig.emojiAdd}\` - ${lang.config.desc.EMOJI}\n` : ``) +
+                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} emoji-drop-out ${guildConfig.emojiRemove}\` - ${lang.config.desc.EMOJI}\n` : ``) +
+                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} private-reminders\` - ${lang.config.desc.PRIVATE_REMINDERS.replace(/\:PR/gi, guildConfig.privateReminders ? "on" : "off")}\n` : ``) +
+                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} role role name\` - ${lang.config.desc.ROLE}\n` : ``) +
+                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} password somepassword\` - ${lang.config.desc.PASSWORD_SET}\n` : ``) +
+                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} password\` - ${lang.config.desc.PASSWORD_CLEAR}\n` : ``) +
+                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} toggle-drop-out\` - ${lang.config.desc.TOGGLE_DROP_OUT}\n` : ``) +
+                        (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} lang ${guildConfig.lang}\` - ${lang.config.desc.LANG} ${languages.map(l => `\`${l.code}\` (${l.name})`).join(', ')}\n` : ``) : ``) +
+                        `\n${lang.config.USAGE}\n` +
+                        `\`${process.env.BOTCOMMAND_SCHEDULE} link\` - ${lang.config.desc.LINK}`
                     );
                     message.channel.send(embed);
                 } else if (cmd === "link") {
-                    message.channel.send(process.env.HOST + config.urls.game.create.url + "?s=" + guildId);
+                    message.channel.send(process.env.HOST + `/lang/${guildConfig.lang}?returnTo=${escape(process.env.HOST + config.urls.game.create.url + "?s=" + guildId)}`);
                 } else if (cmd === "configuration") {
                     if (canConfigure) {
                         const channel = guildConfig.channels.map(c => {
@@ -78,19 +92,20 @@ const discordProcesses = (readyCallback: () => {}) => {
                         }) || ([ guild.channels.array().find(c => c instanceof TextChannel) ]);
                         
                         let embed = new discord.RichEmbed()
-                        .setTitle("RPG Schedule Configuration")
+                        .setTitle(`RPG Schedule ${lang.config.CONFIGURATION}`)
                         .setColor(guildConfig.embedColor)
                         .setDescription(
-                            `Guild: \`${guild.name}\`\n` +
-                            `Channels: \`${channel.filter(c => c).map(c => c.name).join(' | ')}\`\n` +
-                            `Pruning: \`${guildConfig.pruning ? "on" : "off"}\`\n` +
-                            `Embeds: \`${!(guildConfig.embeds === false) ? "on" : "off"}\`\n` +
-                            `Embed Color: \`${guildConfig.embedColor}\`\n` +
-                            `Emoji (Sign Up): \`${guildConfig.emojiAdd}\`\n` +
-                            `Emoji (Drop Out): \`${guildConfig.emojiRemove}\`\n` +
-                            `Password: ${guildConfig.password ? `\`${guildConfig.password}\`` : "Disabled"}\n` +
-                            `Role: ${guildConfig.role ? `\`${guildConfig.role}\`` : "All Roles"}\n` +
-                            `Drop Outs: ${guildConfig.dropOut ? `Enabled` : "Disabled"}\n`
+                            `${lang.config.GUILD}: \`${guild.name}\`\n` +
+                            `${lang.config.CHANNELS}: \`${channel.filter(c => c).map(c => c.name).join(' | ')}\`\n` +
+                            `${lang.config.PRUNING}: \`${guildConfig.pruning ? "on" : "off"}\`\n` +
+                            `${lang.config.EMBEDS}: \`${!(guildConfig.embeds === false) ? "on" : "off"}\`\n` +
+                            `${lang.config.EMBED_COLOR}: \`${guildConfig.embedColor}\`\n` +
+                            `${lang.config.EMOJI_JOIN}: \`${guildConfig.emojiAdd}\`\n` +
+                            `${lang.config.EMOJI_LEAVE}: \`${guildConfig.emojiRemove}\`\n` +
+                            `${lang.config.PRIVATE_REMINDERS}: \`${guildConfig.privateReminders ? "on" : "off"}\`\n` +
+                            `${lang.config.PASSWORD}: ${guildConfig.password ? `\`${guildConfig.password}\`` : "Disabled"}\n` +
+                            `${lang.config.ROLE}: ${guildConfig.role ? `\`${guildConfig.role}\`` : "All Roles"}\n` +
+                            `${lang.config.DROP_OUTS}: ${guildConfig.dropOut ? `Enabled` : "Disabled"}\n`
                         );
                         message.author.send(embed);
                     }
@@ -102,7 +117,7 @@ const discordProcesses = (readyCallback: () => {}) => {
                         guildConfig.save({
                             channel: channels
                         }).then(result => {
-                            message.channel.send("Channel added! Make sure the bot has permissions in the designated channel.");
+                            message.channel.send(`${lang.config.CHANNEL_ADDED}`);
                         }).catch(err => {
                             console.log(err);
                         });
@@ -117,7 +132,7 @@ const discordProcesses = (readyCallback: () => {}) => {
                         guildConfig.save({
                             channel: channels
                         }).then(result => {
-                            message.channel.send("Channel removed!");
+                            message.channel.send(`${lang.config.CHANNEL_REMOVED}`);
                         }).catch(err => {
                             console.log(err);
                         });
@@ -127,7 +142,7 @@ const discordProcesses = (readyCallback: () => {}) => {
                         guildConfig.save({
                             pruning: parts[0] === "on"
                         }).then(result => {
-                            message.channel.send("Configuration updated! Pruning was turned " + (parts[0] === "on" ? "on" : "off"));
+                            message.channel.send(parts[0] === "on" ? lang.config.PRUNING_ON : lang.config.PRUNING_OFF);
                         }).catch(err => {
                             console.log(err);
                         });
@@ -137,7 +152,7 @@ const discordProcesses = (readyCallback: () => {}) => {
                         guildConfig.save({
                             embeds: !(parts[0] === "off")
                         }).then(result => {
-                            message.channel.send("Configuration updated! Embeds were turned " + (!(parts[0] === "off") ? "on" : "off"));
+                            message.channel.send(!(parts[0] === "off") ? lang.config.EMBEDS_ON : lang.config.EMBEDS_OFF);
                         }).catch(err => {
                             console.log(err);
                         });
@@ -166,7 +181,7 @@ const discordProcesses = (readyCallback: () => {}) => {
                             color = colors[color];
                         }
                         else if (!color.match(/[0-9a-f]{6}/i)) {
-                            message.channel.send("Embed color must use hexadecimal format. Example: \`#2196f3\` See https://www.color-hex.com/ for more information.")
+                            message.channel.send(lang.config.desc.EMBED_COLOR_ERROR)
                             return;
                         }
                         guildConfig.save({
@@ -174,7 +189,7 @@ const discordProcesses = (readyCallback: () => {}) => {
                         }).then(result => {
                             let embed = new discord.RichEmbed()
                             .setColor('#'+color.match(/[0-9a-f]{6}/i)[0])
-                            .setDescription("Configuration updated! Embed color was set to \`#"+color.match(/[0-9a-f]{6}/i)[0]+"\`.");
+                            .setDescription(`${lang.config.EMBED_COLOR_SET} \`#"+color.match(/[0-9a-f]{6}/i)[0]+"\`.`);
                             message.channel.send(embed);
                         }).catch(err => {
                             console.log(err);
@@ -184,13 +199,13 @@ const discordProcesses = (readyCallback: () => {}) => {
                     if (canConfigure) {
                         const emoji = parts.join(" ");
                         if (emoji.length > 2 && emoji.match(/\:[^\:]+\:/)) { 
-                            message.channel.send("Emoji must be a unicode emoji character. You entered `"+emoji.replace(/\<|\>/g,"")+"`. See https://www.unicode.org/emoji/charts/full-emoji-list.html for a full list of emoji. Use the browser version.")
+                            message.channel.send(lang.config.desc.EMOJI_ERROR.replace(/\:char/gi, emoji.replace(/\<|\>/g,"")))
                             return;
                         }
                         guildConfig.save({
                             emojiAdd: emoji
                         }).then(result => {
-                            message.channel.send("Sign up emoji updated!");
+                            message.channel.send(lang.conig.EMOJI_JOIN_SET);
                         }).catch(err => {
                             console.log(err);
                         });
@@ -199,13 +214,23 @@ const discordProcesses = (readyCallback: () => {}) => {
                     if (canConfigure) {
                         const emoji = parts.join(" ");
                         if (emoji.length > 2 && emoji.match(/\:[^\:]+\:/)) { 
-                            message.channel.send("Emoji must be a unicode emoji character. You entered `"+emoji.replace(/\<|\>/g,"")+"`. See https://www.unicode.org/emoji/charts/full-emoji-list.html for a full list of emoji. Use the browser version.")
+                            message.channel.send(lang.config.desc.EMOJI_ERROR.replace(/\:char/gi, emoji.replace(/\<|\>/g,"")))
                             return;
                         }
                         guildConfig.save({
                             emojiRemove: emoji
                         }).then(result => {
-                            message.channel.send("Drop out emoji updated!");
+                            message.channel.send(lang.conig.EMOJI_LEAVE_SET);
+                        }).catch(err => {
+                            console.log(err);
+                        });
+                    }
+                } else if (cmd === "private-reminders") {
+                    if (canConfigure) {
+                        guildConfig.save({
+                            privateReminders: !guildConfig.privateReminders
+                        }).then(result => {
+                            message.channel.send(!guildConfig.privateReminders ? lang.config.PRIVATE_REMINDERS_ON : lang.config.PRIVATE_REMINDERS_OFF);
                         }).catch(err => {
                             console.log(err);
                         });
@@ -215,7 +240,7 @@ const discordProcesses = (readyCallback: () => {}) => {
                         guildConfig.save({
                             password: parts.join(" ")
                         }).then(result => {
-                            message.channel.send("Password updated!");
+                            message.channel.send(lang.config.PASSWORD_SET);
                         }).catch(err => {
                             console.log(err);
                         });
@@ -225,7 +250,7 @@ const discordProcesses = (readyCallback: () => {}) => {
                         guildConfig.save({
                             dropOut: !guildConfig.dropOut
                         }).then(result => {
-                            message.channel.send("Drop outs are now `"+(guildConfig.dropOut ? "disabled" : "enabled")+"` for new games.");
+                            message.channel.send(guildConfig.dropOut ? lang.config.DROP_OUTS_ENABLED : lang.config.DROP_OUTS_DISABLED);
                         }).catch(err => {
                             console.log(err);
                         });
@@ -242,7 +267,7 @@ const discordProcesses = (readyCallback: () => {}) => {
                         guildConfig.save({
                             role: roleName == '' ? null : roleName
                         }).then(result => {
-                            message.channel.send(roleName.length > 0 ? `Role set to \`${roleName}\`!` : `Role cleared!`);
+                            message.channel.send(roleName.length > 0 ? lang.config.ROLE_SET.replace(/\:role/gi, roleName) : lang.config.ROLE_CLEARED);
                         }).catch(err => {
                             console.log(err);
                         });
@@ -339,9 +364,6 @@ const refreshMessages = async () => {
         
         try {
             const message = await game.discordChannel.fetchMessage(game.messageId);
-            // await message.clearReactions();
-            // await message.react("➕");
-            // await message.react("➖");
         } catch (err) {}
     });
 };
@@ -389,13 +411,15 @@ const postReminders = async () => {
         if (!game.discordGuild) return;
         
         if (game.discordChannel) {
-            const reserved = [];
+            const reserved: string[] = [];
+            const reservedUsers: discord.GuildMember[] = [];
             game.reserved.split(/\r?\n/).forEach(res => {
                 if (res.trim().length === 0) return;
                 let member = game.discordGuild.members.array().find(mem => mem.user.tag === res.trim().replace("@", ""));
                 
                 let name = res.trim().replace("@", "");
                 if (member) name = member.user.toString();
+                if (member) reservedUsers.push(member);
                 
                 if (reserved.length < parseInt(game.players)) {
                     reserved.push(name);
@@ -404,6 +428,7 @@ const postReminders = async () => {
             
             const member = game.discordGuild.members.array().find(mem => mem.user.tag === game.dm.trim().replace("@", ""));
             let dm = game.dm.trim().replace("@", "");
+            let dmMember = member;
             if (member) dm = member.user.toString();
             
             if (reserved.length > 0) {
@@ -416,19 +441,52 @@ const postReminders = async () => {
                         }
                     });
                 }
+
+                const guildConfig = await GuildConfig.fetch(game.discordGuild.id);
+                const supportedLanguages = require("../../lang/langs.json");
+                const languages = supportedLanguages.langs
+                    .map((lang: String) => {
+                        return {
+                            code: lang,
+                            ...require(`../../lang/${lang}.json`),
+                            selected: lang === guildConfig.lang
+                        };
+                    })
+                    .sort((a: any, b: any) => (a.name > b.name ? 1 : -1));
+                const lang = languages.find(l => l.selected || l.code === "en");
                 
-                let message = `Reminder for **${game.adventure}**\n`;
-                message += `**When:** Starting in ${game.reminder} minutes\n`;
-                message += `**Where:** ${game.where}\n\n`;
-                message += `**DM:** ${dm}\n`;
-                message += `**Players:**\n`;
-                message += `${reserved.join(`\n`)}`;
-                
-                const sent = <Message>(await game.discordChannel.send(message));
-                
-                game.reminder = "0";
-                game.reminderMessageId = sent.id;
-                game.save();
+                if (guildConfig.privateReminders) {
+                    let message = `${lang.game.REMINDER_FOR} **${game.adventure}**\n`;
+                    message += `**${lang.game.WHEN}:** ${lang.game.STARTING_IN.replace(/\:minutes/gi, game.reminder)}\n`;
+                    message += `**${lang.game.SERVER}:** ${game.discordGuild.name}\n`;
+                    message += `**${lang.game.WHERE}:** ${game.where}\n`;
+                    message += `**${lang.game.GM}:** ${dmMember.nickname ? dmMember.nickname : dmMember.user.username}\n`;
+
+                    for(const member of reservedUsers) {
+                        if (member.user.username !== dmMember.user.username && member.nickname !== dmMember.nickname) {
+                            member.user.send(message);
+                        }
+                    }
+
+                    dmMember.user.send(message);
+
+                    game.reminder = "0";
+                    game.save();
+                }
+                else {
+                    let message = `${lang.game.REMINDER_FOR} **${game.adventure}**\n`;
+                    message += `**${lang.game.WHEN}:** ${lang.game.STARTING_IN.replace(/\:minutes/gi, game.reminder)}\n`;
+                    message += `**${lang.game.WHERE}:** ${game.where}\n\n`;
+                    message += `**${lang.game.GM}:** ${dm}\n`;
+                    message += `**${lang.game.RESERVED}:**\n`;
+                    message += `${reserved.join(`\n`)}`;
+
+                    const sent = <Message>(await game.discordChannel.send(message));
+
+                    game.reminder = "0";
+                    game.reminderMessageId = sent.id;
+                    game.save();
+                }
             }
         }
     });

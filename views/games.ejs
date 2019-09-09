@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
     <title>
-        <% if (viewing.games) { %>
-            Games
-        <% } else if (viewing.dashboard) { %>
-            My Games
+        <% if (account.viewing.games) { %>
+            <%= lang.nav.UPCOMING_GAMES %>
+        <% } else if (account.viewing.dashboard) { %>
+            <%= lang.nav.MY_GAMES %>
         <% } %> 
-        - RPG Schedule
+        - <%= config.title %>
     </title>
 
     <% include head.ejs %>
@@ -17,60 +17,60 @@
     <link rel="stylesheet" href="/styles/game.css" />
 </head>
 <body>
-<%- include('menu', { config: config, user: user }); %>
+<%- include('menu'); %>
 <div class="container">
     <h6 class="breadcrumbs">
-        <% if (viewing.games) { %>
-            Upcoming Games
-            <a href="<%= config.urls.game.dashboard.url %>" class="btn btn-primary btn-sm float-right">My Games</a>
-        <% } else if (viewing.dashboard) { %>
-            My Games
-            <a href="<%= config.urls.game.games.url %>" class="btn btn-primary btn-sm float-right">Upcoming Games</a>
+        <% if (account.viewing.games) { %>
+            <%= lang.nav.UPCOMING_GAMES %>
+            <a href="<%= config.urls.game.dashboard.url %>" class="btn btn-primary btn-sm float-right"><%= lang.nav.MY_GAMES %></a>
+        <% } else if (account.viewing.dashboard) { %>
+            <%= lang.nav.MY_GAMES %>
+            <a href="<%= config.urls.game.games.url %>" class="btn btn-primary btn-sm float-right"><%= lang.nav.UPCOMING_GAMES %></a>
         <% } %>
     </h6>
-    <% guilds.forEach(guild => { %>
+    <% account.guilds.forEach(guild => { %>
     <hr />
     <h2 class="guild-name">
         <img class="guild-icon" src="<%= guild.icon %>" alt="" />
         <%= guild.name %>
-        <% if (viewing.dashboard && guild.permission) { %>
-            <a href="<%= config.urls.game.create.url %>?s=<%= guild.id %>" class="btn btn-primary btn-sm float-right">New Game</a>
+        <% if (account.viewing.dashboard && guild.permission) { %>
+            <a href="<%= config.urls.game.create.url %>?s=<%= guild.id %>" class="btn btn-primary btn-sm float-right"><%= lang.buttons.NEW_GAME %></a>
         <% } %>
     </h2>
     <div class="games">
         <% if (guild.games.length === 0) { %>
             <div class="no-games">
-                <% if (viewing.dashboard) { %>
-                    You are not running or playing in any games on this server right now
-                <% } else if (viewing.games) { %>
-                    There are no upcoming games on this server right now
+                <% if (account.viewing.dashboard) { %>
+                    <%= lang.dashboard.EMPTY_MY_GAMES %>
+                <% } else if (account.viewing.games) { %>
+                    <%= lang.dashboard.EMPTY_UPCOMING_GAMES %>
                 <% } %>
             </div>
         <% } %>
         <% guild.games.forEach(game => { %>
-            <% if (guild.permission && viewing.dashboard && (user.tag === game.dm || user.tag === config.author)) { %>
+            <% if (guild.permission && account.viewing.dashboard && (account.user.tag === game.dm || account.user.tag === config.author)) { %>
                 <a class="game my-games" id="<%= game._id %>" href="<%= config.urls.game.create.url %>?g=<%= game._id %>">
                     <h4 class="game-name"><%= game.adventure %></h4>
                     <div class="game-time">
-                        <strong>When:</strong>
+                        <strong><%= lang.game.WHEN %>:</strong>
                         <% if (game.timestamp > new Date().getTime()) {%>
                             <span data-datetime="<%= game.moment.raw %>" data-iso="<%= game.moment.iso %>"><%= game.moment.calendar %> (<%= game.moment.from %>)</span>
                         <% } else { %>
                             <span data-datetime="<%= game.moment.raw %>" data-iso="<%= game.moment.iso %>" class="text-danger"><%= game.moment.date %> (<%= game.moment.from %>)</span>
                         <% } %>
                     </div>
-                    <div class="game-reserved"><strong>Reserved:</strong> <%= Math.min(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0)%></div>
-                    <div class="game-reserved"><strong>Waitlisted:</strong> <%= Math.max(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0) - parseInt(game.players)%></div>
+                    <div class="game-reserved"><strong><%= lang.game.RESERVED %>:</strong> <%= Math.min(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0)%></div>
+                    <div class="game-reserved"><strong><%= lang.game.WAITLISTED %>:</strong> <%= Math.max(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0) - parseInt(game.players)%></div>
                 </a>
-            <% } else if (viewing.games || game.signedup || game.waitlisted) { %>
+            <% } else if (account.viewing.games || game.signedup || game.waitlisted) { %>
                 <div class="game upcoming" id="<%= game._id %>">
                     <h4 class="game-name"><%= game.adventure %></h4>
                     <div class="game-dm">
-                        <strong>GM:</strong>
+                        <strong><%= lang.game.GM %>:</strong>
                         <%= game.dm.replace(/#\d{4}/g, '') %>
                     </div>
                     <div class="game-time">
-                        <strong>When:</strong>
+                        <strong><%= lang.game.WHEN %>:</strong>
                         <% if (game.timestamp > new Date().getTime()) {%>
                             <span data-datetime="<%= game.moment.raw %>" data-iso="<%= game.moment.iso %>"><%= game.moment.calendar %> (<%= game.moment.from %>)</span>
                         <% } else { %>
@@ -78,38 +78,38 @@
                         <% } %>
                     </div>
                     <div class="where">
-                        <strong>Where:</strong>
+                        <strong><%= lang.game.WHERE %>:</strong>
                         <%= game.where %>
                     </div>
                     <div class="game-reserved">
-                        <strong>Reserved:</strong>
+                        <strong><%= lang.game.RESERVED %>:</strong>
                         <%= Math.min(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0)%>
                         <% if (game.signedup) { %>
                             (Slot #<%= game.slot %>)
                         <% } %>
                     </div>
                     <div class="game-reserved">
-                        <strong>Waitlisted:</strong>
+                        <strong><%= lang.game.WAITLISTED %>:</strong>
                         <%= Math.max(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0) - parseInt(game.players)%>
                         <% if (game.waitlisted) { %>
                             (Slot #<%= game.slot %>)
                         <% } %>
                     </div>
                     <div class="game-description" data-iso="<%= game.moment.iso %>">
-                        **Date:** %DATE%
+                        **<%= lang.game.DATE %>:** %DATE%
 
-                        **Runtime:** <%= game.runtime %> hours
+                        **<%= lang.game.RUN_TIME %>:** <%= game.runtime %> <%= lang.game.labels.HOURS %>
 
-                        **Description:**
+                        **<%= lang.game.DESCRIPTION %>:**
 
                         <%= game.description %>
                     </div>
                     <% if (game.method === "automated") { %>
                         <div class="buttons">
                             <% if (!game.signedup && !game.waitlisted) { %>
-                                <a href="<%= config.urls.game.rsvp.url %>?g=<%= game._id %>" class="btn btn-success btn-sm">Sign Up</a>
+                                <a href="<%= config.urls.game.rsvp.url %>?g=<%= game._id %>" class="btn btn-success btn-sm"><%= lang.buttons.SIGN_UP %></a>
                             <% } else { %>
-                                <a href="<%= config.urls.game.rsvp.url %>?g=<%= game._id %>" class="btn btn-danger btn-sm">Drop Out</a>
+                                <a href="<%= config.urls.game.rsvp.url %>?g=<%= game._id %>" class="btn btn-danger btn-sm"><%= lang.buttons.DROP_OUT %></a>
                             <% } %>
                         </div>
                     <% } %>
@@ -118,10 +118,10 @@
         <% }); %>
     </div>
     <% }); %>
-    <% if (guilds.length === 0) { %>
+    <% if (account.guilds.length === 0) { %>
     <div class="no-guilds">
-        <p>You are not a member of a server that has granted you permission to post games. If you would like to use this bot on your own server, click the Invite button below.</p>
-        <a href="/invite" target="_blank" class="btn btn-primary btn-lg">Invite</a>
+        <p><%= lang.dashboard.NO_GAMES %></p>
+        <a href="/invite" target="_blank" class="btn btn-primary btn-lg"><%= lang.nav.INVITE %></a>
     </div>
     <% } %>
 </div>
