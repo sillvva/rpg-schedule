@@ -3,6 +3,7 @@ import request from "request";
 import moment from "moment";
 import { Client } from "discord.js";
 import merge from "lodash/merge";
+import cloneDeep from "lodash/cloneDeep";
 
 import { Game } from "../models/game";
 import { GuildConfig } from "../models/guild-config";
@@ -17,31 +18,13 @@ export default (options: any) => {
   const client: Client = options.client;
 
   router.use("/", async (req: any, res, next) => {
-    const supportedLanguages = require("../../lang/langs.json");
-    const selectedLang = req.cookies.lang && supportedLanguages.langs.includes(req.cookies.lang) ? req.cookies.lang : "en";
-    console.log(selectedLang, supportedLanguages.langs);
-    const languages = supportedLanguages.langs
-      .map((lang: String) => {
-        const data = require(`../../lang/${lang}.json`);
-        console.log(lang, data.buttons);
-        return {
-          code: lang,
-          ...data,
-          selected: lang === selectedLang
-        };
-      })
-      .sort((a: any, b: any) => (a.name > b.name ? 1 : -1));
-    
-    req.lang = {
-      // if a property that exists in the english version doesn't exist in another language, use the english version
-      selected: merge(languages.find((lang: any) => lang.code === "en"), languages.find((lang: any) => lang.selected)),
-      list: languages.map((lang: any) => ({ code: lang.code, name: lang.name, selected: lang.selected }))
-    };
+    const langs = req.app.locals.langs;
+    const selectedLang = req.cookies.lang && langs.map(l => l.code).includes(req.cookies.lang) ? req.cookies.lang : "en";
 
-    res.locals.lang = req.lang.selected;
-    res.locals.langs = req.lang.list;
+    req.lang = merge(cloneDeep(langs.find((lang: any) => lang.code === "en")), cloneDeep(langs.find((lang: any) => lang === selectedLang)));
+
+    res.locals.lang = req.lang;
     res.locals.url = req._parsedOriginalUrl.pathname;
-    console.log(res.locals.lang.name, res.locals.lang.buttons, res.locals.langs);
 
     const parsedURLs = aux.parseConfigURLs(config.urls);
     if (!parsedURLs.find(path => path.session && req._parsedOriginalUrl.pathname === path.url)) {

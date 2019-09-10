@@ -20,8 +20,21 @@ import redirectRoutes from "./routes/redirects";
 
 const app = express();
 
-app.locals.config = config,
-app.locals.host = process.env.HOST
+app.locals.config = config;
+app.locals.host = process.env.HOST;
+
+const supportedLanguages = require("../../lang/langs.json");
+const languages = supportedLanguages.langs
+  .map((lang: String) => {
+    const data = require(`../../lang/${lang}.json`);
+    return {
+      code: lang,
+      ...data
+    };
+  })
+  .sort((a: any, b: any) => (a.name > b.name ? 1 : -1));
+
+app.locals.langs = languages.map((lang: any) => ({ code: lang.code, name: lang.name }));
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "..", "public")));

@@ -74,7 +74,7 @@ export default (options: any) => {
           }
 
           let data: any = {
-            title: req.query.g ? req.lang.selected.buttons.EDIT_GAME : req.lang.selected.buttons.NEW_GAME,
+            title: req.query.g ? req.lang.buttons.EDIT_GAME : req.lang.buttons.NEW_GAME,
             guild: guild.name,
             channels: channels,
             s: server,
