@@ -1,5 +1,6 @@
 import discord, { TextChannel, Client, Message } from "discord.js";
 import { DeleteWriteOpResultObject } from "mongodb";
+import { Express } from "express";
 
 import { GuildConfig } from "../models/guild-config";
 import { Game } from "../models/game";
@@ -7,8 +8,9 @@ import config from "../models/config";
 
 let client: Client;
 
-const discordProcesses = (readyCallback: () => {}) => {
+const discordProcesses = (options: { app: Express }, readyCallback: () => {}) => {
     client = new discord.Client();
+    const app = options.app;
     
     /**
     * Discord.JS - ready
@@ -36,17 +38,8 @@ const discordProcesses = (readyCallback: () => {}) => {
                 const guildId = guild.id;
                 const guildConfig = await GuildConfig.fetch(guildId);
 
-                const supportedLanguages = require("../../lang/langs.json");
-                const languages = supportedLanguages.langs
-                    .map((lang: String) => {
-                        return {
-                            code: lang,
-                            ...require(`../../lang/${lang}.json`),
-                            selected: lang === guildConfig.lang
-                        };
-                    })
-                    .sort((a: any, b: any) => (a.name > b.name ? 1 : -1));
-                const lang = languages.find(l => l.selected) || languages.find(l => l.code === "en");
+                const languages = app.locals.langs;
+                const lang = languages.find(l => l.code === guildConfig.lang) || languages.find(l => l.code === "en");
                 
                 if (!message.channel.guild) {
                     message.reply(lang.config.desc.SERVER_COMMAND);
@@ -419,7 +412,7 @@ const pruneOldGames = async () => {
     return result;
 };
 
-const postReminders = async () => {
+const postReminders = async (app: Express) => {
     let games = await Game.fetchAllBy({ when: "datetime", reminder: { $in: ["15", "30", "60"] } });
     games.forEach(async game => {
         if (game.timestamp - parseInt(game.reminder) * 60 * 1000 > new Date().getTime()) return;
@@ -458,17 +451,8 @@ const postReminders = async () => {
                 }
 
                 const guildConfig = await GuildConfig.fetch(game.discordGuild.id);
-                const supportedLanguages = require("../../lang/langs.json");
-                const languages = supportedLanguages.langs
-                    .map((lang: String) => {
-                        return {
-                            code: lang,
-                            ...require(`../../lang/${lang}.json`),
-                            selected: lang === guildConfig.lang
-                        };
-                    })
-                    .sort((a: any, b: any) => (a.name > b.name ? 1 : -1));
-                const lang = languages.find(l => l.selected || l.code === "en");
+                const languages = app.locals.langs;
+                const lang = languages.find(l => l.code === guildConfig.lang) || languages.find(l => l.code === "en");
                 
                 if (guildConfig.privateReminders) {
                     let message = `${lang.game.REMINDER_FOR} **${game.adventure}**\n`;
