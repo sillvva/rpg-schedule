@@ -93,6 +93,7 @@
     "ROLE": "Role",
     "ROLE_SET": "Role set to `:ROLE`!",
     "ROLE_CLEARED": "Role cleared!",
+    "LANGUAGE": "Language",
     "LANG_SET": "Language set to `:LANG`!",
     "NO_LANG": "Language not found",
     "DROP_OUTS": "Drop Outs",

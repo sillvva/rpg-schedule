@@ -93,6 +93,7 @@
     "ROLE": "Rôle",
     "ROLE_SET": "Rôle attribué à `:ROLE`!",
     "ROLE_CLEARED": "Rôle effacé!",
+    "LANGUAGE": "La langue",
     "LANG_SET": "La langue était réglée sur `:LANG`!",
     "NO_LANG": "La langue n'a pas été trouvée",
     "DROP_OUTS": "Désinscriptions",

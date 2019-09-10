@@ -37,6 +37,7 @@ const discordProcesses = (readyCallback: () => {}) => {
                 const guildConfig = await GuildConfig.fetch(guildId);
 
                 const supportedLanguages = require("../../lang/langs.json");
+                console.log(guildConfig.lang);
                 const languages = supportedLanguages.langs
                     .map((lang: String) => {
                         return {
@@ -105,7 +106,8 @@ const discordProcesses = (readyCallback: () => {}) => {
                             `${lang.config.PRIVATE_REMINDERS}: \`${guildConfig.privateReminders ? "on" : "off"}\`\n` +
                             `${lang.config.PASSWORD}: ${guildConfig.password ? `\`${guildConfig.password}\`` : "Disabled"}\n` +
                             `${lang.config.ROLE}: ${guildConfig.role ? `\`${guildConfig.role}\`` : "All Roles"}\n` +
-                            `${lang.config.DROP_OUTS}: ${guildConfig.dropOut ? `Enabled` : "Disabled"}\n`
+                            `${lang.config.DROP_OUTS}: ${guildConfig.dropOut ? `Enabled` : "Disabled"}\n` +
+                            `${lang.config.LANGUAGE}: ${guildConfig.lang}\n`
                         );
                         message.author.send(embed);
                     }
