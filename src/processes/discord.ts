@@ -39,7 +39,6 @@ const discordProcesses = (readyCallback: () => {}) => {
                 const supportedLanguages = require("../../lang/langs.json");
                 const languages = supportedLanguages.langs
                     .map((lang: String) => {
-                        console.log(lang, guildConfig.lang, lang === guildConfig.lang);
                         return {
                             code: lang,
                             ...require(`../../lang/${lang}.json`),
@@ -47,8 +46,7 @@ const discordProcesses = (readyCallback: () => {}) => {
                         };
                     })
                     .sort((a: any, b: any) => (a.name > b.name ? 1 : -1));
-                const lang = languages.find(l => l.selected || l.code === "en");
-                console.log(lang)
+                const lang = languages.find(l => l.selected) || languages.find(l => l.code === "en");
                 
                 if (!message.channel.guild) {
                     message.reply(lang.config.desc.SERVER_COMMAND);
