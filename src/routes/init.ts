@@ -19,11 +19,14 @@ export default (options: any) => {
   router.use("/", async (req: any, res, next) => {
     const supportedLanguages = require("../../lang/langs.json");
     const selectedLang = req.cookies.lang && supportedLanguages.langs.includes(req.cookies.lang) ? req.cookies.lang : "en";
+    console.log(selectedLang, supportedLanguages.langs);
     const languages = supportedLanguages.langs
       .map((lang: String) => {
+        const data = require(`../../lang/${lang}.json`);
+        console.log(lang, data.buttons);
         return {
           code: lang,
-          ...require(`../../lang/${lang}.json`),
+          ...data,
           selected: lang === selectedLang
         };
       })
@@ -38,7 +41,7 @@ export default (options: any) => {
     res.locals.lang = req.lang.selected;
     res.locals.langs = req.lang.list;
     res.locals.url = req._parsedOriginalUrl.pathname;
-    console.log(res.locals);
+    console.log(res.locals.lang.name, res.locals.lang.buttons, res.locals.langs);
 
     const parsedURLs = aux.parseConfigURLs(config.urls);
     if (!parsedURLs.find(path => path.session && req._parsedOriginalUrl.pathname === path.url)) {
