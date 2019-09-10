@@ -28,8 +28,7 @@ export default (options: any) => {
         };
       })
       .sort((a: any, b: any) => (a.name > b.name ? 1 : -1));
-    console.log(languages.map((lang: any) => ({ code: lang.code, name: lang.name, selected: lang.selected })))
-
+    
     req.lang = {
       // if a property that exists in the english version doesn't exist in another language, use the english version
       selected: merge(languages.find((lang: any) => lang.code === "en"), languages.find((lang: any) => lang.selected)),
