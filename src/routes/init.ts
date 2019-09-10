@@ -24,7 +24,15 @@ export default (options: any) => {
     }))
     const selectedLang = req.cookies.lang && langs.map(l => l.code).includes(req.cookies.lang) ? req.cookies.lang : "en";
 
-    req.lang = merge(cloneDeep(langs.find((lang: any) => lang.code === "en")), cloneDeep(langs.find((lang: any) => lang === selectedLang)));
+    req.lang = merge(
+      cloneDeep(
+        langs.find((lang: any) => lang.code === "en")
+      ), 
+      cloneDeep(
+        langs.find((lang: any) => lang === selectedLang)
+      )
+    );
+    console.log(req.lang);
 
     res.locals.lang = req.lang;
     res.locals.url = req._parsedOriginalUrl.pathname;

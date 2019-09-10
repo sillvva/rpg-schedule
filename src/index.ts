@@ -27,6 +27,7 @@ const supportedLanguages = require("../lang/langs.json");
 const languages = supportedLanguages.langs
   .map((lang: String) => {
     const data = require(`../lang/${lang}.json`);
+    console.log(data);
     return {
       code: lang,
       ...data
