@@ -93,6 +93,8 @@
     "ROLE": "Rôle",
     "ROLE_SET": "Rôle attribué à `:ROLE`!",
     "ROLE_CLEARED": "Rôle effacé!",
+    "LANG_SET": "La langue était réglée sur `:LANG`!",
+    "NO_LANG": "La langue n'a pas été trouvée",
     "DROP_OUTS": "Désinscriptions",
     "DROP_OUTS_ENABLED": "Les désinscriptions sont maintenant `autorisés` pour les nouvelles parties.",
     "DROP_OUTS_DISABLED": "Les désinscriptions sont maintenant `interdites` pour les nouvelles parties.",

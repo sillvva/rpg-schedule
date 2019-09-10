@@ -272,6 +272,20 @@ const discordProcesses = (readyCallback: () => {}) => {
                             console.log(err);
                         });
                     }
+                } else if (cmd === "lang") {
+                    const newLang = languages.find(l => l.code === parts[0].trim());
+                    if (!newLang) {
+                        return message.channel.send(lang.config.NO_LANG);
+                    }
+                    if (canConfigure) {
+                        guildConfig.save({
+                            lang: newLang.code
+                        }).then(result => {
+                            message.channel.send(newLang.config.LANG_SET.replace(/\:lang/gi, newLang.name));
+                        }).catch(err => {
+                            console.log(err);
+                        });
+                    }
                 }
             }
         }
