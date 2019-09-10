@@ -19,6 +19,9 @@ export default (options: any) => {
 
   router.use("/", async (req: any, res, next) => {
     const langs = req.app.locals.langs;
+    console.log(langs.map(l => {
+      return { code: l.code, name: l.name, buttons: l.buttons };
+    }))
     const selectedLang = req.cookies.lang && langs.map(l => l.code).includes(req.cookies.lang) ? req.cookies.lang : "en";
 
     req.lang = merge(cloneDeep(langs.find((lang: any) => lang.code === "en")), cloneDeep(langs.find((lang: any) => lang === selectedLang)));

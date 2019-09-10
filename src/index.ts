@@ -23,10 +23,10 @@ const app = express();
 app.locals.config = config;
 app.locals.host = process.env.HOST;
 
-const supportedLanguages = require("../../lang/langs.json");
+const supportedLanguages = require("../lang/langs.json");
 const languages = supportedLanguages.langs
   .map((lang: String) => {
-    const data = require(`../../lang/${lang}.json`);
+    const data = require(`../lang/${lang}.json`);
     return {
       code: lang,
       ...data
