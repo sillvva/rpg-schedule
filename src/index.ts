@@ -20,8 +20,19 @@ import redirectRoutes from "./routes/redirects";
 
 const app = express();
 
-app.locals.config = config,
-app.locals.host = process.env.HOST
+app.locals.config = config;
+app.locals.host = process.env.HOST;
+
+const supportedLanguages = require("../lang/langs.json");
+app.locals.langs = supportedLanguages.langs
+  .map((lang: String) => {
+    const data = require(`../lang/${lang}.json`);
+    return {
+      code: lang,
+      ...data
+    };
+  })
+  .sort((a: any, b: any) => (a.name > b.name ? 1 : -1));
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "..", "public")));
@@ -101,7 +112,7 @@ app.use(inviteRoute());
 app.use(timezoneRoutes());
 app.use(redirectRoutes());
 app.use("/", (req: any, res, next) => {
-  res.render("home", { lang: req.lang.selected, langs: req.lang.list });
+  res.render("home");
 });
 
 // Login the Discord bot

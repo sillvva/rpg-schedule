@@ -46,7 +46,7 @@ const discordProcesses = (readyCallback: () => {}) => {
                         };
                     })
                     .sort((a: any, b: any) => (a.name > b.name ? 1 : -1));
-                const lang = languages.find(l => l.selected || l.code === "en");
+                const lang = languages.find(l => l.selected) || languages.find(l => l.code === "en");
                 
                 if (!message.channel.guild) {
                     message.reply(lang.config.desc.SERVER_COMMAND);
@@ -105,7 +105,8 @@ const discordProcesses = (readyCallback: () => {}) => {
                             `${lang.config.PRIVATE_REMINDERS}: \`${guildConfig.privateReminders ? "on" : "off"}\`\n` +
                             `${lang.config.PASSWORD}: ${guildConfig.password ? `\`${guildConfig.password}\`` : "Disabled"}\n` +
                             `${lang.config.ROLE}: ${guildConfig.role ? `\`${guildConfig.role}\`` : "All Roles"}\n` +
-                            `${lang.config.DROP_OUTS}: ${guildConfig.dropOut ? `Enabled` : "Disabled"}\n`
+                            `${lang.config.DROP_OUTS}: ${guildConfig.dropOut ? `Enabled` : "Disabled"}\n` +
+                            `${lang.config.LANGUAGE}: ${guildConfig.lang}\n`
                         );
                         message.author.send(embed);
                     }
@@ -268,6 +269,20 @@ const discordProcesses = (readyCallback: () => {}) => {
                             role: roleName == '' ? null : roleName
                         }).then(result => {
                             message.channel.send(roleName.length > 0 ? lang.config.ROLE_SET.replace(/\:role/gi, roleName) : lang.config.ROLE_CLEARED);
+                        }).catch(err => {
+                            console.log(err);
+                        });
+                    }
+                } else if (cmd === "lang") {
+                    const newLang = languages.find(l => l.code === parts[0].trim());
+                    if (!newLang) {
+                        return message.channel.send(lang.config.NO_LANG);
+                    }
+                    if (canConfigure) {
+                        guildConfig.save({
+                            lang: newLang.code
+                        }).then(result => {
+                            message.channel.send(newLang.config.LANG_SET.replace(/\:lang/gi, newLang.name));
                         }).catch(err => {
                             console.log(err);
                         });

@@ -4,6 +4,7 @@
     "SUBMIT": "Submit",
     "SAVE": "Save",
     "NEW_GAME": "New Game",
+    "EDIT_GAME": "Edit Game",
     "DELETE_GAME": "Delete Game",
     "SIGN_UP": "Sign Up",
     "DROP_OUT": "Drop Out"
@@ -92,6 +93,9 @@
     "ROLE": "Role",
     "ROLE_SET": "Role set to `:ROLE`!",
     "ROLE_CLEARED": "Role cleared!",
+    "LANGUAGE": "Language",
+    "LANG_SET": "Language set to `:LANG`!",
+    "NO_LANG": "Language not found",
     "DROP_OUTS": "Drop Outs",
     "DROP_OUTS_ENABLED": "Drop outs are now `enabled` for new games.",
     "DROP_OUTS_DISABLED": "Drop outs are now `disabled` for new games.",

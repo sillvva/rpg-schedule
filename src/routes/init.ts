@@ -3,6 +3,7 @@ import request from "request";
 import moment from "moment";
 import { Client } from "discord.js";
 import merge from "lodash/merge";
+import cloneDeep from "lodash/cloneDeep";
 
 import { Game } from "../models/game";
 import { GuildConfig } from "../models/guild-config";
@@ -17,26 +18,19 @@ export default (options: any) => {
   const client: Client = options.client;
 
   router.use("/", async (req: any, res, next) => {
-    const supportedLanguages = require("../../lang/langs.json");
-    const selectedLang = req.cookies.lang && supportedLanguages.langs.includes(req.cookies.lang) ? req.cookies.lang : "en";
-    const languages = supportedLanguages.langs
-      .map((lang: String) => {
-        return {
-          code: lang,
-          ...require(`../../lang/${lang}.json`),
-          selected: lang === selectedLang
-        };
-      })
-      .sort((a: any, b: any) => (a.name > b.name ? 1 : -1));
+    const langs = req.app.locals.langs;
+    const selectedLang = req.cookies.lang && langs.map(l => l.code).includes(req.cookies.lang) ? req.cookies.lang : "en";
 
-    req.lang = {
-      // if a property that exists in the english version doesn't exist in another language, use the english version
-      selected: merge(languages.find((lang: any) => lang.code === "en"), languages.find((lang: any) => lang.selected)),
-      list: languages.map((lang: any) => ({ code: lang.code, name: lang.name, selected: lang.selected }))
-    };
+    req.lang = merge(
+      cloneDeep(
+        langs.find((lang: any) => lang.code === "en")
+      ), 
+      cloneDeep(
+        langs.find((lang: any) => lang.code === selectedLang)
+      )
+    );
 
-    res.locals.lang = req.lang.selected;
-    res.locals.langs = req.lang.list;
+    res.locals.lang = req.lang;
     res.locals.url = req._parsedOriginalUrl.pathname;
 
     const parsedURLs = aux.parseConfigURLs(config.urls);
