@@ -19,10 +19,11 @@ export default (options: any) => {
 
   router.use("/", async (req: any, res, next) => {
     const langs = req.app.locals.langs;
+    const languages = langs.map((lang: any) => ({ code: lang.code, name: lang.name }));
     console.log(langs.map(l => {
       return { code: l.code, name: l.name, buttons: l.buttons };
     }))
-    const selectedLang = req.cookies.lang && langs.map(l => l.code).includes(req.cookies.lang) ? req.cookies.lang : "en";
+    const selectedLang = req.cookies.lang && languages.map(l => l.code).includes(req.cookies.lang) ? req.cookies.lang : "en";
 
     req.lang = merge(
       cloneDeep(
@@ -32,7 +33,8 @@ export default (options: any) => {
         langs.find((lang: any) => lang === selectedLang)
       )
     );
-    console.log(req.lang);
+
+    console.log(req.lang.name, req.lang.buttons);
 
     res.locals.lang = req.lang;
     res.locals.url = req._parsedOriginalUrl.pathname;

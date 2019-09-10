@@ -24,7 +24,7 @@ app.locals.config = config;
 app.locals.host = process.env.HOST;
 
 const supportedLanguages = require("../lang/langs.json");
-const languages = supportedLanguages.langs
+app.locals.langs = supportedLanguages.langs
   .map((lang: String) => {
     const data = require(`../lang/${lang}.json`);
     console.log(data);
@@ -34,8 +34,6 @@ const languages = supportedLanguages.langs
     };
   })
   .sort((a: any, b: any) => (a.name > b.name ? 1 : -1));
-
-app.locals.langs = languages.map((lang: any) => ({ code: lang.code, name: lang.name }));
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "..", "public")));
