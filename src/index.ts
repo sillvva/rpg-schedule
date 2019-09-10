@@ -23,8 +23,8 @@ const app = express();
 app.locals.config = config;
 app.locals.host = process.env.HOST;
 
-const supportedLanguages = require("../lang/langs.json");
-app.locals.langs = supportedLanguages.langs
+app.locals.supportedLanguages = require("../lang/langs.json");
+app.locals.langs = app.locals.supportedLanguages.langs
   .map((lang: String) => {
     const data = require(`../lang/${lang}.json`);
     return {
@@ -65,7 +65,9 @@ app.use(
 // Initialize the Discord event handlers and then call a
 // callback function when the bot has logged in.
 // Return the client to pass to the app routing logic.
-const client = discord.processes(async () => {
+const client = discord.processes({
+  app: app
+}, async () => {
   // Create the database connection
   let connected = await db.database.connect();
   if (connected) {
@@ -85,9 +87,9 @@ const client = discord.processes(async () => {
       }, 24 * 3600 * 1000); // 24 hours
 
       // Post Game Reminders
-      discord.postReminders();
+      discord.postReminders(app);
       setInterval(() => {
-        discord.postReminders();
+        discord.postReminders(app);
       }, 60 * 1000); // 1 minute
     }
 
