@@ -112,7 +112,7 @@ app.use(inviteRoute());
 app.use(timezoneRoutes());
 app.use(redirectRoutes());
 app.use("/", (req: any, res, next) => {
-  res.render("home", { lang: req.lang.selected, langs: req.lang.list });
+  res.render("home");
 });
 
 // Login the Discord bot
