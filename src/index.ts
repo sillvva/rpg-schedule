@@ -22,14 +22,12 @@ const app = express();
 
 app.locals.config = config;
 app.locals.host = process.env.HOST;
-
 app.locals.supportedLanguages = require("../lang/langs.json");
 app.locals.langs = app.locals.supportedLanguages.langs
   .map((lang: String) => {
-    const data = require(`../lang/${lang}.json`);
     return {
       code: lang,
-      ...data
+      ...require(`../lang/${lang}.json`)
     };
   })
   .sort((a: any, b: any) => (a.name > b.name ? 1 : -1));
