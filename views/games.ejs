@@ -15,6 +15,11 @@
     <script src="/scripts/moment.js"></script>
     <script src="/scripts/socket.io.js"></script>
     <link rel="stylesheet" href="/styles/game.css" />
+
+    <script src="/locale/<%= lang.code %>.js"></script>
+    <script type="text/javascript">
+    moment.locale('<%= lang.code %>');
+    </script>
 </head>
 <body>
 <%- include('menu'); %>

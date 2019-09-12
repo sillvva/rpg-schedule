@@ -137,12 +137,13 @@ export class Game implements GameModel {
       .map((lang: String) => {
         return {
           code: lang,
-          ...require(`../../lang/${lang}.json`),
-          selected: lang === guildConfig.lang
+          ...require(`../../lang/${lang}.json`)
         };
       })
       .sort((a: any, b: any) => (a.name > b.name ? 1 : -1));
-    const lang = languages.find(l => l.selected || l.code === "en");
+    const lang = languages.find(l => l.code === guildConfig.lang) || languages.find(l => l.code === "en");
+
+    moment.locale(lang.code);
 
     let dm: string = game.dm
       .trim()

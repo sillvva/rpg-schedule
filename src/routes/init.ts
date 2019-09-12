@@ -33,6 +33,8 @@ export default (options: any) => {
     res.locals.lang = req.lang;
     res.locals.url = req._parsedOriginalUrl.pathname;
 
+    moment.locale(req.lang.code);
+
     const parsedURLs = aux.parseConfigURLs(config.urls);
     if (!parsedURLs.find(path => path.session && req._parsedOriginalUrl.pathname === path.url)) {
       next();
