@@ -26,7 +26,7 @@ export default {
     }
   },
   formats: {
-    dateLong: "ddd, MMMM Do YYYY, h:mm a"
+    dateLong: "llll"
   },
   author: "Sillvva#2532",
   defaults: {
