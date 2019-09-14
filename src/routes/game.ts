@@ -10,11 +10,15 @@ export default (options: any) => {
   const { client } = options;
 
   router.use(config.urls.game.games.url, async (req: any, res, next) => {
-    res.render("games"); //, { account: req.account, lang: req.lang.selected, langs: req.lang.list }
+    res.render("games");
   });
 
   router.use(config.urls.game.dashboard.url, async (req: any, res, next) => {
-    res.render("games"); //, { account: req.account, lang: req.lang.selected, langs: req.lang.list }
+    res.render("games");
+  });
+
+  router.use(config.urls.game.server.url, async (req: any, res, next) => {
+    res.render("games");
   });
 
   router.use(config.urls.game.create.url, async (req: any, res, next) => {
