@@ -106,7 +106,7 @@ export default (options: any) => {
                   });
 
                   if (req.account.viewing.server) {
-                    req.account.guilds = req.account.guilds.filter(g => req.account.guilds.find(s => s.id === g.id && s.isAdmin);
+                    req.account.guilds = req.account.guilds.filter(g => req.account.guilds.find(s => s.id === g.id && s.isAdmin));
                   }
 
                   if (guildPermission) {
