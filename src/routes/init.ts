@@ -4,6 +4,7 @@ import moment from "moment";
 import { Client } from "discord.js";
 import merge from "lodash/merge";
 import cloneDeep from "lodash/cloneDeep";
+import { Permissions } from "discord.js";
 
 import { Game } from "../models/game";
 import { GuildConfig } from "../models/guild-config";
@@ -21,14 +22,7 @@ export default (options: any) => {
     const langs = req.app.locals.langs;
     const selectedLang = req.cookies.lang && langs.map(l => l.code).includes(req.cookies.lang) ? req.cookies.lang : "en";
 
-    req.lang = merge(
-      cloneDeep(
-        langs.find((lang: any) => lang.code === "en")
-      ), 
-      cloneDeep(
-        langs.find((lang: any) => lang.code === selectedLang)
-      )
-    );
+    req.lang = merge(cloneDeep(langs.find((lang: any) => lang.code === "en")), cloneDeep(langs.find((lang: any) => lang.code === selectedLang)));
 
     res.locals.lang = req.lang;
     res.locals.url = req._parsedOriginalUrl.pathname;
@@ -48,13 +42,12 @@ export default (options: any) => {
         home: res.locals.url === config.urls.base.url,
         games: res.locals.url === config.urls.game.games.url,
         dashboard: res.locals.url === config.urls.game.dashboard.url,
+        server: res.locals.url === config.urls.game.server.url,
         game: res.locals.url === config.urls.game.create.url
       },
       guilds: [],
       user: null
     };
-
-    res.locals.account = req.account;
 
     try {
       const storedSession = await connection()
@@ -101,6 +94,9 @@ export default (options: any) => {
                           permission: guildConfig.role
                             ? member.roles.find(r => r.name.toLowerCase().trim() === guildConfig.role.toLowerCase().trim())
                             : true,
+                          isAdmin:
+                            member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) ||
+                            member.roles.find(r => r.name.toLowerCase().trim() === guildConfig.managerRole.toLowerCase().trim()),
                           channels: guild.channels,
                           config: guildConfig,
                           games: []
@@ -111,7 +107,7 @@ export default (options: any) => {
 
                   if (guildPermission) {
                     req.account.guilds = req.account.guilds.filter(
-                      guild => !guild.config.hidden // && (req.account.viewing.games || req.account.viewing.dashboard))
+                      guild => !guild.config.hidden
                     );
                   }
 
@@ -146,6 +142,17 @@ export default (options: any) => {
                     };
                   }
 
+                  if (req.account.viewing.server) {
+                    gameOptions.s = {
+                      $in: req.account.guilds
+                        .filter(g => req.account.guilds.find(s => s.id === g.id && s.isAdmin))
+                        .reduce((i, g) => {
+                          i.push(g.id);
+                          return i;
+                        }, [])
+                    };
+                  }
+
                   const games: any[] = await Game.fetchAllBy(gameOptions);
                   games.forEach(game => {
                     if (!game.discordGuild) return;
@@ -174,7 +181,7 @@ export default (options: any) => {
                   });
 
                   if (req.account.viewing.games) {
-                    req.account.guilds = req.account.guilds.filter(guild => guild.games.length > 0);
+                    req.account.guilds = req.account.guilds;
                   }
 
                   req.account.guilds = req.account.guilds.map(guild => {
@@ -197,28 +204,35 @@ export default (options: any) => {
                     return;
                   }
 
+                  res.locals.account = req.account;
+
                   next();
                   return;
                 }
                 throw new Error(error);
               } catch (err) {
                 if (req.account.viewing.dashboard) {
+                  res.locals.account = req.account;
                   res.render("error", { message: "init.ts:1:<br />" + err });
                 } else {
+                  res.locals.account = req.account;
                   next();
                 }
               }
             }
           );
         } else {
+          res.locals.account = req.account;
           if (req.account.viewing.home) next();
           else res.redirect(config.urls.login.url + "?redirect=" + escape(req.originalUrl));
         }
       } else {
+        res.locals.account = req.account;
         if (req.account.viewing.home) next();
         else res.redirect(config.urls.login.url + "?redirect=" + escape(req.originalUrl));
       }
     } catch (e) {
+      res.locals.account = req.account;
       res.render("error", { message: "init.ts:2:<br />" + e.message });
     }
   });

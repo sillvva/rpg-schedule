@@ -1,6 +1,6 @@
 # RPG Schedule
 
-A discord bot for posting game announcements for RPGs. Features include: 
+A discord bot for posting game announcements for RPGs. Features include:
 
 - Web interface for posting and editing game announcements
 - Automated or manual sign ups and automated waitlisting
@@ -84,9 +84,29 @@ https://rpg-schedule.herokuapp.com
 <td>Set a discord embed color. Can be a color name like <code>red</code> or a hexadecimal color like <code>#2196f3</code></td>
 </tr>
 <tr>
+<td>!schedule emoji-sign-up ➕</td>
+<td>➕</td>
+<td>Set the emoji used for automated sign up</td>
+</tr>
+<tr>
+<td>!schedule emoji-drop-out ➖</td>
+<td>➖</td>
+<td>Set the emoji used for automated sign up</td>
+</tr>
+<tr>
+<td>!schedule private-reminders</td>
+<td>Off</td>
+<td>Toggle whether the game reminders are sent to private messages.</td>
+</tr>
+<tr>
 <td>!schedule role <code>role name</code></td>
 <td>All Roles</td>
 <td>Assign a role as a prerequisite for posting games</td>
+</tr>
+<tr>
+<td>!schedule manager-role <code>role name</code></td>
+<td>Server Admins</td>
+<td>Assign a role to allow managing all server games</td>
 </tr>
 <tr>
 <td>!schedule password <code>password</code></td>
@@ -97,6 +117,16 @@ https://rpg-schedule.herokuapp.com
 <td>!schedule password</td>
 <td></td>
 <td>Remove the password</td>
+</tr>
+<tr>
+<td>!schedule toggle-drop-out</td>
+<td>Off</td>
+<td>Enable/disable the ability for players to drop out</td>
+</tr>
+<tr>
+<td>!schedule lang <code>en</code></td>
+<td><code>en</code> (English)</td>
+<td>Set the bot's language.</td>
 </tr>
 <tr>
 <td><strong>Usage</strong></td>

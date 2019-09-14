@@ -13,6 +13,7 @@
     "GAMES": "Games",
     "MY_GAMES": "My Games",
     "UPCOMING_GAMES": "Upcoming Games",
+    "MANAGE_SERVER": "Manage Server",
     "INVITE": "Invite",
     "LOGIN": "Login",
     "LOGOUT": "Logout"
@@ -93,6 +94,7 @@
     "ROLE": "Role",
     "ROLE_SET": "Role set to `:ROLE`!",
     "ROLE_CLEARED": "Role cleared!",
+    "MANAGER_ROLE": "Manager Role",
     "LANGUAGE": "Language",
     "LANG_SET": "Language set to `:LANG`!",
     "NO_LANG": "Language not found",
@@ -114,6 +116,7 @@
       "EMOJI_ERROR": "Emoji must be a unicode emoji character. You entered `:CHAR`. See https://www.unicode.org/emoji/charts/full-emoji-list.html for a full list of emoji. Use the browser version.",
       "PRIVATE_REMINDERS": "Toggle whether the game reminders are sent to private messages. Currently `:PR`",
       "ROLE": "Assign a role as a prerequisite for posting games",
+      "MANAGER_ROLE": "Assign a role to allow managing all server games",
       "PASSWORD_SET": "Configure a password for posting games",
       "PASSWORD_CLEAR": "Remove the password",
       "TOGGLE_DROP_OUT": "Enable/disable the ability for players to drop out",

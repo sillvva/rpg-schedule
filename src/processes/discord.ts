@@ -68,6 +68,7 @@ const discordProcesses = (options: { app: Express }, readyCallback: () => {}) =>
                     (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} emoji-drop-out ${guildConfig.emojiRemove}\` - ${lang.config.desc.EMOJI}\n` : ``) +
                     (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} private-reminders\` - ${lang.config.desc.PRIVATE_REMINDERS.replace(/\:PR/gi, guildConfig.privateReminders ? "on" : "off")}\n` : ``) +
                     (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} role role name\` - ${lang.config.desc.ROLE}\n` : ``) +
+                    (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} manager-role role name\` - ${lang.config.desc.MANAGER_ROLE}\n` : ``) +
                     (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} password somepassword\` - ${lang.config.desc.PASSWORD_SET}\n` : ``) +
                     (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} password\` - ${lang.config.desc.PASSWORD_CLEAR}\n` : ``) +
                     (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} toggle-drop-out\` - ${lang.config.desc.TOGGLE_DROP_OUT}\n` : ``) +
@@ -101,6 +102,7 @@ const discordProcesses = (options: { app: Express }, readyCallback: () => {}) =>
                 `${lang.config.PRIVATE_REMINDERS}: \`${guildConfig.privateReminders ? "on" : "off"}\`\n` +
                 `${lang.config.PASSWORD}: ${guildConfig.password ? `\`${guildConfig.password}\`` : "Disabled"}\n` +
                 `${lang.config.ROLE}: ${guildConfig.role ? `\`${guildConfig.role}\`` : "All Roles"}\n` +
+                `${lang.config.MANAGER_ROLE}: ${guildConfig.managerRole ? `\`${guildConfig.managerRole}\` and Server Admins` : "Server Admins"}\n` +
                 `${lang.config.DROP_OUTS}: ${guildConfig.dropOut ? `Enabled` : "Disabled"}\n` +
                 `${lang.config.LANGUAGE}: ${guildConfig.lang}\n`
               );
@@ -419,6 +421,26 @@ const discordProcesses = (options: { app: Express }, readyCallback: () => {}) =>
             guildConfig
               .save({
                 role: roleName == "" ? null : roleName
+              })
+              .then(result => {
+                message.channel.send(roleName.length > 0 ? lang.config.ROLE_SET.replace(/\:role/gi, roleName) : lang.config.ROLE_CLEARED);
+              })
+              .catch(err => {
+                console.log(err);
+              });
+          }
+        } else if (cmd === "manager-role") {
+          const mentioned = (parts[0] || "").match(/(\d+)/);
+          let roleName = parts.join(" ");
+          if (mentioned) {
+            const roleId = mentioned[0];
+            const role = guild.roles.get(roleId);
+            if (role) roleName = role.name;
+          }
+          if (canConfigure) {
+            guildConfig
+              .save({
+                managerRole: roleName == "" ? null : roleName
               })
               .then(result => {
                 message.channel.send(roleName.length > 0 ? lang.config.ROLE_SET.replace(/\:role/gi, roleName) : lang.config.ROLE_CLEARED);

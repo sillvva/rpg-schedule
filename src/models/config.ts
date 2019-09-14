@@ -10,6 +10,7 @@ export default {
     game: {
       games: { url: "/games/upcoming", session: true, guildPermission: true },
       dashboard: { url: "/games/my-games", session: true, guildPermission: true },
+      server: { url: "/games/server", session: true, guildPermission: true },
       create: { url: "/games/edit", session: true },
       delete: { url: "/games/delete", session: true },
       password: { url: "/games/password", session: true },
