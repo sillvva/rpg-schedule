@@ -87,7 +87,6 @@ export default (options: any) => {
                     const guildConfig = guildConfigs.find(gc => gc.guild === guild.id) || new GuildConfig({ guild: guild.id });
                     guild.members.forEach(member => {
                       if (member.id === id) {
-                        console.log(member.user.tag, member.hasPermission(Permissions.FLAGS.MANAGE_GUILD));
                         req.account.guilds.push({
                           id: guild.id,
                           name: guild.name,
@@ -106,7 +105,9 @@ export default (options: any) => {
                     });
                   });
 
-                  console.log(req.account.guilds.filter(g => g.isAdmin).length);
+                  if (req.account.viewing.server) {
+                    req.account.guilds = req.account.guilds.filter(g => req.account.guilds.find(s => s.id === g.id && s.isAdmin);
+                  }
 
                   if (guildPermission) {
                     req.account.guilds = req.account.guilds.filter(
@@ -148,7 +149,6 @@ export default (options: any) => {
                   if (req.account.viewing.server) {
                     gameOptions.s = {
                       $in: req.account.guilds
-                        .filter(g => req.account.guilds.find(s => s.id === g.id && s.isAdmin))
                         .reduce((i, g) => {
                           i.push(g.id);
                           return i;
