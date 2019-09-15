@@ -1,10 +1,9 @@
 import express from "express";
 import request from "request";
 import moment from "moment";
-import { Client } from "discord.js";
+import { Client, Permissions } from "discord.js";
 import merge from "lodash/merge";
 import cloneDeep from "lodash/cloneDeep";
-import { Permissions } from "discord.js";
 
 import { Game } from "../models/game";
 import { GuildConfig } from "../models/guild-config";
