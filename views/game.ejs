@@ -249,12 +249,6 @@
             console.log(err);
         });
 
-    const confirmDelete = () => {
-        if (prompt("Are you sure you want to delete the game? This cannot be undone.")) {
-            window.location = '<%= config.urls.game.delete.url %>?g=<%= _id %>';
-        }
-    };
-
     const passwordRedirect = () => {
         <% if (account.user) { %>
         window.location = '<%= config.urls.game.dashboard.url %>';
@@ -263,6 +257,12 @@
         <% } %>
     };
     <% } %>
+
+    const confirmDelete = () => {
+        if (prompt("Are you sure you want to delete the game? This cannot be undone.")) {
+            window.location = '<%= config.urls.game.delete.url %>?g=<%= _id %>';
+        }
+    };
 
     const getTZUrls = (date, time, gmtOffset) => {
         const d = new Date(`${date} ${time} GMT${gmtOffset < 0 ? '-' : '+'}${Math.abs(gmtOffset)}`);
