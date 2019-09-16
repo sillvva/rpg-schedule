@@ -1,7 +1,7 @@
+import { Client, Permissions } from "discord.js";
 import express from "express";
 import request from "request";
 import moment from "moment";
-import { Client, Permissions } from "discord.js";
 import merge from "lodash/merge";
 import cloneDeep from "lodash/cloneDeep";
 
