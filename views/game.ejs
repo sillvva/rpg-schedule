@@ -178,7 +178,7 @@
                     <a href="<%= config.urls.game.create.url %>?s=<%= s %>" class="btn btn-light col-12"><%= lang.buttons.NEW_GAME %></a>
                 </p>
                 <p class="d-none d-sm-block">
-                    <button role="button" onclick="confirmDelete();" class="btn btn-danger col-12"><%= lang.buttons.DELETE_GAME %></button>
+                    <button type="button" onclick="confirmDelete();" class="btn btn-danger col-12"><%= lang.buttons.DELETE_GAME %></button>
                 </p>
             </div>
         <% } %>
@@ -249,7 +249,7 @@
             console.log(err);
         });
 
-    const confirmDelete = (url) => {
+    const confirmDelete = () => {
         if (prompt("Are you sure you want to delete the game? This cannot be undone.")) {
             window.location = '<%= config.urls.game.delete.url %>?g=<%= _id %>';
         }
