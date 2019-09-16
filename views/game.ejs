@@ -170,14 +170,15 @@
         <% } %>
         <% if (is.editgame) { %>
             <div class="form-group row">
-                <p class="col-sm-6">
+                <p class="col-sm-5">
                     <button type="submit" class="btn btn-primary col-12"><%= lang.buttons.SAVE %></button>
                 </p>
-                <p class="col-sm-3">
-                    <a href="<%= config.urls.game.delete.url %>?g=<%= _id %>" class="btn btn-danger col-12"><%= lang.buttons.DELETE_GAME %></a>
-                </p>
-                <p class="col-sm-3">
+                <div class="col d-none d-md-block"></div>
+                <p class="col-12 col-sm">
                     <a href="<%= config.urls.game.create.url %>?s=<%= s %>" class="btn btn-light col-12"><%= lang.buttons.NEW_GAME %></a>
+                </p>
+                <p class="d-none d-sm-block" style="padding: 0 15px;">
+                    <button type="button" onclick="confirmDelete();" class="btn btn-danger col-12"><%= lang.buttons.DELETE_GAME %></button>
                 </p>
             </div>
         <% } %>
@@ -256,6 +257,12 @@
         <% } %>
     };
     <% } %>
+
+    const confirmDelete = () => {
+        if (confirm("Are you sure you want to delete the game? This cannot be undone.")) {
+            window.location = '<%= config.urls.game.delete.url %>?g=<%= _id %>';
+        }
+    };
 
     const getTZUrls = (date, time, gmtOffset) => {
         const d = new Date(`${date} ${time} GMT${gmtOffset < 0 ? '-' : '+'}${Math.abs(gmtOffset)}`);
