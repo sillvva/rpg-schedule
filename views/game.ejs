@@ -259,7 +259,7 @@
     <% } %>
 
     const confirmDelete = () => {
-        if (prompt("Are you sure you want to delete the game? This cannot be undone.")) {
+        if (confirm("Are you sure you want to delete the game? This cannot be undone.")) {
             window.location = '<%= config.urls.game.delete.url %>?g=<%= _id %>';
         }
     };
