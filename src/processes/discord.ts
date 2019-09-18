@@ -400,10 +400,10 @@ const discordProcesses = (options: { app: Express }, readyCallback: () => {}) =>
           if (canConfigure) {
             guildConfig
               .save({
-                dropOut: !guildConfig.dropOut
+                dropOut: guildConfig.dropOut === false
               })
               .then(result => {
-                message.channel.send(guildConfig.dropOut ? lang.config.DROP_OUTS_ENABLED : lang.config.DROP_OUTS_DISABLED);
+                message.channel.send(guildConfig.dropOut === false ? lang.config.DROP_OUTS_ENABLED : lang.config.DROP_OUTS_DISABLED);
               })
               .catch(err => {
                 console.log(err);
