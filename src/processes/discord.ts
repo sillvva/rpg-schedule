@@ -403,6 +403,9 @@ const discordProcesses = (options: { app: Express }, readyCallback: () => {}) =>
                 dropOut: guildConfig.dropOut === false
               })
               .then(result => {
+                console.log(lang.config.DROP_OUTS_ENABLED);
+                console.log(lang.config.DROP_OUTS_DISABLED);
+                console.log(guildConfig.dropOut, guildConfig.dropOut === false);
                 message.channel.send(guildConfig.dropOut === false ? lang.config.DROP_OUTS_ENABLED : lang.config.DROP_OUTS_DISABLED);
               })
               .catch(err => {
