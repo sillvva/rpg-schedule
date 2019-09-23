@@ -13,15 +13,15 @@
           <li class="nav-item dropdown active">
             <a class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" href="#"><%= lang.nav.GAMES %></a>
             <div class="dropdown-menu bg-primary">
-              <a class="dropdown-item bg-primary text-white" href="<%= config.urls.game.games.url %>"><%= lang.nav.UPCOMING_GAMES %></a>
-              <a class="dropdown-item bg-primary text-white" href="<%= config.urls.game.dashboard.url %>"><%= lang.nav.MY_GAMES %></a>
+              <a class="dropdown-item bg-primary text-white" href="<%= config.urls.game.games.path %>"><%= lang.nav.UPCOMING_GAMES %></a>
+              <a class="dropdown-item bg-primary text-white" href="<%= config.urls.game.dashboard.path %>"><%= lang.nav.MY_GAMES %></a>
               <% if (account.guilds.find(g => g.isAdmin)) { %>
-                <a class="dropdown-item bg-primary text-white" href="<%= config.urls.game.server.url %>"><%= lang.nav.MANAGE_SERVER %></a>
+                <a class="dropdown-item bg-primary text-white" href="<%= config.urls.game.server.path %>"><%= lang.nav.MANAGE_SERVER %></a>
               <% } %>
             </div>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="<%= config.urls.invite.url %>">
+            <a class="nav-link" href="<%= config.urls.invite.path %>">
               <%= lang.nav.INVITE %>
             </a>
           </li>
@@ -76,13 +76,13 @@
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="<%= config.urls.logout.url %>">
+            <a class="nav-link" href="<%= config.urls.logout.path %>">
               <%= lang.nav.LOGOUT %>
             </a>
           </li>
         <% } else { %>
           <li class="nav-item">
-            <a class="nav-link" href="<%= config.urls.login.url %>">
+            <a class="nav-link" href="<%= config.urls.login.path %>">
               <%= lang.nav.LOGIN %>
             </a>
           </li>

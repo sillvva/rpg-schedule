@@ -29,10 +29,10 @@
     <h6 class="breadcrumbs">
         <% if (account.viewing.games) { %>
             <%= lang.nav.UPCOMING_GAMES %>
-            <a href="<%= config.urls.game.dashboard.url %>" class="btn btn-primary btn-sm float-right"><%= lang.nav.MY_GAMES %></a>
+            <a href="<%= config.urls.game.dashboard.path %>" class="btn btn-primary btn-sm float-right"><%= lang.nav.MY_GAMES %></a>
         <% } else if (account.viewing.dashboard) { %>
             <%= lang.nav.MY_GAMES %>
-            <a href="<%= config.urls.game.games.url %>" class="btn btn-primary btn-sm float-right"><%= lang.nav.UPCOMING_GAMES %></a>
+            <a href="<%= config.urls.game.games.path %>" class="btn btn-primary btn-sm float-right"><%= lang.nav.UPCOMING_GAMES %></a>
         <% } else if (account.viewing.server) { %>
             <%= lang.nav.MANAGE_SERVER %>
       <% } %>
@@ -43,7 +43,7 @@
           <img class="guild-icon" src="<%= guild.icon %>" alt="" />
           <%= guild.name %>
           <% if (account.viewing.dashboard && guild.permission) { %>
-              <a href="<%= config.urls.game.create.url %>?s=<%= guild.id %>" class="btn btn-primary btn-sm float-right"><%= lang.buttons.NEW_GAME %></a>
+              <a href="<%= config.urls.game.create.path %>?s=<%= guild.id %>" class="btn btn-primary btn-sm float-right"><%= lang.buttons.NEW_GAME %></a>
           <% } %>
       </h2>
       <div class="games">
@@ -58,7 +58,7 @@
           <% } %>
           <% guild.games.forEach(game => { %>
               <% if ((account.viewing.server && guild.isAdmin) || (guild.permission && account.viewing.dashboard && (account.user.tag === game.dm || account.user.tag === config.author))) { %>
-                  <a class="game my-games" id="<%= game._id %>" href="<%= config.urls.game.create.url %>?g=<%= game._id %>">
+                  <a class="game my-games" id="<%= game._id %>" href="<%= config.urls.game.create.path %>?g=<%= game._id %>">
                       <h4 class="game-name"><%= game.adventure %></h4>
                       <% if (account.viewing.server) { %>
                         <div class="game-dm">
@@ -122,9 +122,9 @@
                       <% if (game.method === "automated") { %>
                           <div class="buttons">
                               <% if (!game.signedup && !game.waitlisted) { %>
-                                  <a href="<%= config.urls.game.rsvp.url %>?g=<%= game._id %>" class="btn btn-success btn-sm"><%= lang.buttons.SIGN_UP %></a>
+                                  <a href="<%= config.urls.game.rsvp.path %>?g=<%= game._id %>" class="btn btn-success btn-sm"><%= lang.buttons.SIGN_UP %></a>
                               <% } else { %>
-                                  <a href="<%= config.urls.game.rsvp.url %>?g=<%= game._id %>" class="btn btn-danger btn-sm"><%= lang.buttons.DROP_OUT %></a>
+                                  <a href="<%= config.urls.game.rsvp.path %>?g=<%= game._id %>" class="btn btn-danger btn-sm"><%= lang.buttons.DROP_OUT %></a>
                               <% } %>
                           </div>
                       <% } %>

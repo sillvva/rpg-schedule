@@ -24,7 +24,8 @@ export default (options: any) => {
     req.lang = merge(cloneDeep(langs.find((lang: any) => lang.code === "en")), cloneDeep(langs.find((lang: any) => lang.code === selectedLang)));
 
     res.locals.lang = req.lang;
-    res.locals.url = req._parsedOriginalUrl.pathname;
+    res.locals.urlPath = req._parsedOriginalUrl.pathname;
+    res.locals.url = req.originalUrl;
 
     moment.locale(req.lang.code);
 
@@ -38,11 +39,11 @@ export default (options: any) => {
 
     req.account = {
       viewing: {
-        home: res.locals.url === config.urls.base.url,
-        games: res.locals.url === config.urls.game.games.url,
-        dashboard: res.locals.url === config.urls.game.dashboard.url,
-        server: res.locals.url === config.urls.game.server.url,
-        game: res.locals.url === config.urls.game.create.url
+        home: res.locals.urlPath === config.urls.base.url,
+        games: res.locals.urlPath === config.urls.game.games.url,
+        dashboard: res.locals.urlPath === config.urls.game.dashboard.url,
+        server: res.locals.urlPath === config.urls.game.server.url,
+        game: res.locals.urlPath === config.urls.game.create.url
       },
       guilds: [],
       user: null

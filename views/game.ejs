@@ -16,7 +16,7 @@
 <div class="container">
     <h6 class="breadcrumbs">
         <% if (account.user) { %>
-            <a href="<%= config.urls.game.dashboard.url %>"><%= lang.nav.MY_GAMES %></a>
+            <a href="<%= config.urls.game.dashboard.path %>"><%= lang.nav.MY_GAMES %></a>
             <span class="breadcrumb-divider">/</span>
         <% } %>
         <%= title %>
@@ -175,10 +175,10 @@
                 </p>
                 <div class="col d-none d-md-block"></div>
                 <p class="col-12 col-sm">
-                    <a href="<%= config.urls.game.create.url %>?s=<%= s %>" class="btn btn-light col-12"><%= lang.buttons.NEW_GAME %></a>
+                    <a href="<%= config.urls.game.create.path %>?s=<%= s %>" class="btn btn-light col-12"><%= lang.buttons.NEW_GAME %></a>
                 </p>
                 <p class="d-none d-sm-block" style="padding: 0 15px;">
-                    <button type="button" onclick="confirmDelete('<%= config.urls.game.delete.url %>?g=<%= _id %>');" class="btn btn-danger col-12"><%= lang.buttons.DELETE_GAME %></button>
+                    <button type="button" onclick="confirmDelete('<%= config.urls.game.delete.path %>?g=<%= _id %>');" class="btn btn-danger col-12"><%= lang.buttons.DELETE_GAME %></button>
                 </p>
             </div>
         <% } %>
@@ -222,7 +222,7 @@
     }).change();
 
     <% if (password) { %>
-    fetch('<%= config.urls.game.auth.url %>?s=<%= s %>', { method: 'GET' })
+    fetch('<%= config.urls.game.auth.path %>?s=<%= s %>', { method: 'GET' })
         .then(response => {
             return response.json();
         })
@@ -231,7 +231,7 @@
             if (!session.status) passwordRedirect();;
             if (!(session.status.loggedInTo || []).includes('<%= s %>')) {
                 const password = prompt('<%= lang.game.labels.REQUEST_SERVER_PASS %>');
-                fetch('<%= config.urls.game.password.url %>?s=<%= s %>&p='+escape(password), { method: 'GET' })
+                fetch('<%= config.urls.game.password.path %>?s=<%= s %>&p='+escape(password), { method: 'GET' })
                     .then(response => {
                         return response.json();
                     })
@@ -251,9 +251,9 @@
 
     const passwordRedirect = () => {
         <% if (account.user) { %>
-        window.location = '<%= config.urls.game.dashboard.url %>';
+        window.location = '<%= config.urls.game.dashboard.path %>';
         <% } else { %>
-        window.location = '<%= config.urls.base.url %>';
+        window.location = '<%= config.urls.base.path %>';
         <% } %>
     };
     <% } %>
@@ -352,7 +352,7 @@
             });
         } else if (response.action === 'deleted') {
             alert('<%= lang.game.labels.GAME_DELETED %>');
-            window.location = '<%= config.urls.game.create.url %>?s=<%= s %>';
+            window.location = '<%= config.urls.game.create.path %>?s=<%= s %>';
         }
     });
     <% } %>
