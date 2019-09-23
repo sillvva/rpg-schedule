@@ -16,7 +16,7 @@
 <div class="container">
     <h6 class="breadcrumbs">
         <% if (account.user) { %>
-            <a href="<%= config.urls.game.dashboard.url %>"><%= lang.nav.MY_GAMES %></a>
+            <a href="<%= config.urls.game.dashboard.path %>"><%= lang.nav.MY_GAMES %></a>
             <span class="breadcrumb-divider">/</span>
         <% } %>
         <%= title %>
@@ -139,7 +139,7 @@
             <div class="col-12">
                 <div class="pinfo overflow-hidden">
                     <p id="convertLink"></p>
-                    <p id="countdownLink"></p>
+                    <!-- <p id="countdownLink"></p> -->
                 </div>
             </div>
         </div>
@@ -175,10 +175,10 @@
                 </p>
                 <div class="col d-none d-md-block"></div>
                 <p class="col-12 col-sm">
-                    <a href="<%= config.urls.game.create.url %>?s=<%= s %>" class="btn btn-light col-12"><%= lang.buttons.NEW_GAME %></a>
+                    <a href="<%= config.urls.game.create.path %>?s=<%= s %>" class="btn btn-light col-12"><%= lang.buttons.NEW_GAME %></a>
                 </p>
                 <p class="d-none d-sm-block" style="padding: 0 15px;">
-                    <button type="button" onclick="confirmDelete('<%= config.urls.game.delete.url %>?g=<%= _id %>');" class="btn btn-danger col-12"><%= lang.buttons.DELETE_GAME %></button>
+                    <button type="button" onclick="confirmDelete('<%= config.urls.game.delete.path %>?g=<%= _id %>');" class="btn btn-danger col-12"><%= lang.buttons.DELETE_GAME %></button>
                 </p>
             </div>
         <% } %>
@@ -222,7 +222,7 @@
     }).change();
 
     <% if (password) { %>
-    fetch('<%= config.urls.game.auth.url %>?s=<%= s %>', { method: 'GET' })
+    fetch('<%= config.urls.game.auth.path %>?s=<%= s %>', { method: 'GET' })
         .then(response => {
             return response.json();
         })
@@ -231,7 +231,7 @@
             if (!session.status) passwordRedirect();;
             if (!(session.status.loggedInTo || []).includes('<%= s %>')) {
                 const password = prompt('<%= lang.game.labels.REQUEST_SERVER_PASS %>');
-                fetch('<%= config.urls.game.password.url %>?s=<%= s %>&p='+escape(password), { method: 'GET' })
+                fetch('<%= config.urls.game.password.path %>?s=<%= s %>&p='+escape(password), { method: 'GET' })
                     .then(response => {
                         return response.json();
                     })
@@ -251,9 +251,9 @@
 
     const passwordRedirect = () => {
         <% if (account.user) { %>
-        window.location = '<%= config.urls.game.dashboard.url %>';
+        window.location = '<%= config.urls.game.dashboard.path %>';
         <% } else { %>
-        window.location = '<%= config.urls.base.url %>';
+        window.location = '<%= config.urls.base.path %>';
         <% } %>
     };
     <% } %>
@@ -265,47 +265,54 @@
     };
 
     const getTZUrls = (date, time, gmtOffset) => {
-        const d = new Date(`${date} ${time} GMT${gmtOffset < 0 ? '-' : '+'}${Math.abs(gmtOffset)}`);
-        const n = d.toISOString().replace(/-|:|\.\d+Z/g,'');
-        d.setHours(d.getHours()+parseInt(gmtOffset))
-        const n2 = d.toISOString().replace(/-|:|\.\d+Z/g,'');
-
-        const tzs = {
-            '-12': 3926,
-            '-11': 3925,
-            '-10': 3924,
-            '-9': 3923,
-            '-8': 3922,
-            '-7': 3921,
-            '-6': 3920,
-            '-5': 3919,
-            '-4': 3918,
-            '-3': 3917,
-            '-2': 3916,
-            '-1': 3915,
-            '0': 1440,
-            '1': 3903,
-            '2': 3904,
-            '3': 3905,
-            '4': 3906,
-            '5': 3907,
-            '6': 3908,
-            '7': 3909,
-            '8': 3910,
-            '9': 3911,
-            '10': 3912,
-            '11': 3913,
-            '12': 3914,
-            '13': 3927,
-            '14': 3928
-        };
-
-        const tz = tzs[parseInt(gmtOffset)] || tzs['0'];
+        const d = new Date(`${date} ${time} GMT${gmtOffset < 0 ? '-' : '+'}${Math.abs(gmtOffset)}`).toISOString().replace(/[^0-9T]/gi,"").slice(0,13);
 
         return {
-            convert: `${document.location.origin}/tz/${n}/${tz}`,
-            countdown: `${document.location.origin}/cd/${n2}/${tz}`
+            convert: `https://timee.io/${d}`// ,
+            // countdown: `https://timee.io/${d}`
         };
+
+        // const d = new Date(`${date} ${time} GMT${gmtOffset < 0 ? '-' : '+'}${Math.abs(gmtOffset)}`);
+        // const n = d.toISOString().replace(/-|:|\.\d+Z/g,'');
+        // d.setHours(d.getHours()+parseInt(gmtOffset))
+        // const n2 = d.toISOString().replace(/-|:|\.\d+Z/g,'');
+
+        // const tzs = {
+        //     '-12': 3926,
+        //     '-11': 3925,
+        //     '-10': 3924,
+        //     '-9': 3923,
+        //     '-8': 3922,
+        //     '-7': 3921,
+        //     '-6': 3920,
+        //     '-5': 3919,
+        //     '-4': 3918,
+        //     '-3': 3917,
+        //     '-2': 3916,
+        //     '-1': 3915,
+        //     '0': 1440,
+        //     '1': 3903,
+        //     '2': 3904,
+        //     '3': 3905,
+        //     '4': 3906,
+        //     '5': 3907,
+        //     '6': 3908,
+        //     '7': 3909,
+        //     '8': 3910,
+        //     '9': 3911,
+        //     '10': 3912,
+        //     '11': 3913,
+        //     '12': 3914,
+        //     '13': 3927,
+        //     '14': 3928
+        // };
+
+        // const tz = tzs[parseInt(gmtOffset)] || tzs['0'];
+
+        // return {
+        //     convert: `${document.location.origin}/tz/${n}/${tz}`,
+        //     countdown: `${document.location.origin}/cd/${n2}/${tz}`
+        // };
     };
 
     <% if (is.newgame) { %>
@@ -318,19 +325,19 @@
     $('#date').change(function() {
         var link = getTZUrls($('#date').val(), $('#time').val(), $('#timezone').val());
         $('#convertLink').html(`Time Zone Conversion: <a href="${link.convert}" target="_blank">${link.convert}</a>`);
-        $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank">${link.countdown}</a>`);
+        // $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank">${link.countdown}</a>`);
     }).change();
 
     $('#time').change(function() {
         var link = getTZUrls($('#date').val(), $('#time').val(), $('#timezone').val());
         $('#convertLink').html(`Time Zone Conversion: <a href="${link.convert}" target="_blank">${link.convert}</a>`);
-        $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank">${link.countdown}</a>`);
+        // $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank">${link.countdown}</a>`);
     }).change();
 
     $('#timezone').change(function() {
         var link = getTZUrls($('#date').val(), $('#time').val(), $('#timezone').val());
         $('#convertLink').html(`Time Zone Conversion: <a href="${link.convert}" target="_blank">${link.convert}</a>`);
-        $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank">${link.countdown}</a>`);
+        // $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank">${link.countdown}</a>`);
     }).change();
 
     <% if (is.editgame) { %>
@@ -345,7 +352,7 @@
             });
         } else if (response.action === 'deleted') {
             alert('<%= lang.game.labels.GAME_DELETED %>');
-            window.location = '<%= config.urls.game.create.url %>?s=<%= s %>';
+            window.location = '<%= config.urls.game.create.path %>?s=<%= s %>';
         }
     });
     <% } %>

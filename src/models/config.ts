@@ -1,29 +1,29 @@
 export default {
   title: "RPG Schedule",
   urls: {
-    base: { url: "/", session: true },
+    base: { path: "/", session: true },
     redirects: {
-      game: { url: "/game", redirect: "/games/edit" },
-      upcoming: { url: "/games", redirect: "/games/upcoming" },
-      mygames: { url: "/my-games", redirect: "/games/my-games" }
+      game: { path: "/game", redirect: "/games/edit" },
+      upcoming: { path: "/games", redirect: "/games/upcoming" },
+      mygames: { path: "/my-games", redirect: "/games/my-games" }
     },
     game: {
-      games: { url: "/games/upcoming", session: true, guildPermission: true },
-      dashboard: { url: "/games/my-games", session: true, guildPermission: true },
-      server: { url: "/games/server", session: true, guildPermission: true },
-      create: { url: "/games/edit", session: true },
-      delete: { url: "/games/delete", session: true },
-      password: { url: "/games/password", session: true },
-      auth: { url: "/games/authenticate", session: true },
-      rsvp: { url: "/games/rsvp", session: true }
+      games: { path: "/games/upcoming", session: true, guildPermission: true },
+      dashboard: { path: "/games/my-games", session: true, guildPermission: true },
+      server: { path: "/games/server", session: true, guildPermission: true },
+      create: { path: "/games/edit", session: true },
+      delete: { path: "/games/delete", session: true },
+      password: { path: "/games/password", session: true },
+      auth: { path: "/games/authenticate", session: true },
+      rsvp: { path: "/games/rsvp", session: true }
     },
-    changeLang: { url: "/lang/:newLang" },
-    invite: { url: "/invite" },
-    login: { url: "/login" },
-    logout: { url: "/logout" },
+    changeLang: { path: "/lang/:newLang" },
+    invite: { path: "/invite" },
+    login: { path: "/login" },
+    logout: { path: "/logout" },
     timezone: {
-      convert: { url: "/tz/:time/:tz" },
-      countdown: { url: "/cd/:time/:tz" }
+      convert: { path: "/tz/:time/:tz" },
+      countdown: { path: "/cd/:time/:tz" }
     }
   },
   formats: {
