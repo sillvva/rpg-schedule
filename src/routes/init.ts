@@ -30,20 +30,20 @@ export default (options: any) => {
     moment.locale(req.lang.code);
 
     const parsedURLs = aux.parseConfigURLs(config.urls);
-    if (!parsedURLs.find(path => path.session && req._parsedOriginalUrl.pathname === path.url)) {
+    if (!parsedURLs.find(path => path.session && res.locals.urlPath === path.path)) {
       next();
       return;
     }
 
-    const guildPermission = parsedURLs.find(path => path.guildPermission && req._parsedOriginalUrl.pathname === path.url) ? true : false;
+    const guildPermission = parsedURLs.find(path => path.guildPermission && res.locals.urlPath === path.path) ? true : false;
 
     req.account = {
       viewing: {
-        home: res.locals.urlPath === config.urls.base.url,
-        games: res.locals.urlPath === config.urls.game.games.url,
-        dashboard: res.locals.urlPath === config.urls.game.dashboard.url,
-        server: res.locals.urlPath === config.urls.game.server.url,
-        game: res.locals.urlPath === config.urls.game.create.url
+        home: res.locals.urlPath === config.urls.base.path,
+        games: res.locals.urlPath === config.urls.game.games.path,
+        dashboard: res.locals.urlPath === config.urls.game.dashboard.path,
+        server: res.locals.urlPath === config.urls.game.server.path,
+        game: res.locals.urlPath === config.urls.game.create.path
       },
       guilds: [],
       user: null
@@ -203,7 +203,7 @@ export default (options: any) => {
                   });
 
                   if (req.account.viewing.home) {
-                    res.redirect(config.urls.game.dashboard.url);
+                    res.redirect(config.urls.game.dashboard.path);
                     return;
                   }
 
@@ -227,12 +227,12 @@ export default (options: any) => {
         } else {
           res.locals.account = req.account;
           if (req.account.viewing.home) next();
-          else res.redirect(config.urls.login.url + "?redirect=" + escape(req.originalUrl));
+          else res.redirect(config.urls.login.path + "?redirect=" + escape(req.originalUrl));
         }
       } else {
         res.locals.account = req.account;
         if (req.account.viewing.home) next();
-        else res.redirect(config.urls.login.url + "?redirect=" + escape(req.originalUrl));
+        else res.redirect(config.urls.login.path + "?redirect=" + escape(req.originalUrl));
       }
     } catch (e) {
       res.locals.account = req.account;
@@ -240,7 +240,7 @@ export default (options: any) => {
     }
   });
 
-  router.use(config.urls.changeLang.url, (req, res, next) => {
+  router.use(config.urls.changeLang.path, (req, res, next) => {
     res.cookie("lang", req.params.newLang).redirect(req.query.returnTo);
   });
 

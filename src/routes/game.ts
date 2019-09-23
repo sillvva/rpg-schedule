@@ -9,19 +9,19 @@ export default (options: any) => {
   const router = express.Router();
   const { client } = options;
 
-  router.use(config.urls.game.games.url, async (req: any, res, next) => {
+  router.use(config.urls.game.games.path, async (req: any, res, next) => {
     res.render("games");
   });
 
-  router.use(config.urls.game.dashboard.url, async (req: any, res, next) => {
+  router.use(config.urls.game.dashboard.path, async (req: any, res, next) => {
     res.render("games");
   });
 
-  router.use(config.urls.game.server.url, async (req: any, res, next) => {
+  router.use(config.urls.game.server.path, async (req: any, res, next) => {
     res.render("games");
   });
 
-  router.use(config.urls.game.create.url, async (req: any, res, next) => {
+  router.use(config.urls.game.create.path, async (req: any, res, next) => {
     try {
       let game: Game;
       let server: string = req.query.s;
@@ -52,17 +52,17 @@ export default (options: any) => {
             password = guildConfig.password;
             if (guildConfig.role) {
               if (!req.account) {
-                res.redirect(config.urls.login.url);
+                res.redirect(config.urls.login.path);
                 return;
               } else {
                 const member = guild.members.find(m => m.id === req.account.user.id);
                 if (member) {
                   if (!member.roles.find(r => r.name.toLowerCase().trim() === guildConfig.role.toLowerCase().trim())) {
-                    res.redirect(config.urls.game.dashboard.url);
+                    res.redirect(config.urls.game.dashboard.path);
                     return;
                   }
                 } else {
-                  res.redirect(config.urls.game.dashboard.url);
+                  res.redirect(config.urls.game.dashboard.path);
                   return;
                 }
               }
@@ -128,7 +128,7 @@ export default (options: any) => {
             game
               .save()
               .then(response => {
-                if (response.modified) res.redirect(config.urls.game.create.url + "?g=" + response._id);
+                if (response.modified) res.redirect(config.urls.game.create.path + "?g=" + response._id);
                 else res.render("game", data);
               })
               .catch(err => {
@@ -149,7 +149,7 @@ export default (options: any) => {
     }
   });
 
-  router.use(config.urls.game.rsvp.url, async (req: any, res, next) => {
+  router.use(config.urls.game.rsvp.path, async (req: any, res, next) => {
     try {
       if (req.query.g) {
         const game = await Game.fetch(req.query.g);
@@ -170,19 +170,19 @@ export default (options: any) => {
       console.log(err);
     }
 
-    res.redirect(req.headers.referer ? req.headers.referer : config.urls.game.games.url);
+    res.redirect(req.headers.referer ? req.headers.referer : config.urls.game.games.path);
   });
 
-  router.get(config.urls.game.delete.url, async (req: any, res, next) => {
+  router.get(config.urls.game.delete.path, async (req: any, res, next) => {
     try {
       if (req.query.g) {
         const game = await Game.fetch(req.query.g);
         if (!game) throw new Error("Game not found");
         game.delete({ sendWS: false }).then(response => {
           if (req.account) {
-            res.redirect(config.urls.game.dashboard.url);
+            res.redirect(config.urls.game.dashboard.path);
           } else {
-            res.redirect(config.urls.game.create.url + "?s=" + game.s);
+            res.redirect(config.urls.game.create.path + "?s=" + game.s);
           }
         });
       } else {
@@ -193,7 +193,7 @@ export default (options: any) => {
     }
   });
 
-  router.get(config.urls.game.password.url, async (req, res, next) => {
+  router.get(config.urls.game.password.path, async (req, res, next) => {
     try {
       const guildConfig = await GuildConfig.fetch(req.query.s);
       if (guildConfig) {
@@ -216,7 +216,7 @@ export default (options: any) => {
     }
   });
 
-  router.get(config.urls.game.auth.url, (req, res, next) => {
+  router.get(config.urls.game.auth.path, (req, res, next) => {
     if (!req.session.status) {
       req.session.status = config.defaults.sessionStatus;
     } else {

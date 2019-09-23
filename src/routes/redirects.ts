@@ -6,7 +6,7 @@ export default () => {
   const router = express.Router();
 
   Object.values(config.urls.redirects).forEach(path => {
-    router.use(path.url, async (req, res, next) => {
+    router.use(path.path, async (req, res, next) => {
       path.redirect = path.redirect.replace(":lang", req.cookies.lang || "en");
       Object.keys(req.params).forEach(param => {
         path.redirect = path.redirect.replace(`:${req.params}`, req.params[param]);

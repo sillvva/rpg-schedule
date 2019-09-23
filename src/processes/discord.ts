@@ -80,7 +80,7 @@ const discordProcesses = (options: { app: Express }, readyCallback: () => {}) =>
           message.channel.send(embed);
         } else if (cmd === "link") {
           message.channel.send(
-            process.env.HOST + `/lang/${guildConfig.lang}?returnTo=${escape(process.env.HOST + config.urls.game.create.url + "?s=" + guildId)}`
+            process.env.HOST + `/lang/${guildConfig.lang}?returnTo=${escape(process.env.HOST + config.urls.game.create.path + "?s=" + guildId)}`
           );
         } else if (cmd === "configuration") {
           if (canConfigure) {

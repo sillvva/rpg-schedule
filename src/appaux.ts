@@ -1,7 +1,7 @@
 import _ from "lodash";
 
 interface Path {
-  url: string;
+  path: string;
   session: boolean;
   redirect: string;
   guildPermission: boolean;
@@ -12,7 +12,7 @@ const parseConfigURLs = (paths: Object) => {
   let urls: Path[] = [];
   _.toPairs(paths).forEach((entry: any) => {
     const [id, path] = entry;
-    if (path.hasOwnProperty("url")) {
+    if (path.hasOwnProperty("path")) {
       urls.push(path);
     } else if (path instanceof Object) {
       urls = [...urls, ...parseConfigURLs(path)];
@@ -27,7 +27,7 @@ const parseConfigParam: any = (paths: Object, param: String, value: String) => {
   return _.fromPairs(
     _.toPairs(parsedPaths).map((entry: any) => {
       let [id, path] = entry;
-      if (path.hasOwnProperty("url")) {
+      if (path.hasOwnProperty("path")) {
         path.url = path.url.replace(`:${param}`, value);
       } else if (path instanceof Object) {
         path = parseConfigParam(path, param, value);

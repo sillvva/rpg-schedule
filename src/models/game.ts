@@ -259,7 +259,7 @@ export class Game implements GameModel {
         lang.game.EDIT_LINK.replace(/\:server_name/gi, guild.name).replace(/\:game_name/gi, game.adventure) +
           "\n" +
           host +
-          config.urls.game.create.url +
+          config.urls.game.create.path +
           "?g=" +
           inserted.insertedId
       );
