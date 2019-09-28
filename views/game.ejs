@@ -153,8 +153,8 @@
             <div class="col-sm-7">
                 <div class="form-group">
                     <label for="description" class="col-form-label"><%= lang.game.DESCRIPTION %></label>
-                    <textarea class="form-control" id="description" name="description" rows="7"><%= description %></textarea>
-                    <small><%= lang.game.labels.DISCORD_FORMATTING %></small>
+                    <textarea class="form-control" id="description" name="description" rows="7" maxlength="1500"><%= description %></textarea>
+                    <small><%= lang.game.labels.DISCORD_FORMATTING %> (<%= lang.game.MAX %> 1500 <%= lang.game.CHARACTERS %>)</small>
                 </div>
             </div>
         </div>

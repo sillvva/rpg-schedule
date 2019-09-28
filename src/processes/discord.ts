@@ -412,6 +412,9 @@ const discordProcesses = (options: { app: Express }, readyCallback: () => {}) =>
         } else if (cmd === "role") {
           const mentioned = (parts[0] || "").match(/(\d+)/);
           let roleName = parts.join(" ");
+          if (roleName.trim() === "All Roles") {
+            roleName = "";
+          }
           if (mentioned) {
             const roleId = mentioned[0];
             const role = guild.roles.get(roleId);
