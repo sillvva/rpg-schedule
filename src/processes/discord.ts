@@ -346,7 +346,7 @@ const discordProcesses = (options: { app: Express }, readyCallback: () => {}) =>
                 emojiAdd: emoji
               })
               .then(result => {
-                message.channel.send(lang.conig.EMOJI_JOIN_SET);
+                message.channel.send(lang.config.EMOJI_JOIN_SET);
               })
               .catch(err => {
                 console.log(err);
@@ -364,7 +364,7 @@ const discordProcesses = (options: { app: Express }, readyCallback: () => {}) =>
                 emojiRemove: emoji
               })
               .then(result => {
-                message.channel.send(lang.conig.EMOJI_LEAVE_SET);
+                message.channel.send(lang.config.EMOJI_LEAVE_SET);
               })
               .catch(err => {
                 console.log(err);
