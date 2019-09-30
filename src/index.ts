@@ -94,6 +94,7 @@ const client = discord.processes({
     // Stay awake...
     if (!process.env.SLEEP) {
       setInterval(() => {
+        console.log("STAY AWAKE!");
         http.get(process.env.HOST.replace("https", "http"));
       }, 5 * 60 * 1000); // 5 minutes
     }
