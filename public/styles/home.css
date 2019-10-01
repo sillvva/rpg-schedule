@@ -9,7 +9,7 @@ body {
 }
 
 h1 { font-size: 64px; }
-h1 img { width: 64px; margin-top: -10px; }
+h1 img { height: 264px; margin-top: -10px; }
 
 @media (max-width: 500px) {
     h1 { font-size: 48px; }
