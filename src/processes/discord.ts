@@ -7,8 +7,11 @@ import { Game } from "../models/game";
 import config from "../models/config";
 
 let client: Client;
+type DiscordProcessesOptions = {
+  app: Express
+}
 
-const discordProcesses = (options: { app: Express }, readyCallback: () => {}) => {
+const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () => {}) => {
   client = new discord.Client();
   const app = options.app;
 
