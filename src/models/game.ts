@@ -176,8 +176,8 @@ export class Game implements GameModel {
 
     const rawDate = `${game.date} ${game.time} GMT${game.timezone < 0 ? "-" : "+"}${Math.abs(game.timezone)}`;
     const timezone = "GMT" + (game.timezone >= 0 ? "+" : "") + game.timezone;
-    const where = parseChannels(game.where, guild.channels);
-    const description = parseChannels(game.description, guild.channels);
+    const where = parseDiscord(game.where, guild);
+    const description = parseDiscord(game.description, guild);
 
     let signups = "";
     if (game.method === "automated") {
@@ -196,8 +196,8 @@ export class Game implements GameModel {
       const tz = Math.round(parseFloat(game.timezone.toString()) * 4) / 4;
       when =
         moment(date)
-        .utcOffset(tz)
-        .format(config.formats.dateLong) + ` (${timezone})`;
+          .utcOffset(tz)
+          .format(config.formats.dateLong) + ` (${timezone})`;
       game.timestamp = new Date(rawDate).getTime();
     } else if (game.when === "now") {
       when = lang.game.options.NOW;
@@ -363,13 +363,15 @@ export class Game implements GameModel {
   }
 }
 
-const parseChannels = (text: string, channels: Collection<string, GuildChannel>) => {
+const parseDiscord = (text: string, guild: Guild) => {
   try {
-    (text.match(/#[a-z0-9\-_]+/g) || []).forEach(m => {
-      const chan = channels.array().find(c => c.name === m.substr(1));
-      if (chan) {
-        text = text.replace(new RegExp(m, "g"), chan.toString());
-      }
+    (text.match(/[^\# ]+\#[0-9]{4}/gm) || []).forEach(m => {
+      const member = guild.members.array().find(mem => mem.user.tag === m);
+      if (member) text = text.replace(new RegExp(m, "g"), member.toString());
+    });
+    (text.match(/#[a-z0-9\-_]+/gm) || []).forEach(m => {
+      const channel = guild.channels.array().find(c => c.name === m.substr(1));
+      if (channel) text = text.replace(new RegExp(m, "g"), channel.toString());
     });
   } catch (err) {
     console.log(err);
