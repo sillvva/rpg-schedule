@@ -484,20 +484,19 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
    */
   client.on("messageReactionAdd", async (reaction, user) => {
     const message = reaction.message;
-    const name = reaction.emoji.name;
-    reaction.remove(user);
     const game = await Game.fetchBy("messageId", message.id);
     try {
       if (game && user.id !== message.author.id) {
+        reaction.remove(user);
         const guildConfig = await GuildConfig.fetch(game.s);
-        if (name === guildConfig.emojiAdd) {
+        if (reaction.emoji.name === guildConfig.emojiAdd) {
           if (game.reserved.indexOf(user.tag) < 0) {
             game.reserved = [...game.reserved.trim().split(/\r?\n/), user.tag].join("\n");
             if (game.reserved.startsWith("\n")) game.reserved = game.reserved.substr(1);
             game.save();
           }
         }
-        if (name === guildConfig.emojiRemove) {
+        if (reaction.emoji.name === guildConfig.emojiRemove) {
           if (game.reserved.indexOf(user.tag) >= 0 && guildConfig.dropOut) {
             game.reserved = game.reserved
               .split(/\r?\n/)
@@ -651,22 +650,27 @@ const postReminders = async (app: Express) => {
         const lang = languages.find(l => l.code === guildConfig.lang) || languages.find(l => l.code === "en");
 
         if (guildConfig.privateReminders) {
-          let message = `${lang.game.REMINDER_FOR} **${game.adventure.replace(/\*/gi, "")}**\n`;
-          message += `**${lang.game.WHEN}:** ${lang.game.STARTING_IN.replace(/\:minutes/gi, game.reminder)}\n`;
-          message += `**${lang.game.SERVER}:** ${game.discordGuild.name}\n`;
-          message += `**${lang.game.WHERE}:** ${game.where}\n`;
-          message += `**${lang.game.GM}:** ${dmMember ? dmMember.nickname ? dmMember.nickname : dmMember.user.username : game.dm}\n`;
+          try {
+            let message = `${lang.game.REMINDER_FOR} **${game.adventure.replace(/\*/gi, "")}**\n`;
+            message += `**${lang.game.WHEN}:** ${lang.game.STARTING_IN.replace(/\:minutes/gi, game.reminder)}\n`;
+            message += `**${lang.game.SERVER}:** ${game.discordGuild.name}\n`;
+            message += `**${lang.game.WHERE}:** ${game.where}\n`;
+            message += `**${lang.game.GM}:** ${dmMember ? dmMember.nickname ? dmMember.nickname : dmMember.user.username : game.dm}\n`;
 
-          for (const member of reservedUsers) {
-            if (!dmMember || (dmMember && member.user.username !== dmMember.user.username && member.nickname !== dmMember.nickname)) {
-              member.user.send(message);
+            for (const member of reservedUsers) {
+              if (!dmMember || (dmMember && member.user.username !== dmMember.user.username && member.nickname !== dmMember.nickname)) {
+                member.user.send(message);
+              }
             }
+
+            if (dmMember && dmMember.user) dmMember.user.send(message);
+
+            game.reminder = "0";
+            game.save();
           }
+          catch(err) {
 
-          if (dmMember && dmMember.user) dmMember.user.send(message);
-
-          game.reminder = "0";
-          game.save();
+          }
         } else {
           let message = `${lang.game.REMINDER_FOR} **${game.adventure.replace(/\*/gi, "")}**\n`;
           message += `**${lang.game.WHEN}:** ${lang.game.STARTING_IN.replace(/\:minutes/gi, game.reminder)}\n`;

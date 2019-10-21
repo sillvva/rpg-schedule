@@ -74,7 +74,7 @@
                               <span data-datetime="<%= game.moment.raw %>" data-iso="<%= game.moment.iso %>" class="text-danger"><%= game.moment.date %> (<%= game.moment.from %>)</span>
                           <% } %>
                       </div>
-                      <div class="game-reserved"><strong><%= lang.game.RESERVED %>:</strong> <%= Math.min(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0)%></div>
+                      <div class="game-reserved"><strong><%= lang.game.RESERVED %>:</strong> <%= Math.min(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0)%> / <%= game.players %></div>
                       <div class="game-reserved"><strong><%= lang.game.WAITLISTED %>:</strong> <%= Math.max(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0) - parseInt(game.players)%></div>
                   </a>
               <% } else if (account.viewing.games || game.signedup || game.waitlisted) { %>
@@ -98,7 +98,7 @@
                       </div>
                       <div class="game-reserved">
                           <strong><%= lang.game.RESERVED %>:</strong>
-                          <%= Math.min(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0)%>
+                          <%= Math.min(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0)%> / <%= game.players %>
                           <% if (game.signedup) { %>
                               (Slot #<%= game.slot %>)
                           <% } %>
