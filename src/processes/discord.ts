@@ -658,7 +658,7 @@ const postReminders = async (app: Express) => {
           message += `**${lang.game.GM}:** ${dmMember ? dmMember.nickname ? dmMember.nickname : dmMember.user.username : game.dm}\n`;
 
           for (const member of reservedUsers) {
-            if (member.user.username !== dmMember.user.username && member.nickname !== dmMember.nickname) {
+            if (!dmMember || (dmMember && member.user.username !== dmMember.user.username && member.nickname !== dmMember.nickname)) {
               member.user.send(message);
             }
           }
