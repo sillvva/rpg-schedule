@@ -655,7 +655,7 @@ const postReminders = async (app: Express) => {
           message += `**${lang.game.WHEN}:** ${lang.game.STARTING_IN.replace(/\:minutes/gi, game.reminder)}\n`;
           message += `**${lang.game.SERVER}:** ${game.discordGuild.name}\n`;
           message += `**${lang.game.WHERE}:** ${game.where}\n`;
-          message += `**${lang.game.GM}:** ${dmMember.nickname ? dmMember.nickname : dmMember.user.username}\n`;
+          message += `**${lang.game.GM}:** ${dmMember ? dmMember.nickname ? dmMember.nickname : dmMember.user.username : game.dm}\n`;
 
           for (const member of reservedUsers) {
             if (member.user.username !== dmMember.user.username && member.nickname !== dmMember.nickname) {
@@ -663,7 +663,7 @@ const postReminders = async (app: Express) => {
             }
           }
 
-          dmMember.user.send(message);
+          if (dmMember && dmMember.user) dmMember.user.send(message);
 
           game.reminder = "0";
           game.save();
