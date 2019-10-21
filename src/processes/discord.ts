@@ -484,20 +484,19 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
    */
   client.on("messageReactionAdd", async (reaction, user) => {
     const message = reaction.message;
-    const name = reaction.emoji.name;
-    reaction.remove(user);
     const game = await Game.fetchBy("messageId", message.id);
     try {
       if (game && user.id !== message.author.id) {
+        reaction.remove(user);
         const guildConfig = await GuildConfig.fetch(game.s);
-        if (name === guildConfig.emojiAdd) {
+        if (reaction.emoji.name === guildConfig.emojiAdd) {
           if (game.reserved.indexOf(user.tag) < 0) {
             game.reserved = [...game.reserved.trim().split(/\r?\n/), user.tag].join("\n");
             if (game.reserved.startsWith("\n")) game.reserved = game.reserved.substr(1);
             game.save();
           }
         }
-        if (name === guildConfig.emojiRemove) {
+        if (reaction.emoji.name === guildConfig.emojiRemove) {
           if (game.reserved.indexOf(user.tag) >= 0 && guildConfig.dropOut) {
             game.reserved = game.reserved
               .split(/\r?\n/)
@@ -670,7 +669,7 @@ const postReminders = async (app: Express) => {
             game.save();
           }
           catch(err) {
-            
+
           }
         } else {
           let message = `${lang.game.REMINDER_FOR} **${game.adventure.replace(/\*/gi, "")}**\n`;

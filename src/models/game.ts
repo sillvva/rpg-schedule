@@ -379,7 +379,7 @@ const parseDiscord = (text: string, guild: Guild) => {
   return text;
 };
 
-const parseTimeZoneISO = timezone => {
+const parseTimeZoneISO = (timezone: number) => {
   const tz = Math.abs(timezone);
   const hours = Math.floor(tz);
   const minutes = (tz - hours) * 60;
