@@ -651,22 +651,27 @@ const postReminders = async (app: Express) => {
         const lang = languages.find(l => l.code === guildConfig.lang) || languages.find(l => l.code === "en");
 
         if (guildConfig.privateReminders) {
-          let message = `${lang.game.REMINDER_FOR} **${game.adventure.replace(/\*/gi, "")}**\n`;
-          message += `**${lang.game.WHEN}:** ${lang.game.STARTING_IN.replace(/\:minutes/gi, game.reminder)}\n`;
-          message += `**${lang.game.SERVER}:** ${game.discordGuild.name}\n`;
-          message += `**${lang.game.WHERE}:** ${game.where}\n`;
-          message += `**${lang.game.GM}:** ${dmMember ? dmMember.nickname ? dmMember.nickname : dmMember.user.username : game.dm}\n`;
+          try {
+            let message = `${lang.game.REMINDER_FOR} **${game.adventure.replace(/\*/gi, "")}**\n`;
+            message += `**${lang.game.WHEN}:** ${lang.game.STARTING_IN.replace(/\:minutes/gi, game.reminder)}\n`;
+            message += `**${lang.game.SERVER}:** ${game.discordGuild.name}\n`;
+            message += `**${lang.game.WHERE}:** ${game.where}\n`;
+            message += `**${lang.game.GM}:** ${dmMember ? dmMember.nickname ? dmMember.nickname : dmMember.user.username : game.dm}\n`;
 
-          for (const member of reservedUsers) {
-            if (!dmMember || (dmMember && member.user.username !== dmMember.user.username && member.nickname !== dmMember.nickname)) {
-              member.user.send(message);
+            for (const member of reservedUsers) {
+              if (!dmMember || (dmMember && member.user.username !== dmMember.user.username && member.nickname !== dmMember.nickname)) {
+                member.user.send(message);
+              }
             }
+
+            if (dmMember && dmMember.user) dmMember.user.send(message);
+
+            game.reminder = "0";
+            game.save();
           }
-
-          if (dmMember && dmMember.user) dmMember.user.send(message);
-
-          game.reminder = "0";
-          game.save();
+          catch(err) {
+            
+          }
         } else {
           let message = `${lang.game.REMINDER_FOR} **${game.adventure.replace(/\*/gi, "")}**\n`;
           message += `**${lang.game.WHEN}:** ${lang.game.STARTING_IN.replace(/\:minutes/gi, game.reminder)}\n`;
