@@ -17,6 +17,7 @@ import inviteRoute from "./routes/invite";
 import timezoneRoutes from "./routes/timezone";
 import loginRoutes from "./routes/login";
 import redirectRoutes from "./routes/redirects";
+import rssRoutes from "./routes/rss";
 
 const app = express();
 
@@ -109,6 +110,7 @@ const client = discord.processes({
 app.use(loginRoutes());
 app.use(initRoutes({ client: client }));
 app.use(gameRoutes({ client: client }));
+app.use(rssRoutes({ client: client }));
 app.use(inviteRoute());
 app.use(timezoneRoutes());
 app.use(redirectRoutes());

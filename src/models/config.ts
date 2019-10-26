@@ -21,6 +21,7 @@ export default {
     invite: { path: "/invite" },
     login: { path: "/login" },
     logout: { path: "/logout" },
+    rss: { path: "/rss/:uid" },
     timezone: {
       convert: { path: "/tz/:time/:tz" },
       countdown: { path: "/cd/:time/:tz" }
