@@ -24,14 +24,7 @@ export default (options: any) => {
           tag = member.user.tag;
           guilds.push({
             id: guild.id,
-            name: guild.name,
-            icon: guild.iconURL,
-            isAdmin:
-              member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) ||
-              member.roles.find(r => r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim()),
-            channels: guild.channels,
-            config: guildConfig,
-            games: []
+            name: guild.name
           });
         }
       });
@@ -94,7 +87,7 @@ export default (options: any) => {
         <link>https://rpg-schedule.herokuapp.com/games/upcoming</link>
         <guid>https://rpg-schedule.herokuapp.com/games/view?g=${game._id.toString().slice(-12)}</guid>
         <description>
-          <![CDATA[<p>GM: ${game.dm}</p><p>Where: ${game.where.replace(/\&/g, "&amp;")}</p><p>When: ${game.moment.date}</p><p>${game.description.trim().replace(/\&/g, "&amp;").replace(/\r?\n/g, "<br>")}</p>]]>
+          <![CDATA[<p>Discord Server: ${(guilds.find(g => g.id === game.s) || {}).name}</p><p>GM: ${game.dm}</p><p>Where: ${game.where.replace(/\&/g, "&amp;")}</p><p>When: ${game.moment.date}</p><p>${game.description.trim().replace(/\&/g, "&amp;").replace(/\r?\n/g, "<br>")}</p>]]>
         </description>
       </item>`;
     }).join("\n")}
