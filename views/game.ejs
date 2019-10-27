@@ -3,7 +3,7 @@
 <head>
     <title><%= title %> - <%= config.title %></title>
     
-    <% include head.ejs %>
+    <%- include('head', {account: null}); %>
     
     <link rel="stylesheet" href="/styles/game.css">
 
