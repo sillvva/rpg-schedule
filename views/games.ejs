@@ -12,7 +12,7 @@
         - <%= config.title %>
     </title>
 
-    <% include head.ejs %>
+    <%- include('head', {account: account}); %>
 
     <script src="/scripts/moment.js"></script>
     <script src="/scripts/socket.io.js"></script>
