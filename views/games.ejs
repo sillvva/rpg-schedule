@@ -40,7 +40,7 @@
     <% account.guilds.filter(guild => !account.viewing.games || guild.games.length > 0).forEach(guild => { %>
       <hr />
       <h2 class="guild-name">
-          <img class="guild-icon" src="<%= guild.icon.length > 0 ? guild.icon : `/images/logo2.png` %>" alt="" />
+          <img class="guild-icon" src="<%= guild.icon && guild.icon.length > 0 ? guild.icon : `/images/logo2.png` %>" alt="" />
           <%= guild.name %>
           <% if (account.viewing.dashboard && guild.permission) { %>
               <a href="<%= config.urls.game.create.path %>?s=<%= guild.id %>" class="btn btn-primary btn-sm float-right"><%= lang.buttons.NEW_GAME %></a>
