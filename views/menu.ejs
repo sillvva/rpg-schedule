@@ -67,7 +67,7 @@
               </svg>
               <span class="d-sm-none"><%= lang.name %></span>
             </a>
-            <div class="dropdown-menu bg-primary" aria-labelledby="langDropdown">
+            <div class="dropdown-menu dropdown-menu-right bg-primary" aria-labelledby="langDropdown">
               <% langs.forEach(l => { %>
                 <a class="dropdown-item bg-primary text-white" href="/lang/<%= l.code %>?returnTo=<%= escape(locals.url) %>"><%= l.name %></a>
               <% }); %>
