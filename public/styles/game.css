@@ -96,7 +96,7 @@ hr {
 }
 
 .guild-icon {
-    border-radius: 20px;
+    border-radius: 20px; background: #202225 !important;
     width: 28px; height: 28px; margin-top: -3px; margin-right: 5px;
 }
 

@@ -12,3 +12,7 @@
 <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/alertifyjs@1.11.2/build/css/themes/bootstrap.min.css"/>
 
 <script src="//cdn.jsdelivr.net/remarkable/1.7.1/remarkable.min.js"></script>
+
+<% if (account && account.user) { %>
+  <link rel="alternate" type="application/rss+xml" title="RSS Feed for RPG Schedule" href="<%= config.urls.rss.path.replace(':uid', account.user.id) %>" />
+<% } %>
