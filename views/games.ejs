@@ -146,8 +146,8 @@
             const date = $(this).get(0).dataset.datetime;
             const iso = $(this).get(0).dataset.iso;
             const parsed = {
-                calendar: moment(iso).utcOffset(moment().utcOffset()).calendar(),
-                from: moment(iso).utcOffset(moment().utcOffset()).fromNow()
+                calendar: moment(iso).calendar(),
+                from: moment(iso).fromNow()
             };
             $(this).html(`${parsed.calendar} (${parsed.from})`);
             if (new Date().getTime() >= new Date(date).getTime()) {
