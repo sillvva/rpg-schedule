@@ -128,10 +128,14 @@ hr {
 }
 
 .game {
-    border-radius: 5px; background: #36393F; padding: 10px 10px 50px;
+    border-radius: 5px; background: #36393F; padding: 10px;
     cursor: pointer; transition: box-shadow 500ms ease;
     box-shadow: 0 0 0 rgba(0,0,0,0.75); color: #fff;
-    text-decoration: none; position: relative;
+    text-decoration: none;
+}
+
+.game.upcoming {
+    padding: 10px 10px 50px; position: relative;
 }
 
 .game:hover {
