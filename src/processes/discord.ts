@@ -8,8 +8,8 @@ import config from "../models/config";
 
 let client: Client;
 type DiscordProcessesOptions = {
-  app: Express
-}
+  app: Express;
+};
 
 const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () => {}) => {
   client = new discord.Client();
@@ -60,31 +60,41 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
               `__**${lang.config.COMMAND_LIST}**__\n` +
                 `\`${process.env.BOTCOMMAND_SCHEDULE}\` - ${lang.config.desc.HELP}\n` +
                 `\`${process.env.BOTCOMMAND_SCHEDULE} help\` - ${lang.config.desc.HELP}\n` +
-                (canConfigure ? `\n${lang.config.CONFIGURATION}\n` +
+                (canConfigure
+                  ? `\n${lang.config.CONFIGURATION}\n` +
                     (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} configuration\` - ${lang.config.desc.CONFIGURATION}\n` : ``) +
                     (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} add-channel #channel-name\` - ${lang.config.desc.ADD_CHANNEL}\n` : ``) +
                     (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} remove-channel #channel-name\` - ${lang.config.desc.REMOVE_CHANNEL}\n` : ``) +
                     (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} pruning ${guildConfig.pruning ? "on" : "off"}\` - \`on/off\` - ${lang.config.desc.PRUNING}\n` : ``) +
-                    (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} embeds ${guildConfig.embeds || guildConfig.embeds == null ? "on" : "off"}\` - \`on/off\` - ${lang.config.desc.EMBEDS}\n` : ``) +
+                    (canConfigure
+                      ? `\`${process.env.BOTCOMMAND_SCHEDULE} embeds ${guildConfig.embeds || guildConfig.embeds == null ? "on" : "off"}\` - \`on/off\` - ${
+                          lang.config.desc.EMBEDS
+                        }\n`
+                      : ``) +
                     (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} embed-color ${guildConfig.embedColor}\` - ${lang.config.desc.EMBED_COLOR}\n` : ``) +
                     (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} emoji-sign-up ${guildConfig.emojiAdd}\` - ${lang.config.desc.EMOJI}\n` : ``) +
                     (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} emoji-drop-out ${guildConfig.emojiRemove}\` - ${lang.config.desc.EMOJI}\n` : ``) +
-                    (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} private-reminders\` - ${lang.config.desc.PRIVATE_REMINDERS.replace(/\:PR/gi, guildConfig.privateReminders ? "on" : "off")}\n` : ``) +
+                    (canConfigure
+                      ? `\`${process.env.BOTCOMMAND_SCHEDULE} private-reminders\` - ${lang.config.desc.PRIVATE_REMINDERS.replace(
+                          /\:PR/gi,
+                          guildConfig.privateReminders ? "on" : "off"
+                        )}\n`
+                      : ``) +
                     (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} role role name\` - ${lang.config.desc.ROLE}\n` : ``) +
                     (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} manager-role role name\` - ${lang.config.desc.MANAGER_ROLE}\n` : ``) +
                     (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} password somepassword\` - ${lang.config.desc.PASSWORD_SET}\n` : ``) +
                     (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} password\` - ${lang.config.desc.PASSWORD_CLEAR}\n` : ``) +
                     (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} toggle-drop-out\` - ${lang.config.desc.TOGGLE_DROP_OUT}\n` : ``) +
-                    (canConfigure ? `\`${process.env.BOTCOMMAND_SCHEDULE} lang ${guildConfig.lang}\` - ${lang.config.desc.LANG} ${languages.map(l => `\`${l.code}\` (${l.name})`).join(", ")}\n` : ``)
+                    (canConfigure
+                      ? `\`${process.env.BOTCOMMAND_SCHEDULE} lang ${guildConfig.lang}\` - ${lang.config.desc.LANG} ${languages.map(l => `\`${l.code}\` (${l.name})`).join(", ")}\n`
+                      : ``)
                   : ``) +
                 `\n${lang.config.USAGE}\n` +
                 `\`${process.env.BOTCOMMAND_SCHEDULE} link\` - ${lang.config.desc.LINK}`
             );
           message.channel.send(embed);
         } else if (cmd === "link") {
-          message.channel.send(
-            process.env.HOST + `/lang/${guildConfig.lang}?returnTo=${escape(process.env.HOST + config.urls.game.create.path + "?s=" + guildId)}`
-          );
+          message.channel.send(process.env.HOST + `/lang/${guildConfig.lang}?returnTo=${escape(process.env.HOST + config.urls.game.create.path + "?s=" + guildId)}`);
         } else if (cmd === "configuration") {
           if (canConfigure) {
             const channel = guildConfig.channels.map(c => {
@@ -96,18 +106,21 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
               .setColor(guildConfig.embedColor)
               .setDescription(
                 `${lang.config.GUILD}: \`${guild.name}\`\n` +
-                `${lang.config.CHANNELS}: \`${channel.filter(c => c).map(c => c.name).join(" | ")}\`\n` +
-                `${lang.config.PRUNING}: \`${guildConfig.pruning ? "on" : "off"}\`\n` +
-                `${lang.config.EMBEDS}: \`${!(guildConfig.embeds === false) ? "on" : "off"}\`\n` +
-                `${lang.config.EMBED_COLOR}: \`${guildConfig.embedColor}\`\n` +
-                `${lang.config.EMOJI_JOIN}: \`${guildConfig.emojiAdd}\`\n` +
-                `${lang.config.EMOJI_LEAVE}: \`${guildConfig.emojiRemove}\`\n` +
-                `${lang.config.PRIVATE_REMINDERS}: \`${guildConfig.privateReminders ? "on" : "off"}\`\n` +
-                `${lang.config.PASSWORD}: ${guildConfig.password ? `\`${guildConfig.password}\`` : "Disabled"}\n` +
-                `${lang.config.ROLE}: ${guildConfig.role ? `\`${guildConfig.role}\`` : "All Roles"}\n` +
-                `${lang.config.MANAGER_ROLE}: ${guildConfig.managerRole ? `\`${guildConfig.managerRole}\` and Server Admins` : "Server Admins"}\n` +
-                `${lang.config.DROP_OUTS}: ${guildConfig.dropOut ? `Enabled` : "Disabled"}\n` +
-                `${lang.config.LANGUAGE}: ${guildConfig.lang}\n`
+                  `${lang.config.CHANNELS}: \`${channel
+                    .filter(c => c)
+                    .map(c => c.name)
+                    .join(" | ")}\`\n` +
+                  `${lang.config.PRUNING}: \`${guildConfig.pruning ? "on" : "off"}\`\n` +
+                  `${lang.config.EMBEDS}: \`${!(guildConfig.embeds === false) ? "on" : "off"}\`\n` +
+                  `${lang.config.EMBED_COLOR}: \`${guildConfig.embedColor}\`\n` +
+                  `${lang.config.EMOJI_JOIN}: \`${guildConfig.emojiAdd}\`\n` +
+                  `${lang.config.EMOJI_LEAVE}: \`${guildConfig.emojiRemove}\`\n` +
+                  `${lang.config.PRIVATE_REMINDERS}: \`${guildConfig.privateReminders ? "on" : "off"}\`\n` +
+                  `${lang.config.PASSWORD}: ${guildConfig.password ? `\`${guildConfig.password}\`` : "Disabled"}\n` +
+                  `${lang.config.ROLE}: ${guildConfig.role ? `\`${guildConfig.role}\`` : "All Roles"}\n` +
+                  `${lang.config.MANAGER_ROLE}: ${guildConfig.managerRole ? `\`${guildConfig.managerRole}\` and Server Admins` : "Server Admins"}\n` +
+                  `${lang.config.DROP_OUTS}: ${guildConfig.dropOut ? `Enabled` : "Disabled"}\n` +
+                  `${lang.config.LANGUAGE}: ${guildConfig.lang}\n`
               );
             message.author.send(embed);
           }
@@ -506,8 +519,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
           }
         }
       }
-    }
-    catch(err) {}
+    } catch (err) {}
   });
 
   /**
@@ -655,21 +667,19 @@ const postReminders = async (app: Express) => {
             message += `**${lang.game.WHEN}:** ${lang.game.STARTING_IN.replace(/\:minutes/gi, game.reminder)}\n`;
             message += `**${lang.game.SERVER}:** ${game.discordGuild.name}\n`;
             message += `**${lang.game.WHERE}:** ${game.where}\n`;
-            message += `**${lang.game.GM}:** ${dmMember ? dmMember.nickname ? dmMember.nickname : dmMember.user.username : game.dm}\n`;
+            message += `**${lang.game.GM}:** ${dmMember ? (dmMember.nickname ? dmMember.nickname : dmMember.user.username) : game.dm}\n`;
 
             for (const member of reservedUsers) {
-              if (!dmMember || (dmMember && member.user.username !== dmMember.user.username && member.nickname !== dmMember.nickname)) {
-                member.user.send(message);
-              }
+              if (member && member.user) member.user.send(message);
+              if (dmMember && dmMember.user && member && member.user && dmMember.user.username == member.user.username) dmMember = null;
             }
 
             if (dmMember && dmMember.user) dmMember.user.send(message);
 
             game.reminder = "0";
             game.save();
-          }
-          catch(err) {
-
+          } catch (err) {
+            console.log(err);
           }
         } else {
           let message = `${lang.game.REMINDER_FOR} **${game.adventure.replace(/\*/gi, "")}**\n`;

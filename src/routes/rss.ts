@@ -1,9 +1,8 @@
-import { Client, Permissions } from "discord.js";
+import { Client } from "discord.js";
 import express from "express";
 import moment from "moment";
 
 import config from "../models/config";
-import { GuildConfig } from "../models/guild-config";
 import { Game } from "../models/game";
 
 export default (options: any) => {
@@ -14,11 +13,9 @@ export default (options: any) => {
     const uid = req.params.uid;
     const guilds = [];
 
-    const guildConfigs = await GuildConfig.fetchAll();
     let tag = "";
 
     client.guilds.forEach(guild => {
-      const guildConfig = guildConfigs.find(gc => gc.guild === guild.id) || new GuildConfig({ guild: guild.id });
       guild.members.forEach(member => {
         if (member.id === uid) {
           tag = member.user.tag;
