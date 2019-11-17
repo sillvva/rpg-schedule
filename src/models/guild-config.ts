@@ -19,6 +19,7 @@ export interface GuildConfigModel {
   lang?: string;
   privateReminders?: boolean;
   managerRole?: string;
+  escape?: string;
 }
 
 interface GuildConfigDataModel extends GuildConfigModel {
@@ -41,6 +42,7 @@ export class GuildConfig implements GuildConfigDataModel {
   lang: string = "en";
   privateReminders: boolean = false;
   managerRole: string = null;
+  escape?: '!';
 
   constructor(guildConfig: GuildConfigDataModel = {}) {
     if (!guildConfig._id) this._id = new ObjectId();
@@ -73,7 +75,8 @@ export class GuildConfig implements GuildConfigDataModel {
       dropOut: this.dropOut,
       lang: this.lang,
       privateReminders: this.privateReminders,
-      managerRole: this.managerRole
+      managerRole: this.managerRole,
+      escape: this.escape
     };
   }
 
