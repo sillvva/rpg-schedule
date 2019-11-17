@@ -31,6 +31,7 @@ export default {
     dateLong: "llll"
   },
   author: "Sillvva#2532",
+  command: "schedule",
   defaults: {
     sessionStatus: {
       access: {},
