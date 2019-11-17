@@ -39,7 +39,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
           const guildId = guild.id;
           const guildConfig = await GuildConfig.fetch(guildId);
   
-          const escape = guildConfig.escape.trim().length ? guildConfig.escape.trim() : '!';
+          const escape = (guildConfig.escape || "").trim().length ? guildConfig.escape.trim() : '!';
           const botcmd = `${escape}${config.command}`;
           if (!message.content.startsWith(botcmd)) return;
 
@@ -78,7 +78,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                       (canConfigure ? `\`${botcmd} embed-color ${guildConfig.embedColor}\` - ${lang.config.desc.EMBED_COLOR}\n` : ``) +
                       (canConfigure ? `\`${botcmd} emoji-sign-up ${guildConfig.emojiAdd}\` - ${lang.config.desc.EMOJI}\n` : ``) +
                       (canConfigure ? `\`${botcmd} emoji-drop-out ${guildConfig.emojiRemove}\` - ${lang.config.desc.EMOJI}\n` : ``) +
-                      (canConfigure ? `\`${botcmd} escape-char ${guildConfig.escape}\` - ${lang.config.desc.ESCAPE.replace(/\:CHAR/gi, guildConfig.escape)}\n` : ``) +
+                      (canConfigure ? `\`${botcmd} escape-char ${escape}\` - ${lang.config.desc.ESCAPE.replace(/\:CHAR/gi, guildConfig.escape)}\n` : ``) +
                       (canConfigure
                         ? `\`${botcmd} private-reminders\` - ${lang.config.desc.PRIVATE_REMINDERS.replace(/\:PR/gi,guildConfig.privateReminders ? "on" : "off")}\n`
                         : ``) +
