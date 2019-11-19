@@ -174,8 +174,8 @@ export class Game implements GameModel {
         }
       });
 
-    const rawDate = `${game.date} ${game.time} GMT${game.timezone < 0 ? "-" : "+"}${Math.abs(game.timezone)}`;
-    const timezone = "GMT" + (game.timezone >= 0 ? "+" : "") + game.timezone;
+    const rawDate = `${game.date} ${game.time} UTC${game.timezone < 0 ? "-" : "+"}${parseTimeZoneISO(game.timezone)}`;
+    const timezone = "UTC" + (game.timezone >= 0 ? "+" : "") + game.timezone;
     const where = parseDiscord(game.where, guild);
     const description = parseDiscord(game.description, guild);
 

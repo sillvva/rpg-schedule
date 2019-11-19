@@ -122,7 +122,7 @@
                 <label for="timezone" class="col-form-label"><%= lang.game.TIME_ZONE %></label>
                 <div class="input-group">
                     <div class="input-group-prepend">
-                        <div class="input-group-text">GMT</div>
+                        <div class="input-group-text">UTC</div>
                     </div>
                     <input type="number" min="-12" max="14" step="0.25" class="form-control" id="timezone" name="timezone" value="<%= timezone %>">
                 </div>
@@ -265,7 +265,7 @@
     };
 
     const getTZUrls = (date, time, gmtOffset) => {
-        const d = new Date(`${date.replace(/-/g, "/").replace(/GMT\//, "GMT-")} ${time} GMT${gmtOffset < 0 ? '-' : '+'}${Math.abs(gmtOffset)}`).toISOString().replace(/[^0-9T]/gi,"").slice(0,13);
+        const d = new Date(`${date.replace(/-/g, "/").replace(/UTC\//, "UTC-")} ${time} UTC${gmtOffset < 0 ? '-' : '+'}${Math.abs(gmtOffset)}`).toISOString().replace(/[^0-9T]/gi,"").slice(0,13);
 
         return {
             convert: `https://timee.io/${d}`// ,

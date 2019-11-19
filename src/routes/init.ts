@@ -162,7 +162,7 @@ export default (options: any) => {
 
                     const date = Game.ISOGameDate(game);
                     game.moment = {
-                      raw: `${game.date} ${game.time} GMT${game.timezone < 0 ? "-" : "+"}${Math.abs(game.timezone)}`,
+                      raw: `${game.date} ${game.time} UTC${game.timezone < 0 ? "-" : "+"}${Math.abs(game.timezone)}`,
                       iso: date,
                       date: moment(date)
                         .utcOffset(parseInt(game.timezone))
