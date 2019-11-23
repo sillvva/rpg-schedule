@@ -152,7 +152,7 @@ export class Game implements GameModel {
     let dmmember = guild.members.array().find(mem => {
       return mem.user.tag === game.dm.trim().replace("@", "");
     });
-    if (!dmmember) throw new Error(lang.game.GM_ERROR);
+    if (!dmmember) dm = game.dm.trim();//throw new Error(lang.game.GM_ERROR);
     else if (guildConfig.embeds === false) dm = dmmember.user.toString();
 
     let reserved: string[] = [];
