@@ -683,9 +683,9 @@ const postReminders = async (app: Express) => {
           try {
             let message = `${lang.game.REMINDER_FOR} **${game.adventure.replace(/\*/gi, "")}**\n`;
             message += `**${lang.game.WHEN}:** ${lang.game.STARTING_IN.replace(/\:minutes/gi, game.reminder)}\n`;
-            message += `**${lang.game.SERVER}:** ${game.discordGuild.name}\n`;
+            message += `**${lang.game.SERVER}:** ${game.discordGuild && game.discordGuild.name}\n`;
             message += `**${lang.game.WHERE}:** ${game.where}\n`;
-            message += `**${lang.game.GM}:** ${dmMember ? (dmMember.nickname ? dmMember.nickname : dmMember.user.username) : game.dm}\n`;
+            message += `**${lang.game.GM}:** ${dmMember ? (dmMember.nickname ? dmMember.nickname : dmMember.user && dmMember.user.username) : game.dm}\n`;
 
             for (const member of reservedUsers) {
               if (member && member.user) member.user.send(message);
@@ -693,7 +693,11 @@ const postReminders = async (app: Express) => {
             }
 
             if (dmMember && dmMember.user) dmMember.user.send(message);
+          } catch (err) {
+            console.log(err);
+          }
 
+          try {
             game.reminder = "0";
             game.save();
           } catch (err) {
