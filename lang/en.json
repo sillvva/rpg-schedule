@@ -52,7 +52,8 @@
       "NO_REMINDER": "No Reminder",
       "MINUTES_15": "15 minutes",
       "MINUTES_30": "30 minutes",
-      "MINUTES_60": "1 hour"
+      "MINUTES_60": "1 hour",
+      "HOURS_24": "24 hours"
     },
     "labels": {
       "HOURS": "hours",
