@@ -1,0 +1,79 @@
+body {
+  background-color: #2f3236;
+  color: #fff;
+  overflow-x: hidden;
+  overflow-y: scroll !important;
+}
+
+@-ms-viewport{
+  width: device-width;
+}
+
+.error {
+  color: salmon;
+}
+
+.bg-primary {
+  background-color: #202225 !important;
+}
+
+.form-group {
+  margin-bottom: 0;
+}
+
+hr {
+  border-color: rgba(255,255,255,0.2);
+}
+
+.navbar-icon {
+  width: 35px; height: 35px;
+  margin-top: -5px;
+  margin-right: 5px;
+}
+
+@media (max-width: 767px) {
+  .navbar-nav.ml-auto {
+      border-top: 1px solid rgba(255,255,255,0.5);
+      padding-top: 10px;
+      margin-top: 10px;
+  }
+
+  .guild-icon {
+      display: none;
+  }
+
+  .nav-item {
+      border-top: 1px solid #fff;
+      margin: 8px 0 0;
+  }
+}
+
+.breadcrumbs {
+  margin: 0.8rem 0 1rem; font-size: 1.5rem;
+}
+
+.breadcrumbs a, .breadcrumbs a:hover {
+  text-decoration: none;
+}
+
+.breadcrumb-divider {
+  margin: 0 8px;
+}
+
+.ajs-content p {
+    margin: 5px;
+}
+
+.ajs-no-overflow {
+    overflow: scroll !important;
+}
+
+.guild-name {
+    line-height: 1.5;
+    font-size: 20px;
+}
+
+.guild-icon {
+    border-radius: 20px; background: #202225 !important;
+    width: 28px; height: 28px; margin-top: -3px; margin-right: 5px;
+}
