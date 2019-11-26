@@ -58,7 +58,7 @@
           <% } %>
           <% guild.games.forEach(game => { %>
               <% if ((account.viewing.server && guild.isAdmin) || (guild.permission && account.viewing.dashboard && (account.user.tag === game.dm || account.user.tag === config.author))) { %>
-                  <a class="game my-games" id="<%= game._id %>" href="<%= config.urls.game.create.path %>?g=<%= game._id %>">
+                  <div class="game my-games" id="<%= game._id %>" onclick="window.location = `<%= config.urls.game.create.path %>?g=<%= game._id %>`;">
                       <h4 class="game-name"><%= game.adventure %></h4>
                       <% if (account.viewing.server) { %>
                         <div class="game-dm">
@@ -74,9 +74,12 @@
                               <span data-datetime="<%= game.moment.raw %>" data-iso="<%= game.moment.iso %>" class="text-danger"><%= game.moment.date %> (<%= game.moment.from %>)</span>
                           <% } %>
                       </div>
+                      <div>
+                        <a href="http://www.google.com/calendar/render?action=TEMPLATE&text=<%= escape(game.adventure) %>&dates=<%= game.moment.isoutc %>/<%= game.moment.isoutc %>&location=<%= escape(`${guild.name} - ${game.where}`) %>&trp=false&sprop=" target="_blank" rel="nofollow" onclick="event.stopPropagation();">Add to my calendar</a>
+                      </div>
                       <div class="game-reserved"><strong><%= lang.game.RESERVED %>:</strong> <%= Math.min(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0)%> / <%= game.players %></div>
                       <div class="game-reserved"><strong><%= lang.game.WAITLISTED %>:</strong> <%= Math.max(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0) - parseInt(game.players)%></div>
-                  </a>
+                    </div>
               <% } else if (account.viewing.games || game.signedup || game.waitlisted) { %>
                   <div class="game upcoming" id="<%= game._id %>">
                       <h4 class="game-name"><%= game.adventure %></h4>
@@ -91,6 +94,9 @@
                           <% } else { %>
                               <span data-datetime="<%= game.moment.raw %>" data-iso="<%= game.moment.iso %>" class="text-danger"><%= game.moment.date %> (<%= game.moment.from %>)</span>
                           <% } %>
+                      </div>
+                      <div>
+                        <a href="http://www.google.com/calendar/render?action=TEMPLATE&text=<%= escape(game.adventure) %>&dates=<%= game.moment.isoutc %>/<%= game.moment.isoutc %>&location=<%= escape(`${guild.name} - ${game.where}`) %>&trp=false&sprop=" target="_blank" rel="nofollow" onclick="event.stopPropagation();">Add to my calendar</a>
                       </div>
                       <div class="where">
                           <strong><%= lang.game.WHERE %>:</strong>

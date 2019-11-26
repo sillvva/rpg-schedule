@@ -141,6 +141,9 @@
                 <div class="pinfo overflow-hidden">
                     <p id="convertLink"></p>
                     <!-- <p id="countdownLink"></p> -->
+                    <% if (is.editgame) { %>
+                    <p id="gcalLink"></p>
+                    <% } %>
                 </div>
             </div>
         </div>
@@ -267,10 +270,14 @@
 
     const getTZUrls = (date, time, gmtOffset) => {
         const d = new Date(`${date.replace(/-/g, "/").replace(/UTC\//, "UTC-")} ${time} UTC${gmtOffset < 0 ? '-' : '+'}${Math.abs(gmtOffset)}`).toISOString().replace(/[^0-9T]/gi,"").slice(0,13);
+        const name = $('#adventure').val();
+        const server = $('#guild').val();
+        const where = $('#where').val();
 
         return {
-            convert: `https://timee.io/${d}`// ,
-            // countdown: `https://timee.io/${d}`
+            convert: `https://timee.io/${d}`,
+            // countdown: `https://timee.io/${d}`,
+            gcal: `http://www.google.com/calendar/render?action=TEMPLATE&text=${escape(name)}&dates=${d}00Z/${d}00Z&location=${escape(server)}%20-%20${escape(where)}&trp=false&sprop=`
         };
     };
 
@@ -283,20 +290,23 @@
 
     $('#date').change(function() {
         var link = getTZUrls($('#date').val(), $('#time').val(), $('#timezone').val());
-        $('#convertLink').html(`Time Zone Conversion: <a href="${link.convert}" target="_blank">${link.convert}</a>`);
-        // $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank">${link.countdown}</a>`);
+        $('#convertLink').html(`Time Zone Conversion: <a href="${link.convert}" target="_blank" rel="nofollow">${link.convert}</a>`);
+        // $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank" rel="nofollow">${link.countdown}</a>`);
+        $('#gcalLink').html(`<a href="${link.gcal}" target="_blank" rel="nofollow">Add to Calendar</a>`);
     }).change();
 
     $('#time').change(function() {
         var link = getTZUrls($('#date').val(), $('#time').val(), $('#timezone').val());
-        $('#convertLink').html(`Time Zone Conversion: <a href="${link.convert}" target="_blank">${link.convert}</a>`);
-        // $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank">${link.countdown}</a>`);
+        $('#convertLink').html(`Time Zone Conversion: <a href="${link.convert}" target="_blank" rel="nofollow">${link.convert}</a>`);
+        // $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank" rel="nofollow">${link.countdown}</a>`);
+        $('#gcalLink').html(`<a href="${link.gcal}" target="_blank" rel="nofollow">Add to Calendar</a>`);
     }).change();
 
     $('#timezone').change(function() {
         var link = getTZUrls($('#date').val(), $('#time').val(), $('#timezone').val());
-        $('#convertLink').html(`Time Zone Conversion: <a href="${link.convert}" target="_blank">${link.convert}</a>`);
-        // $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank">${link.countdown}</a>`);
+        $('#convertLink').html(`Time Zone Conversion: <a href="${link.convert}" target="_blank" rel="nofollow">${link.convert}</a>`);
+        // $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank" rel="nofollow">${link.countdown}</a>`);
+        $('#gcalLink').html(`<a href="${link.gcal}" target="_blank" rel="nofollow">Add to Calendar</a>`);
     }).change();
 
     <% if (is.editgame) { %>
