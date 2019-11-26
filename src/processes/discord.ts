@@ -683,6 +683,13 @@ const postReminders = async (app: Express) => {
         const languages = app.locals.langs;
         const lang = languages.find(l => l.code === guildConfig.lang) || languages.find(l => l.code === "en");
 
+        try {
+          game.reminder = "0";
+          game.save();
+        } catch (err) {
+          console.log(err);
+        }
+
         if (guildConfig.privateReminders) {
           try {
             let message = `${lang.game.REMINDER_FOR} **${game.adventure.replace(/\*/gi, "")}**\n`;
@@ -700,13 +707,6 @@ const postReminders = async (app: Express) => {
           } catch (err) {
             console.log(err);
           }
-
-          try {
-            game.reminder = "0";
-            game.save();
-          } catch (err) {
-            console.log(err);
-          }
         } else {
           let message = `${lang.game.REMINDER_FOR} **${game.adventure.replace(/\*/gi, "")}**\n`;
           message += `**${lang.game.WHEN}:** ${lang.game.STARTING_IN.replace(/\:minutes/gi, game.reminder)}\n`;
@@ -717,7 +717,6 @@ const postReminders = async (app: Express) => {
 
           const sent = <Message>await game.discordChannel.send(message);
 
-          game.reminder = "0";
           game.reminderMessageId = sent.id;
           game.save();
         }
