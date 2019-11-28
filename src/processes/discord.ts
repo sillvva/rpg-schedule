@@ -528,8 +528,8 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
           }
         }
         if (reaction.emoji.name === guildConfig.emojiRemove) {
+          reaction.remove(user);
           if (game.reserved.indexOf(user.tag) >= 0 && guildConfig.dropOut) {
-            reaction.remove(user);
             game.reserved = game.reserved
               .split(/\r?\n/)
               .filter(tag => tag !== user.tag)
