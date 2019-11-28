@@ -273,11 +273,12 @@
         const name = $('#adventure').val();
         const server = $('#guild').val();
         const where = $('#where').val();
+        const description = $('#description').val();
 
         return {
             convert: `https://timee.io/${d}`,
             // countdown: `https://timee.io/${d}`,
-            gcal: `http://www.google.com/calendar/render?action=TEMPLATE&text=${escape(name)}&dates=${d}00Z/${d}00Z&location=${escape(server)}%20-%20${escape(where)}&trp=false&sprop=`
+            gcal: `http://www.google.com/calendar/render?action=TEMPLATE&text=${escape(name)}&dates=${d}00Z/${d}00Z&location=${escape(server)}%20-%20${escape(where)}&trp=false&sprop=&details=${escape(description)}`
         };
     };
 
