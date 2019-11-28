@@ -75,7 +75,7 @@
                           <% } %>
                       </div>
                       <div>
-                        <a href="http://www.google.com/calendar/render?action=TEMPLATE&text=<%= escape(game.adventure) %>&dates=<%= game.moment.isoutc %>/<%= game.moment.isoutc %>&location=<%= escape(`${guild.name} - ${game.where}`) %>&trp=false&sprop=" target="_blank" rel="nofollow" onclick="event.stopPropagation();">Add to my calendar</a>
+                        <a href="http://www.google.com/calendar/render?action=TEMPLATE&text=<%= escape(game.adventure) %>&dates=<%= game.moment.isoutc %>/<%= game.moment.isoutc %>&location=<%= escape(`${guild.name} - ${game.where}`) %>&trp=false&sprop=&details=<%= escape(game.description) %>" target="_blank" rel="nofollow" onclick="event.stopPropagation();">Add to my calendar</a>
                       </div>
                       <div class="game-reserved"><strong><%= lang.game.RESERVED %>:</strong> <%= Math.min(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0)%> / <%= game.players %></div>
                       <div class="game-reserved"><strong><%= lang.game.WAITLISTED %>:</strong> <%= Math.max(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0) - parseInt(game.players)%></div>
@@ -96,7 +96,7 @@
                           <% } %>
                       </div>
                       <div>
-                        <a href="http://www.google.com/calendar/render?action=TEMPLATE&text=<%= escape(game.adventure) %>&dates=<%= game.moment.isoutc %>/<%= game.moment.isoutc %>&location=<%= escape(`${guild.name} - ${game.where}`) %>&trp=false&sprop=" target="_blank" rel="nofollow" onclick="event.stopPropagation();">Add to my calendar</a>
+                        <a href="http://www.google.com/calendar/render?action=TEMPLATE&text=<%= escape(game.adventure) %>&dates=<%= game.moment.isoutc %>/<%= game.moment.isoutc %>&location=<%= escape(`${guild.name} - ${game.where}`) %>&trp=false&sprop=&details=<%= escape(game.description) %>" target="_blank" rel="nofollow" onclick="event.stopPropagation();">Add to my calendar</a>
                       </div>
                       <div class="where">
                           <strong><%= lang.game.WHERE %>:</strong>
