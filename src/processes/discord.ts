@@ -518,9 +518,9 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
     const game = await Game.fetchBy("messageId", message.id);
     try {
       if (game && user.id !== message.author.id) {
-        reaction.remove(user);
         const guildConfig = await GuildConfig.fetch(game.s);
         if (reaction.emoji.name === guildConfig.emojiAdd) {
+          reaction.remove(user);
           if (game.reserved.indexOf(user.tag) < 0) {
             game.reserved = [...game.reserved.trim().split(/\r?\n/), user.tag].join("\n");
             if (game.reserved.startsWith("\n")) game.reserved = game.reserved.substr(1);
@@ -529,6 +529,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
         }
         if (reaction.emoji.name === guildConfig.emojiRemove) {
           if (game.reserved.indexOf(user.tag) >= 0 && guildConfig.dropOut) {
+            reaction.remove(user);
             game.reserved = game.reserved
               .split(/\r?\n/)
               .filter(tag => tag !== user.tag)
