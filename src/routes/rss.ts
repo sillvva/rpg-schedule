@@ -83,6 +83,7 @@ export default (options: any) => {
         <title>${game.adventure}</title>
         <link>https://rpg-schedule.herokuapp.com/games/upcoming</link>
         <guid>https://rpg-schedule.herokuapp.com/games/view?g=${game._id.toString().slice(-12)}</guid>
+        <author>${game.dm}</author>
         <description>
           <![CDATA[<p>Discord Server: ${(guilds.find(g => g.id === game.s) || {}).name}</p><p>GM: ${game.dm}</p><p>Where: ${game.where.replace(/\&/g, "&amp;")}</p><p>When: ${game.moment.date}</p><p>${game.description.trim().replace(/\&/g, "&amp;").replace(/\r?\n/g, "<br>")}</p>]]>
         </description>
