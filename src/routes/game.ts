@@ -108,7 +108,16 @@ export default (options: any) => {
             // lang: req.lang.selected,
             // langs: req.lang.list,
             errors: {
-              dm: false
+              dm: !guild.members.array().find(mem => {
+                return mem.user.tag === game.dm.trim().replace("@", "");
+              }),
+              reserved: game.reserved
+                .replace(/@/g, "")
+                .split(/\r?\n/)
+                .filter(res => {
+                  if (res.trim().length === 0) return false;
+                  return !guild.members.array().find(mem => mem.user.tag === res.trim());
+                })
             }
           };
 
