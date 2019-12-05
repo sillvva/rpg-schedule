@@ -108,8 +108,8 @@ export default (options: any) => {
             // lang: req.lang.selected,
             // langs: req.lang.list,
             errors: {
-              dm: req.query.g && !guild.members.array().find(mem => {
-                return mem.user.tag === (game && game.dm.trim().replace("@", ""));
+              dm: game && !guild.members.array().find(mem => {
+                return mem.user.tag === game.dm.trim().replace("@", "");
               }),
               reserved: game ? game.reserved
                 .replace(/@/g, "")
