@@ -71,7 +71,7 @@
                 <label for="dm" class="col-form-label"><%= lang.game.GM_DISCORD_TAG %></label>
                 <input type="text" class="form-control" id="dm" name="dm" placeholder="Username#1234" required value="<%= dm %>">
                 <% if (errors.dm) { %>
-                    <small class="error"><%= errors.dm %></small>
+                    <small class="error">Could not find GM tag in server users</small>
                 <% } else { %>
                     <small><%= lang.game.labels.DISCORD_TAGS %></small>
                 <% } %>
@@ -153,6 +153,16 @@
                     <label for="reserved" class="col-form-label"><%= lang.game.RESERVED_SLOTS %></label>
                     <textarea class="form-control" id="reserved" name="reserved" rows="7" placeholder="Username#1234"><%= reserved %></textarea>
                 </div>
+                <% if(errors.reserved.length > 0) { %>
+                <div>
+                  <small class="error">Could not find the following tags in server users:</small>
+                  <ul>
+                    <% errors.reserved.forEach(r => { %>
+                      <li><small class="error"><%= r %></small></li>
+                    <% }); %>
+                  </ul>
+                </div>
+                <% } %>
             </div>
             <div class="col-sm-7">
                 <div class="form-group">

@@ -215,7 +215,7 @@ export class Game implements GameModel {
 
     let embed = new discord.RichEmbed().setColor(guildConfig.embedColor).setDescription(msg);
 
-    embed.setThumbnail(dmmember.user.avatarURL);
+    if (dmmember) embed.setThumbnail(dmmember.user.avatarURL);
 
     const dbCollection = connection().collection(collection);
     if (game._id) {
