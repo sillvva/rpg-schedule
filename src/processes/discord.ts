@@ -683,6 +683,7 @@ const postReminders = async (app: Express) => {
         const guildConfig = await GuildConfig.fetch(game.discordGuild.id);
         const languages = app.locals.langs;
         const lang = languages.find(l => l.code === guildConfig.lang) || languages.find(l => l.code === "en");
+        const reminder = game.reminder;
 
         try {
           game.reminder = "0";
@@ -694,7 +695,7 @@ const postReminders = async (app: Express) => {
         if (guildConfig.privateReminders) {
           try {
             let message = `${lang.game.REMINDER_FOR} **${game.adventure.replace(/\*/gi, "")}**\n`;
-            message += `**${lang.game.WHEN}:** ${lang.game.STARTING_IN.replace(/\:minutes/gi, game.reminder)}\n`;
+            message += `**${lang.game.WHEN}:** ${lang.game.STARTING_IN.replace(/\:minutes/gi, reminder)}\n`;
             message += `**${lang.game.SERVER}:** ${game.discordGuild && game.discordGuild.name}\n`;
             message += `**${lang.game.WHERE}:** ${game.where}\n`;
             message += `**${lang.game.GM}:** ${dmMember ? (dmMember.nickname ? dmMember.nickname : dmMember.user && dmMember.user.username) : game.dm}\n`;
@@ -710,7 +711,7 @@ const postReminders = async (app: Express) => {
           }
         } else {
           let message = `${lang.game.REMINDER_FOR} **${game.adventure.replace(/\*/gi, "")}**\n`;
-          message += `**${lang.game.WHEN}:** ${lang.game.STARTING_IN.replace(/\:minutes/gi, game.reminder)}\n`;
+          message += `**${lang.game.WHEN}:** ${lang.game.STARTING_IN.replace(/\:minutes/gi, reminder)}\n`;
           message += `**${lang.game.WHERE}:** ${game.where}\n\n`;
           message += `**${lang.game.GM}:** ${dm}\n`;
           message += `**${lang.game.RESERVED}:**\n`;
