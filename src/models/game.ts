@@ -257,15 +257,18 @@ export class Game implements GameModel {
       if (game.method === "automated" && guildConfig.dropOut) await message.react(guildConfig.emojiRemove);
       const updated = await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { messageId: message.id } });
       if (dmmember) {
-        const pm: any = await dmmember.send(
-          lang.game.EDIT_LINK.replace(/\:server_name/gi, guild.name).replace(/\:game_name/gi, game.adventure) +
-            "\n" +
-            host +
-            config.urls.game.create.path +
-            "?g=" +
-            inserted.insertedId
-        );
-        await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { pm: pm.id } });
+        try {
+          const pm: any = await dmmember.send(
+            lang.game.EDIT_LINK.replace(/\:server_name/gi, guild.name).replace(/\:game_name/gi, game.adventure) +
+              "\n" +
+              host +
+              config.urls.game.create.path +
+              "?g=" +
+              inserted.insertedId
+          );
+          await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { pm: pm.id } });
+        }
+        catch(err) {}
       }
       const saved: GameSaveData = {
         _id: inserted.insertedId.toString(),

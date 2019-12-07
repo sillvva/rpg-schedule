@@ -25,7 +25,7 @@ export default (options: any) => {
     try {
       let game: Game;
       let server: string = req.query.s;
-      if (req.query.g) {
+      if (req.query.g && !(req.body && req.body.copy)) {
         game = await Game.fetch(req.query.g);
         if (game) {
           server = game.s;
@@ -36,6 +36,11 @@ export default (options: any) => {
 
       if (req.method === "POST") {
         req.body.reserved = req.body.reserved.replace(/@/g, "");
+        if (req.body.copy) {
+          delete req.query.g;
+          req.query.s = req.body.s;
+          server = req.body.s;
+        }
         if (req.query.s) {
           game = new Game(req.body);
         }
@@ -109,14 +114,14 @@ export default (options: any) => {
             // langs: req.lang.list,
             errors: {
               dm: game && !guild.members.array().find(mem => {
-                return mem.user.tag === game.dm.trim().replace("@", "");
+                return !mem.user.bot && mem.user.tag === game.dm.trim().replace("@", "");
               }),
               reserved: game ? game.reserved
                 .replace(/@/g, "")
                 .split(/\r?\n/)
                 .filter(res => {
                   if (res.trim().length === 0) return false;
-                  return !guild.members.array().find(mem => mem.user.tag === res.trim());
+                  return !guild.members.array().find(mem => !mem.user.bot && mem.user.tag === res.trim());
                 }) : []
             }
           };
