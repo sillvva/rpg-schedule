@@ -201,7 +201,7 @@
       $('#events-list').html(out);
 
       parseDates();
-
+      
       $('#calendar-name, #calendar-name-2').html(`
         ${calName} 
         <a href="<%= config.urls.game.calendar.path %>?y=${selYear}&m=${selMonth}&d=${selDate}">
@@ -255,7 +255,7 @@
         });
       });
     }
-    renderCalendar();
+
     $('#today').click(function() {
       selMonth = baseDate.month();
       selYear = baseDate.year();
@@ -290,6 +290,7 @@
       });
     };
 
+    renderCalendar();
     parseDates();
     setInterval(function() {
         parseDates();
