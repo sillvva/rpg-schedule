@@ -372,7 +372,7 @@ export class Game implements GameModel {
 const parseDiscord = (text: string, guild: Guild) => {
   try {
     guild.members.array().forEach(mem => {
-      text = text.replace(new RegExp(`\@?${mem.user.tag}`, "gi"), mem.toString());
+      text = text.replace(new RegExp(`\@${mem.user.tag}`, "gi"), mem.toString());
     });
     guild.channels.array().forEach(c => {
       text = text.replace(new RegExp(`\#${c.name}`, "gi"), c.toString());
