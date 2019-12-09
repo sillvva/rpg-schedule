@@ -371,17 +371,15 @@ export class Game implements GameModel {
 
 const parseDiscord = (text: string, guild: Guild) => {
   try {
-    (text.match(/[^# ]+#[0-9]{4}/gm) || []).forEach(m => {
-      const member = guild.members.array().find(mem => mem.user.tag === m);
-      if (member) text = text.replace(new RegExp(m, "g"), member.toString());
+    guild.members.array().forEach(mem => {
+      text = text.replace(new RegExp(`\@?${mem.user.tag}`, "gi"), mem.toString());
     });
-    (text.match(/#[a-z0-9\-_]+/gm) || []).forEach(m => {
-      const channel = guild.channels.array().find(c => c.name === m.substr(1));
-      if (channel) text = text.replace(new RegExp(m, "g"), channel.toString());
+    guild.channels.array().forEach(c => {
+      text = text.replace(new RegExp(`\#${c.name}`, "gi"), c.toString());
     });
-    (text.match(/@[^ ]+/gm) || []).forEach(m => {
-      const role = guild.roles.array().find(role => role.name === m.substr(1));
-      if (role && role.mentionable) text = text.replace(new RegExp(m, "g"), role.toString());
+    guild.roles.array().forEach(role => {
+      if (!role.mentionable) return;
+      text = text.replace(new RegExp(`\@${role.name}`, "gi"), role.toString());
     });
   } catch (err) {
     console.log(err);

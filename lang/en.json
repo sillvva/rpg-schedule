@@ -13,8 +13,10 @@
   "nav": {
     "GAMES": "Games",
     "MY_GAMES": "My Games",
+    "ALL_GAMES": "All Games",
     "UPCOMING_GAMES": "Upcoming Games",
     "MANAGE_SERVER": "Manage Server",
+    "CALENDAR": "Calendar",
     "INVITE": "Invite",
     "LOGIN": "Login",
     "LOGOUT": "Logout"

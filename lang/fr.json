@@ -13,8 +13,10 @@
   "nav": {
     "GAMES": "Parties",
     "MY_GAMES": "Mes parties",
+    "ALL_GAMES": "Tous parties",
     "UPCOMING_GAMES": "Prochaines parties",
     "MANAGE_SERVER": "Gérer Serveur",
+    "CALENDAR": "Calendrier",
     "INVITE": "Inviter",
     "LOGIN": "Connexion",
     "LOGOUT": "Déconnexion"

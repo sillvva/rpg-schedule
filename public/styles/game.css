@@ -92,3 +92,23 @@ input[readonly], input[disabled] {
 .game-description {
     display: none;
 }
+
+#events-list .game {
+    margin-bottom: 10px;
+    padding: 10px;
+    overflow: hidden;
+}
+
+#events-list .game .game-name {
+    margin-right: 70px;
+}
+
+#events-list .game .buttons {
+    top: 0;
+    right: 0;
+    left: auto;
+}
+
+#events-list .game .buttons .btn {
+    border-radius: 0;
+}
