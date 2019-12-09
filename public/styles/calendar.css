@@ -1,0 +1,51 @@
+.calendar {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.cal-header {
+  text-align: center;
+  padding: 6px 6px !important;
+}
+
+.cal-day {
+  text-align: center;
+  padding: 6px 3px !important;
+  background-color: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.1);
+  min-height: 60px;
+}
+
+.cal-day-curmonth {
+  text-align: center;
+  background-color: rgba(255,255,255,0.35);
+}
+
+.cal-day-curmonth:hover, .cal-day-curmonth.selected {
+  cursor: pointer;
+  background-color: rgba(255,255,255,0.2) !important;
+}
+
+.cal-games-count {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  border-radius: 12px;
+  background: #202225;
+  font-weight: bold;
+  overflow: hidden;
+}
+
+.cal-games-count.selected {
+  background: #28a745;
+}
+
+@media (max-width: 500px) {
+  #calendar-name-2 {
+    font-size: 1.4em;
+  }
+}
+
+.add-games-menu::after {
+  display: none !important;
+}

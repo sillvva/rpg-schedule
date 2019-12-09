@@ -6,6 +6,7 @@
     <%- include('head', {account: null}); %>
     
     <link rel="stylesheet" href="/styles/game.css">
+    <script src="/scripts/moment.js"></script>
 
     <% if (is.editgame) { %>
         <script src="/scripts/socket.io.js"></script>
@@ -183,17 +184,17 @@
             </div>
         <% } %>
         <% if (is.editgame) { %>
-            <div class="form-group row">
-                <p class="col-sm-5">
+            <div class="form-group form-row">
+                <p class="col-md-5">
                     <button type="submit" class="btn btn-primary col-12"><%= lang.buttons.SAVE %></button>
                 </p>
-                <p class="col-12 col-sm">
+                <p class="col-12 col-md">
                     <input type="submit" name="copy" value="<%= lang.buttons.SAVE_COPY %>" class="btn btn-light col-12">
                 </p>
-                <p class="col-12 col-sm">
+                <p class="col-12 col-md">
                     <a href="<%= config.urls.game.create.path %>?s=<%= s %>" class="btn btn-light col-12"><%= lang.buttons.NEW_GAME %></a>
                 </p>
-                <p class="d-none d-sm-block" style="padding: 0 15px;">
+                <p class="d-none d-sm-block col-12 col-md">
                     <button type="button" onclick="confirmDelete('<%= config.urls.game.delete.path %>?g=<%= _id %>');" class="btn btn-danger col-12"><%= lang.buttons.DELETE_GAME %></button>
                 </p>
             </div>
@@ -295,10 +296,13 @@
     };
 
     <% if (is.newgame) { %>
-    const d = new Date();
-    $('#date').val(d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+(d.getDate()).toString().padStart(2, '0'));
-    $('#time').val(d.getHours().toString().padStart(2, '0')+':'+d.getMinutes().toString().padStart(2, '0'));
-    $('#timezone').val(-d.getTimezoneOffset()/60);
+        <% if (date === "") { %>
+            $('#date').val(moment().format('YYYY-MM-DD'));
+        <% } %>
+        <% if (time === "") { %>
+            $('#time').val(moment().format('HH:mm'));
+        <% } %>
+        $('#timezone').val(parseInt(moment().format('ZZ')) / 100);
     <% } %>
 
     $('#date').change(function() {
@@ -307,6 +311,8 @@
         // $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank" rel="nofollow">${link.countdown}</a>`);
         $('#gcalLink').html(`<a href="${link.gcal}" target="_blank" rel="nofollow">Add to Calendar</a>`);
     }).change();
+
+    $('#date').attr('min', moment().format('YYYY-MM-DD'));
 
     $('#time').change(function() {
         var link = getTZUrls($('#date').val(), $('#time').val(), $('#timezone').val());
@@ -339,4 +345,5 @@
     });
     <% } %>
 </script>
-<% include foot.ejs %>
+</body>
+</html>

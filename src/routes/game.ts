@@ -1,4 +1,5 @@
 import express from "express";
+import moment from "moment";
 import { Guild, TextChannel } from "discord.js";
 
 import { Game } from "../models/game";
@@ -19,6 +20,15 @@ export default (options: any) => {
 
   router.use(config.urls.game.server.path, async (req: any, res, next) => {
     res.render("games");
+  });
+
+  router.use(config.urls.game.calendar.path, async (req: any, res, next) => {
+    res.render("calendar", {
+      qm: req.query.m ? parseInt(req.query.m) : moment().month(),
+      qy: req.query.y ? parseInt(req.query.y) : moment().year(),
+      qd: req.query.d ? parseInt(req.query.d) : moment().date(),
+      moment: moment
+    });
   });
 
   router.use(config.urls.game.create.path, async (req: any, res, next) => {
@@ -98,8 +108,8 @@ export default (options: any) => {
             method: "automated",
             customSignup: "",
             when: "datetime",
-            date: "",
-            time: "",
+            date: req.query.date || "",
+            time: req.query.time || "",
             timezone: "",
             reminder: "0",
             is: {
@@ -184,7 +194,7 @@ export default (options: any) => {
       console.log(err);
     }
 
-    res.redirect(req.headers.referer ? req.headers.referer : config.urls.game.games.path);
+    res.redirect(req.query.return ? req.query.return : req.headers.referer ? req.headers.referer : config.urls.game.games.path);
   });
 
   router.get(config.urls.game.delete.path, async (req: any, res, next) => {

@@ -43,6 +43,7 @@ export default (options: any) => {
         games: res.locals.urlPath === config.urls.game.games.path,
         dashboard: res.locals.urlPath === config.urls.game.dashboard.path,
         server: res.locals.urlPath === config.urls.game.server.path,
+        calendar: res.locals.urlPath === config.urls.game.calendar.path,
         game: res.locals.urlPath === config.urls.game.create.path
       },
       guilds: [],

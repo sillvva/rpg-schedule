@@ -17,6 +17,7 @@
             <div class="dropdown-menu bg-primary">
               <a class="dropdown-item bg-primary text-white" href="<%= config.urls.game.games.path %>"><%= lang.nav.UPCOMING_GAMES %></a>
               <a class="dropdown-item bg-primary text-white" href="<%= config.urls.game.dashboard.path %>"><%= lang.nav.MY_GAMES %></a>
+              <a class="dropdown-item bg-primary text-white" href="<%= config.urls.game.calendar.path %>"><%= lang.nav.CALENDAR %></a>
               <% if (account.guilds.find(g => g.isAdmin)) { %>
                 <a class="dropdown-item bg-primary text-white" href="<%= config.urls.game.server.path %>"><%= lang.nav.MANAGE_SERVER %></a>
               <% } %>
