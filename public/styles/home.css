@@ -51,7 +51,7 @@ h3 {
     flex-wrap: wrap-reverse;
   }
   .feature > * {
-    width: calc(100vw - 20px);
+    width: calc(100vw - 40px);
   }
 }
 
