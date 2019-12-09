@@ -3,7 +3,9 @@ body {
   color: #fff;
 }
 
-h1, h2, h3 {
+h1,
+h2,
+h3 {
   margin: 10px 0 20px;
 }
 
@@ -14,7 +16,19 @@ h1, h2, h3 {
   justify-content: center;
   font-family: sans-serif;
   position: relative;
-  margin: 20px 0 50px;
+  margin: 20px 10px 50px;
+}
+
+.description {
+  max-width: 800px;
+  margin: 10px auto;
+  font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+  .description {
+    font-size: 1rem;
+  }
 }
 
 .feature {
@@ -27,6 +41,18 @@ h1, h2, h3 {
   flex: 1;
   margin: 10px;
   width: 50%;
+}
+
+@media (max-width: 768px) {
+  .feature.wrap {
+    flex-wrap: wrap;
+  }
+  .feature.wrap-reverse {
+    flex-wrap: wrap-reverse;
+  }
+  .feature > * {
+    width: calc(100vw - 40px);
+  }
 }
 
 .feature > img {
@@ -46,17 +72,16 @@ h1 img {
     font-size: 48px;
   }
   h1 img {
-    width: 48px;
     margin-top: -8px;
   }
 }
 
 @media (max-width: 400px) {
   h1 {
+    max-height: 200px;
     font-size: 32px;
   }
   h1 img {
-    width: 32px;
     margin-top: -6px;
   }
 }

@@ -37,6 +37,7 @@
     "DATE": "Date",
     "TIME": "Heure",
     "TIME_ZONE": "Fuseau horaire",
+    "TODAY": "Aujourd'hui",
     "REMINDER": "Rappel",
     "REMINDER_FOR": "Rappel pour",
     "STARTING_IN": "Commence dans :MINUTES minutes",

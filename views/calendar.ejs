@@ -26,13 +26,13 @@
       <div class="form-row mb-2">
         <h3 class="d-none d-md-block col-md-8 mb-0" id="calendar-name"></h3>
         <div class="col-6 col-md-2">
-          <button id="today" disabled class="btn btn-primary col">Today</button>
+          <button id="today" disabled class="btn btn-primary col"><%= lang.game.TODAY %></button>
         </div>
         <div class="col-3 col-md-1">
-          <button id="prev_month" disabled class="btn btn-light col" style="font-family: Menlo, \"Courier New\", Courier, monospace;">&#9668;</button>
+          <button id="prev_month" disabled class="btn btn-light col" style="font-family: Menlo, 'Courier New', Courier, monospace;">&#9668;</button>
         </div>
         <div class="col-3 col-md-1">
-          <button id="next_month" class="btn btn-light col" style="font-family: Menlo, \"Courier New\", Courier, monospace;">&#9658;</button>
+          <button id="next_month" class="btn btn-light col" style="font-family: Menlo 'Courier New', Courier, monospace;">&#9658;</button>
         </div>
       </div>
       <div class="form-row">
@@ -222,7 +222,7 @@
         </div>`}
       `);
       $('.cal-header').each(function(i) {
-        $(this).children('.wd').html(moment().day(i).format('dddd').slice(0,1));
+        $(this).children('.wd').html(moment().day(i).format('dddd').slice(0,1).toUpperCase());
       });
       $('.cal-date').each(function() {
         const date = $(this).attr('date');
