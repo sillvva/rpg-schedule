@@ -199,6 +199,9 @@
         out = `<h5 class="text-md-center" style="line-height: 50px;">No games available</h5>`;
       }
       $('#events-list').html(out);
+
+      parseDates();
+
       $('#calendar-name, #calendar-name-2').html(`
         ${calName} 
         <a href="<%= config.urls.game.calendar.path %>?y=${selYear}&m=${selMonth}&d=${selDate}">
