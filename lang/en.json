@@ -37,6 +37,7 @@
     "DATE": "Date",
     "TIME": "Time",
     "TIME_ZONE": "Time Zone",
+    "TODAY": "Today",
     "REMINDER": "Reminder",
     "REMINDER_FOR": "Reminder for",
     "STARTING_IN": "Starting in :MINUTES minutes",
