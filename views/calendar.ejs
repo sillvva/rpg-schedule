@@ -62,9 +62,9 @@
     <script type="text/javascript">
     const user = '<%= account.user.tag %>';
     const baseDate = moment();
-    let selMonth = <%= qm %>;
-    let selYear = <%= qy %>;
-    let selDate = <%= qd %>;
+    let selMonth = <%= qm || "baseDate.month()" %>;
+    let selYear = <%= qy || "baseDate.year()" %>;
+    let selDate = <%= qd || "baseDate.date()" %>;
     const weekdays = [0,1,2,3,4,5,6].map(d => {
       return moment().day(d).format('dddd')
     });

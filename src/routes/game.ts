@@ -24,9 +24,9 @@ export default (options: any) => {
 
   router.use(config.urls.game.calendar.path, async (req: any, res, next) => {
     res.render("calendar", {
-      qm: req.query.m ? parseInt(req.query.m) : moment().month(),
-      qy: req.query.y ? parseInt(req.query.y) : moment().year(),
-      qd: req.query.d ? parseInt(req.query.d) : moment().date(),
+      qm: req.query.m,
+      qy: req.query.y,
+      qd: req.query.d,
       moment: moment
     });
   });
