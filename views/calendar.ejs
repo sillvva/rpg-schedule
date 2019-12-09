@@ -222,7 +222,7 @@
         </div>`}
       `);
       $('.cal-header').each(function(i) {
-        $(this).children('.wd').html(moment().day(i).format('dddd').slice(0,1));
+        $(this).children('.wd').html(moment().day(i).format('dddd').slice(0,1).toUpperCase());
       });
       $('.cal-date').each(function() {
         const date = $(this).attr('date');
