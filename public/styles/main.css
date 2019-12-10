@@ -85,3 +85,7 @@ hr {
     }
   }
 }
+
+.html-special {
+  font-family: Menlo, 'Courier New', Courier, monospace;
+}
