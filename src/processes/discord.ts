@@ -39,8 +39,8 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
           const guildId = guild.id;
           const guildConfig = await GuildConfig.fetch(guildId);
   
-          const escape = (guildConfig.escape || "").trim().length ? guildConfig.escape.trim() : '!';
-          const botcmd = `${escape}${config.command}`;
+          const prefix = (guildConfig.escape || "").trim().length ? guildConfig.escape.trim() : '!';
+          const botcmd = `${prefix}${config.command}`;
           if (!message.content.startsWith(botcmd)) return;
 
           const parts = message.content.trim().split(" ").filter(part => part.length > 0);
@@ -84,7 +84,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                       (canConfigure ? `\`${botcmd} emoji-sign-up ${guildConfig.emojiAdd}\` - ${lang.config.desc.EMOJI}\n` : ``) +
                       (canConfigure ? `\`${botcmd} emoji-drop-out ${guildConfig.emojiRemove}\` - ${lang.config.desc.EMOJI}\n` : ``) +
                       (canConfigure ? `\`${botcmd} toggle-drop-out\` - ${lang.config.desc.TOGGLE_DROP_OUT}\n` : ``) +
-                      (canConfigure ? `\`${botcmd} prefix-char ${escape}\` - ${lang.config.desc.PREFIX.replace(/\:CHAR/gi, escape)}\n` : ``) +
+                      (canConfigure ? `\`${botcmd} prefix-char ${prefix}\` - ${lang.config.desc.PREFIX.replace(/\:CHAR/gi, prefix)}\n` : ``) +
                       `\n${lang.config.GAME_CONFIGURATION}\n` +
                       (canConfigure ? `\`${botcmd} add-channel #channel-name\` - ${lang.config.desc.ADD_CHANNEL}\n` : ``) +
                       (canConfigure ? `\`${botcmd} remove-channel #channel-name\` - ${lang.config.desc.REMOVE_CHANNEL}\n` : ``) +
