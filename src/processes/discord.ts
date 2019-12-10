@@ -67,28 +67,30 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   `\`${botcmd}\` - ${lang.config.desc.HELP}\n` +
                   `\`${botcmd} help\` - ${lang.config.desc.HELP}\n` +
                   (canConfigure
-                    ? `\n${lang.config.CONFIGURATION}\n` +
+                    ? `\n${lang.config.GENERAL_CONFIGURATION}\n` +
                       (canConfigure ? `\`${botcmd} configuration\` - ${lang.config.desc.CONFIGURATION}\n` : ``) +
-                      (canConfigure ? `\`${botcmd} add-channel #channel-name\` - ${lang.config.desc.ADD_CHANNEL}\n` : ``) +
-                      (canConfigure ? `\`${botcmd} remove-channel #channel-name\` - ${lang.config.desc.REMOVE_CHANNEL}\n` : ``) +
-                      (canConfigure ? `\`${botcmd} pruning ${guildConfig.pruning ? "on" : "off"}\` - \`on/off\` - ${lang.config.desc.PRUNING}\n` : ``) +
+                      (canConfigure ? `\`${botcmd} role role name\` - ${lang.config.desc.ROLE}\n` : ``) +
+                      (canConfigure ? `\`${botcmd} manager-role role name\` - ${lang.config.desc.MANAGER_ROLE}\n` : ``) +
+                      (canConfigure ? `\`${botcmd} password somepassword\` - ${lang.config.desc.PASSWORD_SET}\n` : ``) +
+                      (canConfigure ? `\`${botcmd} password\` - ${lang.config.desc.PASSWORD_CLEAR}\n` : ``) +
+                      (canConfigure
+                        ? `\`${botcmd} lang ${guildConfig.lang}\` - ${lang.config.desc.LANG} ${languages.map(l => `\`${l.code}\` (${l.name})`).join(", ")}\n`
+                        : ``) +
+                      `\n${lang.config.BOT_CONFIGURATION}\n` +
                       (canConfigure
                         ? `\`${botcmd} embeds ${guildConfig.embeds || guildConfig.embeds == null ? "on" : "off"}\` - \`on/off\` - ${lang.config.desc.EMBEDS}\n`
                         : ``) +
                       (canConfigure ? `\`${botcmd} embed-color ${guildConfig.embedColor}\` - ${lang.config.desc.EMBED_COLOR}\n` : ``) +
                       (canConfigure ? `\`${botcmd} emoji-sign-up ${guildConfig.emojiAdd}\` - ${lang.config.desc.EMOJI}\n` : ``) +
                       (canConfigure ? `\`${botcmd} emoji-drop-out ${guildConfig.emojiRemove}\` - ${lang.config.desc.EMOJI}\n` : ``) +
-                      (canConfigure ? `\`${botcmd} escape-char ${escape}\` - ${lang.config.desc.ESCAPE.replace(/\:CHAR/gi, escape)}\n` : ``) +
+                      (canConfigure ? `\`${botcmd} toggle-drop-out\` - ${lang.config.desc.TOGGLE_DROP_OUT}\n` : ``) +
+                      (canConfigure ? `\`${botcmd} prefix-char ${escape}\` - ${lang.config.desc.PREFIX.replace(/\:CHAR/gi, escape)}\n` : ``) +
+                      `\n${lang.config.GAME_CONFIGURATION}\n` +
+                      (canConfigure ? `\`${botcmd} add-channel #channel-name\` - ${lang.config.desc.ADD_CHANNEL}\n` : ``) +
+                      (canConfigure ? `\`${botcmd} remove-channel #channel-name\` - ${lang.config.desc.REMOVE_CHANNEL}\n` : ``) +
+                      (canConfigure ? `\`${botcmd} pruning ${guildConfig.pruning ? "on" : "off"}\` - \`on/off\` - ${lang.config.desc.PRUNING}\n` : ``) +
                       (canConfigure
                         ? `\`${botcmd} private-reminders\` - ${lang.config.desc.PRIVATE_REMINDERS.replace(/\:PR/gi,guildConfig.privateReminders ? "on" : "off")}\n`
-                        : ``) +
-                      (canConfigure ? `\`${botcmd} role role name\` - ${lang.config.desc.ROLE}\n` : ``) +
-                      (canConfigure ? `\`${botcmd} manager-role role name\` - ${lang.config.desc.MANAGER_ROLE}\n` : ``) +
-                      (canConfigure ? `\`${botcmd} password somepassword\` - ${lang.config.desc.PASSWORD_SET}\n` : ``) +
-                      (canConfigure ? `\`${botcmd} password\` - ${lang.config.desc.PASSWORD_CLEAR}\n` : ``) +
-                      (canConfigure ? `\`${botcmd} toggle-drop-out\` - ${lang.config.desc.TOGGLE_DROP_OUT}\n` : ``) +
-                      (canConfigure
-                        ? `\`${botcmd} lang ${guildConfig.lang}\` - ${lang.config.desc.LANG} ${languages.map(l => `\`${l.code}\` (${l.name})`).join(", ")}\n`
                         : ``)
                     : ``) +
                   `\n${lang.config.USAGE}\n` +
@@ -123,7 +125,8 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                     `${lang.config.ROLE}: ${guildConfig.role ? `\`${guildConfig.role}\`` : "All Roles"}\n` +
                     `${lang.config.MANAGER_ROLE}: ${guildConfig.managerRole ? `\`${guildConfig.managerRole}\` and Server Admins` : "Server Admins"}\n` +
                     `${lang.config.DROP_OUTS}: ${guildConfig.dropOut ? `Enabled` : "Disabled"}\n` +
-                    `${lang.config.LANGUAGE}: ${guildConfig.lang}\n`
+                    `${lang.config.LANGUAGE}: ${guildConfig.lang}\n` +
+                    `${lang.config.PREFIX}: ${guildConfig.escape}\n`
                 );
               message.author.send(embed);
             }
@@ -389,15 +392,15 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   console.log(err);
                 });
             }
-          } else if (cmd === "escape-char") {
+          } else if (cmd === "prefix-char") {
             if (canConfigure) {
-              let escape = params.join("").trim().slice(0,3);
+              let prefix = params.join("").trim().slice(0,3);
               guildConfig
                 .save({
-                  escape: escape.length ? escape : "!"
+                  escape: prefix.length ? prefix : "!"
                 })
                 .then(result => {
-                  message.channel.send(lang.config.ESCAPE.replace(/\:CMD/gi, `${escape.length ? escape : "!"}${config.command}`));
+                  message.channel.send(lang.config.PREFIX.replace(/\:CMD/gi, `${prefix.length ? prefix : "!"}${config.command}`));
                 })
                 .catch(err => {
                   console.log(err);
