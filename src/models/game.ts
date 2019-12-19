@@ -347,7 +347,7 @@ export class Game implements GameModel {
       try {
         if (game.pm) {
           const dm = channel.guild.members.array().find(m => m.user.tag === game.dm);
-          if (dm) {
+          if (dm && dm.user.dmChannel) {
             const pm = dm.user.dmChannel.messages.get(game.pm);
             if (pm) {
               pm.delete().catch(console.log);

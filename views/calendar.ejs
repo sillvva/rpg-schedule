@@ -151,7 +151,7 @@
                 <div>
                   <a href="http://www.google.com/calendar/render?action=TEMPLATE&text=${escape(game.adventure)}&dates=${game.moment.isoutc}/${game.moment.isoutc}&location=${escape(`${game.guild.name} - ${game.where}`)}&trp=false&sprop=&details=${escape(game.description)}" target="_blank" rel="nofollow" onclick="event.stopPropagation();">Add to my calendar</a>
                 </div>
-                <div class="game-guild">
+                <div class="game-guild text-truncate">
                   <strong><%= lang.game.SERVER %>:</strong>
                   ${game.guild.name}
                 </div>
@@ -161,7 +161,7 @@
                 </div>
               </div>
               <div class="col-12 col-md-4">
-                <div class="game-dm">
+                <div class="game-dm text-truncate">
                   <strong><%= lang.game.GM %>:</strong>
                   ${game.dm.replace(/#\d{4}/g, '')}
                 </div>

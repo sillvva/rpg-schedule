@@ -2,6 +2,7 @@ import discord, { TextChannel, Client, Message } from "discord.js";
 import { DeleteWriteOpResultObject } from "mongodb";
 import { Express } from "express";
 
+import { io } from "../processes/socket";
 import { GuildConfig } from "../models/guild-config";
 import { Game } from "../models/game";
 import config from "../models/config";
@@ -39,8 +40,8 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
           const guildId = guild.id;
           const guildConfig = await GuildConfig.fetch(guildId);
   
-          const escape = (guildConfig.escape || "").trim().length ? guildConfig.escape.trim() : '!';
-          const botcmd = `${escape}${config.command}`;
+          const prefix = (guildConfig.escape || "").trim().length ? guildConfig.escape.trim() : '!';
+          const botcmd = `${prefix}${config.command}`;
           if (!message.content.startsWith(botcmd)) return;
 
           const parts = message.content.trim().split(" ").filter(part => part.length > 0);
@@ -67,28 +68,31 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   `\`${botcmd}\` - ${lang.config.desc.HELP}\n` +
                   `\`${botcmd} help\` - ${lang.config.desc.HELP}\n` +
                   (canConfigure
-                    ? `\n${lang.config.CONFIGURATION}\n` +
+                    ? `\n${lang.config.GENERAL_CONFIGURATION}\n` +
                       (canConfigure ? `\`${botcmd} configuration\` - ${lang.config.desc.CONFIGURATION}\n` : ``) +
-                      (canConfigure ? `\`${botcmd} add-channel #channel-name\` - ${lang.config.desc.ADD_CHANNEL}\n` : ``) +
-                      (canConfigure ? `\`${botcmd} remove-channel #channel-name\` - ${lang.config.desc.REMOVE_CHANNEL}\n` : ``) +
-                      (canConfigure ? `\`${botcmd} pruning ${guildConfig.pruning ? "on" : "off"}\` - \`on/off\` - ${lang.config.desc.PRUNING}\n` : ``) +
+                      (canConfigure ? `\`${botcmd} role role name\` - ${lang.config.desc.ROLE}\n` : ``) +
+                      (canConfigure ? `\`${botcmd} manager-role role name\` - ${lang.config.desc.MANAGER_ROLE}\n` : ``) +
+                      (canConfigure ? `\`${botcmd} password somepassword\` - ${lang.config.desc.PASSWORD_SET}\n` : ``) +
+                      (canConfigure ? `\`${botcmd} password\` - ${lang.config.desc.PASSWORD_CLEAR}\n` : ``) +
+                      (canConfigure
+                        ? `\`${botcmd} lang ${guildConfig.lang}\` - ${lang.config.desc.LANG} ${languages.map(l => `\`${l.code}\` (${l.name})`).join(", ")}\n`
+                        : ``) +
+                      `\n${lang.config.BOT_CONFIGURATION}\n` +
                       (canConfigure
                         ? `\`${botcmd} embeds ${guildConfig.embeds || guildConfig.embeds == null ? "on" : "off"}\` - \`on/off\` - ${lang.config.desc.EMBEDS}\n`
                         : ``) +
                       (canConfigure ? `\`${botcmd} embed-color ${guildConfig.embedColor}\` - ${lang.config.desc.EMBED_COLOR}\n` : ``) +
                       (canConfigure ? `\`${botcmd} emoji-sign-up ${guildConfig.emojiAdd}\` - ${lang.config.desc.EMOJI}\n` : ``) +
                       (canConfigure ? `\`${botcmd} emoji-drop-out ${guildConfig.emojiRemove}\` - ${lang.config.desc.EMOJI}\n` : ``) +
-                      (canConfigure ? `\`${botcmd} escape-char ${escape}\` - ${lang.config.desc.ESCAPE.replace(/\:CHAR/gi, escape)}\n` : ``) +
+                      (canConfigure ? `\`${botcmd} toggle-drop-out\` - ${lang.config.desc.TOGGLE_DROP_OUT}\n` : ``) +
+                      (canConfigure ? `\`${botcmd} prefix-char ${prefix}\` - ${lang.config.desc.PREFIX.replace(/\:CHAR/gi, prefix)}\n` : ``) +
+                      `\n${lang.config.GAME_CONFIGURATION}\n` +
+                      (canConfigure ? `\`${botcmd} add-channel #channel-name\` - ${lang.config.desc.ADD_CHANNEL}\n` : ``) +
+                      (canConfigure ? `\`${botcmd} remove-channel #channel-name\` - ${lang.config.desc.REMOVE_CHANNEL}\n` : ``) +
+                      (canConfigure ? `\`${botcmd} pruning ${guildConfig.pruning ? "on" : "off"}\` - \`on/off\` - ${lang.config.desc.PRUNING}\n` : ``) +
+                      (canConfigure ? `\`${botcmd} prune - ${lang.config.desc.PRUNE}\n` : ``) +
                       (canConfigure
                         ? `\`${botcmd} private-reminders\` - ${lang.config.desc.PRIVATE_REMINDERS.replace(/\:PR/gi,guildConfig.privateReminders ? "on" : "off")}\n`
-                        : ``) +
-                      (canConfigure ? `\`${botcmd} role role name\` - ${lang.config.desc.ROLE}\n` : ``) +
-                      (canConfigure ? `\`${botcmd} manager-role role name\` - ${lang.config.desc.MANAGER_ROLE}\n` : ``) +
-                      (canConfigure ? `\`${botcmd} password somepassword\` - ${lang.config.desc.PASSWORD_SET}\n` : ``) +
-                      (canConfigure ? `\`${botcmd} password\` - ${lang.config.desc.PASSWORD_CLEAR}\n` : ``) +
-                      (canConfigure ? `\`${botcmd} toggle-drop-out\` - ${lang.config.desc.TOGGLE_DROP_OUT}\n` : ``) +
-                      (canConfigure
-                        ? `\`${botcmd} lang ${guildConfig.lang}\` - ${lang.config.desc.LANG} ${languages.map(l => `\`${l.code}\` (${l.name})`).join(", ")}\n`
                         : ``)
                     : ``) +
                   `\n${lang.config.USAGE}\n` +
@@ -97,6 +101,9 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
             message.channel.send(embed);
           } else if (cmd === "link") {
             message.channel.send(process.env.HOST + config.urls.game.create.path + "?s=" + guildId);
+          } else if (cmd === "prune") {
+            await pruneOldGames(message.guild);
+            message.channel.send(lang.config.PRUNE);
           } else if (cmd === "configuration") {
             if (canConfigure) {
               const channel = guildConfig.channels.map(c => {
@@ -123,7 +130,8 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                     `${lang.config.ROLE}: ${guildConfig.role ? `\`${guildConfig.role}\`` : "All Roles"}\n` +
                     `${lang.config.MANAGER_ROLE}: ${guildConfig.managerRole ? `\`${guildConfig.managerRole}\` and Server Admins` : "Server Admins"}\n` +
                     `${lang.config.DROP_OUTS}: ${guildConfig.dropOut ? `Enabled` : "Disabled"}\n` +
-                    `${lang.config.LANGUAGE}: ${guildConfig.lang}\n`
+                    `${lang.config.LANGUAGE}: ${guildConfig.lang}\n` +
+                    `${lang.config.PREFIX}: ${guildConfig.escape}\n`
                 );
               message.author.send(embed);
             }
@@ -389,15 +397,15 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   console.log(err);
                 });
             }
-          } else if (cmd === "escape-char") {
+          } else if (cmd === "prefix-char") {
             if (canConfigure) {
-              let escape = params.join("").trim().slice(0,3);
+              let prefix = params.join("").trim().slice(0,3);
               guildConfig
                 .save({
-                  escape: escape.length ? escape : "!"
+                  escape: prefix.length ? prefix : "!"
                 })
                 .then(result => {
-                  message.channel.send(lang.config.ESCAPE.replace(/\:CMD/gi, `${escape.length ? escape : "!"}${config.command}`));
+                  message.channel.send(lang.config.PREFIX.replace(/\:CMD/gi, `${prefix.length ? prefix : "!"}${config.command}`));
                 })
                 .catch(err => {
                   console.log(err);
@@ -601,10 +609,10 @@ const refreshMessages = async () => {
   });
 };
 
-const pruneOldGames = async () => {
+const pruneOldGames = async (guild?: discord.Guild) => {
   let result: DeleteWriteOpResultObject;
   try {
-    console.log("Pruning old games");
+    console.log(`Pruning old games for ${guild ? `${guild.name} server` : 'all servers'}`);
     const query = {
       timestamp: {
         // timestamp lower than 48 hours ago
@@ -614,8 +622,12 @@ const pruneOldGames = async () => {
 
     const games = await Game.fetchAllBy(query);
     const guildConfigs = await GuildConfig.fetchAll();
-    games.forEach(async game => {
-      if (!game.discordGuild) return;
+    for(let i = 0; i < games.length; i++) {
+      let game = games[i];
+      if (!game.discordGuild) continue;
+      if (guild && game.discordGuild.id !== guild.id) continue;
+
+      io().emit("game", { action: "deleted", gameId: game._id });
 
       try {
         const guildConfig = guildConfigs.find(gc => gc.guild === game.s);
@@ -632,7 +644,7 @@ const pruneOldGames = async () => {
       } catch (err) {
         console.log("MessagePruningError:", err);
       }
-    });
+    }
     
     result = await Game.deleteAllBy(query);
     console.log(`${result.deletedCount} old games successfully pruned`);
