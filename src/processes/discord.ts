@@ -2,6 +2,7 @@ import discord, { TextChannel, Client, Message } from "discord.js";
 import { DeleteWriteOpResultObject } from "mongodb";
 import { Express } from "express";
 
+import { io } from "../processes/socket";
 import { GuildConfig } from "../models/guild-config";
 import { Game } from "../models/game";
 import config from "../models/config";
@@ -89,6 +90,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                       (canConfigure ? `\`${botcmd} add-channel #channel-name\` - ${lang.config.desc.ADD_CHANNEL}\n` : ``) +
                       (canConfigure ? `\`${botcmd} remove-channel #channel-name\` - ${lang.config.desc.REMOVE_CHANNEL}\n` : ``) +
                       (canConfigure ? `\`${botcmd} pruning ${guildConfig.pruning ? "on" : "off"}\` - \`on/off\` - ${lang.config.desc.PRUNING}\n` : ``) +
+                      (canConfigure ? `\`${botcmd} prune - ${lang.config.desc.PRUNE}\n` : ``) +
                       (canConfigure
                         ? `\`${botcmd} private-reminders\` - ${lang.config.desc.PRIVATE_REMINDERS.replace(/\:PR/gi,guildConfig.privateReminders ? "on" : "off")}\n`
                         : ``)
@@ -99,6 +101,9 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
             message.channel.send(embed);
           } else if (cmd === "link") {
             message.channel.send(process.env.HOST + config.urls.game.create.path + "?s=" + guildId);
+          } else if (cmd === "prune") {
+            await pruneOldGames(message.guild);
+            message.channel.send(lang.config.PRUNE);
           } else if (cmd === "configuration") {
             if (canConfigure) {
               const channel = guildConfig.channels.map(c => {
@@ -604,10 +609,10 @@ const refreshMessages = async () => {
   });
 };
 
-const pruneOldGames = async () => {
+const pruneOldGames = async (guild?: discord.Guild) => {
   let result: DeleteWriteOpResultObject;
   try {
-    console.log("Pruning old games");
+    console.log(`Pruning old games for ${guild ? `${guild.name} server` : 'all servers'}`);
     const query = {
       timestamp: {
         // timestamp lower than 48 hours ago
@@ -617,8 +622,12 @@ const pruneOldGames = async () => {
 
     const games = await Game.fetchAllBy(query);
     const guildConfigs = await GuildConfig.fetchAll();
-    games.forEach(async game => {
-      if (!game.discordGuild) return;
+    for(let i = 0; i < games.length; i++) {
+      let game = games[i];
+      if (!game.discordGuild) continue;
+      if (guild && game.discordGuild.id !== guild.id) continue;
+
+      io().emit("game", { action: "deleted", gameId: game._id });
 
       try {
         const guildConfig = guildConfigs.find(gc => gc.guild === game.s);
@@ -635,7 +644,7 @@ const pruneOldGames = async () => {
       } catch (err) {
         console.log("MessagePruningError:", err);
       }
-    });
+    }
     
     result = await Game.deleteAllBy(query);
     console.log(`${result.deletedCount} old games successfully pruned`);

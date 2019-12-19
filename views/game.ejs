@@ -312,7 +312,7 @@
         $('#gcalLink').html(`<a href="${link.gcal}" target="_blank" rel="nofollow">Add to Calendar</a>`);
     }).change();
 
-    $('#date').attr('min', moment().format('YYYY-MM-DD'));
+    // $('#date').attr('min', moment().format('YYYY-MM-DD'));
 
     $('#time').change(function() {
         var link = getTZUrls($('#date').val(), $('#time').val(), $('#timezone').val());
