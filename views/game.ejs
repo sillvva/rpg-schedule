@@ -68,7 +68,7 @@
             </div>
         </div>
         <div class="row">
-            <div class="form-group col-sm-5">
+            <div class="form-group col-sm-3">
                 <label for="dm" class="col-form-label"><%= lang.game.GM_DISCORD_TAG %></label>
                 <input type="text" class="form-control" id="dm" name="dm" placeholder="Username#1234" required value="<%= dm %>">
                 <% if (errors.dm) { %>
@@ -77,9 +77,14 @@
                     <small><%= lang.game.labels.DISCORD_TAGS %></small>
                 <% } %>
             </div>
-            <div class="form-group col-sm-7">
+            <div class="form-group col-sm-5">
                 <label for="where" class="col-form-label"><%= lang.game.WHERE %></label>
                 <input type="text" class="form-control" id="where" name="where" required value="<%= where %>">
+            </div>
+            <div class="form-group col-sm-4">
+                <label for="gameImage" class="col-form-label"><%= lang.game.GAME_IMAGE %></label>
+                <input type="text" class="form-control" id="gameImage" name="gameImage" value="<%= gameImage %>">
+                <!-- <small><%= lang.game.labels.GAME_IMAGE_DESC %></small> -->
             </div>
         </div>
         <% if (is.newgame) { %>

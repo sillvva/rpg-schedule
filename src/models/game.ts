@@ -1,5 +1,5 @@
 import mongodb, { ObjectID } from "mongodb";
-import discord, { Message, Guild, TextChannel, GuildChannel, Collection } from "discord.js";
+import discord, { Message, Guild, TextChannel, GuildChannel, Collection, MessageEditOptions, RichEmbed } from "discord.js";
 import moment from "moment";
 
 import db from "../db";
@@ -38,6 +38,7 @@ export interface GameModel {
   messageId: string;
   reminderMessageId: string;
   pm: string;
+  gameImage: string;
 }
 
 interface GameSaveData {
@@ -70,11 +71,13 @@ export class Game implements GameModel {
   messageId: string;
   reminderMessageId: string;
   pm: string;
+  gameImage: string;
 
   private _guild: Guild;
   get discordGuild() {
     return this._guild;
   }
+  
   private _channel: TextChannel;
   get discordChannel() {
     return this._channel;
@@ -121,7 +124,8 @@ export class Game implements GameModel {
       reminder: this.reminder,
       messageId: this.messageId,
       reminderMessageId: this.reminderMessageId,
-      pm: this.pm
+      pm: this.pm,
+      gameImage: this.gameImage
     };
   }
 
@@ -145,7 +149,7 @@ export class Game implements GameModel {
 
     moment.locale(lang.code);
 
-    let dm: string = game.dm
+    let dm = game.dm
       .trim()
       .replace("@", "")
       .replace(/\#\d{4}/, "");
@@ -164,7 +168,7 @@ export class Game implements GameModel {
         if (res.trim().length === 0) return;
         let member = guild.members.array().find(mem => mem.user.tag === res.trim());
 
-        let name: string = res.trim().replace(/\#\d{4}/, "");
+        let name = res.trim().replace(/\#\d{4}/, "");
         if (member && guildConfig.embeds === false) name = member.user.toString();
 
         if (reserved.length < parseInt(game.players)) {
@@ -204,7 +208,7 @@ export class Game implements GameModel {
       game.timestamp = new Date().getTime();
     }
 
-    const msg =
+    let msg =
       `\n**${lang.game.GM}:** ${dm}` +
       `\n**${lang.game.GAME_NAME}:** ${game.adventure}` +
       `\n**${lang.game.RUN_TIME}:** ${game.runtime} ${lang.game.labels.HOURS}` +
@@ -213,9 +217,18 @@ export class Game implements GameModel {
       `\n**${lang.game.WHERE}:** ${where}` +
       `\n${signups}`;
 
-    let embed = new discord.RichEmbed().setColor(guildConfig.embedColor).setDescription(msg);
-
-    if (dmmember) embed.setThumbnail(dmmember.user.avatarURL);
+    let embed: MessageEditOptions | RichEmbed = new discord.RichEmbed(); 
+    if (guildConfig.embeds === false) {
+      embed.setColor(guildConfig.embedColor);
+      let embedded = false;
+      if (game.gameImage.trim().length > 0) { embedded = true; embed.setImage(game.gameImage.trim()); }
+      if (!embedded) embed = { embed: {} };
+    } 
+    else {
+      embed.setColor(guildConfig.embedColor).setDescription(msg);
+      if (dmmember) embed.setThumbnail(dmmember.user.avatarURL);
+      if (game.gameImage.trim().length > 0) embed.setImage(game.gameImage.trim());
+    }
 
     const dbCollection = connection().collection(collection);
     if (game._id) {
@@ -225,7 +238,7 @@ export class Game implements GameModel {
       try {
         message = await channel.fetchMessage(game.messageId);
         if (guildConfig.embeds === false) {
-          message = await message.edit(msg, { embed: {} });
+          message = await message.edit(msg, embed);
         } else {
           message = await message.edit(embed);
         }
@@ -249,7 +262,7 @@ export class Game implements GameModel {
       const inserted = await dbCollection.insertOne(game);
       let message: Message;
       if (guildConfig.embeds === false) {
-        message = <Message>await channel.send(msg);
+        message = <Message>await channel.send(msg, embed);
       } else {
         message = <Message>await channel.send(embed);
       }
