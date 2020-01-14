@@ -38,6 +38,8 @@
     "TIME": "Heure",
     "TIME_ZONE": "Fuseau horaire",
     "TODAY": "Aujourd'hui",
+    "GAME_IMAGE": "Image du jeu",
+    "GAME_IMAGE_DESC": "Par défaut, l'avatar Discord de GM",
     "REMINDER": "Rappel",
     "REMINDER_FOR": "Rappel pour",
     "STARTING_IN": "Commence dans :MINUTES minutes",

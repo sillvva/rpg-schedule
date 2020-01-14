@@ -112,6 +112,7 @@ export default (options: any) => {
             time: req.query.time || "",
             timezone: "",
             reminder: "0",
+            gameImage: "",
             is: {
               newgame: !req.query.g ? true : false,
               editgame: req.query.g ? true : false,

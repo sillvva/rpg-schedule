@@ -136,7 +136,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
               message.author.send(embed);
             }
           } else if (cmd === "add-channel") {
-            if (canConfigure) {
+            if (canConfigure && params[0]) {
               const channel: string = params[0].replace(/\<\#|\>/g, "");
               const channels = guildConfig.channels;
               channels.push(channel);
@@ -152,7 +152,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                 });
             }
           } else if (cmd === "remove-channel") {
-            if (canConfigure) {
+            if (canConfigure && params[0]) {
               const channel: string = params[0].replace(/\<\#|\>/g, "");
               const channels = guildConfig.channels;
               if (channels.indexOf(channel) >= 0) {
@@ -170,7 +170,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                 });
             }
           } else if (cmd === "pruning") {
-            if (canConfigure) {
+            if (canConfigure && params[0]) {
               guildConfig
                 .save({
                   pruning: params[0] === "on"
@@ -183,7 +183,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                 });
             }
           } else if (cmd === "embeds") {
-            if (canConfigure) {
+            if (canConfigure && params[0]) {
               guildConfig
                 .save({
                   embeds: !(params[0] === "off")
