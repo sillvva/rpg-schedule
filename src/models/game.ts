@@ -382,25 +382,17 @@ export class Game implements GameModel {
   }
 }
 
-const backslash = (text: string) => {
-  let output = '';
-  for(var i = 0; i < text.length; i++) {
-    output += `\\${text.charAt(i)}`;
-  }
-  return output;
-};
-
 const parseDiscord = (text: string, guild: Guild) => {
   try {
     guild.members.array().forEach(mem => {
-      text = text.replace(new RegExp(`\@${backslash(mem.user.tag)}`, "gi"), mem.toString());
+      text = text.replace(new RegExp(`\@${aux.backslash(mem.user.tag)}`, "gi"), mem.toString());
     });
     guild.channels.array().forEach(c => {
-      text = text.replace(new RegExp(`\#${backslash(c.name)}`, "gi"), c.toString());
+      text = text.replace(new RegExp(`\#${aux.backslash(c.name)}`, "gi"), c.toString());
     });
     guild.roles.array().forEach(role => {
       if (!role.mentionable) return;
-      text = text.replace(new RegExp(`\@${backslash(role.name)}`, "gi"), role.toString());
+      text = text.replace(new RegExp(`\@${aux.backslash(role.name)}`, "gi"), role.toString());
     });
   } catch (err) {
     console.log(err);

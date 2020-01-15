@@ -6,6 +6,7 @@ import { io } from "../processes/socket";
 import { GuildConfig } from "../models/guild-config";
 import { Game } from "../models/game";
 import config from "../models/config";
+import aux from "../appaux";
 
 let client: Client;
 type DiscordProcessesOptions = {
@@ -547,6 +548,20 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
         }
       }
     } catch (err) {}
+  });
+
+  client.on("userUpdate", async (oldUser, newUser) => {
+    // console.log(aux.backslash(oldUser.tag));
+    if (oldUser.tag != newUser.tag) {
+      const games = await Game.fetchAllBy({ $or: [ { dm: oldUser.tag }, { reserved: new RegExp(aux.backslash(oldUser.tag), "gi") } ] });
+      // console.log(oldUser.tag, newUser.tag, games.length);
+      games.forEach(game => {
+        // console.log(game.adventure);
+        if (game.dm === oldUser.tag) game.dm = newUser.tag;
+        if (game.reserved.includes(oldUser.tag)) game.reserved = game.reserved.replace(new RegExp(aux.backslash(oldUser.tag), "gi"), newUser.tag);
+        game.save();
+      });
+    }
   });
 
   /**
