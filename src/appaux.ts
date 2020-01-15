@@ -46,9 +46,18 @@ const objectChanges = (before: {}, after: {}) => {
   }, {});
 };
 
+const backslash = (text: string) => {
+  let output = '';
+  for(var i = 0; i < text.length; i++) {
+    output += `${text.charAt(i).match(/[A-Z0-9]/gi) ? '' : '\\'}${text.charAt(i)}`;
+  }
+  return output;
+};
+
 export default {
   parseConfigURLs: parseConfigURLs,
   parseConfigParam: parseConfigParam,
   objectChanges: objectChanges,
-  fromEntries: _.fromPairs
+  fromEntries: _.fromPairs,
+  backslash: backslash
 };
