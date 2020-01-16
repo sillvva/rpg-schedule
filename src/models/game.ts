@@ -221,13 +221,13 @@ export class Game implements GameModel {
     if (guildConfig.embeds === false) {
       embed.setColor(guildConfig.embedColor);
       let embedded = false;
-      if (game.gameImage.trim().length > 0) { embedded = true; embed.setImage(game.gameImage.trim()); }
+      if (game && game.gameImage && game.gameImage.trim().length > 0) { embedded = true; embed.setImage(game.gameImage.trim()); }
       if (!embedded) embed = { embed: {} };
     } 
     else {
       embed.setColor(guildConfig.embedColor).setDescription(msg);
       if (dmmember) embed.setThumbnail(dmmember.user.avatarURL);
-      if (game.gameImage.trim().length > 0) embed.setImage(game.gameImage.trim());
+      if (game && game.gameImage && game.gameImage.trim().length > 0) embed.setImage(game.gameImage.trim());
     }
 
     const dbCollection = connection().collection(collection);
