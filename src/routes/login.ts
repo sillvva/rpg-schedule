@@ -2,6 +2,7 @@ import express from "express";
 import request from "request";
 
 import config from "../models/config";
+import moment from "moment";
 
 export default () => {
   const router = express.Router();
@@ -35,7 +36,10 @@ export default () => {
           const token = JSON.parse(body);
           req.session.status = {
             ...config.defaults.sessionStatus,
-            ...req.session.status
+            ...req.session.status,
+            ...{
+              lastRefreshed: moment().unix()
+            }
           };
           req.session.status.access = token;
           res.redirect(req.session.redirect || config.urls.game.games.path);

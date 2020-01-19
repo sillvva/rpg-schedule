@@ -49,8 +49,8 @@ app.set("views", "views");
 const MongoDBStore = connect(session);
 const store = new MongoDBStore({
   uri: process.env.MONGODB_URL,
-  collection: "sessions",
-  expires: 1000 * 60 * 60 * 6 // 6 hours
+  collection: "sessions" //,
+  // expires: 12 * 60 * 60 * 1000 // 12 hours
 });
 app.use(
   session({
