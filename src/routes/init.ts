@@ -89,7 +89,6 @@ export default (options: any) => {
                 };
                 req.session.status.access = token;
                 delete req.session.redirect;
-                console.log(req.session.status);
                 init(req, res, next, token);
               }
             );
