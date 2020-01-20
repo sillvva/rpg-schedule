@@ -1,5 +1,5 @@
 import mongodb, { ObjectID } from "mongodb";
-import discord, { Message, Guild, TextChannel, GuildChannel, Collection, MessageEditOptions, RichEmbed } from "discord.js";
+import discord, { Message, Guild, TextChannel, MessageEditOptions, RichEmbed } from "discord.js";
 import moment from "moment";
 
 import db from "../db";
