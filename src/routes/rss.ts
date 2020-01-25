@@ -45,8 +45,9 @@ export default (options: any) => {
     const games: any[] = await Game.fetchAllBy(gameOptions);
 
     res.type('application/xml');
+    res.status(200);
     res.send(`<?xml version="1.0" encoding="UTF-8" ?>
-<rss version="2.0">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>RPG Schedule</title>
     <link>https://rpg-schedule.herokuapp.com</link>
@@ -83,12 +84,12 @@ export default (options: any) => {
         <title>${game.adventure}</title>
         <link>https://rpg-schedule.herokuapp.com/games/upcoming</link>
         <guid>https://rpg-schedule.herokuapp.com/games/view?g=${game._id.toString().slice(-12)}</guid>
-        <author>${game.dm}</author>
         <description>
           <![CDATA[<p>Discord Server: ${(guilds.find(g => g.id === game.s) || {}).name}</p><p>GM: ${game.dm}</p><p>Where: ${game.where.replace(/\&/g, "&amp;")}</p><p>When: ${game.moment.date}</p><p>${game.description.trim().replace(/\&/g, "&amp;").replace(/\r?\n/g, "<br>")}</p>]]>
         </description>
       </item>`;
     }).join("\n")}
+    <atom:link href="${req.protocol}s://${req.hostname}${req.originalUrl}" rel="self" type="application/rss+xml" />
   </channel>
 </rss>`);
   });
