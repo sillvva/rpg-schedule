@@ -89,7 +89,7 @@ export default (options: any) => {
         </description>
       </item>`;
     }).join("\n")}
-    <atom:link href="${req.protocol}://${req.hostname}${req.originalUrl}" rel="self" type="application/rss+xml" />
+    <atom:link href="${req.protocol}s://${req.hostname}${req.originalUrl}" rel="self" type="application/rss+xml" />
   </channel>
 </rss>`);
   });
