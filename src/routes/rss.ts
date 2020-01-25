@@ -44,7 +44,8 @@ export default (options: any) => {
 
     const games: any[] = await Game.fetchAllBy(gameOptions);
 
-    res.type('application/rss+xml');
+    res.type('application/xml');
+    res.status(200);
     res.send(`<?xml version="1.0" encoding="UTF-8" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
