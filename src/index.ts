@@ -107,10 +107,10 @@ const client = discord.processes({
 /**
  * Routes
  */
+app.use(rssRoutes({ client: client }));
 app.use(loginRoutes());
 app.use(initRoutes({ client: client }));
 app.use(gameRoutes({ client: client }));
-app.use(rssRoutes({ client: client }));
 app.use(inviteRoute());
 app.use(timezoneRoutes());
 app.use(redirectRoutes());
