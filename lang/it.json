@@ -57,6 +57,8 @@
       "MINUTES_15": "15 minuti",
       "MINUTES_30": "30 minuti",
       "MINUTES_60": "1 ora",
+      "HOURS_6": "6 ore",
+      "HOURS_12": "12 ore",
       "HOURS_24": "24 ore"
     },
     "labels": {
