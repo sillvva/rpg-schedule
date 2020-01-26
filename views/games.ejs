@@ -120,11 +120,15 @@
                           <% } %>
                       </div>
                       <div class="game-description" data-iso="<%= game.moment.iso %>">
+                          **<%= game.adventure %>:**
+
                           **<%= lang.game.DATE %>:** %DATE%
 
                           **<%= lang.game.RUN_TIME %>:** <%= game.runtime %> <%= lang.game.labels.HOURS %>
 
                           **<%= lang.game.DESCRIPTION %>:**
+
+                          **<%= lang.game.WHERE %>:** <%= game.where %>
 
                           <%= game.description %>
                       </div>
