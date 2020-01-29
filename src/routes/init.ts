@@ -50,8 +50,6 @@ export default (options: any) => {
         req.session.status = storedSession.session.status;
       }
 
-      console.log(req.originalUrl, res.locals.url);
-
       if (req.session.status) {
         const access = req.session.status.access;
         if (access.token_type) {
