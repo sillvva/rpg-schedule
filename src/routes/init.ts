@@ -50,8 +50,6 @@ export default (options: any) => {
         req.session.status = storedSession.session.status;
       }
 
-      console.log(req.originalUrl, res.locals.url);
-
       if (req.session.status) {
         const access = req.session.status.access;
         if (access.token_type) {
@@ -78,7 +76,9 @@ export default (options: any) => {
               function(error, response, body) {
                 if (error || response.statusCode !== 200) {
                   console.log(error);
-                  res.render("error", { message: `Discord OAuth: ${response.statusCode}<br />${error}` });
+                  if (response.statusCode == 400) res.redirect(config.urls.login.path);
+                  else res.render("error", { message: `Discord OAuth: ${response.statusCode}<br />${error}` });
+                  return;
                 }
       
                 const token = JSON.parse(body);
