@@ -339,7 +339,10 @@ export class Game implements GameModel {
         if (game.messageId) {
           const message = await channel.fetchMessage(game.messageId);
           if (message) {
-            message.delete().catch(console.log);
+            message.delete().catch((err) => {
+              console.log('Attempted to delete announcement message.');
+              console.log(err);
+            });
           }
         }
       } catch (e) {
@@ -350,7 +353,10 @@ export class Game implements GameModel {
         if (game.reminderMessageId) {
           const message = await channel.fetchMessage(game.reminderMessageId);
           if (message) {
-            message.delete().catch(console.log);
+            message.delete().catch((err) => {
+              console.log('Attempted to delete reminder message.');
+              console.log(err);
+            });
           }
         }
       } catch (e) {
@@ -363,7 +369,10 @@ export class Game implements GameModel {
           if (dm && dm.user.dmChannel) {
             const pm = dm.user.dmChannel.messages.get(game.pm);
             if (pm) {
-              pm.delete().catch(console.log);
+              pm.delete().catch((err) => {
+                console.log('Attempted to delete game edit link pm.');
+                console.log(err);
+              });
             }
           }
         }
