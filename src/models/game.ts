@@ -208,6 +208,7 @@ export class Game implements GameModel {
       game.timestamp = new Date().getTime();
     }
 
+    
     let msg =
       `\n**${lang.game.GM}:** ${dm}` +
       `\n**${lang.game.GAME_NAME}:** ${game.adventure}` +
@@ -225,6 +226,16 @@ export class Game implements GameModel {
       if (!embedded) embed = { embed: {} };
     } 
     else {
+      const isoutc = `${new Date(`${game.date} ${game.time} UTC${game.timezone < 0 ? "-" : "+"}${Math.abs(game.timezone)}`).toISOString().replace(/[^0-9T]/gi,"").slice(0,13)}00Z`;
+      msg =
+        `\n**${lang.game.GM}:** ${dm}` +
+        `\n**${lang.game.GAME_NAME}:** ${game.adventure}` +
+        `\n**${lang.game.RUN_TIME}:** ${game.runtime} ${lang.game.labels.HOURS}` +
+        `\n${description.length > 0 ? `**${lang.game.DESCRIPTION}:**\n${description}\n` : description}` +
+        `\n**${lang.game.WHEN}:** [${when}](http://www.google.com/calendar/render?action=TEMPLATE&text=${escape(game.adventure)}&dates=${isoutc}/${isoutc}&location=${escape(`${guild.name} - ${game.where}`)}&trp=false&sprop=&details=${escape(game.description)}})` +
+        `\n**${lang.game.WHERE}:** ${where}` +
+        `\n${signups}`;
+        
       embed.setColor(guildConfig.embedColor).setDescription(msg);
       if (dmmember) embed.setThumbnail(dmmember.user.avatarURL);
       if (game && game.gameImage && game.gameImage.trim().length > 0) embed.setImage(game.gameImage.trim());
