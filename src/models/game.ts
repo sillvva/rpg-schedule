@@ -171,7 +171,7 @@ export class Game implements GameModel {
         let name = res.trim().replace(/\#\d{4}/, "");
         if (member) {
           if (guildConfig.embeds === false) name = member.user.toString();
-          else name = member.nickname;
+          else name = member.nickname || member.user.username;
         }
 
         if (reserved.length < parseInt(game.players)) {
