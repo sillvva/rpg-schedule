@@ -216,7 +216,7 @@ export class Game implements GameModel {
       `\n**${lang.game.GAME_NAME}:** ${game.adventure}` +
       `\n**${lang.game.RUN_TIME}:** ${game.runtime} ${lang.game.labels.HOURS}` +
       `\n**${lang.game.WHEN}:** ${when}` +
-      `\n**${lang.game.WHERE}:** ${where}\n` +
+      `\n**${lang.game.WHERE}:** ${where}` +
       `\n${description.length > 0 ? `**${lang.game.DESCRIPTION}:**\n${description}\n` : description}` +
       `\n${signups}`;
 
@@ -235,7 +235,7 @@ export class Game implements GameModel {
         `\n**${lang.game.GAME_NAME}:** ${game.adventure}` +
         `\n**${lang.game.RUN_TIME}:** ${game.runtime} ${lang.game.labels.HOURS}` +
         `\n**${lang.game.WHEN}:** [${when}](http://www.google.com/calendar/render?action=TEMPLATE&text=${escape(game.adventure)}&dates=${isoutc}/${isoutc}&location=${escape(`${guild.name} - ${game.where}`)}&trp=false&sprop=&details=${escape(game.description)}})` +
-        `\n**${lang.game.WHERE}:** ${where}\n` +
+        `\n**${lang.game.WHERE}:** ${where}` +
         `\n${description.length > 0 ? `**${lang.game.DESCRIPTION}:**\n${description}\n` : description}` +
         `\n${signups}`;
         
