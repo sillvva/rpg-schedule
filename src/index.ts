@@ -76,7 +76,7 @@ const client = discord.processes({
     const server = http.createServer(app).listen(process.env.PORT || 5000);
     const io = socket(server);
 
-    if (!process.env.DO_NOT_REFRESH) {
+    if (!process.env.LOCALENV) {
       discord.refreshMessages();
 
       // Once per day, prune games from the database that are more than 48 hours old
@@ -86,7 +86,6 @@ const client = discord.processes({
       }, 3600 * 1000); // 1 hour
 
       // Post Game Reminders
-      discord.postReminders(app);
       setInterval(() => {
         discord.postReminders(app);
       }, 60 * 1000); // 1 minute

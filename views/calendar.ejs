@@ -149,13 +149,13 @@
                   `}
                 </div>
                 <div>
-                  <a href="http://www.google.com/calendar/render?action=TEMPLATE&text=${escape(game.adventure)}&dates=${game.moment.isoutc}/${game.moment.isoutc}&location=${escape(`${game.guild.name} - ${game.where}`)}&trp=false&sprop=&details=${escape(game.description)}" target="_blank" rel="nofollow" onclick="event.stopPropagation();">Add to my calendar</a>
+                  <a href="http://www.google.com/calendar/render?action=TEMPLATE&text=${escape(game.adventure)}&dates=${game.moment.isoutc}/${game.moment.isoutc}&location=${escape(`${game.guild.name} - ${game.where}`)}&trp=false&sprop=&details=${escape(game.description)}" target="_blank" rel="nofollow" onclick="event.stopPropagation();">Add to Google Calendar</a>
                 </div>
                 <div class="game-guild text-truncate">
                   <strong><%= lang.game.SERVER %>:</strong>
                   ${game.guild.name}
                 </div>
-                <div class="where">
+                <div class="where parse-url">
                   <strong><%= lang.game.WHERE %>:</strong>
                   ${game.where}
                 </div>
@@ -175,7 +175,7 @@
                   ${Math.max(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0) - parseInt(game.players)}
                   ${game.waitlisted ? `(#${game.slot})` : ``}
                 </div>
-                <div class="game-description" data-iso="${game.moment.iso}">
+                <div class="game-description parse-md-url" data-iso="${game.moment.iso}">
                   **${game.adventure}:**
 
                   **<%= lang.game.DATE %>:** %DATE%
@@ -255,6 +255,25 @@
           });
 
           alertify.alert('Game Description', md.render(description)).set('transition', 'zoom');
+        });
+
+        $('.game .parse-url').each(function() {
+            const exp = /((https?:\/\/)((www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b)([-a-zA-Z0-9()@:%_\+.~#?&//=]*))/gi;
+            const regex = new RegExp(exp);
+            $(this).html($(this).html().replace(regex, `<a href="$1" target="_blank">$3</a>`));
+        });
+
+        $('.game .parse-md-url').each(function() {
+            const exp = /((https?:\/\/)((www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b)([-a-zA-Z0-9()@:%_\+.~#?&//=]*))/gi;
+            const regex = new RegExp(exp);
+            $(this).html($(this).html().replace(regex, `[$1]($1)`));
+        });
+
+        $('.game .parse-url a, .game .parse-md-url a').each(function() {
+            $(this).click(function() {
+                window.open($(this).attr('href'));
+                return false;
+            });
         });
 
         $(this).find('.btn').click((ev) => {

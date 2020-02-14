@@ -63,14 +63,14 @@ export default (options: any) => {
           let password: string;
 
           const guildConfig = await GuildConfig.fetch(guild.id);
-          if (guildConfig) {
+          const member = guild.members.find(m => m.id === req.account.user.id);
+          if (guildConfig && !(member && req.account.user.tag === config.author)) {
             password = guildConfig.password;
             if (guildConfig.role) {
               if (!req.account) {
                 res.redirect(config.urls.login.path);
                 return;
               } else {
-                const member = guild.members.find(m => m.id === req.account.user.id);
                 if (member) {
                   if (!member.roles.find(r => r.name.toLowerCase().trim() === guildConfig.role.toLowerCase().trim())) {
                     res.redirect(config.urls.game.dashboard.path);
