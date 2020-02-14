@@ -208,9 +208,11 @@ export default (options: any) => {
               gameOptions.timestamp = {
                 $gt: new Date().getTime()
               };
-              gameOptions.dm = {
-                $ne: tag
-              };
+              if (tag !== config.author) {
+                gameOptions.dm = {
+                  $ne: tag
+                };
+              }
             }
   
             if (req.account.viewing.server) {
