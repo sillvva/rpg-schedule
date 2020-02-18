@@ -678,6 +678,7 @@ const postReminders = async (app: Express) => {
     if (game.discordChannel) {
       const reserved: string[] = [];
       const reservedUsers: discord.GuildMember[] = [];
+      let where = game.where;
       game.reserved.split(/\r?\n/).forEach(res => {
         if (res.trim().length === 0) return;
         let member = game.discordGuild.members.array().find(mem => mem.user.tag === res.trim().replace("@", ""));
@@ -702,7 +703,7 @@ const postReminders = async (app: Express) => {
           channels.forEach(chan => {
             const guildChannel = game.discordGuild.channels.find(c => c.name === chan.replace(/#/, ""));
             if (guildChannel) {
-              game.where = game.where.replace(chan, guildChannel.toString());
+              where = game.where.replace(chan, guildChannel.toString());
             }
           });
         }
@@ -725,7 +726,7 @@ const postReminders = async (app: Express) => {
             let message = `${lang.game.REMINDER_FOR} **${game.adventure.replace(/\*/gi, "")}**\n`;
             message += `**${lang.game.WHEN}:** ${lang.game.STARTING_IN.replace(/\:minutes/gi, reminder)}\n`;
             message += `**${lang.game.SERVER}:** ${game.discordGuild && game.discordGuild.name}\n`;
-            message += `**${lang.game.WHERE}:** ${game.where}\n`;
+            message += `**${lang.game.WHERE}:** ${where}\n`;
             message += `**${lang.game.GM}:** ${dmMember ? (dmMember.nickname ? dmMember.nickname : dmMember.user && dmMember.user.username) : game.dm}\n`;
 
             for (const member of reservedUsers) {
@@ -740,7 +741,7 @@ const postReminders = async (app: Express) => {
         } else {
           let message = `${lang.game.REMINDER_FOR} **${game.adventure.replace(/\*/gi, "")}**\n`;
           message += `**${lang.game.WHEN}:** ${lang.game.STARTING_IN.replace(/\:minutes/gi, reminder)}\n`;
-          message += `**${lang.game.WHERE}:** ${game.where}\n\n`;
+          message += `**${lang.game.WHERE}:** ${where}\n\n`;
           message += `**${lang.game.GM}:** ${dm}\n`;
           message += `**${lang.game.RESERVED}:**\n`;
           message += `${reserved.join(`\n`)}`;
