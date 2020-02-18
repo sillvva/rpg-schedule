@@ -123,6 +123,7 @@ export default (options: any) => {
             // account: req.account,
             // lang: req.lang.selected,
             // langs: req.lang.list,
+            guildConfig: guildConfig,
             errors: {
               dm: game && !guild.members.array().find(mem => {
                 return !mem.user.bot && mem.user.tag === game.dm.trim().replace("@", "");

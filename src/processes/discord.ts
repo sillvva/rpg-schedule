@@ -670,7 +670,7 @@ const pruneOldGames = async (guild?: discord.Guild) => {
 };
 
 const postReminders = async (app: Express) => {
-  let games = await Game.fetchAllBy({ when: "datetime", reminder: { $in: ["15", "30", "60"] } });
+  let games = await Game.fetchAllBy({ when: "datetime", reminder: { $in: ["15", "30", "60", "360", "720", "1440"] } });
   games.forEach(async game => {
     if (game.timestamp - parseInt(game.reminder) * 60 * 1000 > new Date().getTime()) return;
     if (!game.discordGuild) return;
@@ -717,6 +717,7 @@ const postReminders = async (app: Express) => {
           game.save();
         } catch (err) {
           console.log(err);
+          return;
         }
 
         if (guildConfig.privateReminders) {
