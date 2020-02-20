@@ -89,3 +89,12 @@ hr {
 .html-special {
   font-family: Menlo, 'Courier New', Courier, monospace;
 }
+
+.alert-danger {
+  color: rgb(230, 155, 162);
+  background-color: rgb(64, 11, 16);
+  border-top-color: rgb(129, 23, 34);
+  border-right-color: rgb(129, 23, 34);
+  border-bottom-color: rgb(129, 23, 34);
+  border-left-color: rgb(129, 23, 34);
+}

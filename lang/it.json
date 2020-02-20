@@ -48,6 +48,7 @@
     "EDIT_LINK": "Puoi modificare il tuo gioco `: SERVER_NAME` -`: GAME_NAME` qui:",
     "MAX": "Massimo",
     "CHARACTERS": "Caratteri",
+    "NO_PLAYERS": "Nessun giocatore",
     "options": {
       "AUTOMATED_SIGNUP": "Entrata automatica",
       "CUSTOM_SIGNUP_INSTRUCTIONS": "Istruzioni di iscrizione personalizzate",

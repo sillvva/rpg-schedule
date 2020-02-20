@@ -125,6 +125,7 @@ export default (options: any) => {
             // langs: req.lang.list,
             guildConfig: guildConfig,
             errors: {
+              other: null,
               dm: game && !guild.members.array().find(mem => {
                 return !mem.user.bot && mem.user.tag === game.dm.trim().replace("@", "");
               }),
@@ -158,7 +159,12 @@ export default (options: any) => {
                 else res.render("game", data);
               })
               .catch(err => {
-                data.errors.dm = err.message.startsWith("DM") ? err.message : false;
+                if (err.message.startsWith("DM")) {
+                  data.errors.dm = err.message;
+                }
+                else {
+                  data.errors.other = err.message;
+                }
                 res.render("game", data);
               });
           } else {
