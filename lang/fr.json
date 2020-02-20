@@ -50,6 +50,7 @@
     "EDIT_LINK": "Vous pouvez modifier votre `:SERVER_NAME` - `:GAME_NAME` ici:",
     "MAX": "Max",
     "CHARACTERS": "caractère",
+    "NO_PLAYERS": "Aucun joueur",
     "options": {
       "AUTOMATED_SIGNUP": "Inscription automatisée",
       "CUSTOM_SIGNUP_INSTRUCTIONS": "Instructions d'inscription personnalisées",

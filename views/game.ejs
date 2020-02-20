@@ -23,6 +23,11 @@
         <%= title %>
     </h6>
     <hr />
+    <% if (errors.other) { %>
+        <div class="alert alert-danger" role="alert">
+            <%= errors.other %>
+        </div>
+    <% } %>
     <form method="post">
         <div class="row">
             <div class="form-group col-sm-6">
@@ -175,8 +180,8 @@
             <div class="col-sm-7">
                 <div class="form-group">
                     <label for="description" class="col-form-label"><%= lang.game.DESCRIPTION %></label>
-                    <textarea class="form-control" id="description" name="description" rows="7" maxlength="<%= guildConfig.embeds ? 700 : 1500 %>" onkeyup="document.getElementById('desc-len').innerHTML = this.value.length"><%= description %></textarea>
-                    <small><%= lang.game.labels.DISCORD_FORMATTING %> (<span id="desc-len"><%= description.length %></span> / <%= lang.game.MAX %> <%= guildConfig.embeds ? 700 : 1500 %> <%= lang.game.CHARACTERS %>)</small>
+                    <textarea class="form-control" id="description" name="description" rows="7" maxlength="<%= guildConfig.embeds ? 1500 : 1500 %>" onkeyup="document.getElementById('desc-len').innerHTML = this.value.length"><%= description %></textarea>
+                    <small><%= lang.game.labels.DISCORD_FORMATTING %> (<span id="desc-len"><%= description.length %></span> / <%= lang.game.MAX %> <%= guildConfig.embeds ? 1500 : 1500 %> <%= lang.game.CHARACTERS %>)</small>
                 </div>
             </div>
         </div>

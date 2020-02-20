@@ -187,12 +187,13 @@ export class Game implements GameModel {
     const description = parseDiscord(game.description, guild);
 
     let signups = "";
+    let automatedInstructions = `\n(${guildConfig.emojiAdd} ${lang.buttons.SIGN_UP}${
+      guildConfig.dropOut ? ` | ${guildConfig.emojiRemove} ${lang.buttons.DROP_OUT}` : ""
+    })`;
     if (game.method === "automated") {
       if (reserved.length > 0) signups += `\n**${lang.game.RESERVED}:**\n${reserved.join("\n")}\n`;
       if (waitlist.length > 0) signups += `\n**${lang.game.WAITLISTED}:**\n${waitlist.join("\n")}\n`;
-      signups += `\n(${guildConfig.emojiAdd} ${lang.buttons.SIGN_UP}${
-        guildConfig.dropOut ? ` | ${guildConfig.emojiRemove} ${lang.buttons.DROP_OUT}` : ""
-      })`;
+      signups += automatedInstructions;
     } else if (game.method === "custom") {
       signups += `\n${game.customSignup}`;
     }
@@ -230,17 +231,26 @@ export class Game implements GameModel {
     else {
       const isoutc = `${new Date(`${game.date} ${game.time} UTC${game.timezone < 0 ? "-" : "+"}${Math.abs(game.timezone)}`).toISOString().replace(/[^0-9T]/gi,"").slice(0,13)}00Z`;
 
-      msg =
-        `\n**${lang.game.GM}:** ${dm}` +
-        `\n**${lang.game.GAME_NAME}:** ${game.adventure}` +
-        `\n**${lang.game.RUN_TIME}:** ${game.runtime} ${lang.game.labels.HOURS}` +
-        `\n**${lang.game.WHEN}:** [${when}](http://www.google.com/calendar/render?action=TEMPLATE&text=${escape(game.adventure)}&dates=${isoutc}/${isoutc}&location=${escape(`${guild.name} - ${game.where}`)}&trp=false&sprop=&details=${escape(game.description)}})` +
-        `\n**${lang.game.WHERE}:** ${where}` +
-        `\n${description.length > 0 ? `**${lang.game.DESCRIPTION}:**\n${description}\n` : description}` +
-        `\n${signups}`;
-        
-      embed.setColor(guildConfig.embedColor).setDescription(msg);
+      // msg =
+      // `\n**${lang.game.GM}:** ${dm}` +
+      // `\n**${lang.game.GAME_NAME}:** ${game.adventure}` +
+      // `\n**${lang.game.RUN_TIME}:** ${game.runtime} ${lang.game.labels.HOURS}` +
+      // `\n**${lang.game.WHEN}:** [${when}](http://www.google.com/calendar/render?action=TEMPLATE&text=${escape(game.adventure)}&dates=${isoutc}/${isoutc}&location=${escape(`${guild.name} - ${game.where}`)}&trp=false&sprop=&details=${escape(game.description)}})` +
+      // `\n**${lang.game.WHERE}:** ${where}` +
+      // `\n${description.length > 0 ? `**${lang.game.DESCRIPTION}:**\n${description}\n` : description}` +
+      // `\n${signups}`;
+
+      embed.setColor(guildConfig.embedColor);
+      embed.setTitle(game.adventure);
+      embed.setAuthor(dm, dmmember.user.avatarURL);
       if (dmmember) embed.setThumbnail(dmmember.user.avatarURL);
+      if(description.length > 0) embed.setDescription(description);
+      embed.addField(lang.game.WHEN, `[${when}](http://www.google.com/calendar/render?action=TEMPLATE&text=${escape(game.adventure)}&dates=${isoutc}/${isoutc}&location=${escape(`${guild.name} - ${game.where}`)}&trp=false)`, true);
+      if(game.runtime && game.runtime.trim().length > 0 && game.runtime.trim() != '0') embed.addField(lang.game.RUN_TIME, `${game.runtime} ${lang.game.labels.HOURS}`, true);
+      embed.addField(lang.game.WHERE, where);
+      embed.addField(`${lang.game.RESERVED} (${reserved.length}/${game.players})`, reserved.length > 0 ? reserved.join("\n") : lang.game.NO_PLAYERS, true);
+      if (waitlist.length > 0) embed.addField(`${lang.game.WAITLISTED} (${waitlist.length})`, waitlist.join("\n"), true);
+      if (game.method === 'automated') embed.setFooter(automatedInstructions);
       if (game && game.gameImage && game.gameImage.trim().length > 0) embed.setImage(game.gameImage.trim());
     }
 
