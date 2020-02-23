@@ -4,7 +4,7 @@ import { Express } from "express";
 
 import { io } from "../processes/socket";
 import { GuildConfig } from "../models/guild-config";
-import { Game } from "../models/game";
+import { Game, Frequency } from "../models/game";
 import config from "../models/config";
 import aux from "../appaux";
 
@@ -624,6 +624,36 @@ const refreshMessages = async () => {
   });
 };
 
+const rescheduleOldGames = async () => {
+  let result: DeleteWriteOpResultObject;
+  try {
+    console.log(`Rescheduling old games for all servers`);
+    const query = {
+      timestamp: {
+        // timestamp (date scheduled) before now
+        $lt: new Date().getTime()
+      }
+    };
+
+    const games = await Game.fetchAllBy(query);
+    console.log(`Found ${games.length} games scheduled before now`);
+    let count = 0;
+    for(let i = 0; i < games.length; i++) {
+      const game = games[i];
+      if(game.canReschedule()) {
+        game.reschedule();
+        io().emit("game", { action: "rescheduled", gameId: game._id });
+        count++;
+      }   
+    }
+
+    console.log(`rescheduled ${count} games`);
+  } catch (err) {
+    console.log("GameReschedulingError:", err);
+  }
+  return result;
+}
+
 const pruneOldGames = async (guild?: discord.Guild) => {
   let result: DeleteWriteOpResultObject;
   try {
@@ -761,6 +791,7 @@ export default {
   login: discordLogin,
   refreshMessages: refreshMessages,
   pruneOldGames: pruneOldGames,
+  rescheduleOldGames: rescheduleOldGames,
   postReminders: postReminders
 };
 

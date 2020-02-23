@@ -1,6 +1,7 @@
 import mongodb, { ObjectID } from "mongodb";
 import discord, { Message, Guild, TextChannel, MessageEditOptions, RichEmbed } from "discord.js";
 import moment from "moment";
+import "moment-recur-ts";
 
 import db from "../db";
 import aux from "../appaux";
@@ -13,6 +14,14 @@ const connection = db.connection;
 const ObjectId = mongodb.ObjectId;
 const collection = "games";
 const host = process.env.HOST;
+
+export enum Frequency {
+  NO_REPEAT = 0,
+  DAILY = 1,
+  WEEKLY = 2,
+  BIWEEKLY = 3,
+  MONTHLY = 4,
+}
 
 export interface GameModel {
   _id: string | number | ObjectID;
@@ -39,6 +48,14 @@ export interface GameModel {
   reminderMessageId: string;
   pm: string;
   gameImage: string;
+  frequency: Frequency;
+  monday: boolean;
+  tuesday: boolean;
+  wednesday: boolean;
+  thursday: boolean;
+  friday: boolean;
+  saturday: boolean;
+  sunday: boolean;
 }
 
 interface GameSaveData {
@@ -72,6 +89,14 @@ export class Game implements GameModel {
   reminderMessageId: string;
   pm: string;
   gameImage: string;
+  frequency: Frequency;
+  monday: boolean;
+  tuesday: boolean;
+  wednesday: boolean;
+  thursday: boolean;
+  friday: boolean;
+  saturday: boolean;
+  sunday: boolean;
 
   private _guild: Guild;
   get discordGuild() {
@@ -125,7 +150,15 @@ export class Game implements GameModel {
       messageId: this.messageId,
       reminderMessageId: this.reminderMessageId,
       pm: this.pm,
-      gameImage: this.gameImage
+      gameImage: this.gameImage,
+      frequency: this.frequency,
+      monday: this.monday,
+      tuesday: this.tuesday,
+      wednesday: this.wednesday,
+      thursday: this.thursday,
+      friday: this.friday,
+      saturday: this.saturday,
+      sunday: this.sunday
     };
   }
 
@@ -351,6 +384,32 @@ export class Game implements GameModel {
       .deleteMany(query);
   }
 
+  public getWeekdays() {
+    const days = [this.sunday, this.monday, this.tuesday, this.wednesday, this.thursday, this.friday, this.saturday];
+    const validDays = [];
+    for (let i = 0; i < days.length; i++) {
+      if (days[i] == true) {
+        validDays.push(moment.weekdays(true, i));
+      }
+    }
+    return validDays;
+  }
+
+  public canReschedule() {
+    const validDays = this.getWeekdays();
+    return ((this.frequency == Frequency.DAILY || this.frequency == Frequency.MONTHLY) ||
+            ((this.frequency == Frequency.WEEKLY || this.frequency == Frequency.BIWEEKLY) && validDays.length > 0));
+  }
+
+  async reschedule() {
+    const validDays = this.getWeekdays();
+      
+    const nextDate = Game.getNextDate(moment(this.date), validDays, Number(this.frequency));
+    console.log(`rescheduling ${this._id} from ${this.date} to ${nextDate}`);
+    this.date = nextDate;
+    return this.save();
+  }
+
   async delete(options: any = {}) {
     if (!connection()) throw new Error("No database connection");
 
@@ -412,6 +471,44 @@ export class Game implements GameModel {
 
   static ISOGameDate(game: GameModel) {
     return `${game.date.replace(/-/g, "")}T${game.time.replace(/:/g, "")}00${game.timezone >= 0 ? "+" : "-"}${parseTimeZoneISO(game.timezone)}`;
+  }
+
+  static getNextDate(baseDate: moment.Moment, validDays: string[], frequency: Frequency) {
+    if (frequency == Frequency.NO_REPEAT)
+        return null;
+  
+    let dateGenerator;
+    let nextDate = baseDate;
+
+    switch(frequency) {
+      case Frequency.DAILY:
+        nextDate = moment(baseDate).add(1, 'days');
+        break;
+      case Frequency.WEEKLY: // weekly
+        if (validDays === undefined || validDays.length === 0)
+          break;
+        dateGenerator = moment(baseDate).recur().every(validDays).daysOfWeek();
+        nextDate = dateGenerator.next(1)[0];
+        break;
+      case Frequency.BIWEEKLY: // biweekly
+        if (validDays === undefined || validDays.length === 0)
+          break;
+        // this is a compound interval...
+        dateGenerator = moment(baseDate).recur().every(validDays).daysOfWeek();
+        nextDate = dateGenerator.next(1)[0];
+        while(nextDate.week() - moment(baseDate).week() == 1) { // if the next date is in the same week, diff = 0. if it is just next week, diff = 1, so keep going forward.
+          dateGenerator = moment(nextDate).recur().every(validDays).daysOfWeek();
+          nextDate = dateGenerator.next(1)[0];
+        }
+        break;
+      case Frequency.MONTHLY:
+        nextDate = moment(baseDate).add(1, 'month');
+        break;
+      default:
+        throw new Error(`invalid frequency ${frequency} specified`);
+    }
+  
+    return moment(nextDate).format('YYYY-MM-DD');
   }
 }
 

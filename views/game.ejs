@@ -7,6 +7,7 @@
     
     <link rel="stylesheet" href="/styles/game.css">
     <script src="/scripts/moment.js"></script>
+    <script src="/scripts/moment-recur.js"></script>
 
     <% if (is.editgame) { %>
         <script src="/scripts/socket.io.js"></script>
@@ -28,7 +29,7 @@
             <%= errors.other %>
         </div>
     <% } %>
-    <form method="post">
+    <form method="post" id="gameForm">
         <div class="row">
             <div class="form-group col-sm-6">
                 <label for="guild" class="col-form-label"><%= lang.game.SERVER %></label>
@@ -161,6 +162,55 @@
             </div>
         </div>
         <div class="row">
+            <div class="form-group col-sm-3">
+                <label for="frequency" class="col-form-label"><%= lang.game.FREQUENCY %></label>
+                <select class="form-control" id="frequency" name="frequency">
+                    <option value="0" <%= frequency === '0' ? 'selected' : '' %>><%= lang.game.options.NO_REPEAT %></option>
+                    <option value="1" <%= frequency === '1' ? 'selected' : '' %>><%= lang.game.options.DAILY %></option>
+                    <option value="2" <%= frequency === '2' ? 'selected' : '' %>><%= lang.game.options.WEEKLY %></option>
+                    <option value="3" <%= frequency === '3' ? 'selected' : '' %>><%= lang.game.options.BIWEEKLY %></option>
+                    <option value="4" <%= frequency === '4' ? 'selected' : '' %>><%= lang.game.options.MONTHLY %></option>
+                </select>
+            </div>
+            <div class="form-group col-sm-6">
+                <label for="weekdays-selector" class="col-form-label"><%= lang.game.WEEKDAYS %></label>
+                <div id="weekdays-selector" class="btn-group-toggle" data-toggle="buttons">
+                    <label <%- sunday ? 'class="btn btn-secondary active"' : 'class="btn btn-secondary"' %> for="sunday">
+                        <input type="checkbox" id="sunday" name="sunday" value="true" />
+                        <%= lang.game.options.SUNDAY_SHORT %>
+                    </label>
+                    <label <%- monday ? 'class="btn btn-secondary active"' : 'class="btn btn-secondary"' %> for="monday">
+                        <input type="checkbox" id="monday" name="monday" value="true" />
+                        <%= lang.game.options.MONDAY_SHORT %>
+                    </label>
+                    <label <%- tuesday ? 'class="btn btn-secondary active"' : 'class="btn btn-secondary"' %> for="tuesday">
+                        <input type="checkbox" id="tuesday" name="tuesday" value="true" />
+                        <%= lang.game.options.TUESDAY_SHORT %>
+                    </label>
+                    <label <%- wednesday ? 'class="btn btn-secondary active"' : 'class="btn btn-secondary"' %> for="wednesday">
+                        <input type="checkbox" id="wednesday" name="wednesday" value="true" />
+                        <%= lang.game.options.WEDNESDAY_SHORT %>
+                    </label>
+                    <label <%- thursday ? 'class="btn btn-secondary active"' : 'class="btn btn-secondary"' %> for="thursday">
+                        <input type="checkbox" id="thursday" name="thursday" value="true" />
+                        <%= lang.game.options.THURSDAY_SHORT %>
+                    </label>
+                    <label <%- friday ? 'class="btn btn-secondary active"' : 'class="btn btn-secondary"' %> for="friday">
+                        <input type="checkbox" id="friday" name="friday" value="true" />
+                        <%= lang.game.options.FRIDAY_SHORT %>
+                    </label>
+                    <label <%- saturday ? 'class="btn btn-secondary active"' : 'class="btn btn-secondary"' %> for="saturday">
+                        <input type="checkbox" id="saturday" name="saturday" value="true" />
+                        <%= lang.game.options.SATURDAY_SHORT %>
+                    </label>
+                </div>
+            </div>
+            <div class="form-group col-sm-3">
+                <label for="nextDate" class="col-form-label"><%= lang.game.NEXT_DATE %></label>
+                <input type="date" class="form-control" id="nextDate" name="nextDate" disabled>
+            </div>
+        </div>
+        <div class="row">
             <div class="col-sm-5">
                 <div class="form-group">
                     <label for="reserved" class="col-form-label"><%= lang.game.RESERVED_SLOTS %></label>
@@ -246,6 +296,37 @@
         }
     }).change();
 
+    $('#frequency').change(function() {
+        const sel = $(this).val();
+        $("#weekdays-selector label").addClass("disabled");
+        $('#date').removeAttr("disabled");
+        if (sel === '0') {
+            $('#nextDate').val($('#date').val());
+        }
+        if (sel !== '0') {
+            if (sel !== '1' && sel !== '4') { // disable weekday selection if not repeating weekly or biweekly
+                $('#weekdays-selector label').removeClass("disabled");
+            }
+            updateNextDate($('#date').val(), sel);
+        }
+    });//.change();
+
+    // update date on each click on weekday selector labels
+    $("#weekdays-selector label").map(function() {
+        $(this).mouseup(function() {
+            // we want the function to determine the "valid weekdays" only after the click is finished
+            setTimeout(function() {
+                updateNextDate($('#date').val(), $('#frequency').val());
+            }, 100);
+            
+        });
+    });
+
+    const updateNextDate = (currentDate, freq) => {
+        const nextDate = getRecurrenceDate(currentDate, freq);
+        $('#nextDate').val(nextDate);
+    }
+
     $('#c').change(function() {
         $('#channel').val($('#c option:selected').text())
     }).change();
@@ -307,6 +388,46 @@
         };
     };
 
+    const getRecurrenceDate = (baseDate, frequency) => {
+        if (frequency == 0)
+            return moment(baseDate).format('YYYY-MM-DD');
+
+        const validDays = $("#weekdays-selector label:not(.disabled):not(:disabled).active")
+            .map(function () {
+                return $(this).find("input").attr("id");
+            })
+            .get();
+        var dateGenerator;
+        var nextDate = baseDate;
+
+        switch(frequency) {
+            case '1': // daily
+                nextDate = moment(baseDate).add(1, 'days');
+                break;
+            case '2': // weekly
+                if (validDays === undefined || validDays.length === 0)
+                    break;
+                dateGenerator = moment(baseDate).recur().every(validDays).daysOfWeek();
+                nextDate = dateGenerator.next(1)[0];
+                break;
+            case '3': // biweekly
+                if (validDays === undefined || validDays.length === 0)
+                    break;
+                // this is a compound interval...
+                dateGenerator = moment(baseDate).recur().every(validDays).daysOfWeek();
+                nextDate = dateGenerator.next(1)[0];
+                while(nextDate.week() - moment(baseDate).week() == 1) { // if the next date is in the same week, diff = 0. if it is just next week, diff = 1, so keep going forward.
+                    dateGenerator = moment(nextDate).recur().every(validDays).daysOfWeek();
+                    nextDate = dateGenerator.next(1)[0];
+                }
+                break;
+            case '4': // monthly
+                nextDate = moment(baseDate).add(1, 'month');
+        }
+
+        return moment(nextDate).format('YYYY-MM-DD');
+    }
+
     <% if (is.newgame) { %>
         <% if (date === "") { %>
             $('#date').val(moment().format('YYYY-MM-DD'));
@@ -322,6 +443,7 @@
         $('#convertLink').html(`Time Zone Conversion: <a href="${link.convert}" target="_blank" rel="nofollow">${link.convert}</a>`);
         // $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank" rel="nofollow">${link.countdown}</a>`);
         $('#gcalLink').html(`<a href="${link.gcal}" target="_blank" rel="nofollow">Add to Calendar</a>`);
+        updateNextDate($('#date').val(), $('#frequency').val());
     }).change();
 
     // $('#date').attr('min', moment().format('YYYY-MM-DD'));
@@ -356,6 +478,17 @@
         }
     });
     <% } %>
+    
+    $('#frequency').change(); // trigger update here to prevent pre-initialization reference error
+
+    // the "active" class on a label doesn't check its corresponding box at page load
+    $('#gameForm').submit(function (event) {
+        $("#weekdays-selector input").map(function () {
+            if($(`label[for=${$(this).attr('id')}]`).hasClass("active")) {
+                $(this).prop("checked", true);
+            }
+        });
+    });
 </script>
 </body>
 </html>
