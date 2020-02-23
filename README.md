@@ -156,6 +156,27 @@ https://rpg-schedule.herokuapp.com
 </tbody>
 </table>
 
+## How to Develop
+* install [git](https://git-scm.com/downloads), [node](https://nodejs.org/en/download/), [heroku-cli](https://devcenter.heroku.com/articles/heroku-cli#download-and-install), [mongodb server](https://www.mongodb.com/download-center/community)
+* `npm i`
+* [set up discord bot with perms and token](https://discordapp.com/developers)
+  * permissions: 
+    * send messages
+    * manage messages
+    * embed links
+    * read message history
+    * add reactions
+  * OAuth2 redirects
+    * `http://localhost:5000/invite`
+      * guilds
+      * identify
+    * `http://localhost:5000/login`
+      * guilds
+      * identify
+* copy `.env template` to `.env` and fill out values
+* start `mongod`
+* `heroku local`
+
 ## About the bot
 
 The discord bot is deployed with Heroku as a Node.js and discord.js application and MongoDB for data storage. When an update is pushed to this repository, the update is automatically deployed to Heroku.
