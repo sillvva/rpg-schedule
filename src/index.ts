@@ -79,10 +79,16 @@ const client = discord.processes({
     if (!process.env.LOCALENV) {
       discord.refreshMessages();
 
-      // Once per day, prune games from the database that are more than 48 hours old
+      // Once per hour, prune games from the database that are more than 48 hours old
       discord.pruneOldGames();
       setInterval(() => {
         discord.pruneOldGames();
+      }, 3600 * 1000); // 1 hour
+
+      // Once per hour, reschedule recurring games from the database that have already occurred
+      discord.rescheduleOldGames();
+      setInterval(() => {
+        discord.rescheduleOldGames();
       }, 3600 * 1000); // 1 hour
 
       // Post Game Reminders

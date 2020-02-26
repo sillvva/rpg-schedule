@@ -34,6 +34,8 @@
     "SIGN_UP_METHOD": "Sign Up Method",
     "WHEN": "When",
     "CUSTOM_SIGNUP_INSTRUCTIONS": "Custom Signup Instructions",
+    "FREQUENCY": "Frequency",
+    "WEEKDAYS": "Weekdays",
     "DATE": "Date",
     "TIME": "Time",
     "TIME_ZONE": "Time Zone",
@@ -51,6 +53,7 @@
     "MAX": "Max",
     "CHARACTERS": "characters",
     "NO_PLAYERS": "No players",
+    "NEXT_DATE": "Next Scheduled Date",
     "options": {
       "AUTOMATED_SIGNUP": "Automated Signup",
       "CUSTOM_SIGNUP_INSTRUCTIONS": "Custom Signup Instructions",
@@ -62,7 +65,12 @@
       "MINUTES_60": "1 hour",
       "HOURS_6": "6 hours",
       "HOURS_12": "12 hours",
-      "HOURS_24": "24 hours"
+      "HOURS_24": "24 hours",
+      "NO_REPEAT": "Does Not Repeat",
+      "DAILY": "Every Day",
+      "WEEKLY": "Every Week",
+      "BIWEEKLY": "Every Two Weeks",
+      "MONTHLY": "Every Month"
     },
     "labels": {
       "HOURS": "hours",

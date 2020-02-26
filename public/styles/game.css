@@ -112,3 +112,11 @@ input[readonly], input[disabled] {
 #events-list .game .buttons .btn {
     border-radius: 0;
 }
+
+#weekdays-selector .btn {
+    width: 60px;
+}
+
+#weekdays-selector .btn-secondary:not(:disabled):not(.disabled).active {
+    background-color: cornflowerblue;
+}
