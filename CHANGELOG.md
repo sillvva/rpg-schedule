@@ -120,5 +120,4 @@
 - Password configuration added
 
 ## April 4, 2019
-
 - RPG Schedule Bot Launched
