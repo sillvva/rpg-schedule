@@ -94,3 +94,6 @@ app/
 
 # DynamoDB Local files
 .dynamodb/
+
+# vscode workspace file
+*.code-workspace

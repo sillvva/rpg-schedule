@@ -113,6 +113,8 @@ export default (options: any) => {
             timezone: "",
             reminder: "0",
             gameImage: "",
+            frequency: "",
+            weekdays: [false,false,false,false,false,false,false],
             is: {
               newgame: !req.query.g ? true : false,
               editgame: req.query.g ? true : false,
@@ -151,6 +153,11 @@ export default (options: any) => {
             Object.entries(req.body).forEach(([key, value]) => {
               game[key] = value;
             });
+
+            for (let i = 0; i < 7; i++) {
+              game.weekdays[i] = req.body['weekday'+i] ? true : false; // have to manually re-set falses b/c form data isn't sent if the checkbox is not checked
+            }
+            data.weekdays = game.weekdays;
 
             game
               .save()

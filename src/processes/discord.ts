@@ -1,5 +1,5 @@
 import discord, { TextChannel, Client, Message } from "discord.js";
-import { DeleteWriteOpResultObject } from "mongodb";
+import { DeleteWriteOpResultObject, FilterQuery } from "mongodb";
 import { Express } from "express";
 
 import { io } from "../processes/socket";
@@ -624,17 +624,58 @@ const refreshMessages = async () => {
   });
 };
 
+const rescheduleOldGames = async () => {
+  let result: DeleteWriteOpResultObject;
+  try {
+    console.log(`Rescheduling old games for all servers`);
+    const query: FilterQuery<any> = {
+      timestamp: {
+        // timestamp (date scheduled) before now
+        $lt: new Date().getTime()
+      },
+      $and: [
+        {
+          frequency: {
+            $ne: '0'
+          }
+        },
+        {
+          frequency: {
+            $ne: null
+          }
+        }
+      ]
+    };
+
+    const games = await Game.fetchAllBy(query);
+    console.log(`Found ${games.length} games scheduled before now`);
+    let count = 0;
+    for(let i = 0; i < games.length; i++) {
+      const game = games[i];
+      if(game.canReschedule()) {
+        game.reschedule();
+        io().emit("game", { action: "rescheduled", gameId: game._id });
+        count++;
+      }   
+    }
+
+    console.log(`rescheduled ${count} games`);
+  } catch (err) {
+    console.log("GameReschedulingError:", err);
+  }
+  return result;
+}
+
 const pruneOldGames = async (guild?: discord.Guild) => {
   let result: DeleteWriteOpResultObject;
   try {
     console.log(`Pruning old games for ${guild ? `${guild.name} server` : 'all servers'}`);
-    const query = {
+    const query: FilterQuery<any> = {
       timestamp: {
-        // timestamp lower than 48 hours ago
         $lt: new Date().getTime() - 48 * 3600 * 1000
       }
     };
-
+    
     const games = await Game.fetchAllBy(query);
     const guildConfigs = await GuildConfig.fetchAll();
     for(let i = 0; i < games.length; i++) {
@@ -761,6 +802,7 @@ export default {
   login: discordLogin,
   refreshMessages: refreshMessages,
   pruneOldGames: pruneOldGames,
+  rescheduleOldGames: rescheduleOldGames,
   postReminders: postReminders
 };
 
