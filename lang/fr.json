@@ -53,6 +53,7 @@
     "MAX": "Max",
     "CHARACTERS": "caractère",
     "NO_PLAYERS": "Aucun joueur",
+    "NEXT_DATE": "Prochaine date prévue",
     "options": {
       "AUTOMATED_SIGNUP": "Inscription automatisée",
       "CUSTOM_SIGNUP_INSTRUCTIONS": "Instructions d'inscription personnalisées",
