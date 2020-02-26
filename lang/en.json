@@ -70,14 +70,7 @@
       "DAILY": "Every Day",
       "WEEKLY": "Every Week",
       "BIWEEKLY": "Every Two Weeks",
-      "MONTHLY": "Every Month",
-      "MONDAY_SHORT": "Mon",
-      "TUESDAY_SHORT": "Tue",
-      "WEDNESDAY_SHORT": "Wed",
-      "THURSDAY_SHORT": "Thu",
-      "FRIDAY_SHORT": "Fri",
-      "SATURDAY_SHORT": "Sat",
-      "SUNDAY_SHORT": "Sun"
+      "MONTHLY": "Every Month"
     },
     "labels": {
       "HOURS": "hours",

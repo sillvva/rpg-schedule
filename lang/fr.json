@@ -34,6 +34,8 @@
     "SIGN_UP_METHOD": "Méthode d'inscription",
     "WHEN": "Quand",
     "CUSTOM_SIGNUP_INSTRUCTIONS": "Instruction d'inscription personnalisées",
+    "FREQUENCY": "Fréquence",
+    "WEEKDAYS": "Semaine",
     "DATE": "Date",
     "TIME": "Heure",
     "TIME_ZONE": "Fuseau horaire",
@@ -62,7 +64,12 @@
       "MINUTES_60": "1 heure",
       "HOURS_6": "6 heures",
       "HOURS_12": "12 heures",
-      "HOURS_24": "24 heures"
+      "HOURS_24": "24 heures",
+      "NO_REPEAT": "Ne se répète pas",
+      "DAILY": "Quotidienne",
+      "WEEKLY": "Settimanale",
+      "BIWEEKLY": "Bihebdomadaire",
+      "MONTHLY": "Mensuel"
     },
     "labels": {
       "HOURS": "heures",

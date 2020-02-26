@@ -49,13 +49,7 @@ export interface GameModel {
   pm: string;
   gameImage: string;
   frequency: Frequency;
-  monday: boolean;
-  tuesday: boolean;
-  wednesday: boolean;
-  thursday: boolean;
-  friday: boolean;
-  saturday: boolean;
-  sunday: boolean;
+  weekdays: boolean[];
 }
 
 interface GameSaveData {
@@ -90,13 +84,7 @@ export class Game implements GameModel {
   pm: string;
   gameImage: string;
   frequency: Frequency;
-  monday: boolean;
-  tuesday: boolean;
-  wednesday: boolean;
-  thursday: boolean;
-  friday: boolean;
-  saturday: boolean;
-  sunday: boolean;
+  weekdays: boolean[] = [false,false,false,false,false,false,false];
 
   private _guild: Guild;
   get discordGuild() {
@@ -152,13 +140,7 @@ export class Game implements GameModel {
       pm: this.pm,
       gameImage: this.gameImage,
       frequency: this.frequency,
-      monday: this.monday,
-      tuesday: this.tuesday,
-      wednesday: this.wednesday,
-      thursday: this.thursday,
-      friday: this.friday,
-      saturday: this.saturday,
-      sunday: this.sunday
+      weekdays: this.weekdays
     };
   }
 
@@ -214,7 +196,7 @@ export class Game implements GameModel {
         }
       });
 
-    const rawDate = `${game.date} ${game.time} UTC${game.timezone < 0 ? "-" : "+"}${parseTimeZoneISO(game.timezone)}`;
+    const rawDate = `${game.date} ${game.time} UTC${game.timezone < 0 ? "-" : "+"}${aux.parseTimeZoneISO(game.timezone)}`;
     const timezone = "UTC" + (game.timezone >= 0 ? "+" : "") + game.timezone;
     const where = parseDiscord(game.where, guild);
     const description = parseDiscord(game.description, guild);
@@ -385,7 +367,7 @@ export class Game implements GameModel {
   }
 
   public getWeekdays() {
-    const days = [this.sunday, this.monday, this.tuesday, this.wednesday, this.thursday, this.friday, this.saturday];
+    const days = this.weekdays;
     const validDays = [];
     for (let i = 0; i < days.length; i++) {
       if (days[i] == true) {
@@ -403,7 +385,6 @@ export class Game implements GameModel {
 
   async reschedule() {
     const validDays = this.getWeekdays();
-      
     const nextDate = Game.getNextDate(moment(this.date), validDays, Number(this.frequency));
     console.log(`rescheduling ${this._id} from ${this.date} to ${nextDate}`);
     this.date = nextDate;
@@ -470,7 +451,7 @@ export class Game implements GameModel {
   }
 
   static ISOGameDate(game: GameModel) {
-    return `${game.date.replace(/-/g, "")}T${game.time.replace(/:/g, "")}00${game.timezone >= 0 ? "+" : "-"}${parseTimeZoneISO(game.timezone)}`;
+    return `${game.date.replace(/-/g, "")}T${game.time.replace(/:/g, "")}00${game.timezone >= 0 ? "+" : "-"}${aux.parseTimeZoneISO(game.timezone)}`;
   }
 
   static getNextDate(baseDate: moment.Moment, validDays: string[], frequency: Frequency) {
@@ -528,15 +509,4 @@ const parseDiscord = (text: string, guild: Guild) => {
     console.log(err);
   }
   return text;
-};
-
-const parseTimeZoneISO = (timezone: number) => {
-  const tz = Math.abs(timezone);
-  const hours = Math.floor(tz);
-  const minutes = (tz - hours) * 60;
-  const zeroPad = (n: any, width: number, z = "0"): string => {
-    n = n + "";
-    return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
-  };
-  return zeroPad(hours, 2) + zeroPad(minutes, 2);
 };

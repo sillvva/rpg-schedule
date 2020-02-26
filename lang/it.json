@@ -32,6 +32,8 @@
     "SIGN_UP_METHOD": "Metodo di entrata",
     "WHEN": "When",
     "CUSTOM_SIGNUP_INSTRUCTIONS": "Istruzioni d'entrata customizzate",
+    "FREQUENCY": "Frequenza",
+    "WEEKDAYS": "Giorni Feriali",
     "DATE": "Data",
     "TIME": "Tempo",
     "TIME_ZONE": "Time-zone",
@@ -60,7 +62,12 @@
       "MINUTES_60": "1 ora",
       "HOURS_6": "6 ore",
       "HOURS_12": "12 ore",
-      "HOURS_24": "24 ore"
+      "HOURS_24": "24 ore",
+      "NO_REPEAT": "Non si ripete",
+      "DAILY": "Quotidiana",
+      "WEEKLY": "Settimanale",
+      "BIWEEKLY": "Bisettimanale",
+      "MONTHLY": "Mensile"
     },
     "labels": {
       "HOURS": "ore",
