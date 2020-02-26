@@ -54,9 +54,21 @@ const backslash = (text: string) => {
   return output;
 };
 
+const parseTimeZoneISO = (timezone: number) => {
+  const tz = Math.abs(timezone);
+  const hours = Math.floor(tz);
+  const minutes = (tz - hours) * 60;
+  const zeroPad = (n: any, width: number, z = "0"): string => {
+    n = n + "";
+    return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
+  };
+  return zeroPad(hours, 2) + zeroPad(minutes, 2);
+};
+
 export default {
   parseConfigURLs: parseConfigURLs,
   parseConfigParam: parseConfigParam,
+  parseTimeZoneISO: parseTimeZoneISO,
   objectChanges: objectChanges,
   fromEntries: _.fromPairs,
   backslash: backslash

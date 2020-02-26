@@ -8,6 +8,10 @@
     <link rel="stylesheet" href="/styles/game.css">
     <script src="/scripts/moment.js"></script>
     <script src="/scripts/moment-recur.js"></script>
+    <script src="/locale/<%= lang.code %>.js"></script>
+    <script type="text/javascript">
+    moment.locale('<%= lang.code %>');
+    </script>
 
     <% if (is.editgame) { %>
         <script src="/scripts/socket.io.js"></script>
@@ -175,34 +179,12 @@
             <div class="form-group col-sm-6">
                 <label for="weekdays-selector" class="col-form-label"><%= lang.game.WEEKDAYS %></label>
                 <div id="weekdays-selector" class="btn-group-toggle" data-toggle="buttons">
-                    <label <%- sunday ? 'class="btn btn-secondary active"' : 'class="btn btn-secondary"' %> for="sunday">
-                        <input type="checkbox" id="sunday" name="sunday" value="true" />
-                        <%= lang.game.options.SUNDAY_SHORT %>
-                    </label>
-                    <label <%- monday ? 'class="btn btn-secondary active"' : 'class="btn btn-secondary"' %> for="monday">
-                        <input type="checkbox" id="monday" name="monday" value="true" />
-                        <%= lang.game.options.MONDAY_SHORT %>
-                    </label>
-                    <label <%- tuesday ? 'class="btn btn-secondary active"' : 'class="btn btn-secondary"' %> for="tuesday">
-                        <input type="checkbox" id="tuesday" name="tuesday" value="true" />
-                        <%= lang.game.options.TUESDAY_SHORT %>
-                    </label>
-                    <label <%- wednesday ? 'class="btn btn-secondary active"' : 'class="btn btn-secondary"' %> for="wednesday">
-                        <input type="checkbox" id="wednesday" name="wednesday" value="true" />
-                        <%= lang.game.options.WEDNESDAY_SHORT %>
-                    </label>
-                    <label <%- thursday ? 'class="btn btn-secondary active"' : 'class="btn btn-secondary"' %> for="thursday">
-                        <input type="checkbox" id="thursday" name="thursday" value="true" />
-                        <%= lang.game.options.THURSDAY_SHORT %>
-                    </label>
-                    <label <%- friday ? 'class="btn btn-secondary active"' : 'class="btn btn-secondary"' %> for="friday">
-                        <input type="checkbox" id="friday" name="friday" value="true" />
-                        <%= lang.game.options.FRIDAY_SHORT %>
-                    </label>
-                    <label <%- saturday ? 'class="btn btn-secondary active"' : 'class="btn btn-secondary"' %> for="saturday">
-                        <input type="checkbox" id="saturday" name="saturday" value="true" />
-                        <%= lang.game.options.SATURDAY_SHORT %>
-                    </label>
+                    <% for(var i = 0; i < 7; i++) { %>
+                        <label <%- weekdays[i] ? 'class="btn btn-secondary active"' : 'class="btn btn-secondary"' %> for="weekday<%= i %>">
+                            <input type="checkbox" id="weekday<%= i %>" name="weekday<%= i %>" value="true" />
+                            <span class="weekday" day="<%= i %>" len="3"></span>
+                        </label>
+                    <% } %>
                 </div>
             </div>
             <div class="form-group col-sm-3">
@@ -322,6 +304,13 @@
         });
     });
 
+    $(".weekday").each(function() {
+        const day = parseInt($(this).attr("day"));
+        const len = parseInt($(this).attr("len"));
+        const dayOfWeek = moment().day(day).format('dddd').slice(0,len);
+        $(this).html(dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1));
+    });
+
     const updateNextDate = (currentDate, freq) => {
         const nextDate = getRecurrenceDate(currentDate, freq);
         $('#nextDate').val(nextDate);
@@ -394,7 +383,8 @@
 
         const validDays = $("#weekdays-selector label:not(.disabled):not(:disabled).active")
             .map(function () {
-                return $(this).find("input").attr("id");
+                const day = parseInt($(this).find("input").attr("id").replace("weekday",""));
+                return moment().day(day).format('dddd').toLowerCase();
             })
             .get();
         var dateGenerator;
@@ -405,14 +395,12 @@
                 nextDate = moment(baseDate).add(1, 'days');
                 break;
             case '2': // weekly
-                if (validDays === undefined || validDays.length === 0)
-                    break;
+                if (validDays === undefined || validDays.length === 0) break;
                 dateGenerator = moment(baseDate).recur().every(validDays).daysOfWeek();
                 nextDate = dateGenerator.next(1)[0];
                 break;
             case '3': // biweekly
-                if (validDays === undefined || validDays.length === 0)
-                    break;
+                if (validDays === undefined || validDays.length === 0) break;
                 // this is a compound interval...
                 dateGenerator = moment(baseDate).recur().every(validDays).daysOfWeek();
                 nextDate = dateGenerator.next(1)[0];

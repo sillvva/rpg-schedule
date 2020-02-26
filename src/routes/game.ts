@@ -114,13 +114,7 @@ export default (options: any) => {
             reminder: "0",
             gameImage: "",
             frequency: "",
-            monday: false,
-            tuesday: false,
-            wednesday: false,
-            thursday: false,
-            friday: false,
-            saturday: false,
-            sunday: false,
+            weekdays: [false,false,false,false,false,false,false],
             is: {
               newgame: !req.query.g ? true : false,
               editgame: req.query.g ? true : false,
@@ -160,11 +154,10 @@ export default (options: any) => {
               game[key] = value;
             });
 
-            const weekdays = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
-            for (const day of weekdays) {
-              game[day] = (req.body[day]? true : false); // have to manually re-set falses b/c form data isn't sent if the checkbox is not checked
-              data[day] = game[day];
+            for (let i = 0; i < 7; i++) {
+              game.weekdays[i] = req.body['weekday'+i] ? true : false; // have to manually re-set falses b/c form data isn't sent if the checkbox is not checked
             }
+            data.weekdays = game.weekdays;
 
             game
               .save()
