@@ -54,6 +54,9 @@
     "CHARACTERS": "characters",
     "NO_PLAYERS": "No players",
     "NEXT_DATE": "Next Scheduled Date",
+    "ADD_TO_CALENDAR": "Add to Calendar",
+    "CONVERT_TIME_ZONE": "Convert Time Zone",
+    "COUNTDOWN": "Countdown",
     "options": {
       "AUTOMATED_SIGNUP": "Automated Signup",
       "CUSTOM_SIGNUP_INSTRUCTIONS": "Custom Signup Instructions",

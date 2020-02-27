@@ -52,6 +52,9 @@
     "CHARACTERS": "Caratteri",
     "NO_PLAYERS": "Nessun giocatore",
     "NEXT_DATE": "Data programmata successiva",
+    "ADD_TO_CALENDAR": "Aggiungi al calendario",
+    "CONVERT_TIME_ZONE": "Converti fuso orario",
+    "COUNTDOWN": "Conto alla rovescia",
     "options": {
       "AUTOMATED_SIGNUP": "Entrata automatica",
       "CUSTOM_SIGNUP_INSTRUCTIONS": "Istruzioni di iscrizione personalizzate",
