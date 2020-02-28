@@ -1,5 +1,15 @@
 # Change Log
 
+## February 26-27, 2020
+
+- Improved time zone links for embeds
+- Embed formatting
+- Recurring Games Update
+  - Config option: allows rescheduled games to be updated or reposted
+    - Default is `repost`
+    - See the [command list](https://github.com/sillvva/rpg-schedule/blob/master/README.md) for more information
+  - Rescheduling will occur only after the scheduled number of hours
+
 ## February 23-25, 2020
 
 - Support for [recurring games](https://github.com/sillvva/rpg-schedule/pull/143) added. Credits to wilywyrm (Github)
@@ -42,7 +52,7 @@
 
 ## November 17-20, 2019
 
-- Escape character configuration added
+- Escape character configuration added. See the [command list](https://github.com/sillvva/rpg-schedule/blob/master/README.md) for more information.
 - Added support for mentioning roles in announcements
 - Bug Fixes
 
@@ -81,12 +91,12 @@
 
 ## August 18, 2019
 
-- Drop out toggle configuration added
+- Drop out toggle configuration added. See the [command list](https://github.com/sillvva/rpg-schedule/blob/master/README.md) for more information.
 - Bug Fixes
 
 ## July 27, 2019
 
-- Reaction configuration added
+- Reaction configuration added. See the [command list](https://github.com/sillvva/rpg-schedule/blob/master/README.md) for more information.
 - Bug Fixes
 
 ## July 2, 2019
@@ -96,7 +106,7 @@
 
 ## May 31, 2019
 
-- Added configuration for multiple announcement channels
+- Added configuration for multiple announcement channels. See the [command list](https://github.com/sillvva/rpg-schedule/blob/master/README.md) for more information.
 
 ## May 27, 2019
 
@@ -109,15 +119,15 @@
 
 ## May 10-14, 2019
 
-- Message pruning configuration added
-- Embed configuration added
+- Message pruning configuration added. See the [command list](https://github.com/sillvva/rpg-schedule/blob/master/README.md) for more information.
+- Embed configuration added. See the [command list](https://github.com/sillvva/rpg-schedule/blob/master/README.md) for more information.
 - Invite Link created
 - Time zone conversion link added
 - Bug Fixes
 
 ## April 20, 2019
 
-- Password configuration added
+- Password configuration added. See the [command list](https://github.com/sillvva/rpg-schedule/blob/master/README.md) for more information.
 
 ## April 4, 2019
 - RPG Schedule Bot Launched

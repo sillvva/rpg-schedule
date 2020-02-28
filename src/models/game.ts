@@ -9,6 +9,7 @@ import { discordClient } from "../processes/discord";
 import { io } from "../processes/socket";
 import { GuildConfig } from "./guild-config";
 import config from "./config";
+import cloneDeep from "lodash/cloneDeep";
 
 const connection = db.connection;
 const ObjectId = mongodb.ObjectId;
@@ -283,7 +284,6 @@ export class Game implements GameModel {
         const updatedGame = aux.objectChanges(prev, game);
         io().emit("game", { action: "updated", gameId: game._id, game: updatedGame });
       } catch (err) {
-        this.delete();
         updated.modifiedCount = 0;
       }
       const saved: GameSaveData = {
@@ -374,16 +374,32 @@ export class Game implements GameModel {
 
   public canReschedule() {
     const validDays = this.getWeekdays();
-    return ((this.frequency == Frequency.DAILY || this.frequency == Frequency.MONTHLY) ||
+    const hours = this.runtime == null || this.runtime.trim() == '0' || this.runtime.trim() == '' ? 0 : parseFloat(this.runtime);
+    const gameEnded = this.timestamp + hours * 3600 * 1000 < new Date().getTime();
+    return gameEnded && ((this.frequency == Frequency.DAILY || this.frequency == Frequency.MONTHLY) ||
             ((this.frequency == Frequency.WEEKLY || this.frequency == Frequency.BIWEEKLY) && validDays.length > 0));
   }
 
   async reschedule() {
     const validDays = this.getWeekdays();
     const nextDate = Game.getNextDate(moment(this.date), validDays, Number(this.frequency));
-    console.log(`rescheduling ${this._id} from ${this.date} to ${nextDate}`);
+    console.log(`rescheduling ${this._id} from ${this.date} to ${nextDate} ${new Date(nextDate).getTime()}`);
     this.date = nextDate;
-    return this.save();
+
+    const guildConfig = await GuildConfig.fetch(this.s);
+
+    if (guildConfig.rescheduleMode === "update") {
+      this.save();
+    }
+    else {
+
+      let data = cloneDeep(this.data);
+      delete data._id;
+      const game = new Game(data);
+      const newGame = await game.save();
+      io().emit("game", { action: "rescheduled", gameId: this._id, newGameId: newGame._id });
+      this.delete();
+    }
   }
 
   async delete(options: any = {}) {

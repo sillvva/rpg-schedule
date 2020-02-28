@@ -108,7 +108,8 @@
     "EMOJI_LEAVE": "Emoji (cancellati)",
     "EMOJI_JOIN_SET": "emoji di iscrizione aggiornata!",
     "EMOJI_LEAVE_SET": "emoji di cancellazione aggiornata!",
-    "ESCAPE": "Il comando bot è impostato su :CMD",
+    "PREFIX": "Comando bot",
+    "PREFIX_CHAR": "Il comando bot è impostato su :CMD",
     "PRIVATE_REMINDERS": "Promemoria privati",
     "PRIVATE_REMINDERS_ON": "I promemoria privati sono stati attivati!",
     "PRIVATE_REMINDERS_OFF": "I promemoria privati sono stati disattivati!",
@@ -124,6 +125,8 @@
     "DROP_OUTS": "Abbandoni",
     "DROP_OUTS_ENABLED": "Gli abbandoni sono ora`abilitati` per i nuovi giochi.",
     "DROP_OUTS_DISABLED": "Gli abbandoni sono ora`disabilitati` per i nuovi giochi.",
+    "RESCHEDULE_MODE": "Modalità di ripianificazione",
+    "RESCHEDULE_MODE_UPDATED": "La modalità di riprogrammazione è stata aggiornata",
     "desc": {
       "SERVER_COMMAND": "Questo comando funzionerà solo in un server",
       "HELP": "Mostra questa finestra di aiuto",
@@ -145,7 +148,8 @@
       "PASSWORD_SET": "Configura una password per la pubblicazione di giochi",
       "PASSWORD_CLEAR": "Rimuovi la password",
       "TOGGLE_DROP_OUT": "Abilita/disabilita la possibilità per i giocatori di abbandonare",
-      "LANG": "Imposta la lingua del bot. Supportate:"
+      "LANG": "Imposta la lingua del bot. Supportate:",
+      "RESCHEDULE_MODE": ""
     }
   }
 }

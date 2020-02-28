@@ -112,7 +112,8 @@
     "EMOJI_LEAVE": "Emoji (Désinscription)",
     "EMOJI_JOIN_SET": "L'Emoji d'inscription a été mis à jour!",
     "EMOJI_LEAVE_SET": "L'Emoji de désinscription a été mis à jour!",
-    "PREFIX": "La commande bot a été définie sur :CMD",
+    "PREFIX": "Commande bot",
+    "PREFIX_CHAR": "La commande bot a été définie sur :CMD",
     "PRIVATE_REMINDERS": "Rappels privés",
     "PRIVATE_REMINDERS_ON": "Les rappels privés ont été activés!",
     "PRIVATE_REMINDERS_OFF": "Les rappels privés ont été désactivés!",
@@ -128,6 +129,8 @@
     "DROP_OUTS": "Désinscriptions",
     "DROP_OUTS_ENABLED": "Les désinscriptions sont maintenant `autorisés` pour les nouvelles parties.",
     "DROP_OUTS_DISABLED": "Les désinscriptions sont maintenant `interdites` pour les nouvelles parties.",
+    "RESCHEDULE_MODE": "Mode de reprogrammation",
+    "RESCHEDULE_MODE_UPDATED": "Le mode reprogrammation a été mis à jour",
     "desc": {
       "SERVER_COMMAND": "Cette commande ne fonctionnera que sur un serveur",
       "HELP": "Afficher cette fenêtre d'aide",
@@ -149,7 +152,8 @@
       "PASSWORD_SET": "Configurer un mot de passe pour les parties à créer",
       "PASSWORD_CLEAR": "Supprimer le mot de passe",
       "TOGGLE_DROP_OUT": "Activer / désactiver la possibilité pour les joueurs de se désinscrire",
-      "LANG": "Définissez la langue du bot. Prise en charge:"
+      "LANG": "Définissez la langue du bot. Prise en charge:",
+      "RESCHEDULE_MODE": ""
     }
   }
 }

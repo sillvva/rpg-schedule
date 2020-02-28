@@ -112,7 +112,8 @@
     "EMOJI_LEAVE": "Emoji (Drop Out)",
     "EMOJI_JOIN_SET": "Sign up emoji updated!",
     "EMOJI_LEAVE_SET": "Drop out emoji updated!",
-    "PREFIX": "The bot command was set to :CMD",
+    "PREFIX": "Bot Command",
+    "PREFIX_CHAR": "The bot command was set to :CMD",
     "PRIVATE_REMINDERS": "Private Reminders",
     "PRIVATE_REMINDERS_ON": "Private reminders were turned on!",
     "PRIVATE_REMINDERS_OFF": "Private reminders were turned off!",
@@ -128,6 +129,8 @@
     "DROP_OUTS": "Drop Outs",
     "DROP_OUTS_ENABLED": "Drop outs are now `enabled` for new games.",
     "DROP_OUTS_DISABLED": "Drop outs are now `disabled` for new games.",
+    "RESCHEDULE_MODE": "Reschedule Mode",
+    "RESCHEDULE_MODE_UPDATED": "Reschedule mode has been updated",
     "desc": {
       "SERVER_COMMAND": "This command will only work in a server",
       "HELP": "Display this help window",
@@ -149,7 +152,8 @@
       "PASSWORD_SET": "Configure a password for posting games",
       "PASSWORD_CLEAR": "Remove the password",
       "TOGGLE_DROP_OUT": "Enable/disable the ability for players to drop out",
-      "LANG": "Set the bot's language. Supported:"
+      "LANG": "Set the bot's language. Supported:",
+      "RESCHEDULE_MODE": "Options: `repost` (default, creates new announcement post), `update` (updates original announcement post)"
     }
   }
 }
