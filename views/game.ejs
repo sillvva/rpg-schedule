@@ -129,6 +129,11 @@
             <div class="form-group col-sm-6 col-md-3">
                 <label for="date" class="col-form-label"><%= lang.game.DATE %></label>
                 <input type="date" class="form-control" id="date" name="date" value="<%= date %>">
+                <div>
+                    <% if (is.editgame) { %>
+                    <small id="gcalLink"></small>
+                    <% } %>
+                </div>
             </div>
             <div class="form-group col-sm-6 col-md-3">
                 <label for="time" class="col-form-label"><%= lang.game.TIME %></label>
@@ -142,6 +147,9 @@
                     </div>
                     <input type="number" min="-12" max="14" step="0.25" class="form-control" id="timezone" name="timezone" value="<%= timezone %>">
                 </div>
+                <div>
+                    <small id="convertLink"></small>
+                </div>
             </div>
             <div class="form-group col-sm-6 col-md-3">
                 <label for="reminder" class="col-form-label"><%= lang.game.REMINDER %></label>
@@ -154,15 +162,6 @@
                     <option value="720" <%= reminder === '720' ? 'selected' : '' %>><%= lang.game.options.HOURS_12 %></option>
                     <option value="1440" <%= reminder === '1440' ? 'selected' : '' %>><%= lang.game.options.HOURS_24 %></option>
                 </select>
-            </div>
-            <div class="col-12">
-                <div class="pinfo overflow-hidden">
-                    <p id="convertLink"></p>
-                    <!-- <p id="countdownLink"></p> -->
-                    <% if (is.editgame) { %>
-                    <p id="gcalLink"></p>
-                    <% } %>
-                </div>
             </div>
         </div>
         <div class="row">
@@ -372,7 +371,6 @@
 
         return {
             convert: `https://timee.io/${d}`,
-            // countdown: `https://timee.io/${d}`,
             gcal: `http://www.google.com/calendar/render?action=TEMPLATE&text=${escape(name)}&dates=${d}00Z/${d}00Z&location=${escape(server)}%20-%20${escape(where)}&trp=false&sprop=&details=${escape(description)}`
         };
     };
@@ -428,9 +426,9 @@
 
     $('#date').change(function() {
         var link = getTZUrls($('#date').val(), $('#time').val(), $('#timezone').val());
-        $('#convertLink').html(`Time Zone Conversion: <a href="${link.convert}" target="_blank" rel="nofollow">${link.convert}</a>`);
+        $('#convertLink').html(`Conversion: <a href="${link.convert}" target="_blank" rel="nofollow">${link.convert}</a>`);
         // $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank" rel="nofollow">${link.countdown}</a>`);
-        $('#gcalLink').html(`<a href="${link.gcal}" target="_blank" rel="nofollow">Add to Calendar</a>`);
+        $('#gcalLink').html(`<a href="${link.gcal}" target="_blank" rel="nofollow"><%= lang.game.ADD_TO_CALENDAR %></a>`);
         updateNextDate($('#date').val(), $('#frequency').val());
     }).change();
 
@@ -438,16 +436,16 @@
 
     $('#time').change(function() {
         var link = getTZUrls($('#date').val(), $('#time').val(), $('#timezone').val());
-        $('#convertLink').html(`Time Zone Conversion: <a href="${link.convert}" target="_blank" rel="nofollow">${link.convert}</a>`);
+        $('#convertLink').html(`Conversion: <a href="${link.convert}" target="_blank" rel="nofollow">${link.convert}</a>`);
         // $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank" rel="nofollow">${link.countdown}</a>`);
-        $('#gcalLink').html(`<a href="${link.gcal}" target="_blank" rel="nofollow">Add to Calendar</a>`);
+        $('#gcalLink').html(`<a href="${link.gcal}" target="_blank" rel="nofollow"><%= lang.game.ADD_TO_CALENDAR %></a>`);
     }).change();
 
     $('#timezone').change(function() {
         var link = getTZUrls($('#date').val(), $('#time').val(), $('#timezone').val());
-        $('#convertLink').html(`Time Zone Conversion: <a href="${link.convert}" target="_blank" rel="nofollow">${link.convert}</a>`);
+        $('#convertLink').html(`Conversion: <a href="${link.convert}" target="_blank" rel="nofollow">${link.convert}</a>`);
         // $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank" rel="nofollow">${link.countdown}</a>`);
-        $('#gcalLink').html(`<a href="${link.gcal}" target="_blank" rel="nofollow">Add to Calendar</a>`);
+        $('#gcalLink').html(`<a href="${link.gcal}" target="_blank" rel="nofollow"><%= lang.game.ADD_TO_CALENDAR %></a>`);
     }).change();
 
     <% if (is.editgame) { %>
@@ -460,12 +458,19 @@
             Object.keys(response.game).forEach(key => {
                 if ($('#'+key).length > 0) $('#'+key).val(response.game[key]);
             });
-        } else if (response.action === 'deleted') {
+        } else if (response.action === 'rescheduled') {
+            localStorage.setItem('rescheduled', 1);
+            window.location = '<%= config.urls.game.create.path %>?g='+response.newGameId;
+        } else if (response.action === 'deleted' && !localStorage.getItem('rescheduled')) {
             alert('<%= lang.game.labels.GAME_DELETED %>');
             window.location = '<%= config.urls.game.create.path %>?s=<%= s %>';
         }
     });
     <% } %>
+
+    setTimeout(function() {
+        localStorage.removeItem('rescheduled');
+    }, 2000);
     
     $('#frequency').change(); // trigger update here to prevent pre-initialization reference error
 

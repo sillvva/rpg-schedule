@@ -18,6 +18,7 @@ export interface GuildConfigModel {
   dropOut?: boolean;
   lang?: string;
   privateReminders?: boolean;
+  rescheduleMode?: string;
   managerRole?: string;
   escape?: string;
 }
@@ -41,6 +42,7 @@ export class GuildConfig implements GuildConfigDataModel {
   dropOut: boolean = true;
   lang: string = "en";
   privateReminders: boolean = false;
+  rescheduleMode: string = 'repost';
   managerRole: string = null;
   escape?: '!';
 
@@ -75,6 +77,7 @@ export class GuildConfig implements GuildConfigDataModel {
       dropOut: this.dropOut,
       lang: this.lang,
       privateReminders: this.privateReminders,
+      rescheduleMode: this.rescheduleMode,
       managerRole: this.managerRole,
       escape: this.escape
     };

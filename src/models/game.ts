@@ -9,6 +9,7 @@ import { discordClient } from "../processes/discord";
 import { io } from "../processes/socket";
 import { GuildConfig } from "./guild-config";
 import config from "./config";
+import cloneDeep from "lodash/cloneDeep";
 
 const connection = db.connection;
 const ObjectId = mongodb.ObjectId;
@@ -196,7 +197,12 @@ export class Game implements GameModel {
         }
       });
 
-    const rawDate = `${game.date} ${game.time} UTC${game.timezone < 0 ? "-" : "+"}${aux.parseTimeZoneISO(game.timezone)}`;
+    const eventTimes = aux.parseEventTimes(game.date, game.time, game.timezone, {
+      name: game.adventure,
+      location: `${guild.name} - ${game.where}`,
+      description: game.description
+    });
+    const rawDate = eventTimes.rawDate;
     const timezone = "UTC" + (game.timezone >= 0 ? "+" : "") + game.timezone;
     const where = parseDiscord(game.where, guild);
     const description = parseDiscord(game.description, guild);
@@ -244,27 +250,17 @@ export class Game implements GameModel {
       if (!embedded) embed = { embed: {} };
     } 
     else {
-      const isoutc = `${new Date(`${game.date} ${game.time} UTC${game.timezone < 0 ? "-" : "+"}${Math.abs(game.timezone)}`).toISOString().replace(/[^0-9T]/gi,"").slice(0,13)}00Z`;
-
-      // msg =
-      // `\n**${lang.game.GM}:** ${dm}` +
-      // `\n**${lang.game.GAME_NAME}:** ${game.adventure}` +
-      // `\n**${lang.game.RUN_TIME}:** ${game.runtime} ${lang.game.labels.HOURS}` +
-      // `\n**${lang.game.WHEN}:** [${when}](http://www.google.com/calendar/render?action=TEMPLATE&text=${escape(game.adventure)}&dates=${isoutc}/${isoutc}&location=${escape(`${guild.name} - ${game.where}`)}&trp=false&sprop=&details=${escape(game.description)}})` +
-      // `\n**${lang.game.WHERE}:** ${where}` +
-      // `\n${description.length > 0 ? `**${lang.game.DESCRIPTION}:**\n${description}\n` : description}` +
-      // `\n${signups}`;
-
       embed.setColor(guildConfig.embedColor);
       embed.setTitle(game.adventure);
       embed.setAuthor(dm, dmmember.user.avatarURL);
       if (dmmember) embed.setThumbnail(dmmember.user.avatarURL);
       if(description.length > 0) embed.setDescription(description);
-      embed.addField(lang.game.WHEN, `[${when}](http://www.google.com/calendar/render?action=TEMPLATE&text=${escape(game.adventure)}&dates=${isoutc}/${isoutc}&location=${escape(`${guild.name} - ${game.where}`)}&trp=false)`, true);
+      embed.addField(lang.game.WHEN, when, true);
       if(game.runtime && game.runtime.trim().length > 0 && game.runtime.trim() != '0') embed.addField(lang.game.RUN_TIME, `${game.runtime} ${lang.game.labels.HOURS}`, true);
       embed.addField(lang.game.WHERE, where);
       embed.addField(`${lang.game.RESERVED} (${reserved.length}/${game.players})`, reserved.length > 0 ? reserved.join("\n") : lang.game.NO_PLAYERS, true);
       if (waitlist.length > 0) embed.addField(`${lang.game.WAITLISTED} (${waitlist.length})`, waitlist.join("\n"), true);
+      embed.addField("Links", `[📅 ${lang.game.ADD_TO_CALENDAR}](${eventTimes.googleCal})\n[🗺 ${lang.game.CONVERT_TIME_ZONE}](${eventTimes.convert.timeAndDate})\n[⏰ ${lang.game.COUNTDOWN}](${eventTimes.countdown})`, true);
       if (game.method === 'automated') embed.setFooter(automatedInstructions);
       if (game && game.gameImage && game.gameImage.trim().length > 0) embed.setImage(game.gameImage.trim());
     }
@@ -288,7 +284,6 @@ export class Game implements GameModel {
         const updatedGame = aux.objectChanges(prev, game);
         io().emit("game", { action: "updated", gameId: game._id, game: updatedGame });
       } catch (err) {
-        this.delete();
         updated.modifiedCount = 0;
       }
       const saved: GameSaveData = {
@@ -379,16 +374,32 @@ export class Game implements GameModel {
 
   public canReschedule() {
     const validDays = this.getWeekdays();
-    return ((this.frequency == Frequency.DAILY || this.frequency == Frequency.MONTHLY) ||
+    const hours = this.runtime == null || this.runtime.trim() == '0' || this.runtime.trim() == '' ? 0 : parseFloat(this.runtime);
+    const gameEnded = this.timestamp + hours * 3600 * 1000 < new Date().getTime();
+    return gameEnded && ((this.frequency == Frequency.DAILY || this.frequency == Frequency.MONTHLY) ||
             ((this.frequency == Frequency.WEEKLY || this.frequency == Frequency.BIWEEKLY) && validDays.length > 0));
   }
 
   async reschedule() {
     const validDays = this.getWeekdays();
     const nextDate = Game.getNextDate(moment(this.date), validDays, Number(this.frequency));
-    console.log(`rescheduling ${this._id} from ${this.date} to ${nextDate}`);
+    console.log(`rescheduling ${this._id} from ${this.date} to ${nextDate} ${new Date(nextDate).getTime()}`);
     this.date = nextDate;
-    return this.save();
+
+    const guildConfig = await GuildConfig.fetch(this.s);
+
+    if (guildConfig.rescheduleMode === "update") {
+      this.save();
+    }
+    else {
+
+      let data = cloneDeep(this.data);
+      delete data._id;
+      const game = new Game(data);
+      const newGame = await game.save();
+      io().emit("game", { action: "rescheduled", gameId: this._id, newGameId: newGame._id });
+      this.delete();
+    }
   }
 
   async delete(options: any = {}) {

@@ -91,10 +91,11 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                       (canConfigure ? `\`${botcmd} add-channel #channel-name\` - ${lang.config.desc.ADD_CHANNEL}\n` : ``) +
                       (canConfigure ? `\`${botcmd} remove-channel #channel-name\` - ${lang.config.desc.REMOVE_CHANNEL}\n` : ``) +
                       (canConfigure ? `\`${botcmd} pruning ${guildConfig.pruning ? "on" : "off"}\` - \`on/off\` - ${lang.config.desc.PRUNING}\n` : ``) +
-                      (canConfigure ? `\`${botcmd} prune - ${lang.config.desc.PRUNE}\n` : ``) +
+                      (canConfigure ? `\`${botcmd} prune\` - ${lang.config.desc.PRUNE}\n` : ``) +
                       (canConfigure
                         ? `\`${botcmd} private-reminders\` - ${lang.config.desc.PRIVATE_REMINDERS.replace(/\:PR/gi,guildConfig.privateReminders ? "on" : "off")}\n`
-                        : ``)
+                        : ``) +
+                      (canConfigure ? `\`${botcmd} rechedule-mode ${guildConfig.rescheduleMode}\` - ${lang.config.desc.RESCHEDULE_MODE}\n` : ``)
                     : ``) +
                   `\n${lang.config.USAGE}\n` +
                   `\`${botcmd} link\` - ${lang.config.desc.LINK}`
@@ -115,7 +116,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                 .setTitle(`RPG Schedule ${lang.config.CONFIGURATION}`)
                 .setColor(guildConfig.embedColor)
                 .setDescription(
-                  `Bot Command: ${guildConfig.escape}${config.command}\n` +
+                  `${lang.config.PREFIX}: ${prefix.length ? prefix : "!"}${config.command}\n` +
                   `${lang.config.GUILD}: \`${guild.name}\`\n` +
                     `${lang.config.CHANNELS}: \`${channel
                       .filter(c => c)
@@ -127,12 +128,12 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                     `${lang.config.EMOJI_JOIN}: \`${guildConfig.emojiAdd}\`\n` +
                     `${lang.config.EMOJI_LEAVE}: \`${guildConfig.emojiRemove}\`\n` +
                     `${lang.config.PRIVATE_REMINDERS}: \`${guildConfig.privateReminders ? "on" : "off"}\`\n` +
+                    `${lang.config.RESCHEDULE_MODE}: \`${guildConfig.rescheduleMode}\`\n` +
                     `${lang.config.PASSWORD}: ${guildConfig.password ? `\`${guildConfig.password}\`` : "Disabled"}\n` +
                     `${lang.config.ROLE}: ${guildConfig.role ? `\`${guildConfig.role}\`` : "All Roles"}\n` +
                     `${lang.config.MANAGER_ROLE}: ${guildConfig.managerRole ? `\`${guildConfig.managerRole}\` and Server Admins` : "Server Admins"}\n` +
                     `${lang.config.DROP_OUTS}: ${guildConfig.dropOut ? `Enabled` : "Disabled"}\n` +
-                    `${lang.config.LANGUAGE}: ${guildConfig.lang}\n` +
-                    `${lang.config.PREFIX}: ${guildConfig.escape}\n`
+                    `${lang.config.LANGUAGE}: ${guildConfig.lang}\n`
                 );
               message.author.send(embed);
             }
@@ -406,7 +407,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   escape: prefix.length ? prefix : "!"
                 })
                 .then(result => {
-                  message.channel.send(lang.config.PREFIX.replace(/\:CMD/gi, `${prefix.length ? prefix : "!"}${config.command}`));
+                  message.channel.send(lang.config.PREFIX_CHAR.replace(/\:CMD/gi, `${prefix.length ? prefix : "!"}${config.command}`));
                 })
                 .catch(err => {
                   console.log(err);
@@ -425,6 +426,23 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   console.log(err);
                 });
             }
+          } else if (cmd === "reschedule-mode") {
+            if (canConfigure) {
+              let mode = params.join("").trim();
+              const options = ["update","repost"];
+              guildConfig
+                .save({
+                  rescheduleMode: options.includes(mode) ? mode : "repost"
+                })
+                .then(result => {
+                  message.channel.send(lang.config.RESCHEDULE_MODE_UPDATED);
+                })
+                .catch(err => {
+                  console.log(err);
+                });
+            }
+          // } else if (cmd === "reschedule") {
+            // rescheduleOldGames(guildId);
           } else if (cmd === "password") {
             if (canConfigure) {
               guildConfig
@@ -523,9 +541,9 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
    * Discord.JS - messageReactionAdd
    */
   client.on("messageReactionAdd", async (reaction, user) => {
-    const message = reaction.message;
-    const game = await Game.fetchBy("messageId", message.id);
     try {
+      const message = reaction.message;
+      const game = await Game.fetchBy("messageId", message.id);
       if (game && user.id !== message.author.id) {
         const guildConfig = await GuildConfig.fetch(game.s);
         if (reaction.emoji.name === guildConfig.emojiAdd) {
@@ -547,7 +565,8 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
           }
         }
       }
-    } catch (err) {}
+    } catch (err) {
+    }
   });
 
   client.on("userUpdate", async (oldUser, newUser) => {
@@ -624,7 +643,7 @@ const refreshMessages = async () => {
   });
 };
 
-const rescheduleOldGames = async () => {
+const rescheduleOldGames = async (guildId?: string) => {
   let result: DeleteWriteOpResultObject;
   try {
     console.log(`Rescheduling old games for all servers`);
@@ -647,14 +666,17 @@ const rescheduleOldGames = async () => {
       ]
     };
 
-    const games = await Game.fetchAllBy(query);
+    if (guildId) query.s = guildId;
+
+    let games = await Game.fetchAllBy(query);
+    games = games.filter(game => client.guilds.array().find(g => g.id === game.s));
     console.log(`Found ${games.length} games scheduled before now`);
     let count = 0;
     for(let i = 0; i < games.length; i++) {
       const game = games[i];
+
       if(game.canReschedule()) {
         game.reschedule();
-        io().emit("game", { action: "rescheduled", gameId: game._id });
         count++;
       }   
     }
@@ -676,7 +698,8 @@ const pruneOldGames = async (guild?: discord.Guild) => {
       }
     };
     
-    const games = await Game.fetchAllBy(query);
+    let games = await Game.fetchAllBy(query);
+    games = games.filter(game => client.guilds.array().find(g => g.id === game.s));
     const guildConfigs = await GuildConfig.fetchAll();
     for(let i = 0; i < games.length; i++) {
       let game = games[i];
@@ -712,6 +735,7 @@ const pruneOldGames = async (guild?: discord.Guild) => {
 
 const postReminders = async (app: Express) => {
   let games = await Game.fetchAllBy({ when: "datetime", reminder: { $in: ["15", "30", "60", "360", "720", "1440"] } });
+  games = games.filter(game => client.guilds.array().find(g => g.id === game.s));
   games.forEach(async game => {
     if (game.timestamp - parseInt(game.reminder) * 60 * 1000 > new Date().getTime()) return;
     if (!game.discordGuild) return;

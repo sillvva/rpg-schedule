@@ -144,6 +144,17 @@ https://rpg-schedule.herokuapp.com
 <td>Toggle whether the game reminders are sent to private messages.</td>
 </tr>
 <tr>
+<td>!schedule reschedule-mode</td>
+<td>repost</td>
+<td>
+  Available modes:<br />
+  <ul>
+    <li><code>repost</code> - Creates a new announcement post</li>
+    <li><code>update</code> - Updates the original announcement post</li>
+  </ul>
+</td>
+</tr>
+<tr>
 <td><strong>Usage</strong></td>
 <td></td>
 <td></td>
@@ -181,4 +192,6 @@ https://rpg-schedule.herokuapp.com
 
 The discord bot is deployed with Heroku as a Node.js and discord.js application and MongoDB for data storage. When an update is pushed to this repository, the update is automatically deployed to Heroku.
 
-Donate: https://www.paypal.me/Sillvva
+[Change Log](https://github.com/sillvva/rpg-schedule/blob/master/CHANGELOG.md)
+
+Donate: [PayPal](https://www.paypal.me/Sillvva) | [My Website](https://www.mattdekok.dev/#donate)
