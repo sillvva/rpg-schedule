@@ -787,7 +787,7 @@ const postReminders = async (app: Express) => {
         }
 
         const siUnit = parseInt(reminder) > 60 ? 'HOURS' : 'MINUTES';
-        const siLabel = lang.game[`STARTING_IN_${siUnit}`].replace(`:${siUnit}`, reminder);
+        const siLabel = lang.game[`STARTING_IN_${siUnit}`].replace(`:${siUnit}`, parseInt(reminder) / (parseInt(reminder) > 60 ? 60 : 1));
 
         if (guildConfig.privateReminders) {
           try {
