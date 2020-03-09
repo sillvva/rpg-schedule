@@ -45,6 +45,7 @@ export interface GameModel {
   timezone: number;
   timestamp: number;
   reminder: string;
+  reminded: boolean;
   messageId: string;
   reminderMessageId: string;
   pm: string;
@@ -80,6 +81,7 @@ export class Game implements GameModel {
   timezone: number;
   timestamp: number;
   reminder: string;
+  reminded: boolean;
   messageId: string;
   reminderMessageId: string;
   pm: string;
@@ -136,6 +138,7 @@ export class Game implements GameModel {
       timezone: this.timezone,
       timestamp: this.timestamp,
       reminder: this.reminder,
+      reminded: this.reminded,
       messageId: this.messageId,
       reminderMessageId: this.reminderMessageId,
       pm: this.pm,
@@ -385,6 +388,7 @@ export class Game implements GameModel {
     const nextDate = Game.getNextDate(moment(this.date), validDays, Number(this.frequency));
     console.log(`rescheduling ${this._id} from ${this.date} to ${nextDate} ${new Date(nextDate).getTime()}`);
     this.date = nextDate;
+    this.reminded = false;
 
     const guildConfig = await GuildConfig.fetch(this.s);
 
@@ -392,7 +396,6 @@ export class Game implements GameModel {
       this.save();
     }
     else {
-
       let data = cloneDeep(this.data);
       delete data._id;
       const game = new Game(data);

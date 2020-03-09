@@ -1,5 +1,9 @@
 # Change Log
 
+## March 9, 2020
+
+- Retain reminder configuration for rescheduled games
+
 ## February 26-27, 2020
 
 - Improved time zone links for embeds
