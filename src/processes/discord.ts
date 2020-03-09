@@ -734,11 +734,22 @@ const pruneOldGames = async (guild?: discord.Guild) => {
 };
 
 const postReminders = async (app: Express) => {
-  let games = await Game.fetchAllBy({ when: "datetime", reminder: { $in: ["15", "30", "60", "360", "720", "1440"] } });
+  let games = await Game.fetchAllBy({ 
+    when: "datetime", 
+    reminder: { 
+      $in: ["15", "30", "60", "360", "720", "1440"] 
+    }, 
+    $or: [{
+      reminded: null
+    }, {
+      reminded: false
+    }] 
+  });
   games = games.filter(game => client.guilds.array().find(g => g.id === game.s));
   games.forEach(async game => {
     if (game.timestamp - parseInt(game.reminder) * 60 * 1000 > new Date().getTime()) return;
     if (!game.discordGuild) return;
+    if (game.reminded) return;
 
     if (game.discordChannel) {
       const reserved: string[] = [];
@@ -779,7 +790,7 @@ const postReminders = async (app: Express) => {
         const reminder = game.reminder;
 
         try {
-          game.reminder = "0";
+          game.reminded = true;
           game.save();
         } catch (err) {
           console.log(err);
