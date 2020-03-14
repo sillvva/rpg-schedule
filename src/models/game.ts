@@ -250,14 +250,14 @@ export class Game implements GameModel {
     if (guildConfig.embeds === false) {
       embed.setColor(guildConfig.embedColor);
       let embedded = false;
-      if (game && game.gameImage && game.gameImage.trim().length > 0) { embedded = true; embed.setImage(game.gameImage.trim()); }
+      if (game && game.gameImage && game.gameImage.trim().length > 0) { embedded = true; embed.setImage(game.gameImage.trim().substr(0, 2048)); }
       // if (!embedded) embed = { embed: {} };
     } 
     else {
       embed.setColor(guildConfig.embedColor);
       embed.setTitle(game.adventure);
-      embed.setAuthor(dm, dmmember.user.avatarURL());
-      if (dmmember) embed.setThumbnail(dmmember.user.avatarURL());
+      embed.setAuthor(dm, dmmember.user.avatarURL().substr(0, 2048));
+      if (dmmember) embed.setThumbnail(dmmember.user.avatarURL().substr(0, 2048));
       if(description.length > 0) embed.setDescription(description);
       embed.addField(lang.game.WHEN, when, true);
       if(game.runtime && game.runtime.trim().length > 0 && game.runtime.trim() != '0') embed.addField(lang.game.RUN_TIME, `${game.runtime} ${lang.game.labels.HOURS}`, true);
@@ -266,7 +266,7 @@ export class Game implements GameModel {
       if (waitlist.length > 0) embed.addField(`${lang.game.WAITLISTED} (${waitlist.length})`, waitlist.join("\n"), true);
       embed.addField("Links", `[📅 ${lang.game.ADD_TO_CALENDAR}](${eventTimes.googleCal})\n[🗺 ${lang.game.CONVERT_TIME_ZONE}](${eventTimes.convert.timeAndDate})\n[⏰ ${lang.game.COUNTDOWN}](${eventTimes.countdown})`, true);
       if (game.method === 'automated') embed.setFooter(automatedInstructions);
-      if (game && game.gameImage && game.gameImage.trim().length > 0) embed.setImage(game.gameImage.trim());
+      if (game && game.gameImage && game.gameImage.trim().length > 0) embed.setImage(game.gameImage.trim().substr(0, 2048));
     }
 
     const dbCollection = connection().collection(collection);
