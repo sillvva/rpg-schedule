@@ -1,4 +1,4 @@
-import discord, { TextChannel, Client, Message } from "discord.js";
+import discord, { TextChannel, Client, Message, UserResolvable, User } from "discord.js";
 import { DeleteWriteOpResultObject, FilterQuery } from "mongodb";
 import { Express } from "express";
 
@@ -9,6 +9,7 @@ import config from "../models/config";
 import aux from "../appaux";
 
 let client: Client;
+let rcb;
 type DiscordProcessesOptions = {
   app: Express;
 };
@@ -16,6 +17,10 @@ type DiscordProcessesOptions = {
 const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () => {}) => {
   client = new discord.Client();
   const app = options.app;
+
+  client.on("debug", function(info) {
+    console.log(info);
+  })
 
   /**
    * Discord.JS - ready
@@ -28,7 +33,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
   /**
    * Discord.JS - message
    */
-  client.on("message", async message => {
+  client.on("message", async (message: Message) => {
     try {
       if (message.channel instanceof TextChannel) {
         let isCommand = false;
@@ -40,6 +45,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
           const guild = message.channel.guild;
           const guildId = guild.id;
           const guildConfig = await GuildConfig.fetch(guildId);
+          let author: User = message.author;
   
           const prefix = (guildConfig.escape || "").trim().length ? guildConfig.escape.trim() : '!';
           const botcmd = `${prefix}${config.command}`;
@@ -57,11 +63,11 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
             return;
           }
 
-          const member = message.channel.guild.members.array().find(m => m.user.id === message.author.id);
+          const member = message.channel.guild.members.cache.array().find(m => m.user.id === message.author.id);
           const canConfigure = member ? member.hasPermission(discord.Permissions.FLAGS.MANAGE_GUILD) : false;
 
           if (cmd === "help" || message.content.trim().split(" ").length === 1) {
-            let embed = new discord.RichEmbed()
+            let embed = new discord.MessageEmbed()
               .setTitle("RPG Schedule Help")
               .setColor(guildConfig.embedColor)
               .setDescription(
@@ -100,19 +106,19 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   `\n${lang.config.USAGE}\n` +
                   `\`${botcmd} link\` - ${lang.config.desc.LINK}`
               );
-            message.channel.send(embed);
+            (<TextChannel>message.channel).send(embed);
           } else if (cmd === "link") {
-            message.channel.send(process.env.HOST + config.urls.game.create.path + "?s=" + guildId);
+            (<TextChannel>message.channel).send(process.env.HOST + config.urls.game.create.path + "?s=" + guildId);
           } else if (cmd === "prune") {
             await pruneOldGames(message.guild);
-            message.channel.send(lang.config.PRUNE);
+            (<TextChannel>message.channel).send(lang.config.PRUNE);
           } else if (cmd === "configuration") {
             if (canConfigure) {
               const channel = guildConfig.channels.map(c => {
-                return guild.channels.get(c);
-              }) || [guild.channels.array().find(c => c instanceof TextChannel)];
+                return guild.channels.cache.get(c);
+              }) || [guild.channels.cache.array().find(c => c instanceof TextChannel)];
 
-              let embed = new discord.RichEmbed()
+              let embed = new discord.MessageEmbed()
                 .setTitle(`RPG Schedule ${lang.config.CONFIGURATION}`)
                 .setColor(guildConfig.embedColor)
                 .setDescription(
@@ -135,7 +141,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                     `${lang.config.DROP_OUTS}: ${guildConfig.dropOut ? `Enabled` : "Disabled"}\n` +
                     `${lang.config.LANGUAGE}: ${guildConfig.lang}\n`
                 );
-              message.author.send(embed);
+              author.dmChannel.send(embed);
             }
           } else if (cmd === "add-channel") {
             if (canConfigure && params[0]) {
@@ -147,7 +153,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   channel: channels
                 })
                 .then(result => {
-                  message.channel.send(`${lang.config.CHANNEL_ADDED}`);
+                  (<TextChannel>message.channel).send(`${lang.config.CHANNEL_ADDED}`);
                 })
                 .catch(err => {
                   console.log(err);
@@ -165,7 +171,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   channel: channels
                 })
                 .then(result => {
-                  message.channel.send(`${lang.config.CHANNEL_REMOVED}`);
+                  (<TextChannel>message.channel).send(`${lang.config.CHANNEL_REMOVED}`);
                 })
                 .catch(err => {
                   console.log(err);
@@ -178,7 +184,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   pruning: params[0] === "on"
                 })
                 .then(result => {
-                  message.channel.send(params[0] === "on" ? lang.config.PRUNING_ON : lang.config.PRUNING_OFF);
+                  (<TextChannel>message.channel).send(params[0] === "on" ? lang.config.PRUNING_ON : lang.config.PRUNING_OFF);
                 })
                 .catch(err => {
                   console.log(err);
@@ -191,7 +197,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   embeds: !(params[0] === "off")
                 })
                 .then(result => {
-                  message.channel.send(!(params[0] === "off") ? lang.config.EMBEDS_ON : lang.config.EMBEDS_OFF);
+                  (<TextChannel>message.channel).send(!(params[0] === "off") ? lang.config.EMBEDS_ON : lang.config.EMBEDS_OFF);
                 })
                 .catch(err => {
                   console.log(err);
@@ -346,7 +352,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
               if (colors[color]) {
                 color = colors[color];
               } else if (!color.match(/[0-9a-f]{6}/i)) {
-                message.channel.send(lang.config.desc.EMBED_COLOR_ERROR);
+                (<TextChannel>message.channel).send(lang.config.desc.EMBED_COLOR_ERROR);
                 return;
               }
               guildConfig
@@ -354,10 +360,10 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   embedColor: "#" + color.match(/[0-9a-f]{6}/i)[0]
                 })
                 .then(result => {
-                  let embed = new discord.RichEmbed()
+                  let embed = new discord.MessageEmbed()
                     .setColor("#" + color.match(/[0-9a-f]{6}/i)[0])
                     .setDescription(`${lang.config.EMBED_COLOR_SET} \`#"+color.match(/[0-9a-f]{6}/i)[0]+"\`.`);
-                  message.channel.send(embed);
+                  (<TextChannel>message.channel).send(embed);
                 })
                 .catch(err => {
                   console.log(err);
@@ -367,7 +373,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
             if (canConfigure) {
               const emoji = params.join(" ");
               if (emoji.length > 2 && emoji.match(/\:[^\:]+\:/)) {
-                message.channel.send(lang.config.desc.EMOJI_ERROR.replace(/\:char/gi, emoji.replace(/\<|\>/g, "")));
+                (<TextChannel>message.channel).send(lang.config.desc.EMOJI_ERROR.replace(/\:char/gi, emoji.replace(/\<|\>/g, "")));
                 return;
               }
               guildConfig
@@ -375,7 +381,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   emojiAdd: emoji
                 })
                 .then(result => {
-                  message.channel.send(lang.config.EMOJI_JOIN_SET);
+                  (<TextChannel>message.channel).send(lang.config.EMOJI_JOIN_SET);
                 })
                 .catch(err => {
                   console.log(err);
@@ -385,7 +391,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
             if (canConfigure) {
               const emoji = params.join(" ");
               if (emoji.length > 2 && emoji.match(/\:[^\:]+\:/)) {
-                message.channel.send(lang.config.desc.EMOJI_ERROR.replace(/\:char/gi, emoji.replace(/\<|\>/g, "")));
+                (<TextChannel>message.channel).send(lang.config.desc.EMOJI_ERROR.replace(/\:char/gi, emoji.replace(/\<|\>/g, "")));
                 return;
               }
               guildConfig
@@ -393,7 +399,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   emojiRemove: emoji
                 })
                 .then(result => {
-                  message.channel.send(lang.config.EMOJI_LEAVE_SET);
+                  (<TextChannel>message.channel).send(lang.config.EMOJI_LEAVE_SET);
                 })
                 .catch(err => {
                   console.log(err);
@@ -407,7 +413,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   escape: prefix.length ? prefix : "!"
                 })
                 .then(result => {
-                  message.channel.send(lang.config.PREFIX_CHAR.replace(/\:CMD/gi, `${prefix.length ? prefix : "!"}${config.command}`));
+                  (<TextChannel>message.channel).send(lang.config.PREFIX_CHAR.replace(/\:CMD/gi, `${prefix.length ? prefix : "!"}${config.command}`));
                 })
                 .catch(err => {
                   console.log(err);
@@ -420,7 +426,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   privateReminders: !guildConfig.privateReminders
                 })
                 .then(result => {
-                  message.channel.send(!guildConfig.privateReminders ? lang.config.PRIVATE_REMINDERS_ON : lang.config.PRIVATE_REMINDERS_OFF);
+                  (<TextChannel>message.channel).send(!guildConfig.privateReminders ? lang.config.PRIVATE_REMINDERS_ON : lang.config.PRIVATE_REMINDERS_OFF);
                 })
                 .catch(err => {
                   console.log(err);
@@ -435,7 +441,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   rescheduleMode: options.includes(mode) ? mode : "repost"
                 })
                 .then(result => {
-                  message.channel.send(lang.config.RESCHEDULE_MODE_UPDATED);
+                  (<TextChannel>message.channel).send(lang.config.RESCHEDULE_MODE_UPDATED);
                 })
                 .catch(err => {
                   console.log(err);
@@ -450,7 +456,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   password: params.join(" ")
                 })
                 .then(result => {
-                  message.channel.send(lang.config.PASSWORD_SET);
+                  (<TextChannel>message.channel).send(lang.config.PASSWORD_SET);
                 })
                 .catch(err => {
                   console.log(err);
@@ -463,7 +469,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   dropOut: guildConfig.dropOut === false
                 })
                 .then(result => {
-                  message.channel.send(guildConfig.dropOut === false ? lang.config.DROP_OUTS_ENABLED : lang.config.DROP_OUTS_DISABLED);
+                  (<TextChannel>message.channel).send(guildConfig.dropOut === false ? lang.config.DROP_OUTS_ENABLED : lang.config.DROP_OUTS_DISABLED);
                 })
                 .catch(err => {
                   console.log(err);
@@ -477,7 +483,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
             }
             if (mentioned) {
               const roleId = mentioned[0];
-              const role = guild.roles.get(roleId);
+              const role = guild.roles.cache.get(roleId);
               if (role) roleName = role.name;
             }
             if (canConfigure) {
@@ -486,7 +492,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   role: roleName == "" ? null : roleName
                 })
                 .then(result => {
-                  message.channel.send(roleName.length > 0 ? lang.config.ROLE_SET.replace(/\:role/gi, roleName) : lang.config.ROLE_CLEARED);
+                  (<TextChannel>message.channel).send(roleName.length > 0 ? lang.config.ROLE_SET.replace(/\:role/gi, roleName) : lang.config.ROLE_CLEARED);
                 })
                 .catch(err => {
                   console.log(err);
@@ -497,7 +503,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
             let roleName = params.join(" ");
             if (mentioned) {
               const roleId = mentioned[0];
-              const role = guild.roles.get(roleId);
+              const role = guild.roles.cache.get(roleId);
               if (role) roleName = role.name;
             }
             if (canConfigure) {
@@ -506,7 +512,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   managerRole: roleName == "" ? null : roleName
                 })
                 .then(result => {
-                  message.channel.send(roleName.length > 0 ? lang.config.ROLE_SET.replace(/\:role/gi, roleName) : lang.config.ROLE_CLEARED);
+                  (<TextChannel>message.channel).send(roleName.length > 0 ? lang.config.ROLE_SET.replace(/\:role/gi, roleName) : lang.config.ROLE_CLEARED);
                 })
                 .catch(err => {
                   console.log(err);
@@ -515,7 +521,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
           } else if (cmd === "lang") {
             const newLang = languages.find(l => l.code === params[0].trim());
             if (!newLang) {
-              return message.channel.send(lang.config.NO_LANG);
+              return (<TextChannel>message.channel).send(lang.config.NO_LANG);
             }
             if (canConfigure) {
               guildConfig
@@ -523,7 +529,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   lang: newLang.code
                 })
                 .then(result => {
-                  message.channel.send(newLang.config.LANG_SET.replace(/\:lang/gi, newLang.name));
+                  (<TextChannel>message.channel).send(newLang.config.LANG_SET.replace(/\:lang/gi, newLang.name));
                 })
                 .catch(err => {
                   console.log(err);
@@ -540,14 +546,14 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
   /**
    * Discord.JS - messageReactionAdd
    */
-  client.on("messageReactionAdd", async (reaction, user) => {
+  client.on("messageReactionAdd", async (reaction, user: User) => {
     try {
       const message = reaction.message;
       const game = await Game.fetchBy("messageId", message.id);
       if (game && user.id !== message.author.id) {
         const guildConfig = await GuildConfig.fetch(game.s);
         if (reaction.emoji.name === guildConfig.emojiAdd) {
-          reaction.remove(user);
+          reaction.users.remove(<UserResolvable>user);
           if (game.reserved.indexOf(user.tag) < 0) {
             game.reserved = [...game.reserved.trim().split(/\r?\n/), user.tag].join("\n");
             if (game.reserved.startsWith("\n")) game.reserved = game.reserved.substr(1);
@@ -555,7 +561,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
           }
         }
         if (reaction.emoji.name === guildConfig.emojiRemove) {
-          reaction.remove(user);
+          reaction.users.remove(<UserResolvable>user);
           if (game.reserved.indexOf(user.tag) >= 0 && guildConfig.dropOut) {
             game.reserved = game.reserved
               .split(/\r?\n/)
@@ -569,11 +575,10 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
     }
   });
 
-  client.on("userUpdate", async (oldUser, newUser) => {
+  client.on("userUpdate", async (oldUser: User, newUser: User) => {
     // console.log(aux.backslash(oldUser.tag));
     if (oldUser.tag != newUser.tag) {
       const games = await Game.fetchAllBy({ $or: [ { dm: oldUser.tag }, { reserved: new RegExp(aux.backslash(oldUser.tag), "gi") } ] });
-      // console.log(oldUser.tag, newUser.tag, games.length);
       games.forEach(game => {
         // console.log(game.adventure);
         if (game.dm === oldUser.tag) game.dm = newUser.tag;
@@ -608,19 +613,21 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
     if (!events.hasOwnProperty(event.t)) return;
 
     const { d: data } = event;
-    const user = client.users.get(data.user_id);
-    const channel = <TextChannel>client.channels.get(data.channel_id) || (await user.createDM());
+    const user = client.users.cache.get(data.user_id);
+    const channel = <TextChannel>client.channels.cache.get(data.channel_id) || (await user.createDM());
 
-    if (channel.messages.has(data.message_id)) return;
+    if (channel.messages.cache.has(data.message_id)) return;
 
-    const message = await channel.fetchMessage(data.message_id);
+    const message = await channel.messages.fetch(data.message_id);
     const emojiKey = data.emoji.id ? `${data.emoji.name}:${data.emoji.id}` : data.emoji.name;
-    let reaction = message.reactions.get(emojiKey);
+    let reaction = message.reactions.cache.get(emojiKey);
 
-    if (!reaction) {
-      const emoji = new discord.Emoji(client.guilds.get(data.guild_id), data.emoji);
-      reaction = new discord.MessageReaction(message, emoji, 1, data.user_id === client.user.id);
-    }
+    // if (!reaction) {
+    //   const emoji = new discord.Emoji(client.guilds.cache.get(data.guild_id), data.emoji);
+    //   reaction = new discord.MessageReaction(client, {
+    //     emoji: emoji
+    //   }, message);
+    // }
 
     client.emit(events[event.t], reaction, user);
   });
@@ -628,7 +635,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
   return client;
 };
 
-const discordLogin = client => {
+const discordLogin = (client: discord.Client) => {
   client.login(process.env.TOKEN);
 };
 
@@ -638,7 +645,7 @@ const refreshMessages = async () => {
     if (!game.discordGuild) return;
 
     try {
-      const message = await game.discordChannel.fetchMessage(game.messageId);
+      const message = await game.discordChannel.messages.fetch(game.messageId);
     } catch (err) {}
   });
 };
@@ -669,7 +676,7 @@ const rescheduleOldGames = async (guildId?: string) => {
     if (guildId) query.s = guildId;
 
     let games = await Game.fetchAllBy(query);
-    games = games.filter(game => client.guilds.array().find(g => g.id === game.s));
+    games = games.filter(game => client.guilds.cache.array().find(g => g.id === game.s));
     console.log(`Found ${games.length} games scheduled before now`);
     let count = 0;
     for(let i = 0; i < games.length; i++) {
@@ -699,7 +706,7 @@ const pruneOldGames = async (guild?: discord.Guild) => {
     };
     
     let games = await Game.fetchAllBy(query);
-    games = games.filter(game => client.guilds.array().find(g => g.id === game.s));
+    games = games.filter(game => client.guilds.cache.array().find(g => g.id === game.s));
     const guildConfigs = await GuildConfig.fetchAll();
     for(let i = 0; i < games.length; i++) {
       let game = games[i];
@@ -712,11 +719,11 @@ const pruneOldGames = async (guild?: discord.Guild) => {
         const guildConfig = guildConfigs.find(gc => gc.guild === game.s);
         if ((guildConfig || new GuildConfig()).pruning && game.discordChannel) {
           if (game.messageId) {
-            const message = await game.discordChannel.fetchMessage(game.messageId);
+            const message = await game.discordChannel.messages.fetch(game.messageId);
             if (message) message.delete();
           }
           if (game.reminderMessageId) {
-            const reminder = await game.discordChannel.fetchMessage(game.reminderMessageId);
+            const reminder = await game.discordChannel.messages.fetch(game.reminderMessageId);
             if (reminder) reminder.delete();
           }
         }
@@ -744,8 +751,8 @@ const postReminders = async (app: Express) => {
     }, {
       reminded: false
     }] 
-  });
-  games = games.filter(game => client.guilds.array().find(g => g.id === game.s));
+  }); 
+  games = games.filter(game => client.guilds.cache.array().find(g => g.id === game.s));
   games.forEach(async game => {
     if (game.timestamp - parseInt(game.reminder) * 60 * 1000 > new Date().getTime()) return;
     if (!game.discordGuild) return;
@@ -757,7 +764,7 @@ const postReminders = async (app: Express) => {
       let where = game.where;
       game.reserved.split(/\r?\n/).forEach(res => {
         if (res.trim().length === 0) return;
-        let member = game.discordGuild.members.array().find(mem => mem.user.tag === res.trim().replace("@", ""));
+        let member = game.discordGuild.members.cache.array().find(mem => mem.user.tag === res.trim().replace("@", ""));
 
         let name = res.trim().replace("@", "");
         if (member) name = member.user.toString();
@@ -768,7 +775,8 @@ const postReminders = async (app: Express) => {
         }
       });
 
-      const member = game.discordGuild.members.array().find(mem => mem.user.tag === game.dm.trim().replace("@", ""));
+      const guildMembers = await game.discordGuild.members.fetch();
+      const member = guildMembers.array().find(mem => mem.user.tag === game.dm.trim().replace("@", ""));
       let dm = game.dm.trim().replace("@", "");
       let dmMember = member;
       if (member) dm = member.user.toString();
@@ -777,7 +785,7 @@ const postReminders = async (app: Express) => {
         const channels = game.where.match(/#[a-z0-9\-_]+/gi);
         if (channels) {
           channels.forEach(chan => {
-            const guildChannel = game.discordGuild.channels.find(c => c.name === chan.replace(/#/, ""));
+            const guildChannel = game.discordGuild.channels.cache.array().find(c => c.name === chan.replace(/#/, ""));
             if (guildChannel) {
               where = game.where.replace(chan, guildChannel.toString());
             }

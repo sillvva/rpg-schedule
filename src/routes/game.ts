@@ -1,12 +1,16 @@
 import express from "express";
 import moment from "moment";
-import { Guild, TextChannel } from "discord.js";
+import discord, { Guild, TextChannel } from "discord.js";
 
 import { Game } from "../models/game";
 import { GuildConfig } from "../models/guild-config";
 import config from "../models/config";
 
-export default (options: any) => {
+interface GameRouteOptions {
+  client: discord.Client;
+}
+
+export default (options: GameRouteOptions) => {
   const router = express.Router();
   const { client } = options;
 
@@ -57,13 +61,14 @@ export default (options: any) => {
       }
 
       if (server) {
-        const guild: Guild = client.guilds.get(server);
+        const guild: Guild = client.guilds.cache.get(server);
 
         if (guild) {
           let password: string;
 
           const guildConfig = await GuildConfig.fetch(guild.id);
-          const member = guild.members.find(m => m.id === req.account.user.id);
+          const guildMembers = await guild.members.fetch();
+          const member = guildMembers.array().find(m => m.id === req.account.user.id);
           if (guildConfig && !(member && req.account.user.tag === config.author)) {
             password = guildConfig.password;
             if (guildConfig.role) {
@@ -72,7 +77,7 @@ export default (options: any) => {
                 return;
               } else {
                 if (member) {
-                  if (!member.roles.find(r => r.name.toLowerCase().trim() === guildConfig.role.toLowerCase().trim())) {
+                  if (!member.roles.cache.find(r => r.name.toLowerCase().trim() === guildConfig.role.toLowerCase().trim())) {
                     res.redirect(config.urls.game.dashboard.path);
                     return;
                   }
@@ -84,8 +89,8 @@ export default (options: any) => {
             }
           }
 
-          const textChannels = <TextChannel[]>guild.channels.array().filter(c => c instanceof TextChannel);
-          const channels = guildConfig.channels.filter(c => guild.channels.array().find(gc => gc.id == c)).map(c => guild.channels.get(c));
+          const textChannels = <TextChannel[]>guild.channels.cache.array().filter(c => c instanceof TextChannel);
+          const channels = guildConfig.channels.filter(c => guild.channels.cache.array().find(gc => gc.id == c)).map(c => guild.channels.cache.get(c));
           if (channels.length === 0 && textChannels.length > 0) channels.push(textChannels[0]);
 
           if (channels.length === 0) {
@@ -128,7 +133,7 @@ export default (options: any) => {
             guildConfig: guildConfig,
             errors: {
               other: null,
-              dm: game && !guild.members.array().find(mem => {
+              dm: game && !guildMembers.array().find(mem => {
                 return !mem.user.bot && mem.user.tag === game.dm.trim().replace("@", "");
               }),
               reserved: game ? game.reserved
@@ -136,7 +141,7 @@ export default (options: any) => {
                 .split(/\r?\n/)
                 .filter(res => {
                   if (res.trim().length === 0) return false;
-                  return !guild.members.array().find(mem => !mem.user.bot && mem.user.tag === res.trim());
+                  return !guildMembers.array().find(mem => !mem.user.bot && mem.user.tag === res.trim());
                 }) : []
             }
           };

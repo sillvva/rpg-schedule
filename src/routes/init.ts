@@ -150,20 +150,20 @@ export default (options: any) => {
               }
             };
   
-            client.guilds.forEach(guild => {
+            client.guilds.cache.forEach(guild => {
               const guildConfig = guildConfigs.find(gc => gc.guild === guild.id) || new GuildConfig({ guild: guild.id });
-              guild.members.forEach(member => {
+              guild.members.cache.forEach(member => {
                 if (member.id === id) {
                   req.account.guilds.push({
                     id: guild.id,
                     name: guild.name,
                     icon: guild.iconURL,
                     permission: guildConfig.role
-                      ? member.roles.find(r => r.name.toLowerCase().trim() === (guildConfig.role || "").toLowerCase().trim())
+                      ? member.roles.cache.find(r => r.name.toLowerCase().trim() === (guildConfig.role || "").toLowerCase().trim())
                       : true,
                     isAdmin:
                       member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) ||
-                      member.roles.find(r => r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim()),
+                      member.roles.cache.find(r => r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim()),
                     channels: guild.channels,
                     config: guildConfig,
                     games: []
