@@ -246,6 +246,10 @@ export class Game implements GameModel {
       `\n${description.length > 0 ? `**${lang.game.DESCRIPTION}:**\n${description}\n` : description}` +
       `\n${signups}`;
 
+    if (game.gameImage.trim().length > 2048) {
+      game.gameImage = "";
+    }
+
     let embed = new discord.MessageEmbed(); 
     if (guildConfig.embeds === false) {
       embed.setColor(guildConfig.embedColor);
