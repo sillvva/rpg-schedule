@@ -744,7 +744,7 @@ const postReminders = async (app: Express) => {
     }, {
       reminded: false
     }] 
-  });
+  }); 
   games = games.filter(game => client.guilds.array().find(g => g.id === game.s));
   games.forEach(async game => {
     if (game.timestamp - parseInt(game.reminder) * 60 * 1000 > new Date().getTime()) return;
