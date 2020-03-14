@@ -1,5 +1,5 @@
 import mongodb, { ObjectID } from "mongodb";
-import discord, { Message, Guild, TextChannel, MessageEditOptions, RichEmbed } from "discord.js";
+import discord, { Message, Guild, TextChannel, MessageEditOptions, MessageEmbed } from "discord.js";
 import moment from "moment";
 import "moment-recur-ts";
 
@@ -103,9 +103,9 @@ export class Game implements GameModel {
     Object.entries(game || {}).forEach(([key, value]) => {
       this[key] = value;
     });
-    this._guild = discordClient().guilds.get(this.s);
+    this._guild = discordClient().guilds.cache.get(this.s);
     if (this._guild) {
-      this._guild.channels.forEach(c => {
+      this._guild.channels.cache.forEach(c => {
         if (!this._channel && c instanceof TextChannel) {
           this._channel = c;
         }
@@ -149,7 +149,7 @@ export class Game implements GameModel {
   }
 
   async save() {
-    if (!connection()) throw new Error("No database connection");
+    if (!connection()) { console.log("No database connection"); return null; }
     const channel = this._channel;
     const guild = channel.guild;
     const guildConfig = await GuildConfig.fetch(guild.id);
@@ -172,7 +172,8 @@ export class Game implements GameModel {
       .trim()
       .replace("@", "")
       .replace(/\#\d{4}/, "");
-    let dmmember = guild.members.array().find(mem => {
+    let guildMembers = (await guild.members.fetch()).array();
+    let dmmember = guildMembers.find(mem => {
       return mem.user.tag === game.dm.trim().replace("@", "");
     });
     if (!dmmember) dm = game.dm.trim();//throw new Error(lang.game.GM_ERROR);
@@ -185,7 +186,7 @@ export class Game implements GameModel {
       .split(/\r?\n/)
       .forEach((res: string) => {
         if (res.trim().length === 0) return;
-        let member = guild.members.array().find(mem => mem.user.tag.trim() === res.trim());
+        let member = guildMembers.find(mem => mem.user.tag.trim() === res.trim());
 
         let name = res.trim().replace(/\#\d{4}/, "");
         if (member) {
@@ -245,18 +246,18 @@ export class Game implements GameModel {
       `\n${description.length > 0 ? `**${lang.game.DESCRIPTION}:**\n${description}\n` : description}` +
       `\n${signups}`;
 
-    let embed: MessageEditOptions | RichEmbed = new discord.RichEmbed(); 
+    let embed = new discord.MessageEmbed(); 
     if (guildConfig.embeds === false) {
       embed.setColor(guildConfig.embedColor);
       let embedded = false;
       if (game && game.gameImage && game.gameImage.trim().length > 0) { embedded = true; embed.setImage(game.gameImage.trim()); }
-      if (!embedded) embed = { embed: {} };
+      // if (!embedded) embed = { embed: {} };
     } 
     else {
       embed.setColor(guildConfig.embedColor);
       embed.setTitle(game.adventure);
-      embed.setAuthor(dm, dmmember.user.avatarURL);
-      if (dmmember) embed.setThumbnail(dmmember.user.avatarURL);
+      embed.setAuthor(dm, dmmember.user.avatarURL());
+      if (dmmember) embed.setThumbnail(dmmember.user.avatarURL());
       if(description.length > 0) embed.setDescription(description);
       embed.addField(lang.game.WHEN, when, true);
       if(game.runtime && game.runtime.trim().length > 0 && game.runtime.trim() != '0') embed.addField(lang.game.RUN_TIME, `${game.runtime} ${lang.game.labels.HOURS}`, true);
@@ -274,7 +275,7 @@ export class Game implements GameModel {
       const updated = await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: game });
       let message: Message;
       try {
-        message = await channel.fetchMessage(game.messageId);
+        message = await channel.messages.fetch(game.messageId);
         if (guildConfig.embeds === false) {
           message = await message.edit(msg, embed);
         } else {
@@ -330,7 +331,7 @@ export class Game implements GameModel {
   }
 
   static async fetch(gameId: string | number | ObjectID): Promise<Game> {
-    if (!connection()) throw new Error("No database connection");
+    if (!connection()) { console.log("No database connection"); return null; }
     const game = await connection()
       .collection(collection)
       .findOne({ _id: new ObjectId(gameId) });
@@ -338,7 +339,7 @@ export class Game implements GameModel {
   }
 
   static async fetchBy(key: string, value: any): Promise<Game> {
-    if (!connection()) throw new Error("No database connection");
+    if (!connection()) { console.log("No database connection"); return null; }
     const query: mongodb.FilterQuery<any> = aux.fromEntries([[key, value]]);
     const game: GameModel = await connection()
       .collection(collection)
@@ -347,7 +348,7 @@ export class Game implements GameModel {
   }
 
   static async fetchAllBy(query: mongodb.FilterQuery<any>): Promise<Game[]> {
-    if (!connection()) throw new Error("No database connection");
+    if (!connection()) { console.log("No database connection"); return []; }
     const games: GameModel[] = await connection()
       .collection(collection)
       .find(query)
@@ -358,7 +359,7 @@ export class Game implements GameModel {
   }
 
   static async deleteAllBy(query: mongodb.FilterQuery<any>) {
-    if (!connection()) throw new Error("No database connection");
+    if (!connection()) { console.log("No database connection"); return null; }
     return await connection()
       .collection(collection)
       .deleteMany(query);
@@ -406,7 +407,7 @@ export class Game implements GameModel {
   }
 
   async delete(options: any = {}) {
-    if (!connection()) throw new Error("No database connection");
+    if (!connection()) { console.log("No database connection"); return null; }
 
     const { sendWS = true } = options;
     const game: GameModel = this;
@@ -415,7 +416,7 @@ export class Game implements GameModel {
     if (channel) {
       try {
         if (game.messageId) {
-          const message = await channel.fetchMessage(game.messageId);
+          const message = await channel.messages.fetch(game.messageId);
           if (message) {
             message.delete().catch((err) => {
               console.log('Attempted to delete announcement message.');
@@ -429,7 +430,7 @@ export class Game implements GameModel {
 
       try {
         if (game.reminderMessageId) {
-          const message = await channel.fetchMessage(game.reminderMessageId);
+          const message = await channel.messages.fetch(game.reminderMessageId);
           if (message) {
             message.delete().catch((err) => {
               console.log('Attempted to delete reminder message.');
@@ -443,9 +444,10 @@ export class Game implements GameModel {
 
       try {
         if (game.pm) {
-          const dm = channel.guild.members.array().find(m => m.user.tag === game.dm);
+          const guildMembers = await channel.guild.members.fetch();
+          const dm = guildMembers.find(m => m.user.tag === game.dm);
           if (dm && dm.user.dmChannel) {
-            const pm = dm.user.dmChannel.messages.get(game.pm);
+            const pm = await dm.user.dmChannel.messages.fetch(game.pm);
             if (pm) {
               pm.delete().catch((err) => {
                 console.log('Attempted to delete game edit link pm.');
@@ -509,13 +511,13 @@ export class Game implements GameModel {
 
 const parseDiscord = (text: string, guild: Guild) => {
   try {
-    guild.members.array().forEach(mem => {
+    guild.members.cache.array().forEach(mem => {
       text = text.replace(new RegExp(`\@${aux.backslash(mem.user.tag)}`, "gi"), mem.toString());
     });
-    guild.channels.array().forEach(c => {
+    guild.channels.cache.array().forEach(c => {
       text = text.replace(new RegExp(`\#${aux.backslash(c.name)}`, "gi"), c.toString());
     });
-    guild.roles.array().forEach(role => {
+    guild.roles.cache.array().forEach(role => {
       if (!role.mentionable) return;
       text = text.replace(new RegExp(`\@${aux.backslash(role.name)}`, "gi"), role.toString());
     });
