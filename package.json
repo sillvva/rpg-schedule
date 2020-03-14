@@ -47,7 +47,7 @@
   "author": "Matt DeKok",
   "license": "MIT",
   "engines": {
-    "node": "8.14.0",
-    "npm": "6.4.1"
+    "node": "12.13.0",
+    "npm": "6.12.0"
   }
 }
