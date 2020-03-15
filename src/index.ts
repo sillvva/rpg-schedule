@@ -13,7 +13,7 @@ import { socket } from "./processes/socket";
 
 import initRoutes from "./routes/init";
 import gameRoutes from "./routes/game";
-import inviteRoute from "./routes/invite";
+import otherRoutes from "./routes/other";
 import timezoneRoutes from "./routes/timezone";
 import loginRoutes from "./routes/login";
 import redirectRoutes from "./routes/redirects";
@@ -83,18 +83,19 @@ const client = discord.processes({
       discord.pruneOldGames();
       setInterval(() => {
         discord.pruneOldGames();
-      }, 3600 * 1000); // 1 hour
+      }, 60 * 60 * 1000); // 1 hour
 
       // Once per hour, reschedule recurring games from the database that have already occurred
       discord.rescheduleOldGames();
       setInterval(() => {
         discord.rescheduleOldGames();
-      }, 3600 * 1000); // 1 hour
+      }, 60 * 60 * 1000); // 1 hour
 
       // Post Game Reminders
+      discord.postReminders(app);
       setInterval(() => {
-        // discord.postReminders(app);
-      }, 60 * 1000); // 1 minute
+        discord.postReminders(app);
+      }, 1 * 60 * 1000); // 1 minute
     }
 
     // Stay awake...
@@ -116,7 +117,7 @@ app.use(rssRoutes({ client: client }));
 app.use(loginRoutes());
 app.use(initRoutes({ client: client }));
 app.use(gameRoutes({ client: client }));
-app.use(inviteRoute());
+app.use(otherRoutes());
 app.use(timezoneRoutes());
 app.use(redirectRoutes());
 app.use("/", (req: any, res, next) => {

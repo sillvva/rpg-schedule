@@ -151,10 +151,16 @@
         </div>
     <% }); %>
     <% if (account.guilds.filter(guild => !account.viewing.games || guild.games.length > 0).length === 0) { %>
-      <div class="no-guilds">
-          <p><%= lang.dashboard.NO_GAMES %></p>
-          <a href="/invite" target="_blank" class="btn btn-primary btn-lg"><%= lang.nav.INVITE %></a>
-      </div>
+        <% if (account.viewing.games || account.viewing.server) { %>
+            <div class="no-guilds">
+                <%= lang.dashboard.EMPTY_UPCOMING_GAMES %>
+            </div>
+        <% } else if (account.viewing.dashboard) { %>
+            <div class="no-games">
+                <p><%= lang.dashboard.NO_GAMES %></p>
+                <a href="/invite" target="_blank" class="btn btn-primary btn-lg"><%= lang.nav.INVITE %></a>
+            </div>
+        <% } %>
     <% } %>
 </div>
 <script type="text/javascript">

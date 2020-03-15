@@ -87,8 +87,8 @@
   },
   "dashboard": {
     "NO_GAMES": "Vous n'êtes pas membre d'un serveur qui vous a autorisé à publier des parties. Si vous souhaitez utiliser ce bot sur votre propre serveur, cliquez sur le bouton Inviter ci-dessous.",
-    "EMPTY_MY_GAMES": "Vous ne jouez dans aucune partie de ce serveur pour le moment",
-    "EMPTY_UPCOMING_GAMES": "Il n'y a pas de partie à venir sur ce serveur pour le moment"
+    "EMPTY_MY_GAMES": "Vous ne jouez dans aucune partie pour le moment",
+    "EMPTY_UPCOMING_GAMES": "Il n'y a pas de partie à venir pour le moment"
   },
   "config": {
     "COMMAND_LIST": "Liste de commandes",
