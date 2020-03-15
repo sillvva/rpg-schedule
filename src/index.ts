@@ -93,7 +93,7 @@ const client = discord.processes({
 
       // Post Game Reminders
       setInterval(() => {
-        discord.postReminders(app);
+        // discord.postReminders(app);
       }, 60 * 1000); // 1 minute
     }
 
