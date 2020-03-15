@@ -260,7 +260,7 @@ export class Game implements GameModel {
     else {
       embed.setColor(guildConfig.embedColor);
       embed.setTitle(game.adventure);
-      embed.setAuthor(dm, dmmember.user.avatarURL().substr(0, 2048));
+      if (dmmember) embed.setAuthor(dm, dmmember.user.avatarURL().substr(0, 2048));
       if (dmmember) embed.setThumbnail(dmmember.user.avatarURL().substr(0, 2048));
       if(description.length > 0) embed.setDescription(description);
       embed.addField(lang.game.WHEN, when, true);
