@@ -9,7 +9,6 @@ import config from "../models/config";
 import aux from "../appaux";
 
 let client: Client;
-let rcb;
 type DiscordProcessesOptions = {
   app: Express;
 };
@@ -750,9 +749,10 @@ const postReminders = async (app: Express) => {
       reminded: null
     }, {
       reminded: false
-    }] 
+    }]
   }); 
   games = games.filter(game => client.guilds.cache.array().find(g => g.id === game.s));
+  console.log(`Posting reminders for ${games.length} games`);
   games.forEach(async game => {
     if (game.timestamp - parseInt(game.reminder) * 60 * 1000 > new Date().getTime()) return;
     if (!game.discordGuild) return;
