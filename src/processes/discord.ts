@@ -740,28 +740,54 @@ const pruneOldGames = async (guild?: discord.Guild) => {
 };
 
 const postReminders = async (app: Express) => {
-  let games = await Game.fetchAllBy({ 
-    when: "datetime", 
-    reminder: { 
-      $in: ["15", "30", "60", "360", "720", "1440"] 
-    }, 
-    $or: [{
-      reminded: null
-    }, {
-      reminded: false
-    }]
-  }); 
+  const cTime = new Date().getTime();
+  const reminderOptions = ["15", "30", "60", "360", "720", "1440"];
+  const remExprs = reminderOptions.map(r => {
+    const rt = parseInt(r);
+    return {
+      reminder: r,
+      timestamp: {
+        $lte: cTime + rt * 60 * 1000
+      }
+    }
+  });
+  
+  const query: FilterQuery<any> = {
+    when: "datetime",
+    timestamp: {
+      $gt: new Date().getTime()
+    },
+    $and: [
+      {
+        $or: remExprs
+      },
+      {
+        $or: [
+          {
+            reminded: null
+          },
+          {
+            reminded: false
+          }
+        ]
+      }
+    ]
+  };
+  
+  let games = await Game.fetchAllBy(query); 
   games = games.filter(game => client.guilds.cache.array().find(g => g.id === game.s));
   console.log(`Posting reminders for ${games.length} games`);
   games.forEach(async game => {
     if (game.timestamp - parseInt(game.reminder) * 60 * 1000 > new Date().getTime()) return;
     if (!game.discordGuild) return;
+    if (!game.discordChannel) return;
     if (game.reminded) return;
 
-    if (game.discordChannel) {
-      const reserved: string[] = [];
-      const reservedUsers: discord.GuildMember[] = [];
-      let where = game.where;
+    const reserved: string[] = [];
+    const reservedUsers: discord.GuildMember[] = [];
+
+    try {
+      var where = game.where;
       game.reserved.split(/\r?\n/).forEach(res => {
         if (res.trim().length === 0) return;
         let member = game.discordGuild.members.cache.array().find(mem => mem.user.tag === res.trim().replace("@", ""));
@@ -777,68 +803,71 @@ const postReminders = async (app: Express) => {
 
       const guildMembers = await game.discordGuild.members.fetch();
       const member = guildMembers.array().find(mem => mem.user.tag === game.dm.trim().replace("@", ""));
-      let dm = game.dm.trim().replace("@", "");
-      let dmMember = member;
+      var dm = game.dm.trim().replace("@", "");
+      var dmMember = member;
       if (member) dm = member.user.toString();
+    }
+    catch(err) {
 
-      if (reserved.length > 0) {
-        const channels = game.where.match(/#[a-z0-9\-_]+/gi);
-        if (channels) {
-          channels.forEach(chan => {
-            const guildChannel = game.discordGuild.channels.cache.array().find(c => c.name === chan.replace(/#/, ""));
-            if (guildChannel) {
-              where = game.where.replace(chan, guildChannel.toString());
-            }
-          });
+    }
+
+    if (reserved.length == 0) return;
+
+    try {
+      game.reminded = true;
+      game.save();
+    } catch (err) {
+      console.log(err);
+      return;
+    }
+
+    const channels = game.where.match(/#[a-z0-9\-_]+/gi);
+    if (channels) {
+      channels.forEach(chan => {
+        const guildChannel = game.discordGuild.channels.cache.array().find(c => c.name === chan.replace(/#/, ""));
+        if (guildChannel) {
+          where = game.where.replace(chan, guildChannel.toString());
+        }
+      });
+    }
+
+    const guildConfig = await GuildConfig.fetch(game.discordGuild.id);
+    const languages = app.locals.langs;
+    const lang = languages.find(l => l.code === guildConfig.lang) || languages.find(l => l.code === "en");
+    const reminder = game.reminder;
+
+    const siUnit = parseInt(reminder) > 60 ? 'HOURS' : 'MINUTES';
+    const siLabel = lang.game[`STARTING_IN_${siUnit}`].replace(`:${siUnit}`, parseInt(reminder) / (parseInt(reminder) > 60 ? 60 : 1));
+
+    if (guildConfig.privateReminders) {
+      try {
+        let message = `${lang.game.REMINDER_FOR} **${game.adventure.replace(/\*/gi, "")}**\n`;
+        message += `**${lang.game.WHEN}:** ${siLabel}\n`;
+        message += `**${lang.game.SERVER}:** ${game.discordGuild && game.discordGuild.name}\n`;
+        message += `**${lang.game.WHERE}:** ${where}\n`;
+        message += `**${lang.game.GM}:** ${dmMember ? (dmMember.nickname ? dmMember.nickname : dmMember.user && dmMember.user.username) : game.dm}\n`;
+
+        for (const member of reservedUsers) {
+          if (member && member.user) member.user.send(message);
+          if (dmMember && dmMember.user && member && member.user && dmMember.user.username == member.user.username) dmMember = null;
         }
 
-        const guildConfig = await GuildConfig.fetch(game.discordGuild.id);
-        const languages = app.locals.langs;
-        const lang = languages.find(l => l.code === guildConfig.lang) || languages.find(l => l.code === "en");
-        const reminder = game.reminder;
-
-        try {
-          game.reminded = true;
-          game.save();
-        } catch (err) {
-          console.log(err);
-          return;
-        }
-
-        const siUnit = parseInt(reminder) > 60 ? 'HOURS' : 'MINUTES';
-        const siLabel = lang.game[`STARTING_IN_${siUnit}`].replace(`:${siUnit}`, parseInt(reminder) / (parseInt(reminder) > 60 ? 60 : 1));
-
-        if (guildConfig.privateReminders) {
-          try {
-            let message = `${lang.game.REMINDER_FOR} **${game.adventure.replace(/\*/gi, "")}**\n`;
-            message += `**${lang.game.WHEN}:** ${siLabel}\n`;
-            message += `**${lang.game.SERVER}:** ${game.discordGuild && game.discordGuild.name}\n`;
-            message += `**${lang.game.WHERE}:** ${where}\n`;
-            message += `**${lang.game.GM}:** ${dmMember ? (dmMember.nickname ? dmMember.nickname : dmMember.user && dmMember.user.username) : game.dm}\n`;
-
-            for (const member of reservedUsers) {
-              if (member && member.user) member.user.send(message);
-              if (dmMember && dmMember.user && member && member.user && dmMember.user.username == member.user.username) dmMember = null;
-            }
-
-            if (dmMember && dmMember.user) dmMember.user.send(message);
-          } catch (err) {
-            console.log(err);
-          }
-        } else {
-          let message = `${lang.game.REMINDER_FOR} **${game.adventure.replace(/\*/gi, "")}**\n`;
-          message += `**${lang.game.WHEN}:** ${siLabel}\n`;
-          message += `**${lang.game.WHERE}:** ${where}\n\n`;
-          message += `**${lang.game.GM}:** ${dm}\n`;
-          message += `**${lang.game.RESERVED}:**\n`;
-          message += `${reserved.join(`\n`)}`;
-
-          const sent = <Message>await game.discordChannel.send(message);
-
-          game.reminderMessageId = sent.id;
-          game.save();
-        }
+        if (dmMember && dmMember.user) dmMember.user.send(message);
+      } catch (err) {
+        console.log(err);
       }
+    } else {
+      let message = `${lang.game.REMINDER_FOR} **${game.adventure.replace(/\*/gi, "")}**\n`;
+      message += `**${lang.game.WHEN}:** ${siLabel}\n`;
+      message += `**${lang.game.WHERE}:** ${where}\n\n`;
+      message += `**${lang.game.GM}:** ${dm}\n`;
+      message += `**${lang.game.RESERVED}:**\n`;
+      message += `${reserved.join(`\n`)}`;
+
+      const sent = <Message>await game.discordChannel.send(message);
+
+      game.reminderMessageId = sent.id;
+      game.save();
     }
   });
 };

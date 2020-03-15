@@ -83,18 +83,19 @@ const client = discord.processes({
       discord.pruneOldGames();
       setInterval(() => {
         discord.pruneOldGames();
-      }, 3600 * 1000); // 1 hour
+      }, 60 * 60 * 1000); // 1 hour
 
       // Once per hour, reschedule recurring games from the database that have already occurred
       discord.rescheduleOldGames();
       setInterval(() => {
         discord.rescheduleOldGames();
-      }, 3600 * 1000); // 1 hour
+      }, 60 * 60 * 1000); // 1 hour
 
       // Post Game Reminders
+      discord.postReminders(app);
       setInterval(() => {
-        // discord.postReminders(app);
-      }, 2 * 60 * 1000); // 2 minutes
+        discord.postReminders(app);
+      }, 1 * 60 * 1000); // 1 minute
     }
 
     // Stay awake...
