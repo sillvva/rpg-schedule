@@ -87,8 +87,8 @@
   },
   "dashboard": {
     "NO_GAMES": "You are not a member of a server that has granted you permission to post games. If you would like to use this bot on your own server, click the Invite button below.",
-    "EMPTY_MY_GAMES": "You are not running or playing in any games on this server right now",
-    "EMPTY_UPCOMING_GAMES": "There are no upcoming games on this server right now"
+    "EMPTY_MY_GAMES": "You are not running or playing in any games right now",
+    "EMPTY_UPCOMING_GAMES": "There are no upcoming games right now"
   },
   "config": {
     "COMMAND_LIST": "Command List",

@@ -85,8 +85,8 @@
   },
   "dashboard": {
     "NO_GAMES": "Non sei un membro di un server che ti ha permesso di pubblicare giochi. Se volessi usare questo bot sul tuo server, clicca il bottone di invito sottostante.",
-    "EMPTY_MY_GAMES": "Non stai giocando o competendo in nessun gioco su questo server al momento",
-    "EMPTY_UPCOMING_GAMES": "Non ci sono giochi in uscita su questo server al momento"
+    "EMPTY_MY_GAMES": "Non stai giocando o competendo in nessun gioco al momento",
+    "EMPTY_UPCOMING_GAMES": "Non ci sono giochi in uscita al momento"
   },
   "config": {
     "COMMAND_LIST": "Lista comandi",

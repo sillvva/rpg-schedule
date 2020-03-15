@@ -20,6 +20,7 @@ export default {
     },
     changeLang: { path: "/lang/:newLang" },
     invite: { path: "/invite" },
+    donate: { path: "/donate" },
     login: { path: "/login" },
     logout: { path: "/logout" },
     rss: { path: "/rss/:uid" },
