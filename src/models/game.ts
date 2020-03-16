@@ -261,7 +261,7 @@ export class Game implements GameModel {
       // if (!embedded) embed = { embed: {} };
     } 
     else {
-      
+      msg = "";
       embed.setColor(guildConfig.embedColor);
       embed.setTitle(game.adventure);
       if (dmmember && dmmember.user.avatarURL()) embed.setAuthor(dm, dmmember.user.avatarURL().substr(0, 2048));
@@ -285,10 +285,8 @@ export class Game implements GameModel {
       let message: Message;
       try {
         message = await channel.messages.fetch(game.messageId);
-        if (guildConfig.embeds === false) {
+        if (message) {
           message = await message.edit(msg, embed);
-        } else {
-          message = await message.edit(embed);
         }
 
         prev._id = prev._id.toString();
@@ -367,6 +365,18 @@ export class Game implements GameModel {
     });
   }
 
+  static async fetchAllByLimit(query: mongodb.FilterQuery<any>, limit: number): Promise<Game[]> {
+    if (!connection()) { console.log("No database connection"); return []; }
+    const games: GameModel[] = await connection()
+      .collection(collection)
+      .find(query)
+      .limit(limit)
+      .toArray();
+    return games.map(game => {
+      return new Game(game);
+    });
+  }
+
   static async deleteAllBy(query: mongodb.FilterQuery<any>) {
     if (!connection()) { console.log("No database connection"); return null; }
     return await connection()
@@ -387,7 +397,7 @@ export class Game implements GameModel {
 
   public canReschedule() {
     const validDays = this.getWeekdays();
-    const hours = this.runtime == null || this.runtime.trim() == '0' || this.runtime.trim() == '' ? 0 : parseFloat(this.runtime);
+    const hours = isNaN(parseFloat(this.runtime.trim())) ? 0 : Math.abs(parseFloat(this.runtime.trim()));
     const gameEnded = this.timestamp + hours * 3600 * 1000 < new Date().getTime();
     return gameEnded && ((this.frequency == Frequency.DAILY || this.frequency == Frequency.MONTHLY) ||
             ((this.frequency == Frequency.WEEKLY || this.frequency == Frequency.BIWEEKLY) && validDays.length > 0));
@@ -401,11 +411,10 @@ export class Game implements GameModel {
     this.reminded = false;
 
     const guildConfig = await GuildConfig.fetch(this.s);
-
     if (guildConfig.rescheduleMode === "update") {
       this.save();
     }
-    else {
+    else if (guildConfig.rescheduleMode === "repost") {
       let data = cloneDeep(this.data);
       delete data._id;
       const game = new Game(data);
@@ -429,7 +438,7 @@ export class Game implements GameModel {
           if (message) {
             message.delete().catch((err) => {
               console.log('Attempted to delete announcement message.');
-              console.log(err);
+              // console.log(err);
             });
           }
         }
@@ -443,7 +452,7 @@ export class Game implements GameModel {
           if (message) {
             message.delete().catch((err) => {
               console.log('Attempted to delete reminder message.');
-              console.log(err);
+              // console.log(err);
             });
           }
         }
@@ -460,7 +469,7 @@ export class Game implements GameModel {
             if (pm) {
               pm.delete().catch((err) => {
                 console.log('Attempted to delete game edit link pm.');
-                console.log(err);
+                // console.log(err);
               });
             }
           }
