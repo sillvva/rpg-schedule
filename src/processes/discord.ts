@@ -88,6 +88,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                         ? `\`${botcmd} embeds ${guildConfig.embeds || guildConfig.embeds == null ? "on" : "off"}\` - \`on/off\` - ${lang.config.desc.EMBEDS}\n`
                         : ``) +
                       (canConfigure ? `\`${botcmd} embed-color ${guildConfig.embedColor}\` - ${lang.config.desc.EMBED_COLOR}\n` : ``) +
+                      (canConfigure ? `\`${botcmd} embed-user-tags ${guildConfig.embedMentions}\` - ${lang.config.desc.EMBED_USER_TAGS}\n` : ``) +
                       (canConfigure ? `\`${botcmd} emoji-sign-up ${guildConfig.emojiAdd}\` - ${lang.config.desc.EMOJI}\n` : ``) +
                       (canConfigure ? `\`${botcmd} emoji-drop-out ${guildConfig.emojiRemove}\` - ${lang.config.desc.EMOJI}\n` : ``) +
                       (canConfigure ? `\`${botcmd} toggle-drop-out\` - ${lang.config.desc.TOGGLE_DROP_OUT}\n` : ``) +
@@ -197,6 +198,19 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                 })
                 .then(result => {
                   (<TextChannel>message.channel).send(!(params[0] === "off") ? lang.config.EMBEDS_ON : lang.config.EMBEDS_OFF);
+                })
+                .catch(err => {
+                  console.log(err);
+                });
+            }
+          } else if (cmd === "embed-user-tags") {
+            if (canConfigure && params[0]) {
+              guildConfig
+                .save({
+                  embedMentions: !(params[0] === "off")
+                })
+                .then(result => {
+                  (<TextChannel>message.channel).send(!(params[0] === "off") ? lang.config.EMBED_USER_TAGS_ON : lang.config.EMBED_USER_TAGS_OFF);
                 })
                 .catch(err => {
                   console.log(err);
@@ -534,6 +548,8 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   console.log(err);
                 });
             }
+          } else {
+            (<TextChannel>message.channel).send('Command not recognized');
           }
         }
       }
