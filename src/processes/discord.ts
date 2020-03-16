@@ -45,6 +45,10 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
           const guildId = guild.id;
           const guildConfig = await GuildConfig.fetch(guildId);
           let author: User = message.author;
+
+          if (process.env.LOCALENV && guildId != "532564186023329792") {
+            return;
+          }
   
           const prefix = (guildConfig.escape || "").trim().length ? guildConfig.escape.trim() : '!';
           const botcmd = `${prefix}${config.command}`;
@@ -567,6 +571,10 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
   client.on("messageReactionAdd", async (reaction, user: User) => {
     try {
       const message = reaction.message;
+      const channelId = message.channel.id;
+      if (process.env.LOCALENV && channelId != "532564186023329794") {
+        return;
+      }
       const game = await Game.fetchBy("messageId", message.id);
       if (game && user.id !== message.author.id) {
         const guildConfig = await GuildConfig.fetch(game.s);
@@ -594,6 +602,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
   });
 
   client.on("userUpdate", async (oldUser: User, newUser: User) => {
+    if (process.env.LOCALENV) return;
     // console.log(aux.backslash(oldUser.tag));
     if (oldUser.tag != newUser.tag) {
       const games = await Game.fetchAllBy({ $or: [ { dm: oldUser.tag }, { reserved: new RegExp(aux.backslash(oldUser.tag), "gi") } ] });
@@ -613,6 +622,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
   client.on("messageDelete", async message => {
     const game = await Game.fetchBy("messageId", message.id);
     if (game && message.channel instanceof TextChannel) {
+      if (process.env.LOCALENV && message.channel.guild.id != "532564186023329792") return;
       game.delete().then(result => {
         console.log("Game deleted");
       });
@@ -673,6 +683,7 @@ const rescheduleOldGames = async (guildId?: string) => {
   try {
     console.log(`Rescheduling old games for all servers`);
     const query: FilterQuery<any> = {
+      when: "datetime",
       timestamp: {
         // timestamp (date scheduled) before now
         $lt: new Date().getTime()
