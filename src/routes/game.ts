@@ -134,14 +134,14 @@ export default (options: GameRouteOptions) => {
             errors: {
               other: null,
               dm: game && !guildMembers.array().find(mem => {
-                return !mem.user.bot && mem.user.tag === game.dm.trim().replace("@", "");
+                return mem.user.tag === game.dm.trim().replace("@", "");
               }),
               reserved: game ? game.reserved
                 .replace(/@/g, "")
                 .split(/\r?\n/)
                 .filter(res => {
                   if (res.trim().length === 0) return false;
-                  return !guildMembers.array().find(mem => !mem.user.bot && mem.user.tag === res.trim());
+                  return !guildMembers.array().find(mem => mem.user.tag === res.trim());
                 }) : []
             }
           };

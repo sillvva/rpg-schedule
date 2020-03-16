@@ -176,7 +176,7 @@ export class Game implements GameModel {
     let dmmember = guildMembers.find(mem => {
       return mem.user.tag === game.dm.trim().replace("@", "");
     });
-    if (!dmmember) dm = game.dm.trim();//throw new Error(lang.game.GM_ERROR);
+    if (!dmmember) dm = game.dm.trim();
     else if (guildConfig.embeds === false) dm = dmmember.user.toString();
 
     let reserved: string[] = [];
@@ -260,8 +260,8 @@ export class Game implements GameModel {
     else {
       embed.setColor(guildConfig.embedColor);
       embed.setTitle(game.adventure);
-      if (dmmember) embed.setAuthor(dm, dmmember.user.avatarURL().substr(0, 2048));
-      if (dmmember) embed.setThumbnail(dmmember.user.avatarURL().substr(0, 2048));
+      if (dmmember && dmmember.user.avatarURL()) embed.setAuthor(dm, dmmember.user.avatarURL().substr(0, 2048));
+      if (dmmember && dmmember.user.avatarURL()) embed.setThumbnail(dmmember.user.avatarURL().substr(0, 2048));
       if(description.length > 0) embed.setDescription(description);
       embed.addField(lang.game.WHEN, when, true);
       if(game.runtime && game.runtime.trim().length > 0 && game.runtime.trim() != '0') embed.addField(lang.game.RUN_TIME, `${game.runtime} ${lang.game.labels.HOURS}`, true);

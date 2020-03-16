@@ -755,7 +755,7 @@ const postReminders = async (app: Express) => {
   const query: FilterQuery<any> = {
     when: "datetime",
     timestamp: {
-      $gt: new Date().getTime()
+      $gt: cTime
     },
     $and: [
       {
