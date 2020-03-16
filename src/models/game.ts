@@ -176,8 +176,11 @@ export class Game implements GameModel {
     let dmmember = guildMembers.find(mem => {
       return mem.user.tag === game.dm.trim().replace("@", "");
     });
-    if (!dmmember) dm = game.dm.trim();
-    else if (guildConfig.embeds === false) dm = dmmember.user.toString();
+    if (dmmember) {
+      var gmTag = dmmember.user.toString();
+      if (guildConfig.embeds === false) dm = gmTag;
+      else dm = dmmember.nickname || dm;
+    }
 
     let reserved: string[] = [];
     let waitlist: string[] = [];
@@ -190,7 +193,7 @@ export class Game implements GameModel {
 
         let name = res.trim().replace(/\#\d{4}/, "");
         if (member) {
-          if (guildConfig.embeds === false) name = member.user.toString();
+          if (guildConfig.embeds === false || guildConfig.embedMentions) name = member.user.toString();
           else name = member.nickname || member.user.username;
         }
 
@@ -209,7 +212,7 @@ export class Game implements GameModel {
     const rawDate = eventTimes.rawDate;
     const timezone = "UTC" + (game.timezone >= 0 ? "+" : "") + game.timezone;
     const where = parseDiscord(game.where, guild);
-    const description = parseDiscord(game.description, guild);
+    let description = parseDiscord(game.description, guild);
 
     let signups = "";
     let automatedInstructions = `\n(${guildConfig.emojiAdd} ${lang.buttons.SIGN_UP}${
@@ -258,6 +261,7 @@ export class Game implements GameModel {
       // if (!embedded) embed = { embed: {} };
     } 
     else {
+      
       embed.setColor(guildConfig.embedColor);
       embed.setTitle(game.adventure);
       if (dmmember && dmmember.user.avatarURL()) embed.setAuthor(dm, dmmember.user.avatarURL().substr(0, 2048));
@@ -266,6 +270,7 @@ export class Game implements GameModel {
       embed.addField(lang.game.WHEN, when, true);
       if(game.runtime && game.runtime.trim().length > 0 && game.runtime.trim() != '0') embed.addField(lang.game.RUN_TIME, `${game.runtime} ${lang.game.labels.HOURS}`, true);
       embed.addField(lang.game.WHERE, where);
+      if (guildConfig.embedMentions) embed.addField(lang.game.GM, gmTag);
       embed.addField(`${lang.game.RESERVED} (${reserved.length}/${game.players})`, reserved.length > 0 ? reserved.join("\n") : lang.game.NO_PLAYERS, true);
       if (waitlist.length > 0) embed.addField(`${lang.game.WAITLISTED} (${waitlist.length})`, waitlist.join("\n"), true);
       embed.addField("Links", `[📅 ${lang.game.ADD_TO_CALENDAR}](${eventTimes.googleCal})\n[🗺 ${lang.game.CONVERT_TIME_ZONE}](${eventTimes.convert.timeAndDate})\n[⏰ ${lang.game.COUNTDOWN}](${eventTimes.countdown})`, true);

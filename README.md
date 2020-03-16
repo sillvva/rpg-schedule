@@ -99,6 +99,11 @@ https://rpg-schedule.herokuapp.com
 <td>Set a discord embed color. Can be a color name like <code>red</code> or a hexadecimal color like <code>#2196f3</code></td>
 </tr>
 <tr>
+<td>!schedule embed-user-tags <code>on/off</code></td>
+<td>on</td>
+<td>Include user tags in announcement embeds (<a href="https://cdn.discordapp.com/attachments/532565396746928149/682786099679985665/unknown.png" target="_blank">Can occasionally glitch</a>)</td>
+</tr>
+<tr>
 <td>!schedule emoji-sign-up ➕</td>
 <td>➕</td>
 <td>Set the emoji used for automated sign up</td>
