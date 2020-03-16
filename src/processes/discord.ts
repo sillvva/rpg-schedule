@@ -89,7 +89,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                         : ``) +
                       (canConfigure ? `\`${botcmd} embed-color ${guildConfig.embedColor}\` - ${lang.config.desc.EMBED_COLOR}\n` : ``) +
                       (canConfigure
-                        ? `\`${botcmd} embeds ${guildConfig.embedMentions || guildConfig.embedMentions == null ? "on" : "off"}\` - \`on/off\` - ${lang.config.desc.EEMBED_USER_TAGSMBEDS}\n`
+                        ? `\`${botcmd} embeds ${guildConfig.embedMentions || guildConfig.embedMentions == null ? "on" : "off"}\` - \`on/off\` - ${lang.config.desc.EMBED_USER_TAGS}\n`
                         : ``) +
                       (canConfigure ? `\`${botcmd} emoji-sign-up ${guildConfig.emojiAdd}\` - ${lang.config.desc.EMOJI}\n` : ``) +
                       (canConfigure ? `\`${botcmd} emoji-drop-out ${guildConfig.emojiRemove}\` - ${lang.config.desc.EMOJI}\n` : ``) +
@@ -133,6 +133,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                     `${lang.config.PRUNING}: \`${guildConfig.pruning ? "on" : "off"}\`\n` +
                     `${lang.config.EMBEDS}: \`${!(guildConfig.embeds === false) ? "on" : "off"}\`\n` +
                     `${lang.config.EMBED_COLOR}: \`${guildConfig.embedColor}\`\n` +
+                    `${lang.config.EMBED_USER_TAGS}: \`${guildConfig.embedMentions}\`\n` +
                     `${lang.config.EMOJI_JOIN}: \`${guildConfig.emojiAdd}\`\n` +
                     `${lang.config.EMOJI_LEAVE}: \`${guildConfig.emojiRemove}\`\n` +
                     `${lang.config.PRIVATE_REMINDERS}: \`${guildConfig.privateReminders ? "on" : "off"}\`\n` +
