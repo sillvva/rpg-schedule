@@ -88,7 +88,9 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                         ? `\`${botcmd} embeds ${guildConfig.embeds || guildConfig.embeds == null ? "on" : "off"}\` - \`on/off\` - ${lang.config.desc.EMBEDS}\n`
                         : ``) +
                       (canConfigure ? `\`${botcmd} embed-color ${guildConfig.embedColor}\` - ${lang.config.desc.EMBED_COLOR}\n` : ``) +
-                      (canConfigure ? `\`${botcmd} embed-user-tags ${guildConfig.embedMentions}\` - ${lang.config.desc.EMBED_USER_TAGS}\n` : ``) +
+                      (canConfigure
+                        ? `\`${botcmd} embed-user-tags ${guildConfig.embedMentions || guildConfig.embedMentions == null ? "on" : "off"}\` - \`on/off\` - ${lang.config.desc.EMBED_USER_TAGS}\n`
+                        : ``) +
                       (canConfigure ? `\`${botcmd} emoji-sign-up ${guildConfig.emojiAdd}\` - ${lang.config.desc.EMOJI}\n` : ``) +
                       (canConfigure ? `\`${botcmd} emoji-drop-out ${guildConfig.emojiRemove}\` - ${lang.config.desc.EMOJI}\n` : ``) +
                       (canConfigure ? `\`${botcmd} toggle-drop-out\` - ${lang.config.desc.TOGGLE_DROP_OUT}\n` : ``) +
@@ -131,6 +133,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                     `${lang.config.PRUNING}: \`${guildConfig.pruning ? "on" : "off"}\`\n` +
                     `${lang.config.EMBEDS}: \`${!(guildConfig.embeds === false) ? "on" : "off"}\`\n` +
                     `${lang.config.EMBED_COLOR}: \`${guildConfig.embedColor}\`\n` +
+                    `${lang.config.EMBED_USER_TAGS}: \`${guildConfig.embedMentions}\`\n` +
                     `${lang.config.EMOJI_JOIN}: \`${guildConfig.emojiAdd}\`\n` +
                     `${lang.config.EMOJI_LEAVE}: \`${guildConfig.emojiRemove}\`\n` +
                     `${lang.config.PRIVATE_REMINDERS}: \`${guildConfig.privateReminders ? "on" : "off"}\`\n` +
