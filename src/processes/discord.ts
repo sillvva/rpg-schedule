@@ -88,7 +88,9 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                         ? `\`${botcmd} embeds ${guildConfig.embeds || guildConfig.embeds == null ? "on" : "off"}\` - \`on/off\` - ${lang.config.desc.EMBEDS}\n`
                         : ``) +
                       (canConfigure ? `\`${botcmd} embed-color ${guildConfig.embedColor}\` - ${lang.config.desc.EMBED_COLOR}\n` : ``) +
-                      (canConfigure ? `\`${botcmd} embed-user-tags ${guildConfig.embedMentions}\` - ${lang.config.desc.EMBED_USER_TAGS}\n` : ``) +
+                      (canConfigure
+                        ? `\`${botcmd} embeds ${guildConfig.embedMentions || guildConfig.embedMentions == null ? "on" : "off"}\` - \`on/off\` - ${lang.config.desc.EEMBED_USER_TAGSMBEDS}\n`
+                        : ``) +
                       (canConfigure ? `\`${botcmd} emoji-sign-up ${guildConfig.emojiAdd}\` - ${lang.config.desc.EMOJI}\n` : ``) +
                       (canConfigure ? `\`${botcmd} emoji-drop-out ${guildConfig.emojiRemove}\` - ${lang.config.desc.EMOJI}\n` : ``) +
                       (canConfigure ? `\`${botcmd} toggle-drop-out\` - ${lang.config.desc.TOGGLE_DROP_OUT}\n` : ``) +

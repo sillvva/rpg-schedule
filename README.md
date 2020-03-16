@@ -100,7 +100,7 @@ https://rpg-schedule.herokuapp.com
 </tr>
 <tr>
 <td>!schedule embed-user-tags <code>on/off</code></td>
-<td>on</td>
+<td>off</td>
 <td>Include user tags in announcement embeds (<a href="https://cdn.discordapp.com/attachments/532565396746928149/682786099679985665/unknown.png" target="_blank">Can occasionally glitch</a>)</td>
 </tr>
 <tr>
