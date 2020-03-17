@@ -1,16 +1,12 @@
-input[readonly], input[disabled] {
-    background-color: #aaa !important;
-}
-
 .form-control {
     color: #fff;
     background-color: #484C52;
     border: 1px solid #484C52;
 }
 
-input[readonly], input[disabled] {
-    background-color: #2B2C31 !important;
-    border-color: #2B2C31;
+input:disabled, input:read-only {
+    background-color: #23272A !important;
+    border-color: #23272A !important;
 }
 
 .input-group-text {
@@ -124,5 +120,5 @@ input[readonly], input[disabled] {
 }
 
 #weekdays-selector .btn-secondary:not(:disabled):not(.disabled).active {
-    background-color: cornflowerblue;
+    background-color: #7289DA;
 }

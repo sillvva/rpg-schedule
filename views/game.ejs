@@ -241,12 +241,13 @@
                 <p class="col-md-5">
                     <button type="submit" class="btn btn-primary col-12"><%= lang.buttons.SAVE %></button>
                 </p>
-                <p class="col-12 col-md">
+                <p class="col-12 col-sm-6 col-md">
                     <input type="submit" name="copy" value="<%= lang.buttons.SAVE_COPY %>" class="btn btn-light col-12">
                 </p>
-                <p class="col-12 col-md">
+                <p class="col-12 col-sm-6 col-md">
                     <a href="<%= config.urls.game.create.path %>?s=<%= s %>" class="btn btn-light col-12"><%= lang.buttons.NEW_GAME %></a>
                 </p>
+                <hr class="d-none d-sm-block d-md-none mt-0" style="width: 100%;" />
                 <p class="d-none d-sm-block col-12 col-md">
                     <button type="button" onclick="confirmDelete('<%= config.urls.game.delete.path %>?g=<%= _id %>');" class="btn btn-danger col-12"><%= lang.buttons.DELETE_GAME %></button>
                 </p>
