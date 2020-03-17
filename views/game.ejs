@@ -164,8 +164,8 @@
                 </select>
             </div>
         </div>
-        <div class="row">
-            <div class="form-group col-sm-3">
+        <div id="when__frequency" class="row">
+            <div class="form-group col-sm-6 col-lg-3">
                 <label for="frequency" class="col-form-label"><%= lang.game.FREQUENCY %></label>
                 <select class="form-control" id="frequency" name="frequency">
                     <option value="0" <%= frequency === '0' ? 'selected' : '' %>><%= lang.game.options.NO_REPEAT %></option>
@@ -174,8 +174,11 @@
                     <option value="3" <%= frequency === '3' ? 'selected' : '' %>><%= lang.game.options.BIWEEKLY %></option>
                     <option value="4" <%= frequency === '4' ? 'selected' : '' %>><%= lang.game.options.MONTHLY %></option>
                 </select>
+                <div id="next-date">
+                    <small><%= lang.game.NEXT_DATE %>: <span id="nextDate"></span></small>
+                </div>
             </div>
-            <div class="form-group col-sm-6">
+            <div class="form-group col-sm-6 col-lg-5 col-xl-6">
                 <label for="weekdays-selector" class="col-form-label"><%= lang.game.WEEKDAYS %></label>
                 <div id="weekdays-selector" class="btn-group-toggle" data-toggle="buttons">
                     <% for(var i = 0; i < 7; i++) { %>
@@ -186,9 +189,16 @@
                     <% } %>
                 </div>
             </div>
-            <div class="form-group col-sm-3">
-                <label for="nextDate" class="col-form-label"><%= lang.game.NEXT_DATE %></label>
-                <input type="date" class="form-control" id="nextDate" name="nextDate" disabled>
+            <div class="form-group col-sm-12 col-lg-4 col-xl-3">
+                <div>
+                    <label class="col-form-label"><%= lang.game.WHEN_REPEAT %>:</label>
+                </div>
+                <div>
+                    <label class="col-form-label">
+                        <input type="checkbox" name="clearReservedOnRepeat" <%= clearReservedOnRepeat ? 'checked' : '' %> />
+                        <small><%= lang.game.CLEAR_RESERVED %></small>
+                    </label>
+                </div>
             </div>
         </div>
         <div class="row">
@@ -263,12 +273,14 @@
     $('#when').change(function() {
         const sel = $(this).val();
         $('#when__datetime').addClass('d-none');
+        $('#when__frequency').addClass('d-none');
         $('#date').removeAttr('required');
         $('#time').removeAttr('required');
         $('#timezone').removeAttr('required');
 
         if (sel === 'datetime') {
             $('#when__datetime').removeClass('d-none');
+            $('#when__frequency').removeClass('d-none');
             $('#date').attr('required','');
             $('#time').attr('required','');
             $('#timezone').attr('required','');
@@ -282,13 +294,13 @@
         $("#weekdays-selector label").addClass("disabled");
         $('#date').removeAttr("disabled");
         if (sel === '0') {
-            $('#nextDate').val($('#date').val());
-        }
-        if (sel !== '0') {
+            $('#next-date').addClass('d-none');
+        } else {
             if (sel !== '1' && sel !== '4') { // disable weekday selection if not repeating weekly or biweekly
                 $('#weekdays-selector label').removeClass("disabled");
             }
             updateNextDate($('#date').val(), sel);
+            $('#next-date').removeClass('d-none');
         }
     });//.change();
 
@@ -312,7 +324,7 @@
 
     const updateNextDate = (currentDate, freq) => {
         const nextDate = getRecurrenceDate(currentDate, freq);
-        $('#nextDate').val(nextDate);
+        $('#nextDate').html(moment(nextDate).format('l'));
     }
 
     $('#c').change(function() {

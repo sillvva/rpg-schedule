@@ -55,6 +55,8 @@
     "CHARACTERS": "characters",
     "NO_PLAYERS": "No players",
     "NEXT_DATE": "Next Scheduled Date",
+    "WHEN_REPEAT": "When the Game Auto Reschedules",
+    "CLEAR_RESERVED": "Clear the reserved list",
     "ADD_TO_CALENDAR": "Add to Calendar",
     "CONVERT_TIME_ZONE": "Convert Time Zone",
     "COUNTDOWN": "Countdown",

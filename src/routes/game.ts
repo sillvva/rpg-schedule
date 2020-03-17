@@ -120,6 +120,7 @@ export default (options: GameRouteOptions) => {
             gameImage: "",
             frequency: "",
             weekdays: [false,false,false,false,false,false,false],
+            clearReservedOnRepeat: false,
             is: {
               newgame: !req.query.g ? true : false,
               editgame: req.query.g ? true : false,

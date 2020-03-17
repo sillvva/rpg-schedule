@@ -55,6 +55,8 @@
     "CHARACTERS": "caractère",
     "NO_PLAYERS": "Aucun joueur",
     "NEXT_DATE": "Prochaine date prévue",
+    "WHEN_REPEAT": "Lorsque le jeu Auto reprogramme",
+    "CLEAR_RESERVED": "Effacer la liste réservée",
     "ADD_TO_CALENDAR": "Ajouter au calendrier",
     "CONVERT_TIME_ZONE": "Convertir le fuseau horaire",
     "COUNTDOWN": "Countdown",

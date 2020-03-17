@@ -52,6 +52,7 @@ export interface GameModel {
   gameImage: string;
   frequency: Frequency;
   weekdays: boolean[];
+  clearReservedOnRepeat: boolean;
 }
 
 interface GameSaveData {
@@ -88,6 +89,7 @@ export class Game implements GameModel {
   gameImage: string;
   frequency: Frequency;
   weekdays: boolean[] = [false,false,false,false,false,false,false];
+  clearReservedOnRepeat: boolean = false;
 
   private _guild: Guild;
   get discordGuild() {
@@ -144,7 +146,8 @@ export class Game implements GameModel {
       pm: this.pm,
       gameImage: this.gameImage,
       frequency: this.frequency,
-      weekdays: this.weekdays
+      weekdays: this.weekdays,
+      clearReservedOnRepeat: this.clearReservedOnRepeat
     };
   }
 
@@ -409,6 +412,10 @@ export class Game implements GameModel {
     console.log(`rescheduling ${this._id} from ${this.date} to ${nextDate} ${new Date(nextDate).getTime()}`);
     this.date = nextDate;
     this.reminded = false;
+
+    if (this.clearReservedOnRepeat) {
+      this.reserved = "";
+    }
 
     const guildConfig = await GuildConfig.fetch(this.s);
     if (guildConfig.rescheduleMode === "update") {
