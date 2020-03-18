@@ -86,10 +86,10 @@ const client = discord.processes({
       }, 60 * 60 * 1000); // 1 hour
 
       // Once per hour, reschedule recurring games from the database that have already occurred
-      discord.rescheduleOldGames();
-      setInterval(() => {
-        discord.rescheduleOldGames();
-      }, 60 * 60 * 1000); // 1 hour
+      // discord.rescheduleOldGames();
+      // setInterval(() => {
+      //   discord.rescheduleOldGames();
+      // }, 60 * 60 * 1000); // 1 hour
 
       // Post Game Reminders
       discord.postReminders(app);

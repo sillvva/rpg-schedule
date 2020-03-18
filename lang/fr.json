@@ -26,6 +26,7 @@
     "CHANNEL": "Channel",
     "GAME_NAME": "Titre de la partie",
     "RUN_TIME": "Durée de jeu",
+    "MIN_PLAYERS": "Joueurs Min.",
     "MAX_PLAYERS": "Joueurs Max.",
     "GM_DISCORD_TAG": "Tag Discord du MJ",
     "GM_ERROR": "Le MJ doit avoir un Tag Discord",
