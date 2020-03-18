@@ -122,6 +122,7 @@ export default (options: GameRouteOptions) => {
             frequency: "",
             weekdays: [false,false,false,false,false,false,false],
             clearReservedOnRepeat: false,
+            env: process.env,
             is: {
               newgame: !req.query.g ? true : false,
               editgame: req.query.g ? true : false,
@@ -167,6 +168,8 @@ export default (options: GameRouteOptions) => {
               game.weekdays[i] = req.body['weekday'+i] ? true : false; // have to manually re-set falses b/c form data isn't sent if the checkbox is not checked
             }
             data.weekdays = game.weekdays;
+
+            game.clearReservedOnRepeat = req.body['clearReservedOnRepeat'] ? true : false;
 
             game
               .save()

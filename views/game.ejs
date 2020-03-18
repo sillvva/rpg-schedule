@@ -172,43 +172,51 @@
                 </select>
             </div>
         </div>
-        <div id="when__frequency" class="row">
-            <div class="form-group col-sm-6 col-lg-3">
-                <label for="frequency" class="col-form-label"><%= lang.game.FREQUENCY %></label>
-                <select class="form-control" id="frequency" name="frequency">
-                    <option value="0" <%= frequency === '0' ? 'selected' : '' %>><%= lang.game.options.NO_REPEAT %></option>
-                    <option value="1" <%= frequency === '1' ? 'selected' : '' %>><%= lang.game.options.DAILY %></option>
-                    <option value="2" <%= frequency === '2' ? 'selected' : '' %>><%= lang.game.options.WEEKLY %></option>
-                    <option value="3" <%= frequency === '3' ? 'selected' : '' %>><%= lang.game.options.BIWEEKLY %></option>
-                    <option value="4" <%= frequency === '4' ? 'selected' : '' %>><%= lang.game.options.MONTHLY %></option>
-                </select>
-                <div id="next-date">
-                    <small><%= lang.game.NEXT_DATE %>: <span id="nextDate"></span></small>
+        <% if (env.RESCHEDULING) { %>
+            <div id="when__frequency" class="row">
+                <div class="form-group col-sm-6 col-lg-3">
+                    <label for="frequency" class="col-form-label"><%= lang.game.FREQUENCY %></label>
+                    <select class="form-control" id="frequency" name="frequency">
+                        <option value="0" <%= frequency === '0' ? 'selected' : '' %>><%= lang.game.options.NO_REPEAT %></option>
+                        <option value="1" <%= frequency === '1' ? 'selected' : '' %>><%= lang.game.options.DAILY %></option>
+                        <option value="2" <%= frequency === '2' ? 'selected' : '' %>><%= lang.game.options.WEEKLY %></option>
+                        <option value="3" <%= frequency === '3' ? 'selected' : '' %>><%= lang.game.options.BIWEEKLY %></option>
+                        <option value="4" <%= frequency === '4' ? 'selected' : '' %>><%= lang.game.options.MONTHLY %></option>
+                    </select>
+                    <div id="next-date">
+                        <small><%= lang.game.NEXT_DATE %>: <span id="nextDate"></span></small>
+                    </div>
                 </div>
-            </div>
-            <div class="form-group col-sm-6 col-lg-5 col-xl-6">
-                <label for="weekdays-selector" class="col-form-label"><%= lang.game.WEEKDAYS %></label>
-                <div id="weekdays-selector" class="btn-group-toggle" data-toggle="buttons">
-                    <% for(var i = 0; i < 7; i++) { %>
-                        <label <%- weekdays[i] ? 'class="btn btn-secondary active"' : 'class="btn btn-secondary"' %> for="weekday<%= i %>">
-                            <input type="checkbox" id="weekday<%= i %>" name="weekday<%= i %>" value="true" />
-                            <span class="weekday" day="<%= i %>" len="3"></span>
+                <div class="form-group col-sm-6 col-lg-5 col-xl-6">
+                    <label for="weekdays-selector" class="col-form-label"><%= lang.game.WEEKDAYS %></label>
+                    <div id="weekdays-selector" class="btn-group-toggle" data-toggle="buttons">
+                        <% for(var i = 0; i < 7; i++) { %>
+                            <label <%- weekdays[i] ? 'class="btn btn-secondary active"' : 'class="btn btn-secondary"' %> for="weekday<%= i %>">
+                                <input type="checkbox" id="weekday<%= i %>" name="weekday<%= i %>" value="true" />
+                                <span class="weekday" day="<%= i %>" len="3"></span>
+                            </label>
+                        <% } %>
+                    </div>
+                </div>
+                <div class="form-group col-sm-12 col-lg-4 col-xl-3">
+                    <div>
+                        <label class="col-form-label"><%= lang.game.WHEN_REPEAT %>:</label>
+                    </div>
+                    <div>
+                        <label class="col-form-label">
+                            <input type="checkbox" name="clearReservedOnRepeat" <%= clearReservedOnRepeat ? 'checked' : '' %> value="true" />
+                            <small><%= lang.game.CLEAR_RESERVED %></small>
                         </label>
-                    <% } %>
+                    </div>
                 </div>
             </div>
-            <div class="form-group col-sm-12 col-lg-4 col-xl-3">
-                <div>
-                    <label class="col-form-label"><%= lang.game.WHEN_REPEAT %>:</label>
-                </div>
-                <div>
-                    <label class="col-form-label">
-                        <input type="checkbox" name="clearReservedOnRepeat" <%= clearReservedOnRepeat ? 'checked' : '' %> />
-                        <small><%= lang.game.CLEAR_RESERVED %></small>
-                    </label>
-                </div>
-            </div>
-        </div>
+        <% } else { %>
+            <input type="hidden" name="frequency" value="<% frequency %>" />
+            <% for(var i = 0; i < 7; i++) { %>
+                <% if (weekdays[i]) { %><input type="hidden" name="weekday<%= i %>" value="true" /><% } %>
+            <% } %>
+            <% if (clearReservedOnRepeat) { %><input type="hidden" name="clearReservedOnRepeat" value="true" /><% } %>
+        <% } %>
         <div class="row">
             <div class="col-sm-5">
                 <div class="form-group">

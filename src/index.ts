@@ -76,6 +76,7 @@ const client = discord.processes({
     const server = http.createServer(app).listen(process.env.PORT || 5000);
     const io = socket(server);
 
+    // discord.fixReschedules();
     if (!process.env.LOCALENV) {
       discord.refreshMessages();
 
@@ -86,16 +87,20 @@ const client = discord.processes({
       }, 60 * 60 * 1000); // 1 hour
 
       // Once per hour, reschedule recurring games from the database that have already occurred
-      // discord.rescheduleOldGames();
-      // setInterval(() => {
-      //   discord.rescheduleOldGames();
-      // }, 60 * 60 * 1000); // 1 hour
+      if (process.env.RESCHEDULING) {
+        discord.rescheduleOldGames();
+        setInterval(() => {
+          discord.rescheduleOldGames();
+        }, 60 * 60 * 1000); // 1 hour
+      }
 
       // Post Game Reminders
-      discord.postReminders(app);
-      setInterval(() => {
+      if (process.env.REMINDERS) {
         discord.postReminders(app);
-      }, 1 * 60 * 1000); // 1 minute
+        setInterval(() => {
+          discord.postReminders(app);
+        }, 1 * 60 * 1000); // 1 minute
+      }
     }
 
     // Stay awake...

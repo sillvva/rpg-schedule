@@ -1,5 +1,5 @@
 import discord, { TextChannel, Client, Message, UserResolvable, User } from "discord.js";
-import { DeleteWriteOpResultObject, FilterQuery } from "mongodb";
+import { DeleteWriteOpResultObject, FilterQuery, ObjectID } from "mongodb";
 import { Express } from "express";
 
 import { io } from "../processes/socket";
@@ -148,7 +148,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                     `${lang.config.DROP_OUTS}: ${guildConfig.dropOut ? `Enabled` : "Disabled"}\n` +
                     `${lang.config.LANGUAGE}: ${guildConfig.lang}\n`
                 );
-              author.dmChannel.send(embed);
+              if (author.dmChannel) author.dmChannel.send(embed);
             }
           } else if (cmd === "add-channel") {
             if (canConfigure && params[0]) {
@@ -699,6 +699,14 @@ const rescheduleOldGames = async (guildId?: string) => {
             $ne: null
           }
         }
+      ],
+      $or: [
+        {
+          rescheduled: false
+        },
+        {
+          rescheduled: null
+        }
       ]
     };
 
@@ -712,7 +720,7 @@ const rescheduleOldGames = async (guildId?: string) => {
       const game = games[i];
 
       if(game.canReschedule()) {
-        game.reschedule();
+        await game.reschedule();
         count++;
       }   
     }
@@ -906,13 +914,57 @@ const postReminders = async (app: Express) => {
   });
 };
 
+const fixReschedules = async () => {
+  try {
+    const query: FilterQuery<any> = {
+      // _id: {
+      //   $in: [
+      //     new ObjectID("5e71b0f1ffbe22002abb54e5")
+      //   ]
+      // },
+      // _id: { $ne: new ObjectID("5e727b26689f83002a298c7c") },
+      // adventure: "Group Study Session",
+      // where: "3SIX9",
+      // time: "12:30",
+      $and: [
+        {
+          frequency: {
+            $ne: '0'
+          }
+        },
+        {
+          frequency: {
+            $ne: null
+          }
+        }
+      ]
+    };
+  
+    let games = await Game.fetchAllByLimit(query, 50);
+    games = games.filter(game => client.guilds.cache.array().find(g => g.id === game.s));
+    console.log(`Found ${games.length} games scheduled before now`);
+    for(let i = 0; i < games.length; i++) {
+      const game = games[i];
+  
+      if (game.when === "datetime") {
+        console.log(game.dm, game.adventure, game.date, game.time, game._id);
+        await game.delete();
+      }   
+    }
+  }
+  catch(err) {
+    console.log('Error')
+  }
+};
+
 export default {
   processes: discordProcesses,
   login: discordLogin,
   refreshMessages: refreshMessages,
   pruneOldGames: pruneOldGames,
   rescheduleOldGames: rescheduleOldGames,
-  postReminders: postReminders
+  postReminders: postReminders,
+  fixReschedules: fixReschedules
 };
 
 export function discordClient() {
