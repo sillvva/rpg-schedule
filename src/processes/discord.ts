@@ -686,7 +686,6 @@ const rescheduleOldGames = async (guildId?: string) => {
     const query: FilterQuery<any> = {
       when: "datetime",
       timestamp: {
-        // timestamp (date scheduled) before now
         $lt: new Date().getTime()
       },
       $and: [
