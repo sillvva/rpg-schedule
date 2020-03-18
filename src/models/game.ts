@@ -415,7 +415,7 @@ export class Game implements GameModel {
   async reschedule() {
     const validDays = this.getWeekdays();
     const nextDate = Game.getNextDate(moment(this.date), validDays, Number(this.frequency));
-    console.log(`rescheduling ${this.adventure} (${this.s}) from ${this.date} (${this.time}) to ${nextDate} (${this.time})`);
+    console.log(`Rescheduling ${this.s}: ${this.adventure} from ${this.date} (${this.time}) to ${nextDate} (${this.time})`);
     this.date = nextDate;
 
     if (this.clearReservedOnRepeat) {
@@ -432,10 +432,8 @@ export class Game implements GameModel {
       const game = new Game(data);
       const newGame = await game.save();
       const del = await this.delete();
-      console.log(del.deletedCount);
       if (del.deletedCount == 0) {
         const del2 = await this.softDelete(this._id);
-        console.log(del.deletedCount);
         if (del2.deletedCount == 0) {
           this.reminded = true;
           await this.save();
