@@ -54,6 +54,7 @@ export interface GameModel {
   frequency: Frequency;
   weekdays: boolean[];
   clearReservedOnRepeat: boolean;
+  rescheduled: boolean;
 }
 
 interface GameSaveData {
@@ -92,6 +93,7 @@ export class Game implements GameModel {
   frequency: Frequency;
   weekdays: boolean[] = [false,false,false,false,false,false,false];
   clearReservedOnRepeat: boolean = false;
+  rescheduled: boolean = false;
 
   private _guild: Guild;
   get discordGuild() {
@@ -150,7 +152,8 @@ export class Game implements GameModel {
       gameImage: this.gameImage,
       frequency: this.frequency,
       weekdays: this.weekdays,
-      clearReservedOnRepeat: this.clearReservedOnRepeat
+      clearReservedOnRepeat: this.clearReservedOnRepeat,
+      rescheduled: this.rescheduled
     };
   }
 
@@ -405,16 +408,15 @@ export class Game implements GameModel {
     const validDays = this.getWeekdays();
     const hours = isNaN(parseFloat(this.runtime.trim())) ? 0 : Math.abs(parseFloat(this.runtime.trim()));
     const gameEnded = this.timestamp + hours * 3600 * 1000 < new Date().getTime();
-    return gameEnded && ((this.frequency == Frequency.DAILY || this.frequency == Frequency.MONTHLY) ||
+    return gameEnded && !this.rescheduled && ((this.frequency == Frequency.DAILY || this.frequency == Frequency.MONTHLY) ||
             ((this.frequency == Frequency.WEEKLY || this.frequency == Frequency.BIWEEKLY) && validDays.length > 0));
   }
 
   async reschedule() {
     const validDays = this.getWeekdays();
     const nextDate = Game.getNextDate(moment(this.date), validDays, Number(this.frequency));
-    console.log(`rescheduling ${this._id} from ${this.date} to ${nextDate} ${new Date(nextDate).getTime()}`);
+    console.log(`Rescheduling ${this.s}: ${this.adventure} from ${this.date} (${this.time}) to ${nextDate} (${this.time})`);
     this.date = nextDate;
-    this.reminded = false;
 
     if (this.clearReservedOnRepeat) {
       this.reserved = "";
@@ -422,20 +424,36 @@ export class Game implements GameModel {
 
     const guildConfig = await GuildConfig.fetch(this.s);
     if (guildConfig.rescheduleMode === "update") {
-      this.save();
+      await this.save();
     }
     else if (guildConfig.rescheduleMode === "repost") {
       let data = cloneDeep(this.data);
       delete data._id;
       const game = new Game(data);
       const newGame = await game.save();
+      const del = await this.delete();
+      if (del.deletedCount == 0) {
+        const del2 = await this.softDelete(this._id);
+        if (del2.deletedCount == 0) {
+          this.reminded = true;
+          await this.save();
+        }
+      }
       io().emit("game", { action: "rescheduled", gameId: this._id, newGameId: newGame._id });
-      this.delete();
     }
+    return true;
+  }
+
+  async softDelete(_id: string | number | mongodb.ObjectID) {
+    return await connection()
+      .collection(collection)
+      .deleteOne({ _id: new ObjectId(_id) });
   }
 
   async delete(options: any = {}) {
     if (!connection()) { console.log("No database connection"); return null; }
+
+    const result = await this.softDelete(this._id);
 
     const { sendWS = true } = options;
     const game: GameModel = this;
@@ -488,10 +506,9 @@ export class Game implements GameModel {
         console.log("DM: ", e.message);
       }
     }
+
     if (sendWS) io().emit("game", { action: "deleted", gameId: game._id });
-    return await connection()
-      .collection(collection)
-      .deleteOne({ _id: new ObjectId(game._id) });
+    return result;
   }
 
   static ISOGameDate(game: GameModel) {
