@@ -26,6 +26,7 @@
     "CHANNEL": "Channel",
     "GAME_NAME": "Game / Adventure Name",
     "RUN_TIME": "Run Time",
+    "MIN_PLAYERS": "Min Players",
     "MAX_PLAYERS": "Max Players",
     "GM_DISCORD_TAG": "GM Discord Tag",
     "GM_ERROR": "GM must be a Discord tag",

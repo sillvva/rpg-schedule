@@ -59,26 +59,16 @@
             </div>
         </div>
         <div class="row">
-            <div class="form-group col-sm-6">
+            <div class="form-group col-sm-12 col-md-4 col-lg-6">
                 <label for="adventure" class="col-form-label"><%= lang.game.GAME_NAME %></label>
                 <input type="text" class="form-control" id="adventure" name="adventure" required value="<%= adventure %>">
             </div>
-            <div class="form-group col-sm-3">
-                <label for="runtime" class="col-form-label"><%= lang.game.RUN_TIME %></label>
-                <div class="input-group">
-                    <input type="text" class="form-control" id="runtime" name="runtime" value="<%= runtime %>">
-                    <div class="input-group-append">
-                        <div class="input-group-text"><%= lang.game.labels.HOURS %></div>
-                    </div>
-                </div>
+            <div class="form-group col-sm-12 col-md-4 col-lg-6">
+                <label for="gameImage" class="col-form-label"><%= lang.game.GAME_IMAGE %></label>
+                <input type="text" class="form-control" id="gameImage" name="gameImage" value="<%= gameImage %>">
+                <!-- <small><%= lang.game.labels.GAME_IMAGE_DESC %></small> -->
             </div>
-            <div class="form-group col-sm-3">
-                <label for="players" class="col-form-label"><%= lang.game.MAX_PLAYERS %></label>
-                <input type="number" min="1" class="form-control" id="players" name="players" required value="<%= players %>">
-            </div>
-        </div>
-        <div class="row">
-            <div class="form-group col-sm-3">
+            <div class="form-group col-sm-6 col-md-4 col-lg-3">
                 <label for="dm" class="col-form-label"><%= lang.game.GM_DISCORD_TAG %></label>
                 <input type="text" class="form-control" id="dm" name="dm" placeholder="Username#1234" required value="<%= dm %>">
                 <% if (errors.dm) { %>
@@ -87,38 +77,56 @@
                     <small><%= lang.game.labels.DISCORD_TAGS %></small>
                 <% } %>
             </div>
-            <div class="form-group col-sm-5">
+            <div class="form-group col-sm-6 col-md-4 col-lg-3">
+                <label for="runtime" class="col-form-label"><%= lang.game.RUN_TIME %></label>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="runtime" name="runtime" value="<%= runtime %>">
+                    <div class="input-group-append">
+                        <div class="input-group-text"><%= lang.game.labels.HOURS %></div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group col-sm-6 col-md-4 col-lg-3">
+                <label for="minPlayers" class="col-form-label"><%= lang.game.MIN_PLAYERS %></label>
+                <input type="number" min="1" class="form-control" id="minPlayers" name="minPlayers" required value="<%= minPlayers %>">
+                <% if (errors.minPlayers) { %>
+                    <small class="error">Invalid number of players</small>
+                <% } %>
+            </div>
+            <div class="form-group col-sm-6 col-md-4 col-lg-3">
+                <label for="players" class="col-form-label"><%= lang.game.MAX_PLAYERS %></label>
+                <input type="number" min="1" class="form-control" id="players" name="players" required value="<%= players %>">
+                <% if (errors.maxPlayers) { %>
+                    <small class="error">Invalid number of players</small>
+                <% } %>
+            </div>
+            <div class="form-group col-sm-12 <%= is.newgame ? 'col-md-5' : '' %>">
                 <label for="where" class="col-form-label"><%= lang.game.WHERE %></label>
                 <input type="text" class="form-control" id="where" name="where" required value="<%= where %>">
             </div>
-            <div class="form-group col-sm-4">
-                <label for="gameImage" class="col-form-label"><%= lang.game.GAME_IMAGE %></label>
-                <input type="text" class="form-control" id="gameImage" name="gameImage" value="<%= gameImage %>">
-                <!-- <small><%= lang.game.labels.GAME_IMAGE_DESC %></small> -->
-            </div>
-        </div>
-        <% if (is.newgame) { %>
-            <div class="row">
-                <div class="form-group col-sm-6">
-                    <label for="method" class="col-form-label"><%= lang.game.SIGN_UP_METHOD %></label>
-                    <select class="form-control" name="method" id="method">
-                        <option value="automated" <%= method === "automated" ? 'selected' : '' %>><%= lang.game.options.AUTOMATED_SIGNUP %></option>
-                        <option value="custom" <%= method === "custom" ? 'selected' : '' %>><%= lang.game.options.CUSTOM_SIGNUP_INSTRUCTIONS %></option>
-                    </select>
-                    <small id="method-desc"></small>
-                </div>
-                <div class="form-group col-sm-6">
+            <% if (is.newgame) { %>
+                <div class="form-group col-sm-6 col-md-3">
                     <label for="when" class="col-form-label"><%= lang.game.WHEN %></label>
                     <select class="form-control" name="when" id="when">
                         <option value="datetime" <%= when === 'datetime' ? 'selected' : '' %>><%= lang.game.options.DATE_TIME %></option>
                         <option value="now" <%= when === 'now' ? 'selected' : '' %>><%= lang.game.options.NOW %></option>
                     </select>
                 </div>
-            </div>
-        <% } else { %>
-            <input type="hidden" name="method" id="method" value="<%= method %>">
-            <input type="hidden" name="when" id="when" value="<%= when %>">
-        <% } %>
+                <div class="form-group col-sm-6 col-md-4">
+                    <label for="method" class="col-form-label"><%= lang.game.SIGN_UP_METHOD %></label>
+                    <select class="form-control" name="method" id="method">
+                        <option value="automated" <%= method === "automated" ? 'selected' : '' %>><%= lang.game.options.AUTOMATED_SIGNUP %></option>
+                        <option value="custom" <%= method === "custom" ? 'selected' : '' %>><%= lang.game.options.CUSTOM_SIGNUP_INSTRUCTIONS %></option>
+                    </select>
+                    <div class="d-none d-lg-block">
+                        <small id="method-desc"></small>
+                    </div>
+                </div>
+            <% } else { %>
+                <input type="hidden" name="method" id="method" value="<%= method %>">
+                <input type="hidden" name="when" id="when" value="<%= when %>">
+            <% } %>
+        </div>
         <div id="method__custom">
             <div class="form-group">
                 <label for="customSignup" class="col-form-label"><%= lang.game.CUSTOM_SIGNUP_INSTRUCTIONS %></label>

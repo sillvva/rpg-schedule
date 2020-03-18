@@ -172,6 +172,24 @@ https://rpg-schedule.herokuapp.com
 </tbody>
 </table>
 
+## Rescheduling
+
+Here's how rescheduling works:
+
+You enter: 3/20 (Fri) 9am, Reschedule: Weekly, Friday
+- First announcement says 3/20 (Fri) 9am
+- Next announcement says 3/27 (Fri) 9am
+- Next announcement says 4/3 (Fri) 9am
+
+You enter 3/25 (Wed) 9am, Reschedule: Weekly, Friday
+- First announcement says 3/25 (Wed) 9am
+- Next announcement says 3/27 (Fri) 9am
+- Next announcement says 4/3 (Fri) 9am
+
+The first announcement is always on the date you entered. Any following announcements will be based on the day of the week selected.
+
+Each next announcement will be posted X hours after the date/time of the current announcement, where X is the duration of the game. If no duration is entered, it defaults to 0 hours.
+
 ## How to Develop
 * install [git](https://git-scm.com/downloads), [node](https://nodejs.org/en/download/), [heroku-cli](https://devcenter.heroku.com/articles/heroku-cli#download-and-install), [mongodb server](https://www.mongodb.com/download-center/community)
 * `npm i`

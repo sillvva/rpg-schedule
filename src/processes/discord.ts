@@ -842,6 +842,10 @@ const postReminders = async (app: Express) => {
     }
 
     if (reserved.length == 0) return;
+    
+    let minPlayers = parseInt(game.minPlayers);
+    if (!isNaN(parseInt(game.minPlayers))) minPlayers = 0;
+    if (reserved.length < minPlayers) return;
 
     try {
       game.reminded = true;

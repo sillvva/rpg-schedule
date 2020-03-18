@@ -109,6 +109,7 @@ export default (options: GameRouteOptions) => {
             where: "",
             reserved: "",
             description: "",
+            minPlayers: 1,
             players: 7,
             method: "automated",
             customSignup: "",
@@ -134,6 +135,8 @@ export default (options: GameRouteOptions) => {
             guildConfig: guildConfig,
             errors: {
               other: null,
+              minPlayers: game && (isNaN(parseInt(game.minPlayers || "1")) || parseInt(game.minPlayers || "1") > parseInt(game.players || "0")),
+              maxPlayers: game && (isNaN(parseInt(game.players || "0")) || parseInt(game.minPlayers || "1") > parseInt(game.players || "0")),
               dm: game && !guildMembers.array().find(mem => {
                 return mem.user.tag === game.dm.trim().replace("@", "");
               }),

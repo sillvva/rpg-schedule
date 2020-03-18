@@ -32,6 +32,7 @@ export interface GameModel {
   channel: string;
   adventure: string;
   runtime: string;
+  minPlayers: string;
   players: string;
   dm: string;
   where: string;
@@ -69,6 +70,7 @@ export class Game implements GameModel {
   channel: string;
   adventure: string;
   runtime: string;
+  minPlayers: string;
   players: string;
   dm: string;
   where: string;
@@ -127,6 +129,7 @@ export class Game implements GameModel {
       channel: this.channel,
       adventure: this.adventure,
       runtime: this.runtime,
+      minPlayers: this.minPlayers,
       players: this.players,
       dm: this.dm,
       where: this.where,
