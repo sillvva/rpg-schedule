@@ -922,10 +922,10 @@ const fixReschedules = async () => {
       //     new ObjectID("5e71b0f1ffbe22002abb54e5")
       //   ]
       // },
-      // _id: { $ne: new ObjectID("5e727b26689f83002a298c7c") },
-      // adventure: "Group Study Session",
+      // _id: { $ne: new ObjectID("5e738c431501d4002a5d75c0") },
+      // adventure: "Pre-Market Prep",
       // where: "3SIX9",
-      // time: "12:30",
+      // time: "08:30",
       $and: [
         {
           frequency: {
@@ -941,7 +941,7 @@ const fixReschedules = async () => {
     };
   
     let games = await Game.fetchAllByLimit(query, 50);
-    games = games.filter(game => client.guilds.cache.array().find(g => g.id === game.s));
+    // games = games.filter(game => client.guilds.cache.array().find(g => g.id === game.s));
     console.log(`Found ${games.length} games scheduled before now`);
     for(let i = 0; i < games.length; i++) {
       const game = games[i];
