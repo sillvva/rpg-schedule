@@ -1,3 +1,5 @@
+version: 0.2
+
 phases:
   install:
     commands:
@@ -6,6 +8,3 @@ phases:
 
       # Upgrade AWS CLI to the latest version
       - pip install --upgrade awscli
-
-      # Compile TypeScript to JavaScipt
-      - tsc
