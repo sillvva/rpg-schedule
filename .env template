@@ -11,3 +11,4 @@ AUTH_URL="" # discord oauth2 redirect to /login page, use identify/guilds perms
 RESCHEDULING=true
 REMINDERS=true
 LOCALENV=true
+MAINTENANCE=false
