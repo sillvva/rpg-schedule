@@ -1,10 +1,12 @@
 # Change Log
 
-## March 14-17, 2020
+## March 14-18, 2020
 
 - Upgraded server from free to paid. Doubled memory limit.
 - New `embed-user-tags` configuration option. This will enable user tags in embeds. Note that they can <a href="https://cdn.discordapp.com/attachments/532565396746928149/682786099679985665/unknown.png">glitch in embeds</a> and do not actually ping the user.
 - New rescheduling option to clear the reserved list when the game is rescheduled.
+- Performance Improvement
+- Bug Fixes
 
 ## March 9, 2020
 

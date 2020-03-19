@@ -1,0 +1,11 @@
+phases:
+  install:
+    commands:
+      # Install dependencies needed for running application
+      - npm install
+
+      # Upgrade AWS CLI to the latest version
+      - pip install --upgrade awscli
+
+      # Compile TypeScript to JavaScipt
+      - tsc
