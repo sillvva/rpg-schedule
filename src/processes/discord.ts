@@ -18,6 +18,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
   const app = options.app;
 
   client.on("debug", function(info) {
+    if (info.indexOf("hit on route") >= 0) return;
     console.log(info);
   })
 
@@ -685,7 +686,6 @@ const rescheduleOldGames = async (guildId?: string) => {
     const query: FilterQuery<any> = {
       when: "datetime",
       timestamp: {
-        // timestamp (date scheduled) before now
         $lt: new Date().getTime()
       },
       $and: [

@@ -21,6 +21,7 @@ export default {
     changeLang: { path: "/lang/:newLang" },
     invite: { path: "/invite" },
     donate: { path: "/donate" },
+    github: { path: "/github" },
     login: { path: "/login" },
     logout: { path: "/logout" },
     rss: { path: "/rss/:uid" },

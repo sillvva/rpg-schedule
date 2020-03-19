@@ -408,7 +408,8 @@ export class Game implements GameModel {
     const validDays = this.getWeekdays();
     const hours = isNaN(parseFloat(this.runtime.trim())) ? 0 : Math.abs(parseFloat(this.runtime.trim()));
     const gameEnded = this.timestamp + hours * 3600 * 1000 < new Date().getTime();
-    return gameEnded && !this.rescheduled && ((this.frequency == Frequency.DAILY || this.frequency == Frequency.MONTHLY) ||
+    const gameRescheduled = this.timestamp + (hours + 1) * 3600 * 1000 < new Date().getTime();
+    return gameEnded && !this.rescheduled && !gameRescheduled && ((this.frequency == Frequency.DAILY || this.frequency == Frequency.MONTHLY) ||
             ((this.frequency == Frequency.WEEKLY || this.frequency == Frequency.BIWEEKLY) && validDays.length > 0));
   }
 
