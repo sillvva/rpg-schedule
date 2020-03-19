@@ -679,6 +679,7 @@ const refreshMessages = async () => {
   });
 };
 
+let rescheduled: Game[] = [];
 const rescheduleOldGames = async (guildId?: string) => {
   let result: DeleteWriteOpResultObject;
   try {
@@ -719,7 +720,8 @@ const rescheduleOldGames = async (guildId?: string) => {
     for(let i = 0; i < games.length; i++) {
       const game = games[i];
 
-      if(game.canReschedule()) {
+      if(game.canReschedule() && !rescheduled.find(g => g.s == game.s && g.c == game.c && g.adventure == game.adventure && g.date == game.date && g.time == game.time && g.timezone == game.timezone)) {
+        rescheduled.push(game);
         await game.reschedule();
         count++;
       }   
@@ -729,6 +731,10 @@ const rescheduleOldGames = async (guildId?: string) => {
   } catch (err) {
     console.log("GameReschedulingError:", err);
   }
+
+  setTimeout(() => {
+    rescheduled = [];
+  }, 5 * 60 * 1000);
   return result;
 }
 
