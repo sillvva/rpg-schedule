@@ -1,5 +1,5 @@
 import db from "../db";
-import { ObjectID, ObjectId } from "mongodb";
+import { ObjectID, ObjectId, FilterQuery } from "mongodb";
 
 const connection = db.connection;
 const collection = "guildConfig";
@@ -110,6 +110,17 @@ export class GuildConfig implements GuildConfigDataModel {
       .toArray();
     return guildConfigs.map(gc => {
       return new GuildConfig(gc);
+    });
+  }
+
+  static async fetchAllBy(query: FilterQuery<any>): Promise<GuildConfig[]> {
+    if (!connection()) { console.log("No database connection"); return []; }
+    const guildConfigs: GuildConfigModel[] = await connection()
+      .collection(collection)
+      .find(query)
+      .toArray();
+    return guildConfigs.map(game => {
+      return new GuildConfig(game);
     });
   }
 }

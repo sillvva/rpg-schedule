@@ -22,7 +22,7 @@ const parseConfigURLs = (paths: Object) => {
   return urls;
 };
 
-const parseConfigParam: any = (paths: Object, param: String, value: String) => {
+const parseConfigParam = (paths: Object, param: String, value: String): any => {
   const parsedPaths = _.cloneDeep(paths);
   return _.fromPairs(
     _.toPairs(parsedPaths).map((entry: any) => {
@@ -99,6 +99,14 @@ const parseEventTimes = (date: string, time: string, timezone: number, event?: E
   };
 };
 
+let curTimer = new Date().getTime();
+const timer = (n: number) => {
+  const newT = new Date().getTime();
+  console.log(`Timer${n ? ` ${n}` : ''}: `, newT - curTimer);
+  curTimer = newT;
+  return curTimer;
+};
+
 export default {
   parseConfigURLs: parseConfigURLs,
   parseConfigParam: parseConfigParam,
@@ -106,5 +114,6 @@ export default {
   parseEventTimes: parseEventTimes,
   objectChanges: objectChanges,
   fromEntries: _.fromPairs,
-  backslash: backslash
+  backslash: backslash,
+  timer: timer
 };
