@@ -12,40 +12,39 @@ export default () => {
       const headers = {
         "Content-Type": "application/x-www-form-urlencoded"
       };
-
-      request(
-        {
-          url: "https://discordapp.com/api/v6/oauth2/token",
-          method: "POST",
-          headers: headers,
-          form: {
-            client_id: process.env.CLIENT_ID,
-            client_secret: process.env.CLIENT_SECRET,
-            grant_type: "authorization_code",
-            code: req.query.code,
-            redirect_uri: process.env.HOST + config.urls.login.path,
-            scope: "identify guilds"
-          }
-        },
-        function(error, response, body) {
-          if (error || response.statusCode !== 200) {
-            console.log(error);
-            res.render("error", { message: `Discord OAuth: ${response.statusCode}<br />${error}` });
-          }
-
-          const token = JSON.parse(body);
-          req.session.status = {
-            ...config.defaults.sessionStatus,
-            ...req.session.status,
-            ...{
-              lastRefreshed: moment().unix()
-            }
-          };
-          req.session.status.access = token;
-          res.redirect(req.session.redirect || config.urls.game.games.path);
-          delete req.session.redirect;
+      const requestData = {
+        url: "https://discordapp.com/api/v6/oauth2/token",
+        method: "POST",
+        headers: headers,
+        form: {
+          client_id: process.env.CLIENT_ID,
+          client_secret: process.env.CLIENT_SECRET,
+          grant_type: "authorization_code",
+          code: req.query.code,
+          redirect_uri: process.env.HOST + config.urls.login.path,
+          scope: "identify guilds"
         }
-      );
+      };
+      console.log(requestData);
+
+      request(requestData, function(error, response, body) {
+        if (error || response.statusCode !== 200) {
+          console.log(error);
+          return res.render("error", { message: `Discord OAuth: ${response.statusCode}<br />${error}` });
+        }
+
+        const token = JSON.parse(body);
+        req.session.status = {
+          ...config.defaults.sessionStatus,
+          ...req.session.status,
+          ...{
+            lastRefreshed: moment().unix()
+          }
+        };
+        req.session.status.access = token;
+        res.redirect(req.session.redirect || config.urls.game.games.path);
+        delete req.session.redirect;
+      });
     } else if (req.query.error) {
       res.redirect("/");
     } else {
