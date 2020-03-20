@@ -344,7 +344,7 @@ export class Game implements GameModel {
       }
       if (gcUpdated) {
         guildConfig.save(guildConfig.data);
-        Game.updateEmojis(guildConfig);
+        guildConfig.updateEmojis();
       }
 
       const updated = await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { messageId: message.id } });
@@ -416,30 +416,6 @@ export class Game implements GameModel {
     return await connection()
       .collection(collection)
       .deleteMany(query);
-  }
-
-  static async updateEmojis(guildConfig: GuildConfig) {
-    const games = await Game.fetchAllBy({
-      s: guildConfig.guild,
-      timestamp: {
-        $gt: new Date().getTime()
-      }
-    });
-
-    for(let i = 0; i < games.length; i++) {
-      const game = games[i];
-      const message = await game._channel.messages.fetch(game.messageId);
-      if (message) {
-        try {
-          await message.reactions.removeAll();
-          message.react(guildConfig.emojiAdd);
-          message.react(guildConfig.emojiRemove);
-        }
-        catch(err) {
-          console.log('UpdateEmojisError:', 'Could not update emojis for game', game.adventure, `(${game.s})`);
-        }
-      }
-    }
   }
 
   public getWeekdays() {

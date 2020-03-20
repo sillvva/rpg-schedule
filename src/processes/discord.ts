@@ -403,7 +403,8 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                 })
                 .then(result => {
                   (<TextChannel>message.channel).send(lang.config.EMOJI_JOIN_SET);
-                  Game.updateEmojis(guildConfig);
+                  guildConfig.emojiAdd = emoji;
+                  guildConfig.updateEmojis();
                 })
                 .catch(err => {
                   console.log(err);
@@ -422,7 +423,8 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                 })
                 .then(result => {
                   (<TextChannel>message.channel).send(lang.config.EMOJI_LEAVE_SET);
-                  Game.updateEmojis(guildConfig);
+                  guildConfig.emojiRemove = emoji;
+                  guildConfig.updateEmojis();
                 })
                 .catch(err => {
                   console.log(err);
