@@ -328,6 +328,7 @@ export class Game implements GameModel {
       catch(err) {
         gcUpdated = true;
         guildConfig.emojiAdd = '➕';
+        if (game.method === "automated") await message.react(guildConfig.emojiAdd);
       }
       try {
         if (game.method === "automated" && guildConfig.dropOut) await message.react(guildConfig.emojiRemove);
@@ -335,6 +336,7 @@ export class Game implements GameModel {
       catch(err) {
         gcUpdated = true;
         guildConfig.emojiRemove = '➖';
+        if (game.method === "automated" && guildConfig.dropOut) await message.react(guildConfig.emojiRemove);
       }
       if (gcUpdated) {
         guildConfig.save(guildConfig.data);
