@@ -393,7 +393,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
           } else if (cmd === "emoji-sign-up") {
             if (canConfigure) {
               const emoji = params.join(" ");
-              if (emoji.length > 2 && emoji.match(/\:[^\:]+\:/)) {
+              if (!aux.isEmoji(emoji) || (emoji.length > 2 && emoji.match(/\:[^\:]+\:/))) {
                 (<TextChannel>message.channel).send(lang.config.desc.EMOJI_ERROR.replace(/\:char/gi, emoji.replace(/\<|\>/g, "")));
                 return;
               }
@@ -403,6 +403,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                 })
                 .then(result => {
                   (<TextChannel>message.channel).send(lang.config.EMOJI_JOIN_SET);
+                  Game.updateEmojis(guildConfig);
                 })
                 .catch(err => {
                   console.log(err);
@@ -411,16 +412,17 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
           } else if (cmd === "emoji-drop-out") {
             if (canConfigure) {
               const emoji = params.join(" ");
-              if (emoji.length > 2 && emoji.match(/\:[^\:]+\:/)) {
+              if (!aux.isEmoji(emoji) || (emoji.length > 2 && emoji.match(/\:[^\:]+\:/))) {
                 (<TextChannel>message.channel).send(lang.config.desc.EMOJI_ERROR.replace(/\:char/gi, emoji.replace(/\<|\>/g, "")));
                 return;
               }
-              guildConfig
+              await guildConfig
                 .save({
                   emojiRemove: emoji
                 })
                 .then(result => {
                   (<TextChannel>message.channel).send(lang.config.EMOJI_LEAVE_SET);
+                  Game.updateEmojis(guildConfig);
                 })
                 .catch(err => {
                   console.log(err);

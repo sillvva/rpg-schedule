@@ -326,20 +326,25 @@ export class Game implements GameModel {
         if (game.method === "automated") await message.react(guildConfig.emojiAdd);
       }
       catch(err) {
-        gcUpdated = true;
-        guildConfig.emojiAdd = '➕';
-        if (game.method === "automated") await message.react(guildConfig.emojiAdd);
+        if (!aux.isEmoji(guildConfig.emojiAdd)) {
+          gcUpdated = true;
+          guildConfig.emojiAdd = '➕';
+          if (game.method === "automated") await message.react(guildConfig.emojiAdd);
+        }
       }
       try {
         if (game.method === "automated" && guildConfig.dropOut) await message.react(guildConfig.emojiRemove);
       }
       catch(err) {
-        gcUpdated = true;
-        guildConfig.emojiRemove = '➖';
-        if (game.method === "automated" && guildConfig.dropOut) await message.react(guildConfig.emojiRemove);
+        if (!aux.isEmoji(guildConfig.emojiRemove)) {
+          gcUpdated = true;
+          guildConfig.emojiRemove = '➖';
+          if (game.method === "automated" && guildConfig.dropOut) await message.react(guildConfig.emojiRemove);
+        }
       }
       if (gcUpdated) {
         guildConfig.save(guildConfig.data);
+        Game.updateEmojis(guildConfig);
       }
 
       const updated = await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { messageId: message.id } });
@@ -411,6 +416,30 @@ export class Game implements GameModel {
     return await connection()
       .collection(collection)
       .deleteMany(query);
+  }
+
+  static async updateEmojis(guildConfig: GuildConfig) {
+    const games = await Game.fetchAllBy({
+      s: guildConfig.guild,
+      timestamp: {
+        $gt: new Date().getTime()
+      }
+    });
+
+    for(let i = 0; i < games.length; i++) {
+      const game = games[i];
+      const message = await game._channel.messages.fetch(game.messageId);
+      if (message) {
+        try {
+          await message.reactions.removeAll();
+          message.react(guildConfig.emojiAdd);
+          message.react(guildConfig.emojiRemove);
+        }
+        catch(err) {
+          console.log('UpdateEmojisError:', 'Could not update emojis for game', game.adventure, `(${game.s})`);
+        }
+      }
+    }
   }
 
   public getWeekdays() {
