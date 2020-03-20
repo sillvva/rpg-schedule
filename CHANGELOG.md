@@ -1,5 +1,10 @@
 # Change Log
 
+## March 19, 2020
+
+- Transitioned server from Heroku to Amazon Web Services
+- New domain name! https://www.rpg-schedule.com
+
 ## March 14-18, 2020
 
 - Upgraded server from free to paid. Doubled memory limit.

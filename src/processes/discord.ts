@@ -947,7 +947,7 @@ const fixReschedules = async () => {
     };
   
     let games = await Game.fetchAllByLimit(query, 50);
-    // games = games.filter(game => client.guilds.cache.array().find(g => g.id === game.s));
+    games = games.filter(game => client.guilds.cache.array().find(g => g.id === game.s));
     console.log(`Found ${games.length} games scheduled before now`);
     for(let i = 0; i < games.length; i++) {
       const game = games[i];
