@@ -28,12 +28,15 @@
     "mongodb": "^3.1.10",
     "nodemon": "^1.18.9",
     "object.fromentries": "^2.0.0",
+    "remarkable": "^2.0.0",
     "request": "^2.88.0",
     "socket.io": "^2.2.0",
     "socket.io-client": "^2.2.0",
     "typescript": "^3.5.1"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "@types/remarkable": "^1.7.4"
+  },
   "scripts": {
     "build": "tsc",
     "start": "npm run build && node ./app/index.js",

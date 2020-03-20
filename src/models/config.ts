@@ -18,6 +18,7 @@ export default {
       auth: { path: "/games/authenticate", session: true },
       rsvp: { path: "/games/rsvp", session: true }
     },
+    about: { path: "/info/about", session: true },
     changeLang: { path: "/lang/:newLang" },
     invite: { path: "/invite" },
     donate: { path: "/donate" },

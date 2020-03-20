@@ -36,7 +36,8 @@ export default (options: any) => {
         dashboard: res.locals.urlPath === config.urls.game.dashboard.path,
         server: res.locals.urlPath === config.urls.game.server.path,
         calendar: res.locals.urlPath === config.urls.game.calendar.path,
-        game: res.locals.urlPath === config.urls.game.create.path
+        game: res.locals.urlPath === config.urls.game.create.path,
+        about: res.locals.urlPath === config.urls.about.path
       },
       guilds: [],
       user: null

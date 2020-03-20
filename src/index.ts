@@ -13,6 +13,7 @@ import { socket } from "./processes/socket";
 
 import initRoutes from "./routes/init";
 import gameRoutes from "./routes/game";
+import infoRoutes from "./routes/info";
 import otherRoutes from "./routes/other";
 import timezoneRoutes from "./routes/timezone";
 import loginRoutes from "./routes/login";
@@ -132,6 +133,7 @@ else {
   app.use(loginRoutes());
   app.use(initRoutes({ client: client }));
   app.use(gameRoutes({ client: client }));
+  app.use(infoRoutes());
   app.use(otherRoutes());
   app.use(timezoneRoutes());
   app.use(redirectRoutes());
