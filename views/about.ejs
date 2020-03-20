@@ -14,10 +14,11 @@
     <%- include('menu'); %>
     <div class="container">
       <h1>RPG Schedule</h1>
-      <h5>
-        <a href="<%= config.urls.github.path %>" target="_blank">Github</a>
-        | <a href="https://github.com/sillvva/rpg-schedule/blob/master/CHANGELOG.md" target="_blank">Change Log</a>
-      </h5>
+      <h6>
+        Want to contribute? <a href="<%= config.urls.github.path %>" target="_blank">Github</a>
+        | <a href="https://www.patreon.com/rpg_schedule" target="_blank">Patreon</a> 
+        | <a href="https://www.paypal.me/Sillvva" target="_blank">PayPal</a>
+      </h6>
       <p>A discord bot for posting game announcements for RPGs. Features include:</p>
       <ul>
         <li>Web interface for posting and editing game announcements</li>
@@ -26,6 +27,7 @@
         <li>Automated reminders</li>
         <li>RSS Feed</li>
       </ul>
+      <h6><a href="https://github.com/sillvva/rpg-schedule/blob/master/CHANGELOG.md" target="_blank">Change Log</a></h6>
       <p><strong>Note:</strong> Games are automatically pruned 48 - 72 hours after the scheduled time. Or you can delete them manually.</p>
       <p>
         <a href="/images/screenshot3.png" target="_blank" style="display: inline-flex; height: 200px;"
@@ -222,10 +224,21 @@
         The discord bot is deployed with Heroku as a Node.js and discord.js application and MongoDB for data storage. When an update is pushed to this repository, the update is
         automatically deployed to Heroku.
       </p>
-      <p>
-        Donate: <a href="https://www.patreon.com/rpg_schedule" target="_blank">Patreon</a> | <a href="https://www.paypal.me/Sillvva" target="_blank">PayPal</a> |
+      <h2>Credits</h2>
+      <h5>
         <a href="https://www.mattdekok.dev/#donate" target="_blank">My Website</a>
-      </p>
+      </h5>
+      <h5>Patrons/Donors</h5>
+      <ul>
+        <li>JmanX</li>
+      </ul>
+      <h5>Code/Language Contributors</h5>
+      <ul>
+        <li>wilywyrm</li>
+        <li>j-san</li>
+        <li>TheDiceFather</li>
+        <li>ILDaviz</li>
+      </ul>
     </div>
   </body>
 </html>
