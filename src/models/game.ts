@@ -320,8 +320,33 @@ export class Game implements GameModel {
       } else {
         message = <Message>await channel.send(embed);
       }
-      if (game.method === "automated") await message.react(guildConfig.emojiAdd);
-      if (game.method === "automated" && guildConfig.dropOut) await message.react(guildConfig.emojiRemove);
+      
+      let gcUpdated = false;
+      try {
+        if (game.method === "automated") await message.react(guildConfig.emojiAdd);
+      }
+      catch(err) {
+        if (!aux.isEmoji(guildConfig.emojiAdd)) {
+          gcUpdated = true;
+          guildConfig.emojiAdd = '➕';
+          if (game.method === "automated") await message.react(guildConfig.emojiAdd);
+        }
+      }
+      try {
+        if (game.method === "automated" && guildConfig.dropOut) await message.react(guildConfig.emojiRemove);
+      }
+      catch(err) {
+        if (!aux.isEmoji(guildConfig.emojiRemove)) {
+          gcUpdated = true;
+          guildConfig.emojiRemove = '➖';
+          if (game.method === "automated" && guildConfig.dropOut) await message.react(guildConfig.emojiRemove);
+        }
+      }
+      if (gcUpdated) {
+        guildConfig.save(guildConfig.data);
+        guildConfig.updateEmojis();
+      }
+
       const updated = await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { messageId: message.id } });
       if (dmmember) {
         try {
@@ -408,8 +433,10 @@ export class Game implements GameModel {
     const validDays = this.getWeekdays();
     const hours = isNaN(parseFloat(this.runtime.trim())) ? 0 : Math.abs(parseFloat(this.runtime.trim()));
     const gameEnded = this.timestamp + hours * 3600 * 1000 < new Date().getTime();
-    const gameRescheduled = this.timestamp + (hours + 1) * 3600 * 1000 < new Date().getTime();
-    return gameEnded && !this.rescheduled && !gameRescheduled && ((this.frequency == Frequency.DAILY || this.frequency == Frequency.MONTHLY) ||
+    const nextDate = Game.getNextDate(moment(this.date), validDays, Number(this.frequency));
+    const nextISO = `${nextDate.replace(/-/g, "")}T${this.time.replace(/:/g, "")}00${this.timezone >= 0 ? "+" : "-"}${aux.parseTimeZoneISO(this.timezone)}`;
+    const nextGamePassed = new Date(nextISO).getTime() <= new Date().getTime();
+    return gameEnded && !this.rescheduled && !nextGamePassed && ((this.frequency == Frequency.DAILY || this.frequency == Frequency.MONTHLY) ||
             ((this.frequency == Frequency.WEEKLY || this.frequency == Frequency.BIWEEKLY) && validDays.length > 0));
   }
 

@@ -393,7 +393,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
           } else if (cmd === "emoji-sign-up") {
             if (canConfigure) {
               const emoji = params.join(" ");
-              if (emoji.length > 2 && emoji.match(/\:[^\:]+\:/)) {
+              if (!aux.isEmoji(emoji) || (emoji.length > 2 && emoji.match(/\:[^\:]+\:/))) {
                 (<TextChannel>message.channel).send(lang.config.desc.EMOJI_ERROR.replace(/\:char/gi, emoji.replace(/\<|\>/g, "")));
                 return;
               }
@@ -403,6 +403,8 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                 })
                 .then(result => {
                   (<TextChannel>message.channel).send(lang.config.EMOJI_JOIN_SET);
+                  guildConfig.emojiAdd = emoji;
+                  guildConfig.updateEmojis();
                 })
                 .catch(err => {
                   console.log(err);
@@ -411,16 +413,18 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
           } else if (cmd === "emoji-drop-out") {
             if (canConfigure) {
               const emoji = params.join(" ");
-              if (emoji.length > 2 && emoji.match(/\:[^\:]+\:/)) {
+              if (!aux.isEmoji(emoji) || (emoji.length > 2 && emoji.match(/\:[^\:]+\:/))) {
                 (<TextChannel>message.channel).send(lang.config.desc.EMOJI_ERROR.replace(/\:char/gi, emoji.replace(/\<|\>/g, "")));
                 return;
               }
-              guildConfig
+              await guildConfig
                 .save({
                   emojiRemove: emoji
                 })
                 .then(result => {
                   (<TextChannel>message.channel).send(lang.config.EMOJI_LEAVE_SET);
+                  guildConfig.emojiRemove = emoji;
+                  guildConfig.updateEmojis();
                 })
                 .catch(err => {
                   console.log(err);
@@ -722,8 +726,24 @@ const rescheduleOldGames = async (guildId?: string) => {
 
       if(game.canReschedule() && !rescheduled.find(g => g.s == game.s && g.c == game.c && g.adventure == game.adventure && g.date == game.date && g.time == game.time && g.timezone == game.timezone)) {
         rescheduled.push(game);
-        await game.reschedule();
         count++;
+        try {
+          await game.reschedule();
+        }
+        catch(err) {
+          const newGames = await Game.fetchAllBy({
+            s: game.s,
+            c: game.c,
+            adventure: game.adventure,
+            date: {
+              $ne: game.date
+            },
+            time: game.time
+          });
+          if (newGames.length > 0) {
+            await game.delete();
+          }
+        }
       }   
     }
 
