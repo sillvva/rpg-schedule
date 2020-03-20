@@ -25,11 +25,10 @@ export default () => {
           scope: "identify guilds"
         }
       };
-      console.log(requestData);
 
       request(requestData, function(error, response, body) {
         if (error || response.statusCode !== 200) {
-          console.log(error);
+          console.log(requestData);
           return res.render("error", { message: `Discord OAuth: ${response.statusCode}<br />${error}` });
         }
 
