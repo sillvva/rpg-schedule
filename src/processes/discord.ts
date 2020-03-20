@@ -731,6 +731,9 @@ const rescheduleOldGames = async (guildId?: string) => {
             s: game.s,
             c: game.c,
             adventure: game.adventure,
+            date: {
+              $ne: game.date
+            },
             time: game.time
           });
           if (newGames.length > 0) {
