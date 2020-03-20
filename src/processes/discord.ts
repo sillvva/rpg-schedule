@@ -722,8 +722,21 @@ const rescheduleOldGames = async (guildId?: string) => {
 
       if(game.canReschedule() && !rescheduled.find(g => g.s == game.s && g.c == game.c && g.adventure == game.adventure && g.date == game.date && g.time == game.time && g.timezone == game.timezone)) {
         rescheduled.push(game);
-        await game.reschedule();
         count++;
+        try {
+          await game.reschedule();
+        }
+        catch(err) {
+          const newGames = await Game.fetchAllBy({
+            s: game.s,
+            c: game.c,
+            adventure: game.adventure,
+            time: game.time
+          });
+          if (newGames.length > 0) {
+            await game.delete();
+          }
+        }
       }   
     }
 
