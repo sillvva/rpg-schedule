@@ -262,15 +262,17 @@ export class Game implements GameModel {
       game.gameImage = "";
     }
 
-    let embed = new discord.MessageEmbed(); 
+    let embed: MessageEmbed;
     if (guildConfig.embeds === false) {
-      embed.setColor(guildConfig.embedColor);
-      let embedded = false;
-      if (game && game.gameImage && game.gameImage.trim().length > 0) { embedded = true; embed.setImage(game.gameImage.trim().substr(0, 2048)); }
-      // if (!embedded) embed = { embed: {} };
+      if (game && game.gameImage && game.gameImage.trim().length > 0) { 
+        embed = new discord.MessageEmbed();
+        embed.setColor(guildConfig.embedColor);
+        embed.setImage(game.gameImage.trim().substr(0, 2048)); 
+      }
     } 
     else {
       msg = "";
+      embed = new discord.MessageEmbed();
       embed.setColor(guildConfig.embedColor);
       embed.setTitle(game.adventure);
       if (dmmember && dmmember.user.avatarURL()) embed.setAuthor(dm, dmmember.user.avatarURL().substr(0, 2048));
