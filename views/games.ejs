@@ -153,7 +153,8 @@
     <% if (account.guilds.filter(guild => !account.viewing.games || guild.games.length > 0).length === 0) { %>
         <% if (account.viewing.games || account.viewing.server) { %>
             <div class="no-guilds">
-                <%= lang.dashboard.EMPTY_UPCOMING_GAMES %>
+                <p><%= lang.dashboard.EMPTY_UPCOMING_GAMES %></p>
+                <a href="<%= config.urls.game.dashboard.path %>" class="btn btn-primary btn-lg"><%= lang.nav.MY_GAMES %></a>
             </div>
         <% } else if (account.viewing.dashboard) { %>
             <div class="no-games">
