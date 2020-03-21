@@ -7,7 +7,6 @@ export function socket(httpServer: http.Server) {
   _io = SocketIO(httpServer);
 
   _io.on("connection", (socket) => {
-    socket.
     // console.log("Client connected!");
   });
 
