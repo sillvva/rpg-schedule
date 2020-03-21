@@ -3,7 +3,7 @@
 <head>
     <title><%= title %> - <%= config.title %></title>
     
-    <%- include('head', {account: null}); %>
+    <%- include('head', {account: null, env: env}); %>
     
     <link rel="stylesheet" href="/styles/game.css">
     <script src="/scripts/moment.js"></script>

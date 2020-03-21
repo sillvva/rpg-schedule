@@ -158,7 +158,7 @@ export class Game implements GameModel {
   }
 
   async save() {
-    if (!connection()) { console.log("No database connection"); return null; }
+    if (!connection()) { aux.log("No database connection"); return null; }
     const channel = this._channel;
     const guild = channel.guild;
     const guildConfig = await GuildConfig.fetch(guild.id);
@@ -374,7 +374,7 @@ export class Game implements GameModel {
   }
 
   static async fetch(gameId: string | number | ObjectID): Promise<Game> {
-    if (!connection()) { console.log("No database connection"); return null; }
+    if (!connection()) { aux.log("No database connection"); return null; }
     const game = await connection()
       .collection(collection)
       .findOne({ _id: new ObjectId(gameId) });
@@ -382,7 +382,7 @@ export class Game implements GameModel {
   }
 
   static async fetchBy(key: string, value: any): Promise<Game> {
-    if (!connection()) { console.log("No database connection"); return null; }
+    if (!connection()) { aux.log("No database connection"); return null; }
     const query: mongodb.FilterQuery<any> = aux.fromEntries([[key, value]]);
     const game: GameModel = await connection()
       .collection(collection)
@@ -391,7 +391,7 @@ export class Game implements GameModel {
   }
 
   static async fetchAllBy(query: mongodb.FilterQuery<any>): Promise<Game[]> {
-    if (!connection()) { console.log("No database connection"); return []; }
+    if (!connection()) { aux.log("No database connection"); return []; }
     const games: GameModel[] = await connection()
       .collection(collection)
       .find(query)
@@ -402,7 +402,7 @@ export class Game implements GameModel {
   }
 
   static async fetchAllByLimit(query: mongodb.FilterQuery<any>, limit: number): Promise<Game[]> {
-    if (!connection()) { console.log("No database connection"); return []; }
+    if (!connection()) { aux.log("No database connection"); return []; }
     const games: GameModel[] = await connection()
       .collection(collection)
       .find(query)
@@ -414,7 +414,7 @@ export class Game implements GameModel {
   }
 
   static async deleteAllBy(query: mongodb.FilterQuery<any>) {
-    if (!connection()) { console.log("No database connection"); return null; }
+    if (!connection()) { aux.log("No database connection"); return null; }
     return await connection()
       .collection(collection)
       .deleteMany(query);
@@ -445,7 +445,7 @@ export class Game implements GameModel {
   async reschedule() {
     const validDays = this.getWeekdays();
     const nextDate = Game.getNextDate(moment(this.date), validDays, Number(this.frequency));
-    console.log(`Rescheduling ${this.s}: ${this.adventure} from ${this.date} (${this.time}) to ${nextDate} (${this.time})`);
+    aux.log(`Rescheduling ${this.s}: ${this.adventure} from ${this.date} (${this.time}) to ${nextDate} (${this.time})`);
     this.date = nextDate;
 
     if (this.clearReservedOnRepeat) {
@@ -481,7 +481,7 @@ export class Game implements GameModel {
   }
 
   async delete(options: any = {}) {
-    if (!connection()) { console.log("No database connection"); return null; }
+    if (!connection()) { aux.log("No database connection"); return null; }
 
     const result = await this.softDelete(this._id);
 
@@ -495,13 +495,13 @@ export class Game implements GameModel {
           const message = await channel.messages.fetch(game.messageId);
           if (message) {
             message.delete().catch((err) => {
-              console.log('Attempted to delete announcement message.');
-              // console.log(err);
+              aux.log('Attempted to delete announcement message.');
+              // aux.log(err);
             });
           }
         }
       } catch (e) {
-        console.log("Announcement: ", e.message);
+        aux.log("Announcement: ", e.message);
       }
 
       try {
@@ -509,13 +509,13 @@ export class Game implements GameModel {
           const message = await channel.messages.fetch(game.reminderMessageId);
           if (message) {
             message.delete().catch((err) => {
-              console.log('Attempted to delete reminder message.');
-              // console.log(err);
+              aux.log('Attempted to delete reminder message.');
+              // aux.log(err);
             });
           }
         }
       } catch (e) {
-        console.log("Reminder: ", e.message);
+        aux.log("Reminder: ", e.message);
       }
 
       try {
@@ -526,14 +526,14 @@ export class Game implements GameModel {
             const pm = await dm.user.dmChannel.messages.fetch(game.pm);
             if (pm) {
               pm.delete().catch((err) => {
-                console.log('Attempted to delete game edit link pm.');
-                // console.log(err);
+                aux.log('Attempted to delete game edit link pm.');
+                // aux.log(err);
               });
             }
           }
         }
       } catch (e) {
-        console.log("DM: ", e.message);
+        aux.log("DM: ", e.message);
       }
     }
 
@@ -597,7 +597,7 @@ const parseDiscord = (text: string, guild: Guild) => {
       text = text.replace(new RegExp(`\@${aux.backslash(role.name)}`, "gi"), role.toString());
     });
   } catch (err) {
-    console.log(err);
+    aux.log(err);
   }
   return text;
 };

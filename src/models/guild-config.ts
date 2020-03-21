@@ -1,6 +1,7 @@
 import db from "../db";
 import { ObjectID, ObjectId, FilterQuery } from "mongodb";
 import { Game } from "./game";
+import aux from "../appaux"
 
 const connection = db.connection;
 const collection = "guildConfig";
@@ -115,7 +116,7 @@ export class GuildConfig implements GuildConfigDataModel {
   }
 
   static async fetchAllBy(query: FilterQuery<any>): Promise<GuildConfig[]> {
-    if (!connection()) { console.log("No database connection"); return []; }
+    if (!connection()) { aux.log("No database connection"); return []; }
     const guildConfigs: GuildConfigModel[] = await connection()
       .collection(collection)
       .find(query)
@@ -144,7 +145,7 @@ export class GuildConfig implements GuildConfigDataModel {
           game.save();
         }
         catch(err) {
-          console.log('UpdateEmojisError:', 'Could not update emojis for game', game.adventure, `(${game.s})`);
+          aux.log('UpdateEmojisError:', 'Could not update emojis for game', game.adventure, `(${game.s})`);
         }
       }
     }

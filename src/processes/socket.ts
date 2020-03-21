@@ -6,8 +6,8 @@ let _io: SocketIO.Server;
 export function socket(httpServer: http.Server) {
   _io = SocketIO(httpServer);
 
-  _io.on("connection", (socket: any) => {
-    console.log("Client connected!");
+  _io.on("connection", (socket) => {
+    // console.log("Client connected!");
   });
 
   return _io;

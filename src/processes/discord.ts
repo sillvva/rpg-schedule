@@ -19,14 +19,16 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
 
   client.on("debug", function(info) {
     if (info.indexOf("hit on route") >= 0) return;
-    console.log(info);
+    if (info.indexOf("Sending a heartbeat") >= 0) return;
+    if (info.indexOf("Heartbeat acknowledged") >= 0) return;
+    aux.log(info);
   })
 
   /**
    * Discord.JS - ready
    */
   client.on("ready", () => {
-    console.log(`Logged in as ${client.user.username}!`);
+    aux.log(`Logged in as ${client.user.username}!`);
     readyCallback();
   });
 
@@ -164,7 +166,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   (<TextChannel>message.channel).send(`${lang.config.CHANNEL_ADDED}`);
                 })
                 .catch(err => {
-                  console.log(err);
+                  aux.log(err);
                 });
             }
           } else if (cmd === "remove-channel") {
@@ -182,7 +184,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   (<TextChannel>message.channel).send(`${lang.config.CHANNEL_REMOVED}`);
                 })
                 .catch(err => {
-                  console.log(err);
+                  aux.log(err);
                 });
             }
           } else if (cmd === "pruning") {
@@ -195,7 +197,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   (<TextChannel>message.channel).send(params[0] === "on" ? lang.config.PRUNING_ON : lang.config.PRUNING_OFF);
                 })
                 .catch(err => {
-                  console.log(err);
+                  aux.log(err);
                 });
             }
           } else if (cmd === "embeds") {
@@ -208,7 +210,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   (<TextChannel>message.channel).send(!(params[0] === "off") ? lang.config.EMBEDS_ON : lang.config.EMBEDS_OFF);
                 })
                 .catch(err => {
-                  console.log(err);
+                  aux.log(err);
                 });
             }
           } else if (cmd === "embed-user-tags") {
@@ -221,7 +223,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   (<TextChannel>message.channel).send(!(params[0] === "off") ? lang.config.EMBED_USER_TAGS_ON : lang.config.EMBED_USER_TAGS_OFF);
                 })
                 .catch(err => {
-                  console.log(err);
+                  aux.log(err);
                 });
             }
           } else if (cmd === "embed-color") {
@@ -387,7 +389,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   (<TextChannel>message.channel).send(embed);
                 })
                 .catch(err => {
-                  console.log(err);
+                  aux.log(err);
                 });
             }
           } else if (cmd === "emoji-sign-up") {
@@ -407,7 +409,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   guildConfig.updateEmojis();
                 })
                 .catch(err => {
-                  console.log(err);
+                  aux.log(err);
                 });
             }
           } else if (cmd === "emoji-drop-out") {
@@ -427,7 +429,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   guildConfig.updateEmojis();
                 })
                 .catch(err => {
-                  console.log(err);
+                  aux.log(err);
                 });
             }
           } else if (cmd === "prefix-char") {
@@ -441,7 +443,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   (<TextChannel>message.channel).send(lang.config.PREFIX_CHAR.replace(/\:CMD/gi, `${prefix.length ? prefix : "!"}${config.command}`));
                 })
                 .catch(err => {
-                  console.log(err);
+                  aux.log(err);
                 });
             }
           } else if (cmd === "private-reminders") {
@@ -454,7 +456,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   (<TextChannel>message.channel).send(!guildConfig.privateReminders ? lang.config.PRIVATE_REMINDERS_ON : lang.config.PRIVATE_REMINDERS_OFF);
                 })
                 .catch(err => {
-                  console.log(err);
+                  aux.log(err);
                 });
             }
           } else if (cmd === "reschedule-mode") {
@@ -469,7 +471,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   (<TextChannel>message.channel).send(lang.config.RESCHEDULE_MODE_UPDATED);
                 })
                 .catch(err => {
-                  console.log(err);
+                  aux.log(err);
                 });
             }
           // } else if (cmd === "reschedule") {
@@ -484,7 +486,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   (<TextChannel>message.channel).send(lang.config.PASSWORD_SET);
                 })
                 .catch(err => {
-                  console.log(err);
+                  aux.log(err);
                 });
             }
           } else if (cmd === "toggle-drop-out") {
@@ -497,7 +499,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   (<TextChannel>message.channel).send(guildConfig.dropOut === false ? lang.config.DROP_OUTS_ENABLED : lang.config.DROP_OUTS_DISABLED);
                 })
                 .catch(err => {
-                  console.log(err);
+                  aux.log(err);
                 });
             }
           } else if (cmd === "role") {
@@ -520,7 +522,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   (<TextChannel>message.channel).send(roleName.length > 0 ? lang.config.ROLE_SET.replace(/\:role/gi, roleName) : lang.config.ROLE_CLEARED);
                 })
                 .catch(err => {
-                  console.log(err);
+                  aux.log(err);
                 });
             }
           } else if (cmd === "manager-role") {
@@ -540,7 +542,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   (<TextChannel>message.channel).send(roleName.length > 0 ? lang.config.ROLE_SET.replace(/\:role/gi, roleName) : lang.config.ROLE_CLEARED);
                 })
                 .catch(err => {
-                  console.log(err);
+                  aux.log(err);
                 });
             }
           } else if (cmd === "lang") {
@@ -557,7 +559,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   (<TextChannel>message.channel).send(newLang.config.LANG_SET.replace(/\:lang/gi, newLang.name));
                 })
                 .catch(err => {
-                  console.log(err);
+                  aux.log(err);
                 });
             }
           } else {
@@ -566,7 +568,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
         }
       }
     } catch (err) {
-      console.log(err);
+      aux.log(err);
     }
   });
 
@@ -608,11 +610,11 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
 
   client.on("userUpdate", async (oldUser: User, newUser: User) => {
     if (process.env.LOCALENV) return;
-    // console.log(aux.backslash(oldUser.tag));
+    // aux.log(aux.backslash(oldUser.tag));
     if (oldUser.tag != newUser.tag) {
       const games = await Game.fetchAllBy({ $or: [ { dm: oldUser.tag }, { reserved: new RegExp(aux.backslash(oldUser.tag), "gi") } ] });
       games.forEach(game => {
-        // console.log(game.adventure);
+        // aux.log(game.adventure);
         if (game.dm === oldUser.tag) game.dm = newUser.tag;
         if (game.reserved.includes(oldUser.tag)) game.reserved = game.reserved.replace(new RegExp(aux.backslash(oldUser.tag), "gi"), newUser.tag);
         game.save();
@@ -629,7 +631,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
     if (game && message.channel instanceof TextChannel) {
       if (process.env.LOCALENV && message.channel.guild.id != "532564186023329792") return;
       game.delete().then(result => {
-        console.log("Game deleted");
+        aux.log("Game deleted");
       });
     }
   });
@@ -687,7 +689,7 @@ let rescheduled: Game[] = [];
 const rescheduleOldGames = async (guildId?: string) => {
   let result: DeleteWriteOpResultObject;
   try {
-    console.log(`Rescheduling old games for all servers`);
+    aux.log(`Rescheduling old games for all servers`);
     const query: FilterQuery<any> = {
       when: "datetime",
       timestamp: {
@@ -719,7 +721,7 @@ const rescheduleOldGames = async (guildId?: string) => {
 
     let games = await Game.fetchAllBy(query);
     games = games.filter(game => client.guilds.cache.array().find(g => g.id === game.s));
-    console.log(`Found ${games.length} games scheduled before now`);
+    aux.log(`Found ${games.length} games scheduled before now`);
     let count = 0;
     for(let i = 0; i < games.length; i++) {
       const game = games[i];
@@ -747,9 +749,9 @@ const rescheduleOldGames = async (guildId?: string) => {
       }   
     }
 
-    console.log(`rescheduled ${count} games`);
+    aux.log(`rescheduled ${count} games`);
   } catch (err) {
-    console.log("GameReschedulingError:", err);
+    aux.log("GameReschedulingError:", err);
   }
 
   setTimeout(() => {
@@ -761,7 +763,7 @@ const rescheduleOldGames = async (guildId?: string) => {
 const pruneOldGames = async (guild?: discord.Guild) => {
   let result: DeleteWriteOpResultObject;
   try {
-    console.log(`Pruning old games for ${guild ? `${guild.name} server` : 'all servers'}`);
+    aux.log(`Pruning old games for ${guild ? `${guild.name} server` : 'all servers'}`);
     const query: FilterQuery<any> = {
       timestamp: {
         $lt: new Date().getTime() - 48 * 3600 * 1000
@@ -791,14 +793,14 @@ const pruneOldGames = async (guild?: discord.Guild) => {
           }
         }
       } catch (err) {
-        console.log("MessagePruningError:", err);
+        aux.log("MessagePruningError:", err);
       }
     }
     
     result = await Game.deleteAllBy(query);
-    console.log(`${result.deletedCount} old games successfully pruned`);
+    aux.log(`${result.deletedCount} old games successfully pruned`);
   } catch (err) {
-    console.log("GamePruningError:", err);
+    aux.log("GamePruningError:", err);
   }
   return result;
 };
@@ -840,7 +842,7 @@ const postReminders = async (app: Express) => {
   
   let games = await Game.fetchAllBy(query); 
   games = games.filter(game => client.guilds.cache.array().find(g => g.id === game.s));
-  console.log(`Posting reminders for ${games.length} games`);
+  aux.log(`Posting reminders for ${games.length} games`);
   games.forEach(async game => {
     if (game.timestamp - parseInt(game.reminder) * 60 * 1000 > new Date().getTime()) return;
     if (!game.discordGuild) return;
@@ -885,7 +887,7 @@ const postReminders = async (app: Express) => {
       game.reminded = true;
       game.save();
     } catch (err) {
-      console.log(err);
+      aux.log(err);
       return;
     }
 
@@ -922,7 +924,7 @@ const postReminders = async (app: Express) => {
 
         if (dmMember && dmMember.user) dmMember.user.send(message);
       } catch (err) {
-        console.log(err);
+        aux.log(err);
       }
     } else {
       let message = `${lang.game.REMINDER_FOR} **${game.adventure.replace(/\*/gi, "")}**\n`;
@@ -968,18 +970,18 @@ const fixReschedules = async () => {
   
     let games = await Game.fetchAllByLimit(query, 50);
     games = games.filter(game => client.guilds.cache.array().find(g => g.id === game.s));
-    console.log(`Found ${games.length} games scheduled before now`);
+    aux.log(`Found ${games.length} games scheduled before now`);
     for(let i = 0; i < games.length; i++) {
       const game = games[i];
   
       if (game.when === "datetime") {
-        console.log(game.dm, game.adventure, game.date, game.time, game._id);
+        aux.log(game.dm, game.adventure, game.date, game.time, game._id);
         await game.delete();
       }   
     }
   }
   catch(err) {
-    console.log('Error')
+    aux.log('Error')
   }
 };
 
