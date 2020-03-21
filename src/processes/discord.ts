@@ -19,6 +19,8 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
 
   client.on("debug", function(info) {
     if (info.indexOf("hit on route") >= 0) return;
+    if (info.indexOf("Sending a heartbeat") >= 0) return;
+    if (info.indexOf("Heartbeat acknowledged") >= 0) return;
     console.log(info);
   })
 
