@@ -26,6 +26,7 @@ export default (options: any) => {
     res.locals.lang = req.lang;
     res.locals.urlPath = req._parsedOriginalUrl.pathname;
     res.locals.url = req.originalUrl;
+    res.locals.env = process.env;
 
     moment.locale(req.lang.code);
 
