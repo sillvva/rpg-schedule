@@ -1,4 +1,17 @@
-<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 2rem; font-family: sans-serif; position: fixed; top: 0; left: 0; right: 0; bottom: 0;">
-    <h3>Error:</h3>
-    <pre><%= message %></pre>
-</div>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Error</title>
+    <link rel="stylesheet" href="/styles/home.css" />
+  </head>
+  <body>
+    <div class="content" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%)">
+      <h1>
+        <img src="/images/logo.png" />
+      </h1>
+      <h1 style="font-size: 3em; margin: 0;">Uh oh!</h1>
+      <h2>There was an error!</h2>
+      <pre style="padding: 10px; padding-left: -50px; color: silver; background: #23272A; border: 1px solid #1a1a1a; border-radius: 10px; text-align: left; max-width: 500px; overflow-x: auto;"><%- message %></pre>
+    </div>
+  </body>
+</html>

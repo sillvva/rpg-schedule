@@ -9,5 +9,13 @@ export default () => {
     res.redirect(process.env.INVITE);
   });
 
+  router.use(config.urls.donate.path, (req, res, next) => {
+    res.redirect(process.env.DONATE);
+  })
+
+  router.use(config.urls.github.path, (req, res, next) => {
+    res.redirect(process.env.GITHUB);
+  })
+
   return router;
 };

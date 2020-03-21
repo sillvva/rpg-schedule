@@ -9,12 +9,26 @@ body {
   width: device-width;
 }
 
+a {
+  color: #7289DA;
+}
+
+.btn-primary, a.bg-primary:focus, a.bg-primary:hover, button.bg-primary:focus, button.bg-primary:hover {
+  background-color: #7289DA !important;
+  border-color: #7289DA !important;
+}
+
+.btn-primary:hover {
+  background-color: #536fd2;
+  border-color: #536fd2;
+}
+
 .error {
   color: salmon;
 }
 
 .bg-primary {
-  background-color: #202225 !important;
+  background-color: #23272A !important;
 }
 
 .form-group {

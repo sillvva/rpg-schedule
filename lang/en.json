@@ -26,6 +26,7 @@
     "CHANNEL": "Channel",
     "GAME_NAME": "Game / Adventure Name",
     "RUN_TIME": "Run Time",
+    "MIN_PLAYERS": "Min Players",
     "MAX_PLAYERS": "Max Players",
     "GM_DISCORD_TAG": "GM Discord Tag",
     "GM_ERROR": "GM must be a Discord tag",
@@ -55,6 +56,8 @@
     "CHARACTERS": "characters",
     "NO_PLAYERS": "No players",
     "NEXT_DATE": "Next Scheduled Date",
+    "WHEN_REPEAT": "When the Game Auto Reschedules",
+    "CLEAR_RESERVED": "Clear the reserved list",
     "ADD_TO_CALENDAR": "Add to Calendar",
     "CONVERT_TIME_ZONE": "Convert Time Zone",
     "COUNTDOWN": "Countdown",
@@ -87,8 +90,8 @@
   },
   "dashboard": {
     "NO_GAMES": "You are not a member of a server that has granted you permission to post games. If you would like to use this bot on your own server, click the Invite button below.",
-    "EMPTY_MY_GAMES": "You are not running or playing in any games on this server right now",
-    "EMPTY_UPCOMING_GAMES": "There are no upcoming games on this server right now"
+    "EMPTY_MY_GAMES": "You are not running or playing in any games right now",
+    "EMPTY_UPCOMING_GAMES": "There are no upcoming games right now"
   },
   "config": {
     "COMMAND_LIST": "Command List",
@@ -107,6 +110,9 @@
     "EMBEDS": "Embeds",
     "EMBEDS_ON": "Embeds were turned on!",
     "EMBEDS_OFF": "Embeds were turned off!",
+    "EMBED_USER_TAGS": "Embed User Tags",
+    "EMBED_USER_TAGS_ON": "Embed user tags were turned on!",
+    "EMBED_USER_TAGS_OFF": "Embed user tags were turned off!",
     "EMBED_COLOR": "Embed Color",
     "EMBED_COLOR_SET": "Embed color was set to",
     "EMOJI_JOIN": "Emoji (Sign Up)",
@@ -142,6 +148,7 @@
       "PRUNING": "Automatically delete old announcements",
       "PRUNE": "Prune old games",
       "EMBEDS": "Use discord embeds for announcements",
+      "EMBED_USER_TAGS": "Include user tags in announcement embeds (Can occasionally glitch)",
       "EMBED_COLOR": "Set a discord embed color",
       "EMBED_COLOR_ERROR": "Embed color must use hexadecimal format. Example: `#2196f3` See https://www.color-hex.com/ for more information.",
       "EMOJI": "Set the emoji used for automated sign up",

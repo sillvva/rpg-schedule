@@ -26,6 +26,7 @@
     "CHANNEL": "Channel",
     "GAME_NAME": "Titre de la partie",
     "RUN_TIME": "Durée de jeu",
+    "MIN_PLAYERS": "Joueurs Min.",
     "MAX_PLAYERS": "Joueurs Max.",
     "GM_DISCORD_TAG": "Tag Discord du MJ",
     "GM_ERROR": "Le MJ doit avoir un Tag Discord",
@@ -55,6 +56,8 @@
     "CHARACTERS": "caractère",
     "NO_PLAYERS": "Aucun joueur",
     "NEXT_DATE": "Prochaine date prévue",
+    "WHEN_REPEAT": "Lorsque le jeu Auto reprogramme",
+    "CLEAR_RESERVED": "Effacer la liste réservée",
     "ADD_TO_CALENDAR": "Ajouter au calendrier",
     "CONVERT_TIME_ZONE": "Convertir le fuseau horaire",
     "COUNTDOWN": "Countdown",
@@ -87,8 +90,8 @@
   },
   "dashboard": {
     "NO_GAMES": "Vous n'êtes pas membre d'un serveur qui vous a autorisé à publier des parties. Si vous souhaitez utiliser ce bot sur votre propre serveur, cliquez sur le bouton Inviter ci-dessous.",
-    "EMPTY_MY_GAMES": "Vous ne jouez dans aucune partie de ce serveur pour le moment",
-    "EMPTY_UPCOMING_GAMES": "Il n'y a pas de partie à venir sur ce serveur pour le moment"
+    "EMPTY_MY_GAMES": "Vous ne jouez dans aucune partie pour le moment",
+    "EMPTY_UPCOMING_GAMES": "Il n'y a pas de partie à venir pour le moment"
   },
   "config": {
     "COMMAND_LIST": "Liste de commandes",
@@ -109,6 +112,9 @@
     "EMBEDS_OFF": "Les intégrations ont été désactivé!",
     "EMBED_COLOR": "Couleur d'intégration",
     "EMBED_COLOR_SET": "La couleur de l'intégration a été réglé sur ",
+    "EMBED_USER_TAGS": "Étiquettes d’utilisateur embed",
+    "EMBED_USER_TAGS_ON": "Les étiquettes d’utilisateur d’embed ont été allumées !",
+    "EMBED_USER_TAGS_OFF": "Les étiquettes d’utilisateur d’embed ont été éteintes !",
     "EMOJI_JOIN": "Emoji (Inscription)",
     "EMOJI_LEAVE": "Emoji (Désinscription)",
     "EMOJI_JOIN_SET": "L'Emoji d'inscription a été mis à jour!",
@@ -142,6 +148,7 @@
       "PRUNING": "Supprimer automatiquement les anciennes annonces de partie",
       "PRUNE": "Taillez les vieux jeux",
       "EMBEDS": "Utilisez l'intégration Discord pour les annonces de partie",
+      "EMBED_USER_TAGS": "Inclure les balises utilisateur dans les embeds d’annonce (Peut parfois glitch)",
       "EMBED_COLOR": "Définir une couleur d'intégration discord",
       "EMBED_COLOR_ERROR": "La couleur intégrée doit utiliser le format hexadécimal. Example: `#2196f3` Allez voir https://www.color-hex.com/ pour plus d'informations.",
       "EMOJI": "Définir les emoji utilisés pour l'inscription automatisée",

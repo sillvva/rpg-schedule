@@ -1,16 +1,12 @@
-input[readonly], input[disabled] {
-    background-color: #aaa !important;
-}
-
 .form-control {
     color: #fff;
     background-color: #484C52;
     border: 1px solid #484C52;
 }
 
-input[readonly], input[disabled] {
-    background-color: #2B2C31 !important;
-    border-color: #2B2C31;
+input:disabled, input:read-only {
+    background-color: #23272A !important;
+    border-color: #23272A !important;
 }
 
 .input-group-text {
@@ -113,10 +109,16 @@ input[readonly], input[disabled] {
     border-radius: 0;
 }
 
-#weekdays-selector .btn {
-    width: 60px;
+#weekdays-selector {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+    grid-gap: 4px;
+}
+
+#weekdays-selector label.btn {
+    width: 100%;
 }
 
 #weekdays-selector .btn-secondary:not(:disabled):not(.disabled).active {
-    background-color: cornflowerblue;
+    background-color: #7289DA;
 }

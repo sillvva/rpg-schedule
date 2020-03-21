@@ -1,5 +1,6 @@
 import db from "../db";
-import { ObjectID, ObjectId } from "mongodb";
+import { ObjectID, ObjectId, FilterQuery } from "mongodb";
+import { Game } from "./game";
 
 const connection = db.connection;
 const collection = "guildConfig";
@@ -10,6 +11,7 @@ export interface GuildConfigModel {
   pruning?: boolean;
   embeds?: boolean;
   embedColor?: string;
+  embedMentions?: boolean;
   emojiAdd?: string;
   emojiRemove?: string;
   password?: string;
@@ -34,6 +36,7 @@ export class GuildConfig implements GuildConfigDataModel {
   pruning: boolean = false;
   embeds: boolean = true;
   embedColor: string = "#2196f3";
+  embedMentions: boolean = false;
   emojiAdd: string = "➕";
   emojiRemove: string = "➖";
   password: string = "";
@@ -69,6 +72,7 @@ export class GuildConfig implements GuildConfigDataModel {
       pruning: this.pruning,
       embeds: this.embeds,
       embedColor: this.embedColor,
+      embedMentions: this.embedMentions,
       emojiAdd: this.emojiAdd,
       emojiRemove: this.emojiRemove,
       password: this.password,
@@ -108,5 +112,41 @@ export class GuildConfig implements GuildConfigDataModel {
     return guildConfigs.map(gc => {
       return new GuildConfig(gc);
     });
+  }
+
+  static async fetchAllBy(query: FilterQuery<any>): Promise<GuildConfig[]> {
+    if (!connection()) { console.log("No database connection"); return []; }
+    const guildConfigs: GuildConfigModel[] = await connection()
+      .collection(collection)
+      .find(query)
+      .toArray();
+    return guildConfigs.map(game => {
+      return new GuildConfig(game);
+    });
+  }
+
+  async updateEmojis() {
+    const games = await Game.fetchAllBy({
+      s: this.guild,
+      timestamp: {
+        $gt: new Date().getTime()
+      }
+    });
+
+    for(let i = 0; i < games.length; i++) {
+      const game = games[i];
+      const message = await game.discordChannel.messages.fetch(game.messageId);
+      if (message) {
+        try {
+          await message.reactions.removeAll();
+          message.react(this.emojiAdd);
+          message.react(this.emojiRemove);
+          game.save();
+        }
+        catch(err) {
+          console.log('UpdateEmojisError:', 'Could not update emojis for game', game.adventure, `(${game.s})`);
+        }
+      }
+    }
   }
 }

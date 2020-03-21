@@ -16,7 +16,7 @@
     "body-parser": "^1.18.3",
     "connect-mongodb-session": "^2.1.1",
     "cookie-parser": "^1.4.4",
-    "discord.js": "^11.5.1",
+    "discord.js": "^12.0.2",
     "dotenv": "^8.0.0",
     "ejs": "^2.6.1",
     "express": "^4.16.4",
@@ -28,12 +28,15 @@
     "mongodb": "^3.1.10",
     "nodemon": "^1.18.9",
     "object.fromentries": "^2.0.0",
+    "remarkable": "^2.0.0",
     "request": "^2.88.0",
     "socket.io": "^2.2.0",
     "socket.io-client": "^2.2.0",
     "typescript": "^3.5.1"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "@types/remarkable": "^1.7.4"
+  },
   "scripts": {
     "build": "tsc",
     "start": "npm run build && node ./app/index.js",
@@ -47,7 +50,7 @@
   "author": "Matt DeKok",
   "license": "MIT",
   "engines": {
-    "node": "8.14.0",
-    "npm": "6.4.1"
+    "node": "12.13.0",
+    "npm": "6.12.0"
   }
 }

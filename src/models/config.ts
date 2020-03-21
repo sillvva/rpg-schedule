@@ -18,8 +18,11 @@ export default {
       auth: { path: "/games/authenticate", session: true },
       rsvp: { path: "/games/rsvp", session: true }
     },
+    about: { path: "/info/about", session: true },
     changeLang: { path: "/lang/:newLang" },
     invite: { path: "/invite" },
+    donate: { path: "/donate" },
+    github: { path: "/github" },
     login: { path: "/login" },
     logout: { path: "/logout" },
     rss: { path: "/rss/:uid" },

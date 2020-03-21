@@ -4,23 +4,25 @@ A discord bot for posting game announcements for RPGs. Features include:
 
 - Web interface for posting and editing game announcements
 - Automated or manual sign ups and automated waitlisting
+- Automated rescheduling (daily, weekly, biweekly, or monthly)
 - Automated reminders
+- RSS Feed
 
 **Note:** Games are automatically pruned 48 - 72 hours after the scheduled time. Or you can delete them manually.
 
 <details>
   <summary>Screenshots</summary>
-  <a href="http://rpg-schedule.herokuapp.com/images/screenshot3.png" target="_blank" style="display: inline-flex; height: 200px;"><img src="http://rpg-schedule.herokuapp.com/images/screenshot3.png" style="max-width: 100%; max-height: 100%;"></a>
-  <a href="http://rpg-schedule.herokuapp.com/images/screenshot4.png" target="_blank" style="display: inline-flex; height: 200px;"><img src="http://rpg-schedule.herokuapp.com/images/screenshot4.png" style="max-width: 100%; max-height: 100%;"></a>
-  <a href="http://rpg-schedule.herokuapp.com/images/screenshot.png" target="_blank" style="display: inline-flex; height: 200px;"><img src="http://rpg-schedule.herokuapp.com/images/screenshot.png" style="max-width: 100%; max-height: 100%;"></a>
-  <a href="http://rpg-schedule.herokuapp.com/images/screenshot2.png" target="_blank" style="display: inline-flex; height: 200px;"><img src="http://rpg-schedule.herokuapp.com/images/screenshot2.png" style="max-width: 100%; max-height: 100%;"></a>
+  <a href="https://www.rpg-schedule.com/images/screenshot3.png" target="_blank" style="display: inline-flex; height: 200px;"><img src="https://www.rpg-schedule.com/images/screenshot3.png" style="max-width: 100%; max-height: 100%;"></a>
+  <a href="https://www.rpg-schedule.com/images/screenshot4.png" target="_blank" style="display: inline-flex; height: 200px;"><img src="https://www.rpg-schedule.com/images/screenshot4.png" style="max-width: 100%; max-height: 100%;"></a>
+  <a href="https://www.rpg-schedule.com/images/screenshot.png" target="_blank" style="display: inline-flex; height: 200px;"><img src="https://www.rpg-schedule.com/images/screenshot.png" style="max-width: 100%; max-height: 100%;"></a>
+  <a href="https://www.rpg-schedule.com/images/screenshot2.png" target="_blank" style="display: inline-flex; height: 200px;"><img src="https://www.rpg-schedule.com/images/screenshot2.png" style="max-width: 100%; max-height: 100%;"></a>
 </details>
 
 ## Inviting the discord bot
 
 You can invite the discord bot to your server with the following link:
 
-https://rpg-schedule.herokuapp.com
+https://www.rpg-schedule.com/
 
 ## Command List
 
@@ -99,6 +101,11 @@ https://rpg-schedule.herokuapp.com
 <td>Set a discord embed color. Can be a color name like <code>red</code> or a hexadecimal color like <code>#2196f3</code></td>
 </tr>
 <tr>
+<td>!schedule embed-user-tags <code>on/off</code></td>
+<td>off</td>
+<td>Include user tags in announcement embeds (<a href="https://cdn.discordapp.com/attachments/532565396746928149/682786099679985665/unknown.png" target="_blank">Can occasionally glitch</a>)</td>
+</tr>
+<tr>
 <td>!schedule emoji-sign-up ➕</td>
 <td>➕</td>
 <td>Set the emoji used for automated sign up</td>
@@ -167,6 +174,24 @@ https://rpg-schedule.herokuapp.com
 </tbody>
 </table>
 
+## Rescheduling
+
+Here's how rescheduling works:
+
+You enter: 3/20 (Fri) 9am, Reschedule: Weekly, Friday
+- First announcement says 3/20 (Fri) 9am
+- Next announcement says 3/27 (Fri) 9am
+- Next announcement says 4/3 (Fri) 9am
+
+You enter 3/25 (Wed) 9am, Reschedule: Weekly, Friday
+- First announcement says 3/25 (Wed) 9am
+- Next announcement says 3/27 (Fri) 9am
+- Next announcement says 4/3 (Fri) 9am
+
+The first announcement is always on the date you entered. Any following announcements will be based on the day of the week selected.
+
+Each next announcement will be posted X hours after the date/time of the current announcement, where X is the duration of the game. If no duration is entered, it defaults to 0 hours.
+
 ## How to Develop
 * install [git](https://git-scm.com/downloads), [node](https://nodejs.org/en/download/), [heroku-cli](https://devcenter.heroku.com/articles/heroku-cli#download-and-install), [mongodb server](https://www.mongodb.com/download-center/community)
 * `npm i`
@@ -194,4 +219,4 @@ The discord bot is deployed with Heroku as a Node.js and discord.js application 
 
 [Change Log](https://github.com/sillvva/rpg-schedule/blob/master/CHANGELOG.md)
 
-Donate: [PayPal](https://www.paypal.me/Sillvva) | [My Website](https://www.mattdekok.dev/#donate)
+Donate: [Patreon](https://www.patreon.com/rpg_schedule) | [PayPal](https://www.paypal.me/Sillvva) | [My Website](https://www.mattdekok.dev/#donate)

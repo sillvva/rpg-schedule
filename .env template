@@ -1,10 +1,14 @@
 HOST="" # host for web frontend
 MONGODB_URL=""
-TOKEN="" # discord bot token
 PORT=""
-LOCALENV=""
-SLEEP=""
+TOKEN="" # discord bot token
 CLIENT_ID="" # discord
 CLIENT_SECRET="" # discord
+DONATE="" # donation url
+GITHUB="" # github url
 INVITE="" # discord oauth2 redirect to /invite page, use identify/guilds perms
 AUTH_URL="" # discord oauth2 redirect to /login page, use identify/guilds perms
+RESCHEDULING=true
+REMINDERS=true
+LOCALENV=true
+MAINTENANCE=false

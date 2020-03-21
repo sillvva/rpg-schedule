@@ -15,8 +15,8 @@ export default (options: any) => {
 
     let tag = "";
 
-    client.guilds.forEach(guild => {
-      guild.members.forEach(member => {
+    client.guilds.cache.forEach(guild => {
+      guild.members.cache.forEach(member => {
         if (member.id === uid) {
           tag = member.user.tag;
           guilds.push({
