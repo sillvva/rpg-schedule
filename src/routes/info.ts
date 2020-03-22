@@ -1,5 +1,4 @@
 import express, { request } from "express";
-import Remarkable from "remarkable";
 
 import config from "../models/config";
 

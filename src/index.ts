@@ -7,6 +7,7 @@ import connect from "connect-mongodb-session";
 import cookieParser from "cookie-parser";
 
 import db from "./db";
+import aux from "./appaux";
 import config from "./models/config";
 import discord from "./processes/discord";
 import { socket } from "./processes/socket";
@@ -34,7 +35,7 @@ app.set("views", "views");
 
 if (process.env.MAINTENANCE == 'true') {
   const server = http.createServer(app).listen(process.env.PORT || 5000);
-  console.log('App started!')
+  aux.log('App started!')
 
   app.use("/", (req: any, res, next) => {
     res.render("maintenance");
@@ -80,12 +81,12 @@ else {
     // Create the database connection
     let connected = await db.database.connect();
     if (connected) {
-      console.log("Database connected!");
+      aux.log("Database connected!");
 
       // Start the http server
       const server = http.createServer(app).listen(process.env.PORT || 5000);
       const io = socket(server);
-      console.log('App started!')
+      aux.log('App started!')
 
       // discord.fixReschedules();
       if (!process.env.LOCALENV) {
@@ -117,12 +118,12 @@ else {
       // Stay awake...
       // if (!process.env.SLEEP) {
       //   setInterval(() => {
-      //     console.log("STAY AWAKE!");
+      //     aux.log("STAY AWAKE!");
       //     http.get(process.env.HOST.replace("https", "http"));
       //   }, 5 * 60 * 1000); // 5 minutes
       // }
     } else {
-      console.log("Database not connected!");
+      aux.log("Database not connected!");
     }
   });
 

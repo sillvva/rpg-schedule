@@ -1,5 +1,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<% if (env) { %>
+  <meta property="og:title" content="RPG Schedule">
+  <meta property="og:description" content="A Discord bot designed for scheduling RPG games with automated signup, rescheduling, and RSS.">
+  <meta property="og:image" content="<%= env.HOST %>/images/social-logo.png">
+  <meta property="og:url" content="<%= env.HOST %>/">
+
+  <meta name="twitter:title" content="RPG SChedule">
+  <meta name="twitter:description" content=" A Discord bot designed for scheduling RPG games with automated signup, rescheduling, and RSS.">
+  <meta name="twitter:image" content=" <%= env.HOST %>/images/social-logo.png">
+  <meta name="twitter:card" content="summary_large_image">
+<% } %>
+
 <link rel="icon" type="image/png" href="/images/logo2.png">
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>

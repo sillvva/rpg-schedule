@@ -1,4 +1,5 @@
 import _ from "lodash";
+import moment from "moment";
 
 interface Path {
   path: string;
@@ -7,6 +8,10 @@ interface Path {
   guildPermission: boolean;
   hidden: boolean;
 }
+
+const log = (...content: any) => {
+  console.log(moment().format('lll')+':', ...content);
+};
 
 const parseConfigURLs = (paths: Object) => {
   let urls: Path[] = [];
@@ -120,5 +125,6 @@ export default {
   fromEntries: _.fromPairs,
   backslash: backslash,
   timer: timer,
-  isEmoji: isEmoji
+  isEmoji: isEmoji,
+  log: log
 };
