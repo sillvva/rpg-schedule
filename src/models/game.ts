@@ -286,7 +286,7 @@ export class Game implements GameModel {
         embed.addField(`${lang.game.RESERVED} (${reserved.length}/${game.players})`, reserved.length > 0 ? reserved.join("\n") : lang.game.NO_PLAYERS, true);
         if (waitlist.length > 0) embed.addField(`${lang.game.WAITLISTED} (${waitlist.length})`, waitlist.join("\n"), true);
       } else if (game.method === "custom") {
-        ember.addField(lang.game.CUSTOM_SIGNUP_INSTRUCTIONS, game.customSignup);
+        embed.addField(lang.game.CUSTOM_SIGNUP_INSTRUCTIONS, game.customSignup);
       }
       embed.addField("Links", `[📅 ${lang.game.ADD_TO_CALENDAR}](${eventTimes.googleCal})\n[🗺 ${lang.game.CONVERT_TIME_ZONE}](${eventTimes.convert.timeAndDate})\n[⏰ ${lang.game.COUNTDOWN}](${eventTimes.countdown})`, true);
       if (game.method === 'automated') embed.setFooter(automatedInstructions);
