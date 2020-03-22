@@ -206,9 +206,14 @@ Each next announcement will be posted X hours after the date/time of the current
     * `http://localhost:5000/login`
       * guilds
       * identify
-* Copy `.env template` to `.env` and fill out values
+* Copy `.env template` to `.devenv` and fill out the values
+* Create a file called `dev` (no extension) with the following content:
+  ```javascript
+  require('dotenv').config({ path: './.devenv' });
+  require('./app/index.js');
+  ```
 * Start mongodb
-* Run `npm start`
+* Run `npm run dev`
 
 ## About the bot
 
