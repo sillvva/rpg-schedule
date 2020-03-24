@@ -321,36 +321,41 @@ export class Game implements GameModel {
     } else {
       const inserted = await dbCollection.insertOne(game);
       let message: Message;
-      if (guildConfig.embeds === false) {
-        message = <Message>await channel.send(msg, embed);
-      } else {
-        message = <Message>await channel.send(embed);
-      }
-      
       let gcUpdated = false;
+
       try {
-        if (game.method === "automated") await message.react(guildConfig.emojiAdd);
-      }
-      catch(err) {
-        if (!aux.isEmoji(guildConfig.emojiAdd)) {
-          gcUpdated = true;
-          guildConfig.emojiAdd = '➕';
+        if (guildConfig.embeds === false) {
+          message = <Message>await channel.send(msg, embed);
+        } else {
+          message = <Message>await channel.send(embed);
+        }
+        
+        try {
           if (game.method === "automated") await message.react(guildConfig.emojiAdd);
         }
-      }
-      try {
-        if (game.method === "automated" && guildConfig.dropOut) await message.react(guildConfig.emojiRemove);
-      }
-      catch(err) {
-        if (!aux.isEmoji(guildConfig.emojiRemove)) {
-          gcUpdated = true;
-          guildConfig.emojiRemove = '➖';
+        catch(err) {
+          if (!aux.isEmoji(guildConfig.emojiAdd)) {
+            gcUpdated = true;
+            guildConfig.emojiAdd = '➕';
+            if (game.method === "automated") await message.react(guildConfig.emojiAdd);
+          }
+        }
+        try {
           if (game.method === "automated" && guildConfig.dropOut) await message.react(guildConfig.emojiRemove);
         }
+        catch(err) {
+          if (!aux.isEmoji(guildConfig.emojiRemove)) {
+            gcUpdated = true;
+            guildConfig.emojiRemove = '➖';
+            if (game.method === "automated" && guildConfig.dropOut) await message.react(guildConfig.emojiRemove);
+          }
+        }
       }
+      catch(err) {}
+
       if (gcUpdated) {
         guildConfig.save(guildConfig.data);
-        guildConfig.updateEmojis();
+        guildConfig.updateReactions();
       }
 
       const updated = await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { messageId: message.id } });
