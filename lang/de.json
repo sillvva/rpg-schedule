@@ -7,8 +7,8 @@
       "EDIT_GAME": "Spiel editieren",
       "DELETE_GAME": "Spiel löschen",
       "SAVE_COPY": "Speichern als Kopie",
-      "SIGN_UP": "Anmelden",
-      "DROP_OUT": "Abmelden"
+      "SIGN_UP": "Eintragen",
+      "DROP_OUT": "Austragen"
     },
     "nav": {
       "GAMES": "Spiele",
@@ -32,9 +32,9 @@
       "GM_ERROR": "SL muss ein gültiges Discord Tag sein.",
       "GM": "SL",
       "WHERE": "Wo",
-      "SIGN_UP_METHOD": "Anmeldemethode",
+      "SIGN_UP_METHOD": "Methode zum Eintragen",
       "WHEN": "Wann",
-      "CUSTOM_SIGNUP_INSTRUCTIONS": "Benutzerdefinierter Anmeldebefehl",
+      "CUSTOM_SIGNUP_INSTRUCTIONS": "Benutzerdefinierter Befehl zum Eintragen",
       "FREQUENCY": "Regelmäßigkeit",
       "WEEKDAYS": "Werktags",
       "DATE": "Datum",
@@ -62,8 +62,8 @@
       "CONVERT_TIME_ZONE": "Zeitzone umwandeln",
       "COUNTDOWN": "Countdown",
       "options": {
-        "AUTOMATED_SIGNUP": "Automatisches Anmelden",
-        "CUSTOM_SIGNUP_INSTRUCTIONS": "Benutzerdefinierter Anmeldebefehl",
+        "AUTOMATED_SIGNUP": "Automatisches Eintragen",
+        "CUSTOM_SIGNUP_INSTRUCTIONS": "Benutzerdefinierter Befehl zum Eintragen",
         "DATE_TIME": "Datum/Zeit",
         "NOW": "Jetzt",
         "NO_REMINDER": "Keine Erinnerung",
@@ -83,7 +83,7 @@
         "HOURS": "Stunden",
         "DISCORD_TAGS": "Groß-/Kleinschreibung beachten bei Discord Tags.",
         "DISCORD_FORMATTING": "Discord Formattierung erlaubt",
-        "AUTOMATED_SIGNUP_DESC": "Verwendet Discord Reaktionsbuttons, die den Spielern ermöglicht direkt im Kanal sich für die Runde an- oder abzumelden.",
+        "AUTOMATED_SIGNUP_DESC": "Verwendet Discord Reaktionsbuttons, die den Spielern ermöglicht direkt im Kanal sich für die Runde ein- oder auszutragen.",
         "REQUEST_SERVER_PASS": "Gib das Passwort ein, welches du vom Server erhalten hast.",
         "GAME_DELETED": "Dieses Spiel wurde gelöscht."
       }
@@ -133,9 +133,9 @@
       "LANGUAGE": "Sprache",
       "LANG_SET": "Sprache ist auf `:LANG` eingestellt!",
       "NO_LANG": "Sprache nicht gefunden",
-      "DROP_OUTS": "Abmeldungen",
-      "DROP_OUTS_ENABLED": "Abmeldungen sind nun `aktiviert` für neue Spiele.",
-      "DROP_OUTS_DISABLED": "Abmeldungen sind nun `deaktiviert` für neue Spiele.",
+      "DROP_OUTS": "Austragungen",
+      "DROP_OUTS_ENABLED": "Austragungen sind nun `aktiviert` für neue Spiele.",
+      "DROP_OUTS_DISABLED": "Austragungen sind nun `deaktiviert` für neue Spiele.",
       "RESCHEDULE_MODE": "Terminverschiebungsmodus",
       "RESCHEDULE_MODE_UPDATED": "Terminverschiebungsmodus wurde aktualisiert",
       "desc": {
@@ -159,7 +159,7 @@
         "MANAGER_ROLE": "Weise eine Rolle zu, um die Verwaltung aller Spiele auf dem Server zu ermöglichen.",
         "PASSWORD_SET": "Konfiguriere ein Passwort für das Veröffentlichen von Spielen.",
         "PASSWORD_CLEAR": "Passwort entfernen",
-        "TOGGLE_DROP_OUT": "Aktivieren/Deaktivieren, ob sich Spieler abmelden dürfen.",
+        "TOGGLE_DROP_OUT": "Aktivieren/Deaktivieren, ob sich Spieler austragen dürfen.",
         "LANG": "Wähle die Sprache des Bots. Unterstützt:",
         "RESCHEDULE_MODE": "Optionen: `repost` (standard, erstellt einen neuen Ankündigungsbeitrag), `update` (aktualisiert den originalen Ankündigungsbeitrag)"
       }
