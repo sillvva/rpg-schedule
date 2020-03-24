@@ -310,6 +310,7 @@ export class Game implements GameModel {
         const updatedGame = aux.objectChanges(prev, game);
         io().emit("game", { action: "updated", gameId: game._id, game: updatedGame });
       } catch (err) {
+        aux.log('UpdateGameError:', err);
         updated.modifiedCount = 0;
       }
       const saved: GameSaveData = {
@@ -351,7 +352,9 @@ export class Game implements GameModel {
           }
         }
       }
-      catch(err) {}
+      catch(err) {
+        aux.log('InsertGameError:', err);
+      }
 
       if (gcUpdated) {
         guildConfig.save(guildConfig.data);
@@ -371,7 +374,9 @@ export class Game implements GameModel {
           );
           await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { pm: pm.id } });
         }
-        catch(err) {}
+        catch(err) {
+          aux.log('EditLinkError:', err);
+        }
       }
       const saved: GameSaveData = {
         _id: inserted.insertedId.toString(),
