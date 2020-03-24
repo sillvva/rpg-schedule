@@ -193,25 +193,27 @@ The first announcement is always on the date you entered. Any following announce
 Each next announcement will be posted X hours after the date/time of the current announcement, where X is the duration of the game. If no duration is entered, it defaults to 0 hours.
 
 ## How to Develop
-* install [git](https://git-scm.com/downloads), [node](https://nodejs.org/en/download/), [heroku-cli](https://devcenter.heroku.com/articles/heroku-cli#download-and-install), [mongodb server](https://www.mongodb.com/download-center/community)
-* `npm i`
-* [set up discord bot with perms and token](https://discordapp.com/developers)
+* install [git](https://git-scm.com/downloads), [node](https://nodejs.org/en/download/), [heroku-cli](https://devcenter.heroku.com/articles/heroku-cli#download-and-install), and [mongodb server](https://www.mongodb.com/download-center/community)
+* Run `npm install`
+* Set up a [discord bot application](https://discordapp.com/developers) with permissions and a token
   * permissions: 
     * send messages
     * manage messages
     * embed links
     * read message history
     * add reactions
-  * OAuth2 redirects
-    * `http://localhost:5000/invite`
-      * guilds
-      * identify
+  * OAuth2 redirect
     * `http://localhost:5000/login`
       * guilds
       * identify
-* copy `.env template` to `.env` and fill out values
-* start `mongod`
-* `heroku local`
+* Copy `.env template` to `.devenv` and fill out the values
+* Create a file called `dev` (no extension) with the following content:
+  ```javascript
+  require('dotenv').config({ path: './.devenv' });
+  require('./app/index.js');
+  ```
+* Start mongodb
+* Run `npm run dev`
 
 ## About the bot
 

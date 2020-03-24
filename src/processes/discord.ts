@@ -9,6 +9,7 @@ import config from "../models/config";
 import aux from "../appaux";
 
 let client: Client;
+let isReady = false;
 type DiscordProcessesOptions = {
   app: Express;
 };
@@ -29,7 +30,10 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
    */
   client.on("ready", () => {
     aux.log(`Logged in as ${client.user.username}!`);
-    readyCallback();
+    if (!isReady) {
+      isReady = true;
+      readyCallback();
+    }
   });
 
   /**
@@ -666,6 +670,35 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
 
     client.emit(events[event.t], reaction, user);
   });
+
+  client.on("shardDisconnect", (ev, id) => {
+    console.log("Client: Shard Disconnect", id);
+    console.log(ev);
+  });
+
+  client.on("shardError", (err, id) => {
+    console.log("Client: Shard Error", id);
+    console.log(err);
+  });
+
+  client.on("shardReady", (id) => {
+    console.log("Client: Shard Ready", id);
+  });
+
+  client.on("shardReconnecting", (id) => {
+    console.log("Client: Shard Reconnecting", id);
+  });
+
+  client.on("shardResume", (id) => {
+    console.log("Client: Shard Resumed", id);
+  });
+
+  client.on("invalidated", () => {
+    console.log('Client: Invalidated');
+    // setTimeout(() => {
+    //   discordLogin(client);
+    // }, 60 * 1000);
+  })
 
   return client;
 };
