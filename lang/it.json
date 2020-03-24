@@ -148,7 +148,7 @@
       "EMBED_COLOR": "Imposta un colore di incorporamento discord",
       "EMBED_COLOR_ERROR": "Il colore di incorporamento deve usare un formato esadecimale. Esempio: `#2196f3` Vedi https://www.color-hex.com/ per maggiori informazioni.",
       "EMOJI": "Imposta l'emoji utilizzata per la registrazione automatica",
-      "ESCAPE": "Carattere di fuga per il comando del bot. Attuale `:CHAR`",
+      "PREFIX": "Carattere di fuga per il comando del bot. Attuale `:CHAR`",
       "EMOJI_ERROR": "L'emoji deve essere un carattere emoji unicode. Hai inserito `:CHAR`. Vedi https://www.unicode.org/emoji/charts/full-emoji-list.html per una liosta completa di emoji. Usa la versione browser.",
       "PRIVATE_REMINDERS": "Seleziona se i promemoria del gioco vengono inviati via messaggi privati. Attuale `:PR`",
       "ROLE": "Assegna un ruolo come prerequisito per la pubblicazione di giochi",
