@@ -672,29 +672,29 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
   });
 
   client.on("shardDisconnect", (ev, id) => {
-    console.log("Client: Shard Disconnect", id);
-    console.log(ev);
+    aux.log("Client: Shard Disconnect", id);
+    aux.log(ev);
   });
 
   client.on("shardError", (err, id) => {
-    console.log("Client: Shard Error", id);
-    console.log(err);
+    aux.log("Client: Shard Error", id);
+    aux.log(err);
   });
 
   client.on("shardReady", (id) => {
-    console.log("Client: Shard Ready", id);
+    aux.log("Client: Shard Ready", id);
   });
 
   client.on("shardReconnecting", (id) => {
-    console.log("Client: Shard Reconnecting", id);
+    aux.log("Client: Shard Reconnecting", id);
   });
 
   client.on("shardResume", (id) => {
-    console.log("Client: Shard Resumed", id);
+    aux.log("Client: Shard Resumed", id);
   });
 
   client.on("invalidated", () => {
-    console.log('Client: Invalidated');
+    aux.log('Client: Invalidated');
     // setTimeout(() => {
     //   discordLogin(client);
     // }, 60 * 1000);
