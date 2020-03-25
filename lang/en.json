@@ -19,7 +19,9 @@
     "CALENDAR": "Calendar",
     "INVITE": "Invite",
     "LOGIN": "Login",
-    "LOGOUT": "Logout"
+    "LOGOUT": "Logout",
+    "DONATE": "Donate",
+    "HELP": "Help"
   },
   "game": {
     "SERVER": "Server",

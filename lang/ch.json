@@ -19,7 +19,9 @@
     "CALENDAR": "Kalender",
     "INVITE": "Einladen",
     "LOGIN": "Anmelden",
-    "LOGOUT": "Abmelden"
+    "LOGOUT": "Abmelden",
+    "DONATE": "Schenken",
+    "HELP": "Hilfe"
   },
   "game": {
     "SERVER": "Server",
