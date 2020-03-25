@@ -1,5 +1,12 @@
 # Change Log
 
+## March 24, 2020
+
+- Monthly scheduling types now provides option to reschedule
+  - on the same date each month
+  - on the same Xth weekday each month
+- Russion language added as an option
+
 ## March 19-20, 2020
 
 - Transitioned server from Heroku to Amazon Web Services

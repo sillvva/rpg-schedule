@@ -62,7 +62,6 @@
     "CONVERT_TIME_ZONE": "Convert Time Zone",
     "COUNTDOWN": "Countdown",
     "MONTHLY_TYPE": "Monthly Type",
-    "MONTHLY_DATE": "Monthly Date",
     "options": {
       "AUTOMATED_SIGNUP": "Automated Signup",
       "CUSTOM_SIGNUP_INSTRUCTIONS": "Custom Signup Instructions",

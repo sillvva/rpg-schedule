@@ -61,6 +61,7 @@
     "ADD_TO_CALENDAR": "Ajouter au calendrier",
     "CONVERT_TIME_ZONE": "Convertir le fuseau horaire",
     "COUNTDOWN": "Countdown",
+    "MONTHLY_TYPE": "Type mensuel",
     "options": {
       "AUTOMATED_SIGNUP": "Inscription automatisée",
       "CUSTOM_SIGNUP_INSTRUCTIONS": "Instructions d'inscription personnalisées",
@@ -77,7 +78,9 @@
       "DAILY": "Quotidienne",
       "WEEKLY": "Settimanale",
       "BIWEEKLY": "Bihebdomadaire",
-      "MONTHLY": "Mensuel"
+      "MONTHLY": "Mensuel",
+      "DATE": "Date",
+      "WEEKDAY": "Semaine"
     },
     "labels": {
       "HOURS": "heures",
@@ -85,7 +88,9 @@
       "DISCORD_FORMATTING": "Formattage de texte comme Discord autorisé",
       "AUTOMATED_SIGNUP_DESC": "Utiliser des boutons de réaction Discord lors de l'annonce de partie pour permettre aux joueurs de s'inscrire ou de se désinscrire",
       "REQUEST_SERVER_PASS": "Entrez le mot de passe fourni par le serveur",
-      "GAME_DELETED": "La partie a été éffacé"
+      "GAME_DELETED": "La partie a été éffacé",
+      "MONTHLY_DATE": "Le jeu se produit à la même date chaque mois",
+      "MONTHLY_WEEKDAY": "Le jeu se déroule sur :XTH :WEEKDAY chaque mois"
     }
   },
   "dashboard": {
