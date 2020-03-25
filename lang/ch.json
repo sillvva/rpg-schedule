@@ -61,6 +61,7 @@
     "ADD_TO_CALENDAR": "Dem Kalender hinzufügen",
     "CONVERT_TIME_ZONE": "Zeitzone umwandeln",
     "COUNTDOWN": "Countdown",
+    "MONTHLY_TYPE": "Monatlicher Typ",
     "options": {
       "AUTOMATED_SIGNUP": "Automatisches Eintragen",
       "CUSTOM_SIGNUP_INSTRUCTIONS": "Benutzerdefinierter Befehl zum Eintragen",
@@ -77,7 +78,9 @@
       "DAILY": "Täglich",
       "WEEKLY": "Wöchentlich",
       "BIWEEKLY": "Jede zweite Woche",
-      "MONTHLY": "Monatlich"
+      "MONTHLY": "Monatlich",
+      "DATE": "Datum",
+      "WEEKDAY": "Wochentag"
     },
     "labels": {
       "HOURS": "Stunden",
@@ -85,7 +88,9 @@
       "DISCORD_FORMATTING": "Discord Formattierung erlaubt",
       "AUTOMATED_SIGNUP_DESC": "Verwendet Discord Reaktionsbuttons, die den Spielern ermöglicht direkt im Kanal sich für die Runde ein- oder auszutragen.",
       "REQUEST_SERVER_PASS": "Gib das Passwort ein, welches du vom Server erhalten hast.",
-      "GAME_DELETED": "Dieses Spiel wurde gelöscht."
+      "GAME_DELETED": "Dieses Spiel wurde gelöscht.",
+      "MONTHLY_DATE": "Das Spiel findet jeden Monat am selben Tag statt",
+      "MONTHLY_WEEKDAY": "Das Spiel findet jeden Monat am :XTH :WEEKDAY statt"
     }
   },
   "dashboard": {
