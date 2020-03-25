@@ -24,6 +24,26 @@ export enum Frequency {
   MONTHLY = 4,
 }
 
+export enum MonthlyType {
+  WEEKDAY = "weekday",
+  DATE = "date"
+}
+
+export enum GameMethod {
+  AUTOMATED = "automated",
+  CUSTOM = "custom"
+}
+
+export enum GameWhen {
+  DATETIME = "datetime",
+  NOW = "now"
+}
+
+export enum RescheduleMode {
+  REPOST = "repost",
+  UPDATE = "update"
+}
+
 export interface GameModel {
   _id: string | number | ObjectID;
   s: string;
@@ -38,9 +58,9 @@ export interface GameModel {
   where: string;
   description: string;
   reserved: string;
-  method: string;
+  method: GameMethod;
   customSignup: string;
-  when: string;
+  when: GameWhen;
   date: string;
   time: string;
   timezone: number;
@@ -53,6 +73,7 @@ export interface GameModel {
   gameImage: string;
   frequency: Frequency;
   weekdays: boolean[];
+  monthlyType: MonthlyType;
   clearReservedOnRepeat: boolean;
   rescheduled: boolean;
 }
@@ -77,9 +98,9 @@ export class Game implements GameModel {
   where: string;
   description: string;
   reserved: string;
-  method: string;
+  method: GameMethod;
   customSignup: string;
-  when: string;
+  when: GameWhen;
   date: string;
   time: string;
   timezone: number;
@@ -92,6 +113,7 @@ export class Game implements GameModel {
   gameImage: string;
   frequency: Frequency;
   weekdays: boolean[] = [false,false,false,false,false,false,false];
+  monthlyType: MonthlyType = MonthlyType.WEEKDAY;
   clearReservedOnRepeat: boolean = false;
   rescheduled: boolean = false;
 
@@ -152,6 +174,7 @@ export class Game implements GameModel {
       gameImage: this.gameImage,
       frequency: this.frequency,
       weekdays: this.weekdays,
+      monthlyType: this.monthlyType,
       clearReservedOnRepeat: this.clearReservedOnRepeat,
       rescheduled: this.rescheduled
     };
@@ -227,16 +250,16 @@ export class Game implements GameModel {
     let automatedInstructions = `\n(${guildConfig.emojiAdd} ${lang.buttons.SIGN_UP}${
       guildConfig.dropOut ? ` | ${guildConfig.emojiRemove} ${lang.buttons.DROP_OUT}` : ""
     })`;
-    if (game.method === "automated") {
+    if (game.method === GameMethod.AUTOMATED) {
       if (reserved.length > 0) signups += `\n**${lang.game.RESERVED}:**\n${reserved.join("\n")}\n`;
       if (waitlist.length > 0) signups += `\n**${lang.game.WAITLISTED}:**\n${waitlist.join("\n")}\n`;
       signups += automatedInstructions;
-    } else if (game.method === "custom") {
+    } else if (game.method === GameMethod.CUSTOM) {
       signups += `\n${game.customSignup}`;
     }
 
     let when = "";
-    if (game.when === "datetime") {
+    if (game.when === GameWhen.DATETIME) {
       const date = Game.ISOGameDate(game);
       const tz = Math.round(parseFloat(game.timezone.toString()) * 4) / 4;
       when =
@@ -244,7 +267,7 @@ export class Game implements GameModel {
           .utcOffset(tz)
           .format(config.formats.dateLong) + ` (${timezone})`;
       game.timestamp = new Date(rawDate).getTime();
-    } else if (game.when === "now") {
+    } else if (game.when === GameWhen.NOW) {
       when = lang.game.options.NOW;
       game.timestamp = new Date().getTime();
     }
@@ -282,14 +305,14 @@ export class Game implements GameModel {
       if(game.runtime && game.runtime.trim().length > 0 && game.runtime.trim() != '0') embed.addField(lang.game.RUN_TIME, `${game.runtime} ${lang.game.labels.HOURS}`, true);
       embed.addField(lang.game.WHERE, where);
       if (guildConfig.embedMentions) embed.addField(lang.game.GM, gmTag);
-      if (game.method === "automated") {
+      if (game.method === GameMethod.AUTOMATED) {
         embed.addField(`${lang.game.RESERVED} (${reserved.length}/${game.players})`, reserved.length > 0 ? reserved.join("\n") : lang.game.NO_PLAYERS, true);
         if (waitlist.length > 0) embed.addField(`${lang.game.WAITLISTED} (${waitlist.length})`, waitlist.join("\n"), true);
-      } else if (game.method === "custom") {
+      } else if (game.method === GameMethod.CUSTOM) {
         embed.addField(lang.game.CUSTOM_SIGNUP_INSTRUCTIONS, game.customSignup);
       }
       embed.addField("Links", `[📅 ${lang.game.ADD_TO_CALENDAR}](${eventTimes.googleCal})\n[🗺 ${lang.game.CONVERT_TIME_ZONE}](${eventTimes.convert.timeAndDate})\n[⏰ ${lang.game.COUNTDOWN}](${eventTimes.countdown})`, true);
-      if (game.method === 'automated') embed.setFooter(automatedInstructions);
+      if (game.method === GameMethod.AUTOMATED) embed.setFooter(automatedInstructions);
       if (game && game.gameImage && game.gameImage.trim().length > 0) embed.setImage(game.gameImage.trim().substr(0, 2048));
     }
 
@@ -332,23 +355,23 @@ export class Game implements GameModel {
         }
         
         try {
-          if (game.method === "automated") await message.react(guildConfig.emojiAdd);
+          if (game.method === GameMethod.AUTOMATED) await message.react(guildConfig.emojiAdd);
         }
         catch(err) {
           if (!aux.isEmoji(guildConfig.emojiAdd)) {
             gcUpdated = true;
             guildConfig.emojiAdd = '➕';
-            if (game.method === "automated") await message.react(guildConfig.emojiAdd);
+            if (game.method === GameMethod.AUTOMATED) await message.react(guildConfig.emojiAdd);
           }
         }
         try {
-          if (game.method === "automated" && guildConfig.dropOut) await message.react(guildConfig.emojiRemove);
+          if (game.method === GameMethod.AUTOMATED && guildConfig.dropOut) await message.react(guildConfig.emojiRemove);
         }
         catch(err) {
           if (!aux.isEmoji(guildConfig.emojiRemove)) {
             gcUpdated = true;
             guildConfig.emojiRemove = '➖';
-            if (game.method === "automated" && guildConfig.dropOut) await message.react(guildConfig.emojiRemove);
+            if (game.method === GameMethod.AUTOMATED && guildConfig.dropOut) await message.react(guildConfig.emojiRemove);
           }
         }
       }
@@ -449,7 +472,7 @@ export class Game implements GameModel {
     const validDays = this.getWeekdays();
     const hours = isNaN(parseFloat(this.runtime.trim())) ? 0 : Math.abs(parseFloat(this.runtime.trim()));
     const gameEnded = this.timestamp + hours * 3600 * 1000 < new Date().getTime();
-    const nextDate = Game.getNextDate(moment(this.date), validDays, Number(this.frequency));
+    const nextDate = Game.getNextDate(moment(this.date), validDays, Number(this.frequency), this.monthlyType);
     const nextISO = `${nextDate.replace(/-/g, "")}T${this.time.replace(/:/g, "")}00${this.timezone >= 0 ? "+" : "-"}${aux.parseTimeZoneISO(this.timezone)}`;
     const nextGamePassed = new Date(nextISO).getTime() <= new Date().getTime();
     return gameEnded && !this.rescheduled && !nextGamePassed && ((this.frequency == Frequency.DAILY || this.frequency == Frequency.MONTHLY) ||
@@ -458,7 +481,7 @@ export class Game implements GameModel {
 
   async reschedule() {
     const validDays = this.getWeekdays();
-    const nextDate = Game.getNextDate(moment(this.date), validDays, Number(this.frequency));
+    const nextDate = Game.getNextDate(moment(this.date), validDays, Number(this.frequency), this.monthlyType);
     aux.log(`Rescheduling ${this.s}: ${this.adventure} from ${this.date} (${this.time}) to ${nextDate} (${this.time})`);
     this.date = nextDate;
 
@@ -467,10 +490,10 @@ export class Game implements GameModel {
     }
 
     const guildConfig = await GuildConfig.fetch(this.s);
-    if (guildConfig.rescheduleMode === "update") {
+    if (guildConfig.rescheduleMode === RescheduleMode.UPDATE) {
       await this.save();
     }
-    else if (guildConfig.rescheduleMode === "repost") {
+    else if (guildConfig.rescheduleMode === RescheduleMode.REPOST) {
       let data = cloneDeep(this.data);
       delete data._id;
       const game = new Game(data);
@@ -559,7 +582,7 @@ export class Game implements GameModel {
     return `${game.date.replace(/-/g, "")}T${game.time.replace(/:/g, "")}00${game.timezone >= 0 ? "+" : "-"}${aux.parseTimeZoneISO(game.timezone)}`;
   }
 
-  static getNextDate(baseDate: moment.Moment, validDays: string[], frequency: Frequency) {
+  static getNextDate(baseDate: moment.Moment, validDays: string[], frequency: Frequency, monthlyType: MonthlyType) {
     if (frequency == Frequency.NO_REPEAT)
         return null;
   
@@ -588,7 +611,15 @@ export class Game implements GameModel {
         }
         break;
       case Frequency.MONTHLY:
-        nextDate = moment(baseDate).add(1, 'month');
+        if (monthlyType == MonthlyType.WEEKDAY) {
+          const weekOfMonth = moment(baseDate).monthWeekByDay();
+          const validDay = moment(baseDate).day();
+          dateGenerator = moment(baseDate).recur().every(validDay).daysOfWeek().every(weekOfMonth).weeksOfMonthByDay();
+          nextDate = dateGenerator.next(1)[0];
+        }
+        else {
+          nextDate = moment(baseDate).add(1, 'month');
+        }
         break;
       default:
         throw new Error(`invalid frequency ${frequency} specified`);

@@ -61,6 +61,8 @@
     "ADD_TO_CALENDAR": "Add to Calendar",
     "CONVERT_TIME_ZONE": "Convert Time Zone",
     "COUNTDOWN": "Countdown",
+    "MONTHLY_TYPE": "Monthly Type",
+    "MONTHLY_DATE": "Monthly Date",
     "options": {
       "AUTOMATED_SIGNUP": "Automated Signup",
       "CUSTOM_SIGNUP_INSTRUCTIONS": "Custom Signup Instructions",
@@ -77,7 +79,9 @@
       "DAILY": "Every Day",
       "WEEKLY": "Every Week",
       "BIWEEKLY": "Every Two Weeks",
-      "MONTHLY": "Every Month"
+      "MONTHLY": "Every Month",
+      "DATE": "Date",
+      "WEEKDAY": "Weekday"
     },
     "labels": {
       "HOURS": "hours",
@@ -85,7 +89,9 @@
       "DISCORD_FORMATTING": "Discord formatting allowed",
       "AUTOMATED_SIGNUP_DESC": "Uses discord reaction buttons on the game announcement to allow users to sign up or cancel",
       "REQUEST_SERVER_PASS": "Enter the password provided by the server",
-      "GAME_DELETED": "This game has been deleted"
+      "GAME_DELETED": "This game has been deleted",
+      "MONTHLY_DATE": "Game occurs on same date each month",
+      "MONTHLY_WEEKDAY": "Game occurs on :XTH :WEEKDAY each month"
     }
   },
   "dashboard": {
