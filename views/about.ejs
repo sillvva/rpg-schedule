@@ -4,11 +4,6 @@
     <title><%= title %> - <%= config.title %></title>
 
     <%- include('head', {account: null}); %>
-
-    <script src="/locale/<%= lang.code %>.js"></script>
-    <script type="text/javascript">
-      moment.locale("<%= lang.code %>");
-    </script>
   </head>
   <body>
     <%- include('menu'); %>
