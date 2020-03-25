@@ -2,7 +2,7 @@ import express from "express";
 import moment from "moment";
 import discord, { Guild, TextChannel } from "discord.js";
 
-import { Game } from "../models/game";
+import { Game, MonthlyType, GameMethod, GameWhen, RescheduleMode } from "../models/game";
 import { GuildConfig } from "../models/guild-config";
 import config from "../models/config";
 
@@ -111,15 +111,16 @@ export default (options: GameRouteOptions) => {
             description: "",
             minPlayers: 1,
             players: 7,
-            method: "automated",
+            method: GameMethod.AUTOMATED,
             customSignup: "",
-            when: "datetime",
+            when: GameWhen.DATETIME,
             date: req.query.date || "",
             time: req.query.time || "",
             timezone: "",
             reminder: "0",
             gameImage: "",
             frequency: "",
+            monthlyType: MonthlyType.WEEKDAY,
             weekdays: [false,false,false,false,false,false,false],
             clearReservedOnRepeat: false,
             env: process.env,
@@ -133,6 +134,12 @@ export default (options: GameRouteOptions) => {
             // account: req.account,
             // lang: req.lang.selected,
             // langs: req.lang.list,
+            enums: {
+              GameMethod: GameMethod,
+              GameWhen: GameWhen,
+              RescheduleMode: RescheduleMode,
+              MonthlyType: MonthlyType
+            },
             guildConfig: guildConfig,
             errors: {
               other: null,

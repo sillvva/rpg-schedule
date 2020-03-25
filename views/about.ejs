@@ -13,232 +13,220 @@
   <body>
     <%- include('menu'); %>
     <div class="container">
-      <h1>RPG Schedule</h1>
-      <h6>
-        Want to contribute? <a href="<%= config.urls.github.path %>" target="_blank">Github</a>
-        | <a href="https://www.patreon.com/rpg_schedule" target="_blank">Patreon</a> 
-        | <a href="https://www.paypal.me/Sillvva" target="_blank">PayPal</a>
-      </h6>
-      <p>A discord bot for posting game announcements for RPGs. Features include:</p>
-      <ul>
-        <li>Web interface for posting and editing game announcements</li>
-        <li>Automated or manual sign ups and automated waitlisting</li>
-        <li>Automated rescheduling (daily, weekly, biweekly, or monthly)</li>
-        <li>Automated reminders</li>
-        <li>RSS Feed</li>
-      </ul>
-      <h6><a href="https://github.com/sillvva/rpg-schedule/blob/master/CHANGELOG.md" target="_blank">Change Log</a></h6>
-      <p><strong>Note:</strong> Games are automatically pruned 48 - 72 hours after the scheduled time. Or you can delete them manually.</p>
-      <p>
-        <a href="/images/screenshot3.png" target="_blank" style="display: inline-flex; height: 200px;"
-          ><img src="/images/screenshot3.png" style="max-width: 100%; max-height: 100%;"
-        /></a>
-        <a href="/images/screenshot.png" target="_blank" style="display: inline-flex; height: 200px;"
-          ><img src="/images/screenshot.png" style="max-width: 100%; max-height: 100%;"
-        /></a>
-        <a href="/images/screenshot5.png" target="_blank" style="display: inline-flex; height: 200px;"
-          ><img src="/images/screenshot5.png" style="max-width: 100%; max-height: 100%;"
-        /></a>
-      </p>
-      <h2>Command List</h2>
-      <div class="table-responsive">
-        <table class="table">
-          <thead>
-            <tr>
-              <th scope="col">
-                Command&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-              </th>
-              <th scope="col">Default&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
-              <th scope="col">Description</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><strong>General Commands</strong></td>
-              <td></td>
-              <td></td>
-            </tr>
-            <tr>
-              <td>!schedule</td>
-              <td></td>
-              <td>Displays the help menu</td>
-            </tr>
-            <tr>
-              <td>!schedule help</td>
-              <td></td>
-              <td>Displays the help menu</td>
-            </tr>
-            <tr>
-              <td><strong>General Configuration</strong></td>
-              <td></td>
-              <td></td>
-            </tr>
-            <tr>
-              <td>!schedule configuration</td>
-              <td></td>
-              <td>Get the bot configuration</td>
-            </tr>
-            <tr>
-              <td>!schedule role <code>role name</code></td>
-              <td>All Roles</td>
-              <td>Assign a role as a prerequisite for posting games</td>
-            </tr>
-            <tr>
-              <td>!schedule manager-role <code>role name</code></td>
-              <td>Server Admins</td>
-              <td>Assign a role to allow managing all server games</td>
-            </tr>
-            <tr>
-              <td>!schedule password <code>password</code></td>
-              <td>disabled</td>
-              <td>Configure a password for posting games</td>
-            </tr>
-            <tr>
-              <td>!schedule password</td>
-              <td></td>
-              <td>Remove the password</td>
-            </tr>
-            <tr>
-              <td>!schedule lang <code>en</code></td>
-              <td><code>en</code> (English)</td>
-              <td>Set the bot's language.</td>
-            </tr>
-            <tr>
-              <td><strong>Bot Configuration</strong></td>
-              <td></td>
-              <td></td>
-            </tr>
-            <tr>
-              <td>!schedule embeds <code>on/off</code></td>
-              <td>on</td>
-              <td>Use discord embeds for announcements</td>
-            </tr>
-            <tr>
-              <td>!schedule embed-color <code>color</code></td>
-              <td>#2196f3</td>
-              <td>Set a discord embed color. Can be a color name like <code>red</code> or a hexadecimal color like <code>#2196f3</code></td>
-            </tr>
-            <tr>
-              <td>!schedule embed-user-tags <code>on/off</code></td>
-              <td>off</td>
-              <td>
-                Include user tags in announcement embeds (<a href="https://cdn.discordapp.com/attachments/532565396746928149/682786099679985665/unknown.png" target="_blank"
-                  >Can occasionally glitch</a
-                >)
-              </td>
-            </tr>
-            <tr>
-              <td>!schedule emoji-sign-up ➕</td>
-              <td>➕</td>
-              <td>Set the emoji used for automated sign up</td>
-            </tr>
-            <tr>
-              <td>!schedule emoji-drop-out ➖</td>
-              <td>➖</td>
-              <td>Set the emoji used for automated sign up</td>
-            </tr>
-            <tr>
-              <td>!schedule toggle-drop-out</td>
-              <td>Off</td>
-              <td>Enable/disable the ability for players to drop out</td>
-            </tr>
-            <tr>
-              <td>!schedule prefix-char <code>?</code></td>
-              <td>!</td>
-              <td>Set the prefix character for sending bot commands</td>
-            </tr>
-            <tr>
-              <td><strong>Game Configuration</strong></td>
-              <td></td>
-              <td></td>
-            </tr>
-            <tr>
-              <td>!schedule add-channel <code>#channel-name</code></td>
-              <td>first text channel</td>
-              <td>Add a channel where games are posted (recommended)</td>
-            </tr>
-            <tr>
-              <td>!schedule remove-channel <code>#channel-name</code></td>
-              <td></td>
-              <td>Remove a channel where games are posted</td>
-            </tr>
-            <tr>
-              <td>!schedule pruning <code>on/off</code></td>
-              <td>off</td>
-              <td>
-                Automatically delete old game announcements. As noted above, games over 48 hours past their scheduled date are automatically pruned from the database. However, by
-                default the announcements are not.
-              </td>
-            </tr>
-            <tr>
-              <td>!schedule private-reminders</td>
-              <td>Off</td>
-              <td>Toggle whether the game reminders are sent to private messages.</td>
-            </tr>
-            <tr>
-              <td>!schedule reschedule-mode</td>
-              <td>repost</td>
-              <td>
-                Available modes:<br />
-                <ul>
-                  <li><code>repost</code> - Creates a new announcement post</li>
-                  <li><code>update</code> - Updates the original announcement post</li>
-                </ul>
-              </td>
-            </tr>
-            <tr>
-              <td><strong>Usage</strong></td>
-              <td></td>
-              <td></td>
-            </tr>
-            <tr>
-              <td>!schedule link</td>
-              <td></td>
-              <td>Retrieve the link for posting games</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <br />
-      <h2>Rescheduling</h2>
-      <p>Here’s how rescheduling works:</p>
-      <p>You enter: 3/20 (Fri) 9am, Reschedule: Weekly, Friday</p>
-      <ul>
-        <li>First announcement says 3/20 (Fri) 9am</li>
-        <li>Next announcement says 3/27 (Fri) 9am</li>
-        <li>Next announcement says 4/3 (Fri) 9am</li>
-      </ul>
-      <p>You enter 3/25 (Wed) 9am, Reschedule: Weekly, Friday</p>
-      <ul>
-        <li>First announcement says 3/25 (Wed) 9am</li>
-        <li>Next announcement says 3/27 (Fri) 9am</li>
-        <li>Next announcement says 4/3 (Fri) 9am</li>
-      </ul>
-      <p>The first announcement is always on the date you entered. Any following announcements will be based on the day of the week selected.</p>
-      <p>
-        Each next announcement will be posted X hours after the date/time of the current announcement, where X is the duration of the game. If no duration is entered, it defaults
-        to 0 hours.
-      </p>
-      <h2>About the bot</h2>
-      <p>
-        The discord bot is deployed with Heroku as a Node.js and discord.js application and MongoDB for data storage. When an update is pushed to this repository, the update is
-        automatically deployed to Heroku.
-      </p>
-      <h2>Credits</h2>
-      <h5>
-        <a href="https://www.mattdekok.dev/#donate" target="_blank">My Website</a>
-      </h5>
-      <h5>Patrons/Donors</h5>
-      <ul>
-        <li>JmanX</li>
-      </ul>
-      <h5>Code/Language Contributors</h5>
-      <ul>
-        <li>wilywyrm</li>
-        <li>j-san</li>
-        <li>TheDiceFather</li>
-        <li>ILDaviz</li>
-      </ul>
+      <section>
+        <h2>Links</h2>
+        <h6>
+          Want to contribute? <a href="<%= config.urls.github.path %>" target="_blank">Github</a>
+          | <a href="https://www.patreon.com/rpg_schedule" target="_blank">Patreon</a> 
+          | <a href="https://www.paypal.me/Sillvva" target="_blank">PayPal</a>
+        </h6>
+        <h6>
+          Need assistance? Join my <a href="https://discord.gg/mazZEe3" target="_blank">Discord server</a>.
+        </h6>
+        <h6><a href="https://github.com/sillvva/rpg-schedule/blob/master/CHANGELOG.md" target="_blank">Change Log</a></h6>
+      </section>
+      <section>
+        <h2>Important Notes</h2>
+        <p><strong>Note:</strong> Games are automatically pruned 48 - 72 hours after the scheduled time. Or you can delete them manually.</p>
+      </section>
+      <section>
+        <h2>Command List</h2>
+        <p>All bot commands must be sent in the server being configured. The bot will not respond to direct messages.</p>
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">
+                  Command&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                </th>
+                <th scope="col">Default&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
+                <th scope="col">Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>General Commands</strong></td>
+                <td></td>
+                <td></td>
+              </tr>
+              <tr>
+                <td>!schedule</td>
+                <td></td>
+                <td>Displays the help menu</td>
+              </tr>
+              <tr>
+                <td>!schedule help</td>
+                <td></td>
+                <td>Displays the help menu</td>
+              </tr>
+              <tr>
+                <td><strong>General Configuration</strong></td>
+                <td></td>
+                <td></td>
+              </tr>
+              <tr>
+                <td>!schedule configuration</td>
+                <td></td>
+                <td>Get the bot configuration</td>
+              </tr>
+              <tr>
+                <td>!schedule role <code>role name</code></td>
+                <td>All Roles</td>
+                <td>Assign a role as a prerequisite for posting games</td>
+              </tr>
+              <tr>
+                <td>!schedule manager-role <code>role name</code></td>
+                <td>Server Admins</td>
+                <td>Assign a role to allow managing all server games. By default any server user with the <em>Manage Server</em> permission has this capability. This option allows you to provide this capability to users without that permission.</td>
+              </tr>
+              <tr>
+                <td>!schedule password <code>password</code></td>
+                <td>disabled</td>
+                <td>Configure a password for posting games</td>
+              </tr>
+              <tr>
+                <td>!schedule password</td>
+                <td></td>
+                <td>Remove the password</td>
+              </tr>
+              <tr>
+                <td>!schedule lang <code>en</code></td>
+                <td><code>en</code> (English)</td>
+                <td>Set the bot's language.</td>
+              </tr>
+              <tr>
+                <td><strong>Bot Configuration</strong></td>
+                <td></td>
+                <td></td>
+              </tr>
+              <tr>
+                <td>!schedule embeds <code>on/off</code></td>
+                <td><code>on</code></td>
+                <td>Use discord embeds for announcements</td>
+              </tr>
+              <tr>
+                <td>!schedule embed-color <code>color</code></td>
+                <td><code>#2196f3</code></td>
+                <td>Set a discord embed color. Can be a color name like <code>red</code> or a hexadecimal color like <code>#2196f3</code></td>
+              </tr>
+              <tr>
+                <td>!schedule embed-user-tags <code>on/off</code></td>
+                <td><code>off</code></td>
+                <td>
+                  Include user tags in announcement embeds (<a href="https://cdn.discordapp.com/attachments/532565396746928149/682786099679985665/unknown.png" target="_blank"
+                    >Can occasionally glitch</a
+                  >)
+                </td>
+              </tr>
+              <tr>
+                <td>!schedule emoji-sign-up ➕</td>
+                <td>➕</td>
+                <td>Set the emoji used for automated sign up</td>
+              </tr>
+              <tr>
+                <td>!schedule emoji-drop-out ➖</td>
+                <td>➖</td>
+                <td>Set the emoji used for automated sign up</td>
+              </tr>
+              <tr>
+                <td>!schedule toggle-drop-out</td>
+                <td><code>off</code></td>
+                <td>Enable/disable the ability for players to drop out</td>
+              </tr>
+              <tr>
+                <td>!schedule prefix-char <code>?</code></td>
+                <td><code>!</code></td>
+                <td>Set the prefix character for sending bot commands</td>
+              </tr>
+              <tr>
+                <td><strong>Game Configuration</strong></td>
+                <td></td>
+                <td></td>
+              </tr>
+              <tr>
+                <td>!schedule add-channel <code>#channel-name</code></td>
+                <td>first text channel</td>
+                <td>Add a channel where games are posted (recommended)</td>
+              </tr>
+              <tr>
+                <td>!schedule remove-channel <code>#channel-name</code></td>
+                <td></td>
+                <td>Remove a channel where games are posted</td>
+              </tr>
+              <tr>
+                <td>!schedule pruning <code>on/off</code></td>
+                <td><code>off</code></td>
+                <td>
+                  Automatically delete old game announcements. As noted above, games over 48 hours past their scheduled date are automatically pruned from the database. However, by
+                  default the announcements are not.
+                </td>
+              </tr>
+              <tr>
+                <td>!schedule private-reminders</td>
+                <td><code>off</code></td>
+                <td>Toggle whether the game reminders are sent to private messages.</td>
+              </tr>
+              <tr>
+                <td>!schedule reschedule-mode</td>
+                <td><code>repost</code></td>
+                <td>
+                  Available modes:<br />
+                  <ul>
+                    <li><code>repost</code> - Creates a new announcement post</li>
+                    <li><code>update</code> - Updates the original announcement post</li>
+                  </ul>
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Usage</strong></td>
+                <td></td>
+                <td></td>
+              </tr>
+              <tr>
+                <td>!schedule link</td>
+                <td></td>
+                <td>Retrieve the link for posting games</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <section>
+        <h2>Rescheduling</h2>
+        <p>The rescheduled announcement will be posted X hours after the date/time of the current announcement, where
+        X is the duration (or runtime) of the game (+/- 1 hour). If no duration is entered, it defaults to 0 hours.</p>
+        <h5>Weekly</h5>
+        <p>You enter: 3/25 (Wed) 9 am; Reschedule: Weekly, Friday; Duration: 2 hours</p>
+        <ul>
+          <li>First announcement says 3/25 (Wed) 9 am, posted manually</li>
+          <li>Next announcement says 3/27 (Fri) 9 am, posted automatically at 3/25 11 am</li>
+          <li>Next announcement says 4/3 (Fri) 9 am, posted automatically at 3/27 11 am</li>
+        </ul>
+        <p>The first announcement is always on the date you entered. Any following announcements will be based on the day(s) of the week selected.</p>
+      </section>
+      <section>
+        <h2>About the bot</h2>
+        <p>
+          The bot is deployed from Github to Amazon Web Services as a Node.js and discord.js application with MongoDB for data storage.
+        </p>
+      </section>
+      <section>
+        <h2>Credits</h2>
+        <h5>
+          <a href="https://www.mattdekok.dev/#donate" target="_blank">My Website</a>
+        </h5>
+        <h5>Patrons/Donors</h5>
+        <ul>
+          <li>JmanX</li>
+        </ul>
+        <h5>Code/Language Contributors</h5>
+        <ul>
+          <li>wilywyrm</li>
+          <li>j-san</li>
+          <li>TheDiceFather</li>
+          <li>ILDaviz</li>
+        </ul>
+      </section>
     </div>
   </body>
 </html>

@@ -77,7 +77,7 @@ export default (options: any) => {
               },
               function(error, response, body) {
                 if (error || response.statusCode !== 200) {
-                  console.log(error);
+                  aux.log(error);
                   if (response.statusCode == 400) res.redirect(config.urls.login.path);
                   else res.render("error", { message: `Discord OAuth: ${response.statusCode}<br />${error}` });
                   return;
