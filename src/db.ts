@@ -1,4 +1,5 @@
 import mongodb from "mongodb";
+import aux from "./appaux";
 
 let _db: mongodb.Db;
 
@@ -11,7 +12,7 @@ class database {
     try {
       result = await this.client.connect(process.env.MONGODB_URL, { useNewUrlParser: true });
     } catch (err) {
-      console.log(err);
+      aux.log(err);
     }
 
     if (result) {

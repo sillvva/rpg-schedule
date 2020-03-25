@@ -59,6 +59,7 @@
     "ADD_TO_CALENDAR": "Aggiungi al calendario",
     "CONVERT_TIME_ZONE": "Converti fuso orario",
     "COUNTDOWN": "Conto alla rovescia",
+    "MONTHLY_TYPE": "Tipo mensile",
     "options": {
       "AUTOMATED_SIGNUP": "Entrata automatica",
       "CUSTOM_SIGNUP_INSTRUCTIONS": "Istruzioni di iscrizione personalizzate",
@@ -75,7 +76,9 @@
       "DAILY": "Quotidiana",
       "WEEKLY": "Settimanale",
       "BIWEEKLY": "Bisettimanale",
-      "MONTHLY": "Mensile"
+      "MONTHLY": "Mensile",
+      "DATE": "Data",
+      "WEEKDAY": "Giorno feriale"
     },
     "labels": {
       "HOURS": "ore",
@@ -83,7 +86,9 @@
       "DISCORD_FORMATTING": "Discord formattazione consentita",
       "AUTOMATED_SIGNUP_DESC": "Usa le reazioni sull'annuncio del gioco per permettere agli utenti di iscriversi o cancellarsi",
       "REQUEST_SERVER_PASS": "Inserisci la password fornita dal server",
-      "GAME_DELETED": "Questo gioco è stato cancellato"
+      "GAME_DELETED": "Questo gioco è stato cancellato",
+      "MONTHLY_DATE": "Il gioco si verifica nella stessa data ogni mese",
+      "MONTHLY_WEEKDAY": "Il gioco si svolge il :XTH :WEEKDAY ogni mese"
     }
   },
   "dashboard": {
@@ -148,7 +153,7 @@
       "EMBED_COLOR": "Imposta un colore di incorporamento discord",
       "EMBED_COLOR_ERROR": "Il colore di incorporamento deve usare un formato esadecimale. Esempio: `#2196f3` Vedi https://www.color-hex.com/ per maggiori informazioni.",
       "EMOJI": "Imposta l'emoji utilizzata per la registrazione automatica",
-      "ESCAPE": "Carattere di fuga per il comando del bot. Attuale `:CHAR`",
+      "PREFIX": "Carattere di fuga per il comando del bot. Attuale `:CHAR`",
       "EMOJI_ERROR": "L'emoji deve essere un carattere emoji unicode. Hai inserito `:CHAR`. Vedi https://www.unicode.org/emoji/charts/full-emoji-list.html per una liosta completa di emoji. Usa la versione browser.",
       "PRIVATE_REMINDERS": "Seleziona se i promemoria del gioco vengono inviati via messaggi privati. Attuale `:PR`",
       "ROLE": "Assegna un ruolo come prerequisito per la pubblicazione di giochi",
