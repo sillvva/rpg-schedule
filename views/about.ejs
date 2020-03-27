@@ -213,6 +213,9 @@
         <h5>Patrons/Donors</h5>
         <ul>
           <li>JmanX</li>
+          <% pledges.forEach(pledge => {
+            %><li><%= pledge.patron.attributes.full_name %></li><%
+          }); %>
         </ul>
         <h5>Code/Language Contributors</h5>
         <p>
