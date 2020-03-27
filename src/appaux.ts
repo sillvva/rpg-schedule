@@ -1,6 +1,6 @@
 import _ from "lodash";
 import moment from "moment";
-const patreonAPI = require("patreon");
+import axios from "axios";
 
 interface Path {
   path: string;
@@ -14,12 +14,16 @@ const patreonPledges = async () => {
   const accessToken = process.env.PATREON_API_ACCESS_TOKEN;
   const campaignId = process.env.PATREON_CAMPAIGN_ID;
   try {
-    const patreonAPIClient = patreonAPI.patreon(accessToken);
-    const client = await patreonAPIClient(`/campaigns/${campaignId}/pledges`);
-    const store = client.store;
-    const rewards = store.findAll("reward").map(reward => reward.serialize().data);
-    const pledges = store.findAll("pledge").map(pledge => pledge.serialize().data);
-    const users = store.findAll("user").map(user => user.serialize().data);
+    const url = `https://www.patreon.com/api/oauth2/api/campaigns/${campaignId}/pledges`;
+    const response = await axios.get(url, {
+      headers: {
+        authorization: `Bearer ${accessToken}`
+      }
+    });
+    const data = response.data;
+    const rewards = data.included.filter(i => i.type === "reward" && i.id > 0);
+    const pledges = data.data.filter(i => i.type === "pledge" && i.id > 0);
+    const users = data.included.filter(i => i.type === "user" && i.id > 0);
     const result = [];
     pledges.forEach(pledge => {
       const rewardId = pledge.relationships.reward.data.id;
