@@ -69,19 +69,24 @@ export default (options: GameRouteOptions) => {
           const guildConfig = await GuildConfig.fetch(guild.id);
           const guildMembers = await guild.members.fetch();
           const member = guildMembers.array().find(m => m.id === req.account.user.id);
+          const userGuild = req.account.guilds.find(g => g.id === guild.id);
           if (guildConfig && !(member && req.account.user.tag === config.author)) {
             password = guildConfig.password;
-            if (guildConfig.role) {
+            // A role is required to post on the server
+            if (guildConfig.role && !userGuild.isAdmin) {
+              // User is not logged in
               if (!req.account) {
                 res.redirect(config.urls.login.path);
                 return;
               } else {
                 if (member) {
+                  // User does not have the require role
                   if (!member.roles.cache.find(r => r.name.toLowerCase().trim() === guildConfig.role.toLowerCase().trim())) {
                     res.redirect(config.urls.game.dashboard.path);
                     return;
                   }
                 } else {
+                  // User is not part of the server
                   res.redirect(config.urls.game.dashboard.path);
                   return;
                 }

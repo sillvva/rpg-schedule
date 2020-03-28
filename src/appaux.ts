@@ -7,6 +7,7 @@ interface Path {
   session: boolean;
   redirect: string;
   guildPermission: boolean;
+  loadGames: boolean;
   hidden: boolean;
 }
 

@@ -8,10 +8,10 @@ export default {
       mygames: { path: "/my-games", redirect: "/games/my-games" }
     },
     game: {
-      games: { path: "/games/upcoming", session: true, guildPermission: true },
-      dashboard: { path: "/games/my-games", session: true, guildPermission: true },
-      calendar: { path: "/games/calendar", session: true, guildPermission: true },
-      server: { path: "/games/server", session: true, guildPermission: true },
+      games: { path: "/games/upcoming", session: true, guildPermission: true, loadGames: true },
+      dashboard: { path: "/games/my-games", session: true, guildPermission: true, loadGames: true },
+      calendar: { path: "/games/calendar", session: true, guildPermission: true, loadGames: true },
+      server: { path: "/games/server", session: true, guildPermission: true, loadGames: true },
       create: { path: "/games/edit", session: true },
       delete: { path: "/games/delete", session: true },
       password: { path: "/games/password", session: true },
