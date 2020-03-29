@@ -65,6 +65,7 @@ export interface GameModel {
   time: string;
   timezone: number;
   timestamp: number;
+  hideDate: boolean;
   reminder: string;
   reminded: boolean;
   messageId: string;
@@ -105,6 +106,7 @@ export class Game implements GameModel {
   time: string;
   timezone: number;
   timestamp: number;
+  hideDate: boolean;
   reminder: string;
   reminded: boolean;
   messageId: string;
@@ -166,6 +168,7 @@ export class Game implements GameModel {
       time: this.time,
       timezone: this.timezone,
       timestamp: this.timestamp,
+      hideDate: this.hideDate,
       reminder: this.reminder,
       reminded: this.reminded,
       messageId: this.messageId,
@@ -276,7 +279,7 @@ export class Game implements GameModel {
       `\n**${lang.game.GM}:** ${dm}` +
       `\n**${lang.game.GAME_NAME}:** ${game.adventure}` +
       `\n**${lang.game.RUN_TIME}:** ${game.runtime} ${lang.game.labels.HOURS}` +
-      `\n**${lang.game.WHEN}:** ${when}` +
+      (game.hideDate ? `\n**${lang.game.WHEN}:** TBD` : `\n**${lang.game.WHEN}:** ${when}`) +
       `\n**${lang.game.WHERE}:** ${where}` +
       `\n${description.length > 0 ? `**${lang.game.DESCRIPTION}:**\n${description}\n` : description}` +
       `\n${signups}`;
@@ -301,7 +304,8 @@ export class Game implements GameModel {
       if (dmmember && dmmember.user.avatarURL()) embed.setAuthor(dm, dmmember.user.avatarURL().substr(0, 2048));
       if (dmmember && dmmember.user.avatarURL()) embed.setThumbnail(dmmember.user.avatarURL().substr(0, 2048));
       if(description.length > 0) embed.setDescription(description);
-      embed.addField(lang.game.WHEN, when, true);
+      if (game.hideDate) embed.addField(lang.game.WHEN, lang.game.labels.TBD, true);
+      else embed.addField(lang.game.WHEN, when, true);
       if(game.runtime && game.runtime.trim().length > 0 && game.runtime.trim() != '0') embed.addField(lang.game.RUN_TIME, `${game.runtime} ${lang.game.labels.HOURS}`, true);
       embed.addField(lang.game.WHERE, where);
       if (guildConfig.embedMentions) embed.addField(lang.game.GM, gmTag);

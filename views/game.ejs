@@ -142,6 +142,10 @@
                     <small id="gcalLink"></small>
                     <% } %>
                 </div>
+                <div>
+                    <input type="checkbox" name="hideDate" <%= hideDate ? 'checked' : '' %> value="true" />
+                    <label for="hideDate" class="col-form-label">Hide Date</label>
+                </div>
             </div>
             <div class="form-group col-sm-6 col-md-3">
                 <label for="time" class="col-form-label"><%= lang.game.TIME %></label>
@@ -506,7 +510,7 @@
 
     $('#date').change(function() {
         var link = getTZUrls($('#date').val(), $('#time').val(), $('#timezone').val());
-        $('#convertLink').html(`Conversion: <a href="${link.convert}" target="_blank" rel="nofollow">${link.convert}</a>`);
+        $('#convertLink').html(`<a href="${link.convert}" target="_blank" rel="nofollow">${link.convert}</a>`);
         // $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank" rel="nofollow">${link.countdown}</a>`);
         $('#gcalLink').html(`<a href="${link.gcal}" target="_blank" rel="nofollow"><%= lang.game.ADD_TO_CALENDAR %></a>`);
         updateNextDate($('#date').val(), $('#frequency').val());
@@ -516,14 +520,14 @@
 
     $('#time').change(function() {
         var link = getTZUrls($('#date').val(), $('#time').val(), $('#timezone').val());
-        $('#convertLink').html(`Conversion: <a href="${link.convert}" target="_blank" rel="nofollow">${link.convert}</a>`);
+        $('#convertLink').html(`<a href="${link.convert}" target="_blank" rel="nofollow">${link.convert}</a>`);
         // $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank" rel="nofollow">${link.countdown}</a>`);
         $('#gcalLink').html(`<a href="${link.gcal}" target="_blank" rel="nofollow"><%= lang.game.ADD_TO_CALENDAR %></a>`);
     }).change();
 
     $('#timezone').change(function() {
         var link = getTZUrls($('#date').val(), $('#time').val(), $('#timezone').val());
-        $('#convertLink').html(`Conversion: <a href="${link.convert}" target="_blank" rel="nofollow">${link.convert}</a>`);
+        $('#convertLink').html(`<a href="${link.convert}" target="_blank" rel="nofollow">${link.convert}</a>`);
         // $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank" rel="nofollow">${link.countdown}</a>`);
         $('#gcalLink').html(`<a href="${link.gcal}" target="_blank" rel="nofollow"><%= lang.game.ADD_TO_CALENDAR %></a>`);
     }).change();

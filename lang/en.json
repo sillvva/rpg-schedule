@@ -64,6 +64,7 @@
     "CONVERT_TIME_ZONE": "Convert Time Zone",
     "COUNTDOWN": "Countdown",
     "MONTHLY_TYPE": "Monthly Type",
+    "HIDE_DATE": "Hide Date",
     "options": {
       "AUTOMATED_SIGNUP": "Automated Signup",
       "CUSTOM_SIGNUP_INSTRUCTIONS": "Custom Signup Instructions",
@@ -86,6 +87,7 @@
     },
     "labels": {
       "HOURS": "hours",
+      "TBD": "TBD",
       "DISCORD_TAGS": "Discord tags are case sensitive",
       "DISCORD_FORMATTING": "Discord formatting allowed",
       "AUTOMATED_SIGNUP_DESC": "Uses discord reaction buttons on the game announcement to allow users to sign up or cancel",

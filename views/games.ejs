@@ -64,22 +64,29 @@
                     <div class="game my-games" id="<%= game._id %>" onclick="window.location = `<%= config.urls.game.create.path %>?g=<%= game._id %>`;">
                         <h4 class="game-name"><%= game.adventure %></h4>
                         <% if (account.viewing.server) { %>
-                        <div class="game-dm">
-                            <strong><%= lang.game.GM %>:</strong>
-                            <%= game.dm.replace(/#\d{4}/g, '') %>
-                        </div>
+                            <div class="game-dm">
+                                <strong><%= lang.game.GM %>:</strong>
+                                <%= game.dm.replace(/#\d{4}/g, '') %>
+                            </div>
                         <% } %>
-                        <div class="game-time">
-                            <strong><%= lang.game.WHEN %>:</strong>
-                            <% if (game.timestamp > new Date().getTime()) {%>
-                                <span data-datetime="<%= game.moment.raw %>" data-iso="<%= game.moment.iso %>"><%= game.moment.calendar %> (<%= game.moment.from %>)</span>
-                            <% } else { %>
-                                <span data-datetime="<%= game.moment.raw %>" data-iso="<%= game.moment.iso %>" class="text-danger"><%= game.moment.date %> (<%= game.moment.from %>)</span>
-                            <% } %>
-                        </div>
-                        <div>
-                        <a href="http://www.google.com/calendar/render?action=TEMPLATE&text=<%= escape(game.adventure) %>&dates=<%= game.moment.isoutc %>/<%= game.moment.isoutc %>&location=<%= escape(`${guild.name} - ${game.where}`) %>&trp=false&sprop=&details=<%= escape(game.description) %>" target="_blank" rel="nofollow" onclick="event.stopPropagation();">Add to Google Calendar</a>
-                        </div>
+                        <% if (game.hideDate) { %>
+                            <div class="game-time">
+                                <strong><%= lang.game.WHEN %>:</strong>
+                                <span><%= lang.game.labels.TBD %></span>
+                            </div>
+                        <% } else { %>
+                            <div class="game-time">
+                                <strong><%= lang.game.WHEN %>:</strong>
+                                <% if (game.timestamp > new Date().getTime()) {%>
+                                    <span data-datetime="<%= game.moment.raw %>" data-iso="<%= game.moment.iso %>"><%= game.moment.calendar %> (<%= game.moment.from %>)</span>
+                                <% } else { %>
+                                    <span data-datetime="<%= game.moment.raw %>" data-iso="<%= game.moment.iso %>" class="text-danger"><%= game.moment.date %> (<%= game.moment.from %>)</span>
+                                <% } %>
+                            </div>
+                            <div>
+                                <a href="http://www.google.com/calendar/render?action=TEMPLATE&text=<%= escape(game.adventure) %>&dates=<%= game.moment.isoutc %>/<%= game.moment.isoutc %>&location=<%= escape(`${guild.name} - ${game.where}`) %>&trp=false&sprop=&details=<%= escape(game.description) %>" target="_blank" rel="nofollow" onclick="event.stopPropagation();">Add to Google Calendar</a>
+                            </div>
+                        <% } %>
                         <div class="game-reserved"><strong><%= lang.game.RESERVED %>:</strong> <%= Math.min(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0)%> / <%= game.players %></div>
                         <div class="game-reserved"><strong><%= lang.game.WAITLISTED %>:</strong> <%= Math.max(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0) - parseInt(game.players)%></div>
                     </div>
@@ -90,17 +97,24 @@
                             <strong><%= lang.game.GM %>:</strong>
                             <%= game.dm.replace(/#\d{4}/g, '') %>
                         </div>
-                        <div class="game-time">
-                            <strong><%= lang.game.WHEN %>:</strong>
-                            <% if (game.timestamp > new Date().getTime()) {%>
-                                <span data-datetime="<%= game.moment.raw %>" data-iso="<%= game.moment.iso %>"><%= game.moment.calendar %> (<%= game.moment.from %>)</span>
-                            <% } else { %>
-                                <span data-datetime="<%= game.moment.raw %>" data-iso="<%= game.moment.iso %>" class="text-danger"><%= game.moment.date %> (<%= game.moment.from %>)</span>
-                            <% } %>
-                        </div>
-                        <div>
-                        <a href="http://www.google.com/calendar/render?action=TEMPLATE&text=<%= escape(game.adventure) %>&dates=<%= game.moment.isoutc %>/<%= game.moment.isoutc %>&location=<%= escape(`${guild.name} - ${game.where}`) %>&trp=false&sprop=&details=<%= escape(game.description) %>" target="_blank" rel="nofollow" onclick="event.stopPropagation();"><%= lang.game.ADD_TO_CALENDAR %></a>
-                        </div>
+                        <% if (game.hideDate) { %>
+                            <div class="game-time">
+                                <strong><%= lang.game.WHEN %>:</strong>
+                                <span><%= lang.game.labels.TBD %></span>
+                            </div>
+                        <% } else { %>
+                            <div class="game-time">
+                                <strong><%= lang.game.WHEN %>:</strong>
+                                <% if (game.timestamp > new Date().getTime()) {%>
+                                    <span data-datetime="<%= game.moment.raw %>" data-iso="<%= game.moment.iso %>"><%= game.moment.calendar %> (<%= game.moment.from %>)</span>
+                                <% } else { %>
+                                    <span data-datetime="<%= game.moment.raw %>" data-iso="<%= game.moment.iso %>" class="text-danger"><%= game.moment.date %> (<%= game.moment.from %>)</span>
+                                <% } %>
+                            </div>
+                            <div>
+                                <a href="http://www.google.com/calendar/render?action=TEMPLATE&text=<%= escape(game.adventure) %>&dates=<%= game.moment.isoutc %>/<%= game.moment.isoutc %>&location=<%= escape(`${guild.name} - ${game.where}`) %>&trp=false&sprop=&details=<%= escape(game.description) %>" target="_blank" rel="nofollow" onclick="event.stopPropagation();"><%= lang.game.ADD_TO_CALENDAR %></a>
+                            </div>
+                        <% } %>
                         <div class="where parse-url">
                             <strong><%= lang.game.WHERE %>:</strong>
                             <%= game.where %>
@@ -122,7 +136,7 @@
                         <div class="game-description parse-md-url" data-iso="<%= game.moment.iso %>">
                             ### <%= game.adventure %>
 
-                            **<%= lang.game.DATE %>:** %DATE%
+                            **<%= lang.game.DATE %>:** <%= game.hideDate ? 'TBD' : '%DATE%' %>
 
                             **<%= lang.game.RUN_TIME %>:** <%= game.runtime %> <%= lang.game.labels.HOURS %>
 

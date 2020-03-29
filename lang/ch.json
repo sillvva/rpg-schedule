@@ -64,6 +64,7 @@
     "CONVERT_TIME_ZONE": "Zeitzone umwandeln",
     "COUNTDOWN": "Countdown",
     "MONTHLY_TYPE": "Monatlicher Typ",
+    "HIDE_DATE": "Datum ausblenden",
     "options": {
       "AUTOMATED_SIGNUP": "Automatisches Eintragen",
       "CUSTOM_SIGNUP_INSTRUCTIONS": "Benutzerdefinierter Befehl zum Eintragen",
@@ -86,6 +87,7 @@
     },
     "labels": {
       "HOURS": "Stunden",
+      "TBD": "Bestimmt werden",
       "DISCORD_TAGS": "Gross-/Kleinschreibung beachten bei Discord Tags.",
       "DISCORD_FORMATTING": "Discord Formattierung erlaubt",
       "AUTOMATED_SIGNUP_DESC": "Verwendet Discord Reaktionsbuttons, die den Spielern ermöglicht direkt im Kanal sich für die Runde ein- oder auszutragen.",

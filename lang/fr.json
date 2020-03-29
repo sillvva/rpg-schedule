@@ -64,6 +64,7 @@
     "CONVERT_TIME_ZONE": "Convertir le fuseau horaire",
     "COUNTDOWN": "Countdown",
     "MONTHLY_TYPE": "Type mensuel",
+    "HIDE_DATE": "Masquer la date",
     "options": {
       "AUTOMATED_SIGNUP": "Inscription automatisée",
       "CUSTOM_SIGNUP_INSTRUCTIONS": "Instructions d'inscription personnalisées",
@@ -86,6 +87,7 @@
     },
     "labels": {
       "HOURS": "heures",
+      "TBD": "Être déterminé",
       "DISCORD_TAGS": "Les tags Discord sont sensibles à la casse",
       "DISCORD_FORMATTING": "Formattage de texte comme Discord autorisé",
       "AUTOMATED_SIGNUP_DESC": "Utiliser des boutons de réaction Discord lors de l'annonce de partie pour permettre aux joueurs de s'inscrire ou de se désinscrire",

@@ -62,6 +62,7 @@
     "CONVERT_TIME_ZONE": "Converti fuso orario",
     "COUNTDOWN": "Conto alla rovescia",
     "MONTHLY_TYPE": "Tipo mensile",
+    "HIDE_DATE": "Nascondi data",
     "options": {
       "AUTOMATED_SIGNUP": "Entrata automatica",
       "CUSTOM_SIGNUP_INSTRUCTIONS": "Istruzioni di iscrizione personalizzate",
@@ -84,6 +85,7 @@
     },
     "labels": {
       "HOURS": "ore",
+      "TBD": "Essere determinati",
       "DISCORD_TAGS": "I tag Discord fanno distinzione tra maiuscole e minuscole",
       "DISCORD_FORMATTING": "Discord formattazione consentita",
       "AUTOMATED_SIGNUP_DESC": "Usa le reazioni sull'annuncio del gioco per permettere agli utenti di iscriversi o cancellarsi",

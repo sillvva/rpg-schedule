@@ -123,6 +123,7 @@ export default (options: GameRouteOptions) => {
             time: req.query.time || "",
             timezone: "",
             reminder: "0",
+            hideDate: false,
             gameImage: "",
             frequency: "",
             monthlyType: MonthlyType.WEEKDAY,

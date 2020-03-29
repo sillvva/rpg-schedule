@@ -64,6 +64,7 @@
     "CONVERT_TIME_ZONE": "Конвертировать часовой пояс",
     "COUNTDOWN": "Обратный отчет",
     "MONTHLY_TYPE": "Ежемесячный тип",
+    "HIDE_DATE": "Скрыть дату",
     "options": {
       "AUTOMATED_SIGNUP": "Автоматическая запись",
       "CUSTOM_SIGNUP_INSTRUCTIONS": "Свои условия записи",
@@ -86,6 +87,7 @@
     },
     "labels": {
       "HOURS": "час.",
+      "TBD": "Быть определенным",
       "DISCORD_TAGS": "Discord тэги чувстветительны к регистру",
       "DISCORD_FORMATTING": "Доступно Discord форматирование",
       "AUTOMATED_SIGNUP_DESC": "Использует кнопки реакций Discord в объявлении для записи игроков",

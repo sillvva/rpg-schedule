@@ -86,7 +86,7 @@
         return g;
       }));
     }, [])) %>;
-    allGames = allGames.filter(function(g) { return g.date >= moment().format("YYYY-MM-DD"); });
+    allGames = allGames.filter(function(g) { return g.date >= moment().format("YYYY-MM-DD") && !g.hideDate; });
     function daysInMonth(month, year) { return new Date(year, month, 0).getDate(); }
     function renderCalendar() {
       if (selMonth === baseDate.month() && selYear === baseDate.year() && selDate === baseDate.date()) {
