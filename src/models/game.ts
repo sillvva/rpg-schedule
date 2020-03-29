@@ -338,6 +338,18 @@ export class Game implements GameModel {
         if (message) {
           message = await message.edit(msg, embed);
         }
+        else {
+          if (guildConfig.embeds === false) {
+            message = <Message>await channel.send(msg, embed);
+          } else {
+            message = <Message>await channel.send(embed);
+          }
+
+          if (message) {
+            await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: { messageId: message.id } });
+            game.messageId = message.id;
+          }
+        }
 
         prev._id = prev._id.toString();
         game._id = game._id.toString();
