@@ -65,6 +65,7 @@ export interface GameModel {
   time: string;
   timezone: number;
   timestamp: number;
+  hideDate: boolean;
   reminder: string;
   reminded: boolean;
   messageId: string;
@@ -105,6 +106,7 @@ export class Game implements GameModel {
   time: string;
   timezone: number;
   timestamp: number;
+  hideDate: boolean;
   reminder: string;
   reminded: boolean;
   messageId: string;
@@ -132,6 +134,7 @@ export class Game implements GameModel {
       this[key] = value;
     });
     this._guild = discordClient().guilds.cache.get(this.s);
+    if (!this._guild) this._guild = discordClient().guilds.resolve(this.s);
     if (this._guild) {
       this._guild.channels.cache.forEach(c => {
         if (!this._channel && c instanceof TextChannel) {
@@ -166,6 +169,7 @@ export class Game implements GameModel {
       time: this.time,
       timezone: this.timezone,
       timestamp: this.timestamp,
+      hideDate: this.hideDate,
       reminder: this.reminder,
       reminded: this.reminded,
       messageId: this.messageId,
@@ -182,10 +186,17 @@ export class Game implements GameModel {
 
   async save() {
     if (!connection()) { aux.log("No database connection"); return null; }
-    const channel = this._channel;
+    let channel = this._channel;
     const guild = channel.guild;
     const guildConfig = await GuildConfig.fetch(guild.id);
     const game: GameModel = this.data;
+
+    if (guild && !channel) {
+      const textChannels = <TextChannel[]>guild.channels.cache.array().filter(c => c instanceof TextChannel);
+      const channels = guildConfig.channels.filter(c => guild.channels.cache.array().find(gc => gc.id == c)).map(c => guild.channels.cache.get(c));
+      if (channels.length === 0 && textChannels.length > 0) channels.push(textChannels[0]);
+      channel = <TextChannel>(channels[0]);
+    }
 
     const supportedLanguages = require("../../lang/langs.json");
     const languages = supportedLanguages.langs
@@ -276,7 +287,7 @@ export class Game implements GameModel {
       `\n**${lang.game.GM}:** ${dm}` +
       `\n**${lang.game.GAME_NAME}:** ${game.adventure}` +
       `\n**${lang.game.RUN_TIME}:** ${game.runtime} ${lang.game.labels.HOURS}` +
-      `\n**${lang.game.WHEN}:** ${when}` +
+      (game.hideDate ? `\n**${lang.game.WHEN}:** TBD` : `\n**${lang.game.WHEN}:** ${when}`) +
       `\n**${lang.game.WHERE}:** ${where}` +
       `\n${description.length > 0 ? `**${lang.game.DESCRIPTION}:**\n${description}\n` : description}` +
       `\n${signups}`;
@@ -301,7 +312,8 @@ export class Game implements GameModel {
       if (dmmember && dmmember.user.avatarURL()) embed.setAuthor(dm, dmmember.user.avatarURL().substr(0, 2048));
       if (dmmember && dmmember.user.avatarURL()) embed.setThumbnail(dmmember.user.avatarURL().substr(0, 2048));
       if(description.length > 0) embed.setDescription(description);
-      embed.addField(lang.game.WHEN, when, true);
+      if (game.hideDate) embed.addField(lang.game.WHEN, lang.game.labels.TBD, true);
+      else embed.addField(lang.game.WHEN, when, true);
       if(game.runtime && game.runtime.trim().length > 0 && game.runtime.trim() != '0') embed.addField(lang.game.RUN_TIME, `${game.runtime} ${lang.game.labels.HOURS}`, true);
       embed.addField(lang.game.WHERE, where);
       if (guildConfig.embedMentions) embed.addField(lang.game.GM, gmTag);
@@ -325,6 +337,18 @@ export class Game implements GameModel {
         message = await channel.messages.fetch(game.messageId);
         if (message) {
           message = await message.edit(msg, embed);
+        }
+        else {
+          if (guildConfig.embeds === false) {
+            message = <Message>await channel.send(msg, embed);
+          } else {
+            message = <Message>await channel.send(embed);
+          }
+
+          if (message) {
+            await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: { messageId: message.id } });
+            game.messageId = message.id;
+          }
         }
 
         prev._id = prev._id.toString();
@@ -376,7 +400,7 @@ export class Game implements GameModel {
         }
       }
       catch(err) {
-        aux.log('InsertGameError:', err);
+        aux.log('InsertGameError:', game.s, err);
       }
 
       if (gcUpdated) {
@@ -384,27 +408,33 @@ export class Game implements GameModel {
         guildConfig.updateReactions();
       }
 
-      const updated = await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { messageId: message.id } });
-      if (dmmember) {
-        try {
-          const pm: any = await dmmember.send(
-            lang.game.EDIT_LINK.replace(/\:server_name/gi, guild.name).replace(/\:game_name/gi, game.adventure) +
-              "\n" +
-              host +
-              config.urls.game.create.path +
-              "?g=" +
-              inserted.insertedId
-          );
-          await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { pm: pm.id } });
+      let updated;
+      if (message) {
+        updated = await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { messageId: message.id } });
+        if (dmmember) {
+          try {
+            const pm: any = await dmmember.send(
+              lang.game.EDIT_LINK.replace(/\:server_name/gi, guild.name).replace(/\:game_name/gi, game.adventure) +
+                "\n" +
+                host +
+                config.urls.game.create.path +
+                "?g=" +
+                inserted.insertedId
+            );
+            await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { pm: pm.id } });
+          }
+          catch(err) {
+            aux.log('EditLinkError:', err);
+          }
         }
-        catch(err) {
-          aux.log('EditLinkError:', err);
-        }
+      }
+      else {
+        aux.log(`GameMessageNotPostedError:\n`, game.s, `${msg}\n`, embed);
       }
       const saved: GameSaveData = {
         _id: inserted.insertedId.toString(),
         message: message,
-        modified: updated.modifiedCount > 0
+        modified: updated ? false : updated.modifiedCount > 0
       };
       return saved;
     }

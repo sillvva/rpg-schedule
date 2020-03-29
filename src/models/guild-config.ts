@@ -145,7 +145,7 @@ export class GuildConfig implements GuildConfigDataModel {
           game.save();
         }
         catch(err) {
-          aux.log('UpdateReactionsError:', 'Could not update emojis for game', game.adventure, `(${game.s})`);
+          aux.log('UpdateReactionsError:', 'Could not update emojis for game', game.adventure, `(${game.s})`, err);
         }
       }
     }

@@ -128,6 +128,7 @@ export default (options: any) => {
     }
     
     const guildPermission = parsedURLs.find(path => path.guildPermission && res.locals.urlPath === path.path) ? true : false;
+    const loadGames = parsedURLs.find(path => path.loadGames && res.locals.urlPath === path.path) ? true : false;
     
     request(
       {
@@ -191,60 +192,54 @@ export default (options: any) => {
               return guild;
             })
   
+            // Manage Server Page
             if (req.account.viewing.server) {
-              req.account.guilds = req.account.guilds.filter(g => req.account.guilds.find(s => s.id === g.id && s.isAdmin));
+              req.account.guilds = req.account.guilds.filter(g => req.account.guilds.find(s => s.id === g.id && (s.isAdmin || config.author == tag)));
             }
   
+            // Page requires permission to post games and guild is not hidden
             if (guildPermission) {
               req.account.guilds = req.account.guilds.filter(
-                guild => !guild.config.hidden
+                guild => !guild.config.hidden || config.author == tag
               );
             }
-  
-            const gameOptions: any = {
-              s: {
-                $in: req.account.guilds.reduce((i, g) => {
-                  i.push(g.id);
-                  return i;
-                }, [])
-              }
-            };
-  
-            if (req.account.viewing.dashboard && tag !== config.author) {
-              gameOptions.$or = [
-                {
-                  dm: tag
-                },
-                {
-                  reserved: {
-                    $regex: tag.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&")
-                  }
-                }
-              ];
-            }
-  
-            if (req.account.viewing.games) {
-              gameOptions.timestamp = {
-                $gt: new Date().getTime()
-              };
-              if (tag !== config.author) {
-                gameOptions.dm = {
-                  $ne: tag
-                };
-              }
-            }
-  
-            if (req.account.viewing.server) {
-              gameOptions.s = {
-                $in: req.account.guilds
-                  .reduce((i, g) => {
+            
+            if (loadGames) {
+              const gameOptions: any = {
+                s: {
+                  $in: req.account.guilds.reduce((i, g) => {
                     i.push(g.id);
                     return i;
                   }, [])
+                }
               };
-            }
-  
-            if (req.account.viewing.games || req.account.viewing.dashboard || req.account.viewing.server || req.account.viewing.calendar) {
+    
+              // My Games Page
+              if (req.account.viewing.dashboard) {
+                gameOptions.$or = [
+                  {
+                    dm: tag
+                  },
+                  {
+                    reserved: {
+                      $regex: tag.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&")
+                    }
+                  }
+                ];
+              }
+    
+              // Upcoming Games Page
+              if (req.account.viewing.games) {
+                gameOptions.timestamp = {
+                  $gt: new Date().getTime()
+                };
+                if (tag !== config.author) {
+                  gameOptions.dm = {
+                    $ne: tag
+                  };
+                }
+              }
+
               const games: any[] = await Game.fetchAllBy(gameOptions);
               games.forEach(game => {
                 if (!game.discordGuild) return;

@@ -19,7 +19,9 @@
     "CALENDAR": "Календарь",
     "INVITE": "Приглашение",
     "LOGIN": "Войти",
-    "LOGOUT": "Выйти"
+    "LOGOUT": "Выйти",
+    "DONATE": "дарить",
+    "HELP": "Помогите"
   },
   "game": {
     "SERVER": "Сервер",
@@ -53,7 +55,7 @@
     "DESCRIPTION": "Описание",
     "EDIT_LINK": "Вы можете редактировать :SERVER_NAME - :GAME_NAME игру здесь:",
     "MAX": "Макс.",
-    "CHARACTERS": "игроков",
+    "CHARACTERS": "символов",
     "NO_PLAYERS": "Нет игроков",
     "NEXT_DATE": "Следующая запланированная дата",
     "WHEN_REPEAT": "Когда игра автоматически перепланируется",
@@ -62,6 +64,7 @@
     "CONVERT_TIME_ZONE": "Конвертировать часовой пояс",
     "COUNTDOWN": "Обратный отчет",
     "MONTHLY_TYPE": "Ежемесячный тип",
+    "HIDE_DATE": "Скрыть дату",
     "options": {
       "AUTOMATED_SIGNUP": "Автоматическая запись",
       "CUSTOM_SIGNUP_INSTRUCTIONS": "Свои условия записи",
@@ -84,6 +87,7 @@
     },
     "labels": {
       "HOURS": "час.",
+      "TBD": "Быть определенным",
       "DISCORD_TAGS": "Discord тэги чувстветительны к регистру",
       "DISCORD_FORMATTING": "Доступно Discord форматирование",
       "AUTOMATED_SIGNUP_DESC": "Использует кнопки реакций Discord в объявлении для записи игроков",

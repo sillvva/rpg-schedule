@@ -4,11 +4,6 @@
     <title><%= title %> - <%= config.title %></title>
 
     <%- include('head', {account: null}); %>
-
-    <script src="/locale/<%= lang.code %>.js"></script>
-    <script type="text/javascript">
-      moment.locale("<%= lang.code %>");
-    </script>
   </head>
   <body>
     <%- include('menu'); %>
@@ -218,13 +213,28 @@
         <h5>Patrons/Donors</h5>
         <ul>
           <li>JmanX</li>
+          <% pledges.forEach(pledge => {
+            %>
+            <li>
+              <%= pledge.patron.attributes.full_name %>
+              <% if (pledge.patron.attributes.vanity && !pledge.patron.url.startsWith('https://www.patreon.com/user')) { %>
+                (<a href="<%= pledge.patron.attributes.url %>" target="_blank"><%= pledge.patron.attributes.vanity %></a>)
+              <% } %>
+            </li>
+            <%
+          }); %>
         </ul>
         <h5>Code/Language Contributors</h5>
+        <p>
+          This list contains contributors who have added something to RPG Schedule. You can see the full list of contributors and their contributions
+          <a href="https://github.com/sillvva/rpg-schedule/graphs/contributors" target="_blank">here</a>.
+        </p>
         <ul>
-          <li>wilywyrm</li>
-          <li>j-san</li>
-          <li>TheDiceFather</li>
-          <li>ILDaviz</li>
+          <li>wilywyrm (Recurring Games Added)</li>
+          <li>Manuoue (French Language Added)</li>
+          <li>ILDaviz (Italian Language Added)</li>
+          <li>Level8Broccoli (German Language Added)</li>
+          <li>Rudolf J (Russian Language Added)</li>
         </ul>
       </section>
     </div>
