@@ -363,7 +363,7 @@ export class Game implements GameModel {
       const saved: GameSaveData = {
         _id: game._id,
         message: message,
-        modified: updated.modifiedCount > 0
+        modified: updated && updated.modifiedCount > 0
       };
       return saved;
     } else {
@@ -434,7 +434,7 @@ export class Game implements GameModel {
       const saved: GameSaveData = {
         _id: inserted.insertedId.toString(),
         message: message,
-        modified: updated ? false : updated.modifiedCount > 0
+        modified: updated && updated.modifiedCount > 0
       };
       return saved;
     }

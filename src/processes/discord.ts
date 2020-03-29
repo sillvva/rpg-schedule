@@ -51,8 +51,9 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
           const guild = message.channel.guild;
           const guildId = guild.id;
           const guildConfig = await GuildConfig.fetch(guildId);
-          let author: User = message.author;
-
+          // const author: User = message.author;
+          const member = message.member;
+          
           if (process.env.LOCALENV && guildId != "532564186023329792") {
             return;
           }
@@ -73,7 +74,6 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
             return;
           }
 
-          const member = message.channel.guild.members.cache.array().find(m => m.user.id === message.author.id);
           const canConfigure = member ? member.hasPermission(discord.Permissions.FLAGS.MANAGE_GUILD) : false;
 
           try {
@@ -127,10 +127,11 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
               await pruneOldGames(message.guild);
               (<TextChannel>message.channel).send(lang.config.PRUNE);
             } else if (cmd === "configuration") {
+              aux.log(canConfigure);
               if (canConfigure) {
-                const channel = guildConfig.channels.map(c => {
+                const channel = guildConfig.channels.length > 0 ? guildConfig.channels.map(c => {
                   return guild.channels.cache.get(c);
-                }) || [guild.channels.cache.array().find(c => c instanceof TextChannel)];
+                }) : [guild.channels.cache.array().find(c => c instanceof TextChannel)];
 
                 let embed = new discord.MessageEmbed()
                   .setTitle(`RPG Schedule ${lang.config.CONFIGURATION}`)
@@ -138,10 +139,11 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   .setDescription(
                     `${lang.config.PREFIX}: ${prefix.length ? prefix : "!"}${config.command}\n` +
                     `${lang.config.GUILD}: \`${guild.name}\`\n` +
-                      `${lang.config.CHANNELS}: \`${channel
-                        .filter(c => c)
-                        .map(c => c.name)
-                        .join(" | ")}\`\n` +
+                      `${lang.config.CHANNELS}: ${channel
+                        .filter(c => c).length > 0 ? `\`${channel
+                          .filter(c => c)
+                          .map(c => c.name)
+                          .join(" | ")}\`` : 'First text channel'}\n` +
                       `${lang.config.PRUNING}: \`${guildConfig.pruning ? "on" : "off"}\`\n` +
                       `${lang.config.EMBEDS}: \`${!(guildConfig.embeds === false) ? "on" : "off"}\`\n` +
                       `${lang.config.EMBED_COLOR}: \`${guildConfig.embedColor}\`\n` +
@@ -156,7 +158,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                       `${lang.config.DROP_OUTS}: ${guildConfig.dropOut ? `Enabled` : "Disabled"}\n` +
                       `${lang.config.LANGUAGE}: ${guildConfig.lang}\n`
                   );
-                if (author.dmChannel) author.dmChannel.send(embed);
+                if (member) member.send(embed);
               }
             } else if (cmd === "add-channel") {
               if (canConfigure && params[0]) {
