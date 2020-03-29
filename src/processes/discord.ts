@@ -127,7 +127,6 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
               await pruneOldGames(message.guild);
               (<TextChannel>message.channel).send(lang.config.PRUNE);
             } else if (cmd === "configuration") {
-              aux.log(canConfigure);
               if (canConfigure) {
                 const channel = guildConfig.channels.length > 0 ? guildConfig.channels.map(c => {
                   return guild.channels.cache.get(c);

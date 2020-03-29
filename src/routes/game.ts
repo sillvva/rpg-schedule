@@ -183,6 +183,7 @@ export default (options: GameRouteOptions) => {
             }
             data.weekdays = game.weekdays;
 
+            game.hideDate = req.body['hideDate'] ? true : false;
             game.clearReservedOnRepeat = req.body['clearReservedOnRepeat'] ? true : false;
 
             game

@@ -287,7 +287,7 @@ export class Game implements GameModel {
       `\n**${lang.game.GM}:** ${dm}` +
       `\n**${lang.game.GAME_NAME}:** ${game.adventure}` +
       `\n**${lang.game.RUN_TIME}:** ${game.runtime} ${lang.game.labels.HOURS}` +
-      (game.hideDate ? `\n**${lang.game.WHEN}:** TBD` : `\n**${lang.game.WHEN}:** ${when}`) +
+      `\n**${lang.game.WHEN}:** ${game.hideDate ? lang.game.labels.TBD : when}` +
       `\n**${lang.game.WHERE}:** ${where}` +
       `\n${description.length > 0 ? `**${lang.game.DESCRIPTION}:**\n${description}\n` : description}` +
       `\n${signups}`;
