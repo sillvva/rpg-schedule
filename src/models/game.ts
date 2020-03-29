@@ -134,6 +134,7 @@ export class Game implements GameModel {
       this[key] = value;
     });
     this._guild = discordClient().guilds.cache.get(this.s);
+    if (!this._guild) this._guild = discordClient().guilds.resolve(this.s);
     if (this._guild) {
       this._guild.channels.cache.forEach(c => {
         if (!this._channel && c instanceof TextChannel) {
@@ -185,10 +186,17 @@ export class Game implements GameModel {
 
   async save() {
     if (!connection()) { aux.log("No database connection"); return null; }
-    const channel = this._channel;
+    let channel = this._channel;
     const guild = channel.guild;
     const guildConfig = await GuildConfig.fetch(guild.id);
     const game: GameModel = this.data;
+
+    if (guild && !channel) {
+      const textChannels = <TextChannel[]>guild.channels.cache.array().filter(c => c instanceof TextChannel);
+      const channels = guildConfig.channels.filter(c => guild.channels.cache.array().find(gc => gc.id == c)).map(c => guild.channels.cache.get(c));
+      if (channels.length === 0 && textChannels.length > 0) channels.push(textChannels[0]);
+      channel = <TextChannel>(channels[0]);
+    }
 
     const supportedLanguages = require("../../lang/langs.json");
     const languages = supportedLanguages.langs
@@ -380,7 +388,7 @@ export class Game implements GameModel {
         }
       }
       catch(err) {
-        aux.log('InsertGameError:', err);
+        aux.log('InsertGameError:', game.s, err);
       }
 
       if (gcUpdated) {
@@ -388,27 +396,33 @@ export class Game implements GameModel {
         guildConfig.updateReactions();
       }
 
-      const updated = await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { messageId: message.id } });
-      if (dmmember) {
-        try {
-          const pm: any = await dmmember.send(
-            lang.game.EDIT_LINK.replace(/\:server_name/gi, guild.name).replace(/\:game_name/gi, game.adventure) +
-              "\n" +
-              host +
-              config.urls.game.create.path +
-              "?g=" +
-              inserted.insertedId
-          );
-          await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { pm: pm.id } });
+      let updated;
+      if (message) {
+        updated = await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { messageId: message.id } });
+        if (dmmember) {
+          try {
+            const pm: any = await dmmember.send(
+              lang.game.EDIT_LINK.replace(/\:server_name/gi, guild.name).replace(/\:game_name/gi, game.adventure) +
+                "\n" +
+                host +
+                config.urls.game.create.path +
+                "?g=" +
+                inserted.insertedId
+            );
+            await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { pm: pm.id } });
+          }
+          catch(err) {
+            aux.log('EditLinkError:', err);
+          }
         }
-        catch(err) {
-          aux.log('EditLinkError:', err);
-        }
+      }
+      else {
+        aux.log(`GameMessageNotPostedError:\n`, game.s, `${msg}\n`, embed);
       }
       const saved: GameSaveData = {
         _id: inserted.insertedId.toString(),
         message: message,
-        modified: updated.modifiedCount > 0
+        modified: updated ? false : updated.modifiedCount > 0
       };
       return saved;
     }

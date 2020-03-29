@@ -61,14 +61,15 @@ export default (options: GameRouteOptions) => {
       }
 
       if (server) {
-        const guild: Guild = client.guilds.cache.get(server);
+        let guild: Guild = client.guilds.cache.get(server);
+        if (!guild) guild = client.guilds.resolve(server);
 
         if (guild) {
           let password: string;
 
           const guildConfig = await GuildConfig.fetch(guild.id);
           const guildMembers = await guild.members.fetch();
-          const member = guildMembers.array().find(m => m.id === req.account.user.id);
+          const member = req.account.user && guildMembers.array().find(m => m.id === req.account.user.id);
           const userGuild = req.account.guilds.find(g => g.id === guild.id);
           if (guildConfig && !(member && req.account.user.tag === config.author)) {
             password = guildConfig.password;
