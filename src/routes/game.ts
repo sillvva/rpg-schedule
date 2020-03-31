@@ -197,7 +197,7 @@ export default (options: GameRouteOptions) => {
                   data.errors.dm = err.message;
                 }
                 else {
-                  data.errors.other = err.message;
+                  data.errors.other = err.message || err;
                 }
                 res.render("game", data);
               });
