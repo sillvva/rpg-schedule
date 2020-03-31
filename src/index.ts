@@ -12,6 +12,7 @@ import config from "./models/config";
 import discord from "./processes/discord";
 import { socket } from "./processes/socket";
 
+import apiRoutes from "./routes/api";
 import initRoutes from "./routes/init";
 import gameRoutes from "./routes/game";
 import infoRoutes from "./routes/info";
@@ -130,6 +131,7 @@ else {
   /**
    * Routes
    */
+  app.use(apiRoutes({ client: client }));
   app.use(rssRoutes({ client: client }));
   app.use(loginRoutes());
   app.use(initRoutes({ client: client }));
