@@ -57,7 +57,7 @@ export class GuildConfig implements GuildConfigDataModel {
     });
   }
 
-  async save(data: GuildConfigModel) {
+  async save(data: GuildConfigModel = {}) {
     if (!connection()) throw new Error("No database connection");
     if (!data.guild && !this.guild) throw new Error("Guild ID not specified");
     const config: GuildConfigDataModel = this.data;
