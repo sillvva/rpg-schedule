@@ -13,7 +13,7 @@ import db from "../db";
 
 const connection = db.connection;
 
-config.urls.login.path = "/test";
+// config.urls.login.path = "/test";
 
 interface APIRouteOptions {
   client: Client;

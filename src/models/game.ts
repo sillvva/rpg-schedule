@@ -358,7 +358,7 @@ export class Game implements GameModel {
         io().emit("game", { action: "updated", gameId: game._id, game: updatedGame });
       } catch (err) {
         aux.log('UpdateGameError:', err);
-        updated.modifiedCount = 0;
+        if (updated) updated.modifiedCount = 0;
       }
       const saved: GameSaveData = {
         _id: game._id,
