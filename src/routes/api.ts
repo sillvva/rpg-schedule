@@ -7,13 +7,10 @@ import cloneDeep from "lodash/cloneDeep";
 
 import { Game, GameMethod, RescheduleMode, GameWhen, MonthlyType } from "../models/game";
 import { GuildConfig } from "../models/guild-config";
+import { Session } from "../models/session";
 import config from "../models/config";
+import { io } from "../processes/socket";
 import aux from "../appaux";
-import db from "../db";
-
-const connection = db.connection;
-
-// config.urls.login.path = "/test";
 
 interface APIRouteOptions {
   client: Client;
@@ -24,24 +21,28 @@ export default (options: APIRouteOptions) => {
   const client = options.client;
 
   router.use("/api", async (req, res, next) => {
+    res.set("Access-Control-Allow-Origin", process.env.SITE_HOST);
+    res.set("Access-Control-Allow-Methods", `GET,POST`);
+    res.set("Access-Control-Allow-Headers", `authorization, accept, content-type`);
     try {
       const langs = req.app.locals.langs;
       const selectedLang = req.cookies.lang && langs.map(l => l.code).includes(req.cookies.lang) ? req.cookies.lang : "en";
 
-      req.app.locals.lang = merge(cloneDeep(langs.find((lang: any) => lang.code === "en")), cloneDeep(langs.find((lang: any) => lang.code === selectedLang)));
+      req.app.locals.lang = merge(cloneDeep(langs.find((lang: any) => lang && lang.code === "en")), cloneDeep(langs.find((lang: any) => lang && lang.code === selectedLang)));
 
       res.locals.lang = req.session.lang;
       // res.locals.urlPath = req._parsedOriginalUrl.pathname;
       res.locals.url = req.originalUrl;
       res.locals.env = process.env;
 
-      moment.locale(req.session.lang.code);
+      moment.locale(req.app.locals.lang.code);
 
       next();
     } catch (err) {
       res.json({
         status: "error",
-        token: req.session.status.access.access_token,
+        code: 1,
+        token: req.session.status && req.session.status.access.access_token,
         message: err.message || err
       });
     }
@@ -61,7 +62,7 @@ export default (options: APIRouteOptions) => {
           client_secret: process.env.CLIENT_SECRET,
           grant_type: "authorization_code",
           code: req.query.code,
-          redirect_uri: process.env.HOST + config.urls.login.path,
+          redirect_uri: `${process.env.SITE_HOST}/login`,
           scope: "identify guilds"
         }
       };
@@ -70,6 +71,7 @@ export default (options: APIRouteOptions) => {
         if (error || response.statusCode !== 200) {
           return res.json({
             status: "error",
+            code: 2,
             message: `Discord OAuth: ${response.statusCode}<br />${error}`,
             redirect: "/"
           });
@@ -83,24 +85,50 @@ export default (options: APIRouteOptions) => {
             lastRefreshed: moment().unix()
           }
         };
+
         req.session.status.access = token;
 
         fetchAccount(token, {
           client: client,
           guilds: true
         })
-          .then((result: any) => {
+          .then(async (result: any) => {
+            const storedSession = await Session.fetch(token);
+            if (storedSession) storedSession.delete();
+
+            const d = new Date();
+            d.setDate(d.getDate() + 14);
+            const session = new Session({
+              expires: d,
+              token: token.access_token,
+              session: {
+                status: {
+                  lastRefreshed: moment().unix(),
+                  access: {
+                    access_token: token.access_token,
+                    refresh_token: token.refresh_token,
+                    expires_in: token.expires_in,
+                    scope: token.scope,
+                    token_type: token.token_type
+                  }
+                }
+              }
+            });
+
+            await session.save();
+            aux.log(token.access_token)
+
             res.json({
               status: "success",
               token: token.access_token,
               account: result.account,
-              lang: req.app.locals.lang,
               redirect: req.session.redirect || config.urls.game.games.path
             });
           })
           .catch(err => {
             res.json({
               status: "error",
+              code: 3,
               message: err,
               redirect: "/"
             });
@@ -109,12 +137,14 @@ export default (options: APIRouteOptions) => {
     } else if (req.query.error) {
       res.json({
         status: "error",
+        code: 4,
         message: req.query.error,
         redirect: "/"
       });
     } else {
       res.json({
         status: "error",
+        code: 4,
         message: `OAuth2 code missing`,
         redirect: "/"
       });
@@ -122,6 +152,10 @@ export default (options: APIRouteOptions) => {
   });
 
   router.use("/auth-api", async (req, res, next) => {
+    res.set("Access-Control-Allow-Origin", process.env.SITE_HOST);
+    res.set("Access-Control-Allow-Methods", `GET,POST`);
+    res.set("Access-Control-Allow-Headers", `authorization, accept, content-type`);
+
     const langs = req.app.locals.langs;
     const selectedLang = req.cookies.lang && langs.map(l => l.code).includes(req.cookies.lang) ? req.cookies.lang : "en";
 
@@ -135,83 +169,106 @@ export default (options: APIRouteOptions) => {
     moment.locale(req.app.locals.lang.code);
 
     const bearer = (req.headers.authorization || "").replace("Bearer ", "").trim();
-    let access = req.session && req.session.status && req.session.status.access;
-    if (access.access_token == bearer) {
-      const storedSession = await connection()
-        .collection("sessions")
-        .findOne({ _id: req.session.id });
-      if (storedSession) {
-        req.session.status = storedSession.session.status;
-      }
 
-      if (req.session.status) {
-        access = req.session.status.access;
-        if (access.token_type) {
-          // Refresh token
-          const headers = {
-            "Content-Type": "application/x-www-form-urlencoded"
+    if (!bearer || bearer.length == 0) {
+      return res.json({
+        status: "ignore"
+      });
+    }
+    
+    const storedSession = await Session.fetch(bearer);
+    aux.log(storedSession, bearer)
+    if (storedSession) req.session.status = storedSession.session.status;
+    if (req.session.status) {
+      const access = req.session.status.access;
+      if (access.token_type) {
+        // Refresh token
+        const headers = {
+          "Content-Type": "application/x-www-form-urlencoded"
+        };
+
+        if (!req.session.status.lastRefreshed || req.session.status.lastRefreshed + 10*60 < moment().unix()) {
+          const requestData = {
+            url: "https://discordapp.com/api/v6/oauth2/token",
+            method: "POST",
+            headers: headers,
+            form: {
+              client_id: process.env.CLIENT_ID,
+              client_secret: process.env.CLIENT_SECRET,
+              grant_type: "refresh_token",
+              refresh_token: access.refresh_token,
+              redirect_uri: `${process.env.SITE_HOST}/login`,
+              scope: "identify guilds"
+            }
           };
 
-          if (!req.session.status.lastRefreshed || req.session.status.lastRefreshed + 300 < moment().unix()) {
-            request(
-              {
-                url: "https://discordapp.com/api/v6/oauth2/token",
-                method: "POST",
-                headers: headers,
-                form: {
-                  client_id: process.env.CLIENT_ID,
-                  client_secret: process.env.CLIENT_SECRET,
-                  grant_type: "refresh_token",
-                  refresh_token: access.refresh_token,
-                  redirect_uri: process.env.HOST + config.urls.login.path,
-                  scope: "identify guilds"
-                }
-              },
-              function(error, response, body) {
-                if (error || response.statusCode !== 200) {
-                  aux.log(error);
-                  if (response.statusCode == 400) res.redirect(config.urls.login.path);
-                  else res.render("error", { message: `Discord OAuth: ${response.statusCode}<br />${error}` });
-                  return;
-                }
+          request(requestData, async (error, response, body) => {
+            if (error || response.statusCode !== 200) {
+              aux.log(requestData);
+              res.json({
+                status: "error",
+                message: `Discord OAuth: ${response.statusCode}<br />${error}`,
+                redirect: "/"
+              });
+              return;
+            }
 
-                const token = JSON.parse(body);
-                req.session.status = {
-                  ...config.defaults.sessionStatus,
-                  ...req.session.status,
-                  ...{
-                    lastRefreshed: moment().unix()
-                  }
-                };
-                req.session.status.access = token;
-                delete req.session.redirect;
-                next();
+            const token = JSON.parse(body);
+            req.session.status = {
+              ...config.defaults.sessionStatus,
+              ...req.session.status,
+              ...{
+                lastRefreshed: moment().unix()
               }
-            );
-          } else {
+            };
+            req.session.status.access = token;
+
+            aux.log(storedSession && storedSession.token, token.access_token);
+
+            if (storedSession && storedSession.token != token.access_token) {
+              await storedSession.delete();
+
+              const d = new Date();
+              d.setDate(d.getDate() + 14);
+              const session = new Session({
+                expires: d,
+                token: token.access_token,
+                session: {
+                  status: {
+                    lastRefreshed: moment().unix(),
+                    access: {
+                      access_token: token.access_token,
+                      refresh_token: token.refresh_token,
+                      expires_in: token.expires_in,
+                      scope: token.scope,
+                      token_type: token.token_type
+                    }
+                  }
+                }
+              });
+
+              await session.save();
+            }
+
+            delete req.session.redirect;
             next();
-          }
-        } else {
-          res.json({
-            status: "error",
-            token: req.session.status.access.access_token,
-            message: "Missing or invalid session token (1)",
-            redirect: "/"
           });
+        } else {
+          next();
         }
       } else {
         res.json({
           status: "error",
-          token: req.session.status.access.access_token,
-          message: "Missing or invalid session token (2)",
+          token: req.session.status && req.session.status.access.access_token,
+          message: "Missing or invalid session token (1)",
           redirect: "/"
         });
       }
     } else {
       res.json({
         status: "error",
-        token: req.session.status.access.access_token,
-        message: "Missing or invalid session token (3)",
+        token: req.session.status && req.session.status.access.access_token,
+        message: "Missing or invalid session token (2)",
         redirect: "/"
       });
     }
@@ -389,10 +446,6 @@ export default (options: APIRouteOptions) => {
               locked: password ? true : false
             },
             password: password ? password : false,
-            // host: process.env.HOST,
-            // account: req.account,
-            // lang: req.lang.selected,
-            // langs: req.lang.list,
             enums: {
               GameMethod: GameMethod,
               GameWhen: GameWhen,
@@ -500,6 +553,7 @@ export default (options: APIRouteOptions) => {
               } catch (err) {
                 return res.json({
                   status: "error",
+                  token: req.session.status && req.session.status.access.access_token,
                   message: `You must be logged in to post a game to ${guild.name}.`,
                   redirect: "/"
                 });

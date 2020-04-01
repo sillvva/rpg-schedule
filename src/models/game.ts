@@ -355,7 +355,7 @@ export class Game implements GameModel {
         game._id = game._id.toString();
 
         const updatedGame = aux.objectChanges(prev, game);
-        io().emit("game", { action: "updated", gameId: game._id, game: updatedGame });
+        io().emit("game", { action: "updated", gameId: game._id, game: updatedGame, guildId: game.s });
       } catch (err) {
         aux.log('UpdateGameError:', err);
         if (updated) updated.modifiedCount = 0;
@@ -431,6 +431,9 @@ export class Game implements GameModel {
       else {
         aux.log(`GameMessageNotPostedError:\n`, game.s, `${msg}\n`, embed);
       }
+
+      io().emit("game", { action: "new", gameId: inserted.insertedId.toString(), guildId: game.s });
+
       const saved: GameSaveData = {
         _id: inserted.insertedId.toString(),
         message: message,
@@ -536,7 +539,7 @@ export class Game implements GameModel {
           await this.save();
         }
       }
-      io().emit("game", { action: "rescheduled", gameId: this._id, newGameId: newGame._id });
+      io().emit("game", { action: "rescheduled", gameId: this._id, newGameId: newGame._id, guildId: game.s });
     }
     return true;
   }
@@ -604,7 +607,7 @@ export class Game implements GameModel {
       }
     }
 
-    if (sendWS) io().emit("game", { action: "deleted", gameId: game._id });
+    if (sendWS) io().emit("game", { action: "deleted", gameId: game._id, guildId: game.s });
     return result;
   }
 
