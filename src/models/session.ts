@@ -8,7 +8,7 @@ export interface SessionModel {
   expires: Date;
   token: String;
   session: {
-    status: {
+    api: {
       lastRefreshed: Number;
       access: {
         access_token: String;
@@ -30,7 +30,7 @@ export class Session implements SessionDataModel {
   expires: Date = new Date();
   token: String = "";
   session = {
-    status: {
+    api: {
       lastRefreshed: 0,
       access: {
         access_token: "",

@@ -9,7 +9,6 @@ import { Game, GameMethod, RescheduleMode, GameWhen, MonthlyType } from "../mode
 import { GuildConfig } from "../models/guild-config";
 import { Session } from "../models/session";
 import config from "../models/config";
-import { io } from "../processes/socket";
 import aux from "../appaux";
 
 interface APIRouteOptions {
@@ -42,7 +41,7 @@ export default (options: APIRouteOptions) => {
       res.json({
         status: "error",
         code: 1,
-        token: req.session.status && req.session.status.access.access_token,
+        token: req.session.api && req.session.api.access.access_token,
         message: err.message || err
       });
     }
@@ -78,15 +77,15 @@ export default (options: APIRouteOptions) => {
         }
 
         const token = JSON.parse(body);
-        req.session.status = {
+        req.session.api = {
           ...config.defaults.sessionStatus,
-          ...req.session.status,
+          ...req.session.api,
           ...{
             lastRefreshed: moment().unix()
           }
         };
 
-        req.session.status.access = token;
+        req.session.api.access = token;
 
         fetchAccount(token, {
           client: client,
@@ -102,7 +101,7 @@ export default (options: APIRouteOptions) => {
               expires: d,
               token: token.access_token,
               session: {
-                status: {
+                api: {
                   lastRefreshed: moment().unix(),
                   access: {
                     access_token: token.access_token,
@@ -116,13 +115,13 @@ export default (options: APIRouteOptions) => {
             });
 
             await session.save();
-            aux.log(token.access_token)
+            aux.log("success", token.access_token);
 
             res.json({
               status: "success",
               token: token.access_token,
               account: result.account,
-              redirect: req.session.redirect || config.urls.game.games.path
+              redirect: config.urls.game.games.path
             });
           })
           .catch(err => {
@@ -162,7 +161,6 @@ export default (options: APIRouteOptions) => {
     req.app.locals.lang = merge(cloneDeep(langs.find((lang: any) => lang.code === "en")), cloneDeep(langs.find((lang: any) => lang.code === selectedLang)));
 
     res.locals.lang = req.app.locals.lang;
-    // res.locals.urlPath = req._parsedOriginalUrl.pathname;
     res.locals.url = req.originalUrl;
     res.locals.env = process.env;
 
@@ -175,19 +173,19 @@ export default (options: APIRouteOptions) => {
         status: "ignore"
       });
     }
-    
+
     const storedSession = await Session.fetch(bearer);
-    aux.log(storedSession, bearer)
-    if (storedSession) req.session.status = storedSession.session.status;
-    if (req.session.status) {
-      const access = req.session.status.access;
+    aux.log(storedSession, bearer);
+    if (storedSession) req.session.api = storedSession.session.api;
+    if (req.session.api) {
+      const access = req.session.api.access;
       if (access.token_type) {
         // Refresh token
         const headers = {
           "Content-Type": "application/x-www-form-urlencoded"
         };
 
-        if (!req.session.status.lastRefreshed || req.session.status.lastRefreshed + 10*60 < moment().unix()) {
+        // if (!req.session.api.lastRefreshed || req.session.api.lastRefreshed + 10 * 60 < moment().unix()) {
           const requestData = {
             url: "https://discordapp.com/api/v6/oauth2/token",
             method: "POST",
@@ -204,7 +202,6 @@ export default (options: APIRouteOptions) => {
 
           request(requestData, async (error, response, body) => {
             if (error || response.statusCode !== 200) {
-              aux.log(requestData);
               res.json({
                 status: "error",
                 message: `Discord OAuth: ${response.statusCode}<br />${error}`,
@@ -214,14 +211,14 @@ export default (options: APIRouteOptions) => {
             }
 
             const token = JSON.parse(body);
-            req.session.status = {
+            req.session.api = {
               ...config.defaults.sessionStatus,
-              ...req.session.status,
+              ...req.session.api,
               ...{
                 lastRefreshed: moment().unix()
               }
             };
-            req.session.status.access = token;
+            req.session.api.access = token;
 
             aux.log(storedSession && storedSession.token, token.access_token);
 
@@ -234,7 +231,7 @@ export default (options: APIRouteOptions) => {
                 expires: d,
                 token: token.access_token,
                 session: {
-                  status: {
+                  api: {
                     lastRefreshed: moment().unix(),
                     access: {
                       access_token: token.access_token,
@@ -253,13 +250,13 @@ export default (options: APIRouteOptions) => {
             delete req.session.redirect;
             next();
           });
-        } else {
-          next();
-        }
+        // } else {
+        //   next();
+        // }
       } else {
         res.json({
           status: "error",
-          token: req.session.status && req.session.status.access.access_token,
+          token: req.session.api && req.session.api.access.access_token,
           message: "Missing or invalid session token (1)",
           redirect: "/"
         });
@@ -267,7 +264,7 @@ export default (options: APIRouteOptions) => {
     } else {
       res.json({
         status: "error",
-        token: req.session.status && req.session.status.access.access_token,
+        token: req.session.api && req.session.api.access.access_token,
         message: "Missing or invalid session token (2)",
         redirect: "/"
       });
@@ -276,36 +273,36 @@ export default (options: APIRouteOptions) => {
 
   router.get("/auth-api/user", async (req, res, next) => {
     try {
-      fetchAccount(req.session.status.access, {
+      fetchAccount(req.session.api.access, {
         client: client
       })
         .then((result: any) => {
           res.json({
             status: "success",
-            token: req.session.status.access.access_token,
+            token: req.session.api.access.access_token,
             account: result.account
           });
         })
         .catch(err => {
           res.json({
             status: "error",
-            token: req.session.status.access.access_token,
-            message: err,
+            token: req.session.api.access.access_token,
+            message: `UserAuthError (1)`,
             redirect: "/"
           });
         });
     } catch (err) {
       res.json({
         status: "error",
-        token: req.session.status.access.access_token,
-        message: err
+        token: req.session.api.access.access_token,
+        message: `UserAuthError (2)`
       });
     }
   });
 
   router.get("/auth-api/guilds", async (req, res, next) => {
     try {
-      fetchAccount(req.session.status.access, {
+      fetchAccount(req.session.api.access, {
         client: client,
         guilds: true,
         games: req.query.games,
@@ -314,14 +311,14 @@ export default (options: APIRouteOptions) => {
         .then((result: any) => {
           res.json({
             status: "success",
-            token: req.session.status.access.access_token,
+            token: req.session.api.access.access_token,
             guilds: result.account.guilds
           });
         })
         .catch(err => {
           res.json({
             status: "error",
-            token: req.session.status.access.access_token,
+            token: req.session.api.access.access_token,
             message: `GuildsAPI: FetchAccountError: ${err}`,
             redirect: "/"
           });
@@ -329,7 +326,7 @@ export default (options: APIRouteOptions) => {
     } catch (err) {
       res.json({
         status: "error",
-        token: req.session.status.access.access_token,
+        token: req.session.api.access.access_token,
         message: `GuildsAPI: ${err}`
       });
     }
@@ -337,7 +334,7 @@ export default (options: APIRouteOptions) => {
 
   router.post("/auth-api/guild-config", async (req, res, next) => {
     try {
-      fetchAccount(req.session.status.access, {
+      fetchAccount(req.session.api.access, {
         client: client
       })
         .then(async (result: any) => {
@@ -357,7 +354,7 @@ export default (options: APIRouteOptions) => {
 
           res.json({
             status: saveResult.modifiedCount > 0 ? "success" : "error",
-            token: req.session.status.access.access_token,
+            token: req.session.api.access.access_token,
             guildConfig: guildConfig.data,
             lang: lang
           });
@@ -365,14 +362,14 @@ export default (options: APIRouteOptions) => {
         .catch(err => {
           res.json({
             status: "error",
-            token: req.session.status.access.access_token,
+            token: req.session.api.access.access_token,
             message: err
           });
         });
     } catch (err) {
       res.json({
         status: "error",
-        token: req.session.status.access.access_token,
+        token: req.session.api.access.access_token,
         message: `SaveGuildConfigError: ${err.message || err}`
       });
     }
@@ -480,7 +477,7 @@ export default (options: APIRouteOptions) => {
 
           res.json({
             status: "success",
-            token: req.session.status.access.access_token,
+            token: req.session.api.access.access_token,
             game: data
             // lang: req.session.lang
           });
@@ -493,7 +490,7 @@ export default (options: APIRouteOptions) => {
     } catch (err) {
       res.json({
         status: "error",
-        token: req.session.status.access.access_token,
+        token: req.session.api.access.access_token,
         message: err.message || err,
         redirect: "/"
       });
@@ -501,7 +498,7 @@ export default (options: APIRouteOptions) => {
   });
 
   router.post("/api/game", async (req, res, next) => {
-    const token = req.session.status && req.session.status.access && req.session.status.access.access_token;
+    const token = req.session.api && req.session.api.access && req.session.api.access.access_token;
 
     try {
       const userId = (req.headers.authorization || "0").replace("Bearer ", "").trim();
@@ -553,7 +550,7 @@ export default (options: APIRouteOptions) => {
               } catch (err) {
                 return res.json({
                   status: "error",
-                  token: req.session.status && req.session.status.access.access_token,
+                  token: req.session.api && req.session.api.access.access_token,
                   message: `You must be logged in to post a game to ${guild.name}.`,
                   redirect: "/"
                 });
@@ -724,178 +721,178 @@ const fetchAccount = async (token: any, options: AccountOptions) => {
   const client = options.client;
 
   return await new Promise((resolve, reject) => {
-    request(
-      {
-        url: "https://discordapp.com/api/users/@me",
-        method: "GET",
-        headers: {
-          authorization: `${token.token_type} ${token.access_token}`
-        }
-      },
-      async (error, response, body) => {
-        try {
-          if (!error && response.statusCode === 200) {
-            const response = JSON.parse(body);
-            const { username, discriminator, id, avatar } = response;
-            const tag = `${username}#${discriminator}`;
+    const requestData = {
+      url: "https://discordapp.com/api/users/@me",
+      method: "GET",
+      headers: {
+        authorization: `${token.token_type} ${token.access_token}`
+      }
+    };
 
-            const account = {
-              user: {
-                ...response,
-                ...{
-                  tag: tag,
-                  avatarURL: `https://cdn.discordapp.com/avatars/${id}/${avatar}.png?size=128`
+    request(requestData, async (error, response, body) => {
+      try {
+        // console.log(requestData, response.statusCode);
+        if (!error && response.statusCode === 200) {
+          const response = JSON.parse(body);
+          const { username, discriminator, id, avatar } = response;
+          const tag = `${username}#${discriminator}`;
+
+          const account = {
+            user: {
+              ...response,
+              ...{
+                tag: tag,
+                avatarURL: `https://cdn.discordapp.com/avatars/${id}/${avatar}.png?size=128`
+              }
+            },
+            guilds: []
+          };
+
+          if (options.guilds) {
+            client.guilds.cache.forEach(guild => {
+              guild.members.cache.forEach(member => {
+                if (member.id === id) {
+                  account.guilds.push({
+                    id: guild.id,
+                    name: guild.name,
+                    icon: guild.iconURL,
+                    permission: false,
+                    isAdmin: false,
+                    member: member,
+                    channels: guild.channels,
+                    announcementChannels: [],
+                    config: new GuildConfig({ guild: guild.id }),
+                    games: []
+                  });
                 }
-              },
-              guilds: []
-            };
-
-            if (options.guilds) {
-              client.guilds.cache.forEach(guild => {
-                guild.members.cache.forEach(member => {
-                  if (member.id === id) {
-                    account.guilds.push({
-                      id: guild.id,
-                      name: guild.name,
-                      icon: guild.iconURL,
-                      permission: false,
-                      isAdmin: false,
-                      member: member,
-                      channels: guild.channels,
-                      announcementChannels: [],
-                      config: new GuildConfig({ guild: guild.id }),
-                      games: []
-                    });
-                  }
-                });
-
-                account.guilds = account.guilds.filter(guild => !guild.config.hidden || config.author == tag);
               });
 
-              const guildConfigs = await GuildConfig.fetchAllBy({
-                guild: {
+              account.guilds = account.guilds.filter(guild => !guild.config.hidden || config.author == tag);
+            });
+
+            const guildConfigs = await GuildConfig.fetchAllBy({
+              guild: {
+                $in: account.guilds.reduce((i, g) => {
+                  i.push(g.id);
+                  return i;
+                }, [])
+              }
+            });
+
+            account.guilds = account.guilds.map(guild => {
+              const guildConfig = guildConfigs.find(gc => gc.guild === guild.id) || new GuildConfig({ guild: guild.id });
+              const member: GuildMember = guild.member;
+
+              const textChannels = <TextChannel[]>guild.channels.cache.array().filter(c => c instanceof TextChannel);
+              const channels = guildConfig.channels.filter(c => guild.channels.cache.array().find(gc => gc.id == c)).map(c => guild.channels.cache.get(c));
+              if (channels.length === 0 && textChannels.length > 0) channels.push(textChannels[0]);
+              guild.announcementChannels = channels;
+
+              guild.permission = guildConfig.role ? !!member.roles.cache.find(r => r.name.toLowerCase().trim() === (guildConfig.role || "").toLowerCase().trim()) : true;
+              guild.isAdmin =
+                member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) ||
+                member.roles.cache.find(r => r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim());
+              guild.config = guildConfig;
+              return guild;
+            });
+
+            if (options.page === GamesPages.server) {
+              account.guilds = account.guilds.filter(g => account.guilds.find(s => s.id === g.id && (s.isAdmin || config.author == tag)));
+            }
+
+            if (options.games) {
+              const gameOptions: any = {
+                s: {
                   $in: account.guilds.reduce((i, g) => {
                     i.push(g.id);
                     return i;
                   }, [])
                 }
-              });
+              };
 
-              account.guilds = account.guilds.map(guild => {
-                const guildConfig = guildConfigs.find(gc => gc.guild === guild.id) || new GuildConfig({ guild: guild.id });
-                const member: GuildMember = guild.member;
-
-                const textChannels = <TextChannel[]>guild.channels.cache.array().filter(c => c instanceof TextChannel);
-                const channels = guildConfig.channels.filter(c => guild.channels.cache.array().find(gc => gc.id == c)).map(c => guild.channels.cache.get(c));
-                if (channels.length === 0 && textChannels.length > 0) channels.push(textChannels[0]);
-                guild.announcementChannels = channels;
-
-                guild.permission = guildConfig.role ? !!member.roles.cache.find(r => r.name.toLowerCase().trim() === (guildConfig.role || "").toLowerCase().trim()) : true;
-                guild.isAdmin =
-                  member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) ||
-                  member.roles.cache.find(r => r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim());
-                guild.config = guildConfig;
-                return guild;
-              });
-
-              if (options.page === GamesPages.server) {
-                account.guilds = account.guilds.filter(g => account.guilds.find(s => s.id === g.id && (s.isAdmin || config.author == tag)));
+              if (options.page === GamesPages.myGames) {
+                gameOptions.$or = [
+                  {
+                    dm: tag
+                  },
+                  {
+                    reserved: {
+                      $regex: tag.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&")
+                    }
+                  }
+                ];
               }
 
-              if (options.games) {
-                const gameOptions: any = {
-                  s: {
-                    $in: account.guilds.reduce((i, g) => {
-                      i.push(g.id);
-                      return i;
-                    }, [])
-                  }
+              if (options.page === GamesPages.upcoming) {
+                gameOptions.timestamp = {
+                  $gt: new Date().getTime()
+                };
+                if (tag !== config.author) {
+                  gameOptions.dm = {
+                    $ne: tag
+                  };
+                }
+              }
+
+              const games: any[] = await Game.fetchAllBy(gameOptions);
+              games.forEach(game => {
+                if (!game.discordGuild) return;
+
+                const date = Game.ISOGameDate(game);
+                game.moment = {
+                  raw: `${game.date} ${game.time} UTC${game.timezone < 0 ? "-" : "+"}${Math.abs(game.timezone)}`,
+                  isoutc: `${new Date(`${game.date} ${game.time} UTC${game.timezone < 0 ? "-" : "+"}${Math.abs(game.timezone)}`)
+                    .toISOString()
+                    .replace(/[^0-9T]/gi, "")
+                    .slice(0, 13)}00Z`,
+                  iso: date,
+                  date: moment(date)
+                    .utcOffset(parseInt(game.timezone))
+                    .format(config.formats.dateLong),
+                  calendar: moment(date)
+                    .utcOffset(parseInt(game.timezone))
+                    .calendar(),
+                  from: moment(date)
+                    .utcOffset(parseInt(game.timezone))
+                    .fromNow()
                 };
 
-                if (options.page === GamesPages.myGames) {
-                  gameOptions.$or = [
-                    {
-                      dm: tag
-                    },
-                    {
-                      reserved: {
-                        $regex: tag.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&")
-                      }
-                    }
-                  ];
-                }
+                game.slot = game.reserved.split(/\r?\n/).findIndex(t => t.trim().replace("@", "") === tag) + 1;
+                game.signedup = game.slot > 0 && game.slot <= parseInt(game.players);
+                game.waitlisted = game.slot > parseInt(game.players);
 
-                if (options.page === GamesPages.upcoming) {
-                  gameOptions.timestamp = {
-                    $gt: new Date().getTime()
-                  };
-                  if (tag !== config.author) {
-                    gameOptions.dm = {
-                      $ne: tag
-                    };
-                  }
-                }
-
-                const games: any[] = await Game.fetchAllBy(gameOptions);
-                games.forEach(game => {
-                  if (!game.discordGuild) return;
-
-                  const date = Game.ISOGameDate(game);
-                  game.moment = {
-                    raw: `${game.date} ${game.time} UTC${game.timezone < 0 ? "-" : "+"}${Math.abs(game.timezone)}`,
-                    isoutc: `${new Date(`${game.date} ${game.time} UTC${game.timezone < 0 ? "-" : "+"}${Math.abs(game.timezone)}`)
-                      .toISOString()
-                      .replace(/[^0-9T]/gi, "")
-                      .slice(0, 13)}00Z`,
-                    iso: date,
-                    date: moment(date)
-                      .utcOffset(parseInt(game.timezone))
-                      .format(config.formats.dateLong),
-                    calendar: moment(date)
-                      .utcOffset(parseInt(game.timezone))
-                      .calendar(),
-                    from: moment(date)
-                      .utcOffset(parseInt(game.timezone))
-                      .fromNow()
-                  };
-
-                  game.slot = game.reserved.split(/\r?\n/).findIndex(t => t.trim().replace("@", "") === tag) + 1;
-                  game.signedup = game.slot > 0 && game.slot <= parseInt(game.players);
-                  game.waitlisted = game.slot > parseInt(game.players);
-
-                  const gi = account.guilds.findIndex(g => g.id === game.s);
-                  account.guilds[gi].games.push(game);
-                });
-              }
-
-              account.guilds = account.guilds.map(guild => {
-                guild.games.sort((a, b) => {
-                  return a.timestamp < b.timestamp ? -1 : 1;
-                });
-                return guild;
+                const gi = account.guilds.findIndex(g => g.id === game.s);
+                account.guilds[gi].games.push(game);
               });
-
-              if (options.page === GamesPages.upcoming || options.page === GamesPages.myGames) {
-                account.guilds.sort((a, b) => {
-                  if (a.games.length === 0 && b.games.length === 0) return a.name < b.name ? -1 : 1;
-                  if (a.games.length === 0) return 1;
-                  if (b.games.length === 0) return -1;
-
-                  return a.games[0].timestamp < b.games[0].timestamp ? -1 : 1;
-                });
-              }
             }
 
-            resolve({
-              status: "success",
-              account: account
+            account.guilds = account.guilds.map(guild => {
+              guild.games.sort((a, b) => {
+                return a.timestamp < b.timestamp ? -1 : 1;
+              });
+              return guild;
             });
+
+            if (options.page === GamesPages.upcoming || options.page === GamesPages.myGames) {
+              account.guilds.sort((a, b) => {
+                if (a.games.length === 0 && b.games.length === 0) return a.name < b.name ? -1 : 1;
+                if (a.games.length === 0) return 1;
+                if (b.games.length === 0) return -1;
+
+                return a.games[0].timestamp < b.games[0].timestamp ? -1 : 1;
+              });
+            }
           }
-          throw new Error(error);
-        } catch (err) {
-          reject(err);
+
+          resolve({
+            status: "success",
+            account: account
+          });
         }
+        throw new Error(error);
+      } catch (err) {
+        reject(err);
       }
-    );
+    });
   });
 };
