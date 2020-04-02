@@ -9,13 +9,12 @@ export default () => {
 
   router.use(config.urls.login.path, (req, res, next) => {
     if (req.query.code) {
-      const headers = {
-        "Content-Type": "application/x-www-form-urlencoded"
-      };
       const requestData = {
         url: "https://discordapp.com/api/v6/oauth2/token",
         method: "POST",
-        headers: headers,
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
         form: {
           client_id: process.env.CLIENT_ID,
           client_secret: process.env.CLIENT_SECRET,
@@ -28,8 +27,8 @@ export default () => {
 
       request(requestData, function(error, response, body) {
         if (error || response.statusCode !== 200) {
-          console.log(requestData);
-          return res.render("error", { message: `Discord OAuth: ${response.statusCode}<br />${error}` });
+          console.log(requestData, response.statusCode);
+          return res.render("error", { message: `Discord OAuth: ${response.statusCode}${error && `<br />${error}`}` });
         }
 
         const token = JSON.parse(body);
