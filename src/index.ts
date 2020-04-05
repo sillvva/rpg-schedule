@@ -25,6 +25,7 @@ import rssRoutes from "./routes/rss";
 const app = express();
 
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, "..", "public")));
 app.use(cookieParser());
 
@@ -66,7 +67,7 @@ else {
   });
   app.use(
     session({
-      secret: process.env.TOKEN,
+      secret: `${process.env.HOST}/${process.env.TOKEN}`,
       resave: false,
       saveUninitialized: false,
       store: store

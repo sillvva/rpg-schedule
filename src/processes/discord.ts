@@ -1,5 +1,5 @@
 import discord, { TextChannel, Client, Message, UserResolvable, User } from "discord.js";
-import { DeleteWriteOpResultObject, FilterQuery, ObjectID } from "mongodb";
+import { DeleteWriteOpResultObject, FilterQuery } from "mongodb";
 import { Express } from "express";
 
 import { io } from "../processes/socket";
