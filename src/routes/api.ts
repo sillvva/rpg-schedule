@@ -5,10 +5,12 @@ import request from "request";
 import merge from "lodash/merge";
 import cloneDeep from "lodash/cloneDeep";
 
+import { io } from "../processes/socket";
 import { Game, GameMethod, RescheduleMode, GameWhen, MonthlyType } from "../models/game";
 import { GuildConfig } from "../models/guild-config";
 import { Session } from "../models/session";
 import config from "../models/config";
+import { SiteSettings } from "../models/site-settings";
 import aux from "../appaux";
 
 interface APIRouteOptions {
@@ -23,6 +25,11 @@ export default (options: APIRouteOptions) => {
     res.set("Access-Control-Allow-Origin", process.env.SITE_HOST);
     res.set("Access-Control-Allow-Methods", `GET,POST`);
     res.set("Access-Control-Allow-Headers", `authorization, accept, content-type`);
+
+    const siteSettings = await SiteSettings.fetch(process.env.SITE);
+
+    req.app.locals.settings = siteSettings.data;
+
     try {
       const langs = req.app.locals.langs;
       const selectedLang = req.cookies.lang && langs.map(l => l.code).includes(req.cookies.lang) ? req.cookies.lang : "en";
@@ -143,7 +150,7 @@ export default (options: APIRouteOptions) => {
     } else {
       res.json({
         status: "error",
-        code: 4,
+        code: 5,
         message: `OAuth2 code missing`,
         redirect: "/"
       });
@@ -152,7 +159,7 @@ export default (options: APIRouteOptions) => {
 
   router.use("/auth-api", async (req, res, next) => {
     res.set("Access-Control-Allow-Origin", process.env.SITE_HOST);
-    res.set("Access-Control-Allow-Methods", `GET,POST`);
+    res.set("Access-Control-Allow-Methods", `GET,POST,OPTIONS`);
     res.set("Access-Control-Allow-Headers", `authorization, accept, content-type`);
 
     const langs = req.app.locals.langs;
@@ -175,98 +182,33 @@ export default (options: APIRouteOptions) => {
     }
 
     const storedSession = await Session.fetch(bearer);
-    aux.log(storedSession, bearer);
-    if (storedSession) req.session.api = storedSession.session.api;
-    if (req.session.api) {
-      const access = req.session.api.access;
-      if (access.token_type) {
-        // Refresh token
-        const headers = {
-          "Content-Type": "application/x-www-form-urlencoded"
-        };
-
-        // if (!req.session.api.lastRefreshed || req.session.api.lastRefreshed + 10 * 60 < moment().unix()) {
-          const requestData = {
-            url: "https://discordapp.com/api/v6/oauth2/token",
-            method: "POST",
-            headers: headers,
-            form: {
-              client_id: process.env.CLIENT_ID,
-              client_secret: process.env.CLIENT_SECRET,
-              grant_type: "refresh_token",
-              refresh_token: access.refresh_token,
-              redirect_uri: `${process.env.SITE_HOST}/login`,
-              scope: "identify guilds"
-            }
-          };
-
-          request(requestData, async (error, response, body) => {
-            if (error || response.statusCode !== 200) {
-              res.json({
-                status: "error",
-                message: `Discord OAuth: ${response.statusCode}<br />${error}`,
-                redirect: "/"
-              });
-              return;
-            }
-
-            const token = JSON.parse(body);
-            req.session.api = {
-              ...config.defaults.sessionStatus,
-              ...req.session.api,
-              ...{
-                lastRefreshed: moment().unix()
-              }
-            };
-            req.session.api.access = token;
-
-            aux.log(storedSession && storedSession.token, token.access_token);
-
-            if (storedSession && storedSession.token != token.access_token) {
-              await storedSession.delete();
-
-              const d = new Date();
-              d.setDate(d.getDate() + 14);
-              const session = new Session({
-                expires: d,
-                token: token.access_token,
-                session: {
-                  api: {
-                    lastRefreshed: moment().unix(),
-                    access: {
-                      access_token: token.access_token,
-                      refresh_token: token.refresh_token,
-                      expires_in: token.expires_in,
-                      scope: token.scope,
-                      token_type: token.token_type
-                    }
-                  }
-                }
-              });
-
-              await session.save();
-            }
-
-            delete req.session.redirect;
+    // aux.log(storedSession, bearer);
+    if (storedSession) {
+      req.session.api = storedSession.session.api;
+      // console.log((moment().unix() - req.session.api.lastRefreshed) / (60 * 60))
+      if ((moment().unix() - req.session.api.lastRefreshed) / (60 * 60) >= 12) {
+        refreshToken(req.session.api.access)
+          .then(newToken => {
+            // console.log(newToken);
+            req.session.api.access = newToken;
             next();
+          })
+          .catch(err => {
+            res.json({
+              status: "error",
+              message: err.message || err,
+              code: 19
+            });
           });
-        // } else {
-        //   next();
-        // }
-      } else {
-        res.json({
-          status: "error",
-          token: req.session.api && req.session.api.access.access_token,
-          message: "Missing or invalid session token (1)",
-          redirect: "/"
-        });
+      }
+      else {
+        next();
       }
     } else {
       res.json({
         status: "error",
-        token: req.session.api && req.session.api.access.access_token,
-        message: "Missing or invalid session token (2)",
-        redirect: "/"
+        message: "Invalid Session",
+        code: 18
       });
     }
   });
@@ -287,15 +229,16 @@ export default (options: APIRouteOptions) => {
           res.json({
             status: "error",
             token: req.session.api.access.access_token,
-            message: `UserAuthError (1)`,
-            redirect: "/"
+            message: `UserAuthError`,
+            code: 9
           });
         });
     } catch (err) {
       res.json({
         status: "error",
         token: req.session.api.access.access_token,
-        message: `UserAuthError (2)`
+        code: 10,
+        message: `UserAuthError`
       });
     }
   });
@@ -320,14 +263,15 @@ export default (options: APIRouteOptions) => {
             status: "error",
             token: req.session.api.access.access_token,
             message: `GuildsAPI: FetchAccountError: ${err}`,
-            redirect: "/"
+            code: 11
           });
         });
     } catch (err) {
       res.json({
         status: "error",
         token: req.session.api.access.access_token,
-        message: `GuildsAPI: ${err}`
+        message: `GuildsAPI: ${err}`,
+        code: 12
       });
     }
   });
@@ -363,14 +307,16 @@ export default (options: APIRouteOptions) => {
           res.json({
             status: "error",
             token: req.session.api.access.access_token,
-            message: err
+            message: err,
+            code: 13
           });
         });
     } catch (err) {
       res.json({
         status: "error",
         token: req.session.api.access.access_token,
-        message: `SaveGuildConfigError: ${err.message || err}`
+        message: `SaveGuildConfigError: ${err.message || err}`,
+        code: 14
       });
     }
   });
@@ -407,7 +353,7 @@ export default (options: APIRouteOptions) => {
           }
 
           let data: any = {
-            title: req.query.g ? req.session.lang.buttons.EDIT_GAME : req.session.lang.buttons.NEW_GAME,
+            title: req.query.g ? req.app.locals.lang.buttons.EDIT_GAME : req.app.locals.lang.buttons.NEW_GAME,
             guild: guild.name,
             channels: channels,
             s: server,
@@ -429,7 +375,7 @@ export default (options: APIRouteOptions) => {
             reminder: "0",
             hideDate: false,
             gameImage: "",
-            frequency: "",
+            frequency: "0",
             monthlyType: MonthlyType.WEEKDAY,
             weekdays: [false, false, false, false, false, false, false],
             clearReservedOnRepeat: false,
@@ -477,9 +423,8 @@ export default (options: APIRouteOptions) => {
 
           res.json({
             status: "success",
-            token: req.session.api.access.access_token,
+            token: req.session.api && req.session.api.access.access_token,
             game: data
-            // lang: req.session.lang
           });
         } else {
           throw new Error("Discord server not found");
@@ -490,9 +435,10 @@ export default (options: APIRouteOptions) => {
     } catch (err) {
       res.json({
         status: "error",
-        token: req.session.api.access.access_token,
+        token: req.session.api && req.session.api.access.access_token,
         message: err.message || err,
-        redirect: "/"
+        redirect: "/",
+        code: 15
       });
     }
   });
@@ -536,11 +482,12 @@ export default (options: APIRouteOptions) => {
           const guildConfig = await GuildConfig.fetch(guild.id);
           const guildMembers = await guild.members.fetch();
           const member = guildMembers.array().find(m => m.id == userId);
-          if (!member) throw new Error("You are not a member of this server");
+          if (!member && token && req.query.s) throw new Error("You are not a member of this server");
           const isAdmin =
-            member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) ||
-            member.roles.cache.find(r => r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim());
-          if (guildConfig && member.user.tag !== config.author) {
+            member &&
+            (member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) ||
+              member.roles.cache.find(r => r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim()));
+          if (guildConfig && member && member.user.tag !== config.author) {
             password = guildConfig.password;
             // A role is required to post on the server
             if (guildConfig.role && !isAdmin) {
@@ -550,9 +497,9 @@ export default (options: APIRouteOptions) => {
               } catch (err) {
                 return res.json({
                   status: "error",
-                  token: req.session.api && req.session.api.access.access_token,
+                  token: token,
                   message: `You must be logged in to post a game to ${guild.name}.`,
-                  redirect: "/"
+                  code: 16
                 });
               }
               if (member) {
@@ -573,7 +520,7 @@ export default (options: APIRouteOptions) => {
           }
 
           let data: any = {
-            title: req.query.g ? req.app.locals.lang.buttons.EDIT_GAME : req.app.locals.buttons.NEW_GAME,
+            title: req.query.g ? req.app.locals.lang.buttons.EDIT_GAME : req.app.locals.lang.buttons.NEW_GAME,
             guild: guild.name,
             channels: channels,
             s: server,
@@ -644,7 +591,8 @@ export default (options: APIRouteOptions) => {
 
           if (req.method === "POST") {
             Object.entries(req.body).forEach(([key, value]) => {
-              game[key] = value;
+              if (key === "_id") return;
+              if (game[key]) game[key] = value;
             });
 
             for (let i = 0; i < 7; i++) {
@@ -674,14 +622,17 @@ export default (options: APIRouteOptions) => {
                 res.json({
                   status: "error",
                   token: token,
-                  game: data
+                  game: data,
+                  message: err.message,
+                  code: 17
                 });
               });
           } else {
             res.json({
-              status: "error",
+              status: "success",
               token: token,
-              game: data
+              game: data,
+              _id: data._id
             });
           }
         } else {
@@ -695,7 +646,123 @@ export default (options: APIRouteOptions) => {
         status: "error",
         token: token,
         redirect: "/error",
-        error: err.message || err
+        message: err.message || err
+      });
+    }
+  });
+
+  router.get("/api/delete-game", async (req, res, next) => {
+    try {
+      if (req.query.g) {
+        const game = await Game.fetch(req.query.g);
+        if (!game) throw new Error("Game not found");
+        game.delete({ sendWS: false }).then(response => {
+          res.json({
+            status: "success"
+          });
+        });
+      } else {
+        throw new Error("Game not found");
+      }
+    } catch (err) {
+      res.json({
+        status: "error",
+        message: err.message || err
+      });
+      res.render("error", { message: "routes/game.ts:2:<br />" + err });
+    }
+  });
+
+  router.post("/auth-api/rsvp", async (req, res, next) => {
+    const token = req.session.api && req.session.api.access.access_token;
+    try {
+      if (req.body.g) {
+        const game = await Game.fetch(req.body.g);
+        if (game) {
+          fetchAccount(req.session.api.access, {
+            client: client
+          })
+            .then(async (result: any) => {
+              const reserved = game.reserved.split(/\r?\n/);
+              if (reserved[0] == "") reserved.splice(0, 1);
+              if (reserved.find(t => t === result.account.user.tag)) {
+                reserved.splice(reserved.indexOf(result.account.user.tag), 1);
+              } else {
+                reserved.push(result.account.user.tag);
+              }
+
+              game.reserved = reserved.join("\n");
+
+              await game.save();
+
+              res.json({
+                status: "success",
+                token: token,
+                gameId: game._id,
+                reserved: reserved
+              });
+            })
+            .catch(err => {
+              res.json({
+                status: "error",
+                token: token,
+                message: `UserAuthError (1)`,
+                redirect: "/",
+                code: 19
+              });
+            });
+        } else {
+          throw new Error("Game not found (1)");
+        }
+      } else {
+        throw new Error("Game not found (2)");
+      }
+    } catch (err) {
+      res.json({
+        status: "error",
+        redirect: "/error",
+        token: token,
+        message: err.message || err,
+        code: 20
+      });
+    }
+  });
+
+  router.get("/api/site", async (req, res, next) => {
+    res.json({
+      settings: req.app.locals.settings
+    });
+  });
+
+  router.post("/auth-api/site", async (req, res, next) => {
+    const token = req.session.api && req.session.api.access.access_token;
+    try {
+      if (Object.keys(req.body).length > 0) {
+        const siteSettings = await SiteSettings.fetch(process.env.SITE);
+        for (const setting in siteSettings.data) {
+          if (req.body[setting] !== null && typeof req.body[setting] !== "undefined") {
+            if (typeof siteSettings[setting] == "number") siteSettings[setting] = parseFloat(req.body[setting]);
+            else if (typeof siteSettings[setting] == "boolean") siteSettings[setting] = req.body[setting] == "true";
+            else siteSettings[setting] = req.body[setting];
+          }
+        }
+        await siteSettings.save();
+
+        io().emit("site", { action: "settings", ...siteSettings.data });
+
+        res.json({
+          status: "success",
+          token: token
+        });
+      } else {
+        throw new Error("No settings specified");
+      }
+    } catch (err) {
+      res.json({
+        status: "error",
+        token: token,
+        message: err.message || err,
+        code: 21
       });
     }
   });
@@ -717,10 +784,10 @@ interface AccountOptions {
   page?: GamesPages;
 }
 
-const fetchAccount = async (token: any, options: AccountOptions) => {
+const fetchAccount = (token: any, options: AccountOptions) => {
   const client = options.client;
 
-  return await new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     const requestData = {
       url: "https://discordapp.com/api/users/@me",
       method: "GET",
@@ -755,7 +822,7 @@ const fetchAccount = async (token: any, options: AccountOptions) => {
                   account.guilds.push({
                     id: guild.id,
                     name: guild.name,
-                    icon: guild.iconURL,
+                    icon: `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=128`,
                     permission: false,
                     isAdmin: false,
                     member: member,
@@ -884,15 +951,108 @@ const fetchAccount = async (token: any, options: AccountOptions) => {
             }
           }
 
-          resolve({
+          return resolve({
             status: "success",
             account: account
           });
         }
         throw new Error(error);
       } catch (err) {
-        reject(err);
+        refreshToken(token)
+          .then(newToken => {
+            resolve(fetchAccount(newToken, options));
+          })
+          .catch(err => {
+            reject(err);
+          });
       }
     });
+  });
+};
+
+const refreshToken = (access: any) => {
+  return new Promise(async (resolve, reject) => {
+    // const storedSession = await Session.fetch(req.session.bearer);
+    const storedSession = await Session.fetch(access.access_token);
+    if (access.token_type) {
+      // Refresh token
+      const headers = {
+        "Content-Type": "application/x-www-form-urlencoded"
+      };
+
+      const requestData = {
+        url: "https://discordapp.com/api/v6/oauth2/token",
+        method: "POST",
+        headers: headers,
+        form: {
+          client_id: process.env.CLIENT_ID,
+          client_secret: process.env.CLIENT_SECRET,
+          grant_type: "refresh_token",
+          refresh_token: access.refresh_token,
+          redirect_uri: `${process.env.SITE_HOST}/login`,
+          scope: "identify guilds"
+        }
+      };
+
+      request(requestData, async (error, response, body) => {
+        if (error || response.statusCode !== 200) {
+          reject({
+            status: "error",
+            code: 6,
+            message: `Discord OAuth: ${response.statusCode}<br />${error}`,
+            reauthenticate: true
+          });
+          return;
+        }
+
+        const token = JSON.parse(body);
+        // req.session.api = {
+        //   ...config.defaults.sessionStatus,
+        //   ...req.session.api,
+        //   ...{
+        //     lastRefreshed: moment().unix()
+        //   }
+        // };
+        // req.session.api.access = token;
+
+        aux.log(access.access_token, token.access_token);
+
+        if (storedSession && storedSession.token != token.access_token) {
+          await storedSession.delete();
+
+          const d = new Date();
+          d.setDate(d.getDate() + 14);
+          const session = new Session({
+            expires: d,
+            token: token.access_token,
+            session: {
+              api: {
+                lastRefreshed: moment().unix(),
+                access: {
+                  access_token: token.access_token,
+                  refresh_token: token.refresh_token,
+                  expires_in: token.expires_in,
+                  scope: token.scope,
+                  token_type: token.token_type
+                }
+              }
+            }
+          });
+
+          await session.save();
+        }
+
+        // delete req.session.redirect;
+        resolve(token);
+      });
+    } else {
+      reject({
+        status: "error",
+        token: access.access_token,
+        message: "Missing or invalid session token",
+        reauthenticate: true,
+        code: 7
+      });
+    }
   });
 };
