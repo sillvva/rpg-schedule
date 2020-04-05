@@ -23,7 +23,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
     if (info.indexOf("Sending a heartbeat") >= 0) return;
     if (info.indexOf("Heartbeat acknowledged") >= 0) return;
     aux.log(info);
-  })
+  });
 
   /**
    * Discord.JS - ready
@@ -43,7 +43,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
     try {
       if (message.channel instanceof TextChannel) {
         let isCommand = false;
-        for(let i = 1; i <= 3; i++) {
+        for (let i = 1; i <= 3; i++) {
           isCommand = isCommand || message.content.startsWith(config.command, i);
         }
 
@@ -51,18 +51,22 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
           const guild = message.channel.guild;
           const guildId = guild.id;
           const guildConfig = await GuildConfig.fetch(guildId);
-          let author: User = message.author;
+          // const author: User = message.author;
+          const member = message.member;
 
           if (process.env.LOCALENV && guildId != "532564186023329792") {
             return;
           }
-  
-          const prefix = (guildConfig.escape || "").trim().length ? guildConfig.escape.trim() : '!';
+
+          const prefix = (guildConfig.escape || "").trim().length ? guildConfig.escape.trim() : "!";
           const botcmd = `${prefix}${config.command}`;
           if (!message.content.startsWith(botcmd)) return;
 
-          const parts = message.content.trim().split(" ").filter(part => part.length > 0);
-          const cmd = parts.slice(1,2)[0];
+          const parts = message.content
+            .trim()
+            .split(" ")
+            .filter(part => part.length > 0);
+          const cmd = parts.slice(1, 2)[0];
           const params = parts.slice(2);
 
           const languages = app.locals.langs;
@@ -73,7 +77,6 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
             return;
           }
 
-          const member = message.channel.guild.members.cache.array().find(m => m.user.id === message.author.id);
           const canConfigure = member ? member.hasPermission(discord.Permissions.FLAGS.MANAGE_GUILD) : false;
 
           try {
@@ -87,40 +90,50 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                     `\`${botcmd} help\` - ${lang.config.desc.HELP}\n` +
                     (canConfigure
                       ? `\n${lang.config.GENERAL_CONFIGURATION}\n` +
-                        (canConfigure ? `\`${botcmd} configuration\` - ${lang.config.desc.CONFIGURATION}\n` : ``) +
-                        (canConfigure ? `\`${botcmd} role role name\` - ${lang.config.desc.ROLE}\n` : ``) +
-                        (canConfigure ? `\`${botcmd} manager-role role name\` - ${lang.config.desc.MANAGER_ROLE}\n` : ``) +
-                        (canConfigure ? `\`${botcmd} password somepassword\` - ${lang.config.desc.PASSWORD_SET}\n` : ``) +
-                        (canConfigure ? `\`${botcmd} password\` - ${lang.config.desc.PASSWORD_CLEAR}\n` : ``) +
-                        (canConfigure
-                          ? `\`${botcmd} lang ${guildConfig.lang}\` - ${lang.config.desc.LANG} ${languages.map(l => `\`${l.code}\` (${l.name})`).join(", ")}\n`
-                          : ``) +
-                        `\n${lang.config.BOT_CONFIGURATION}\n` +
-                        (canConfigure
-                          ? `\`${botcmd} embeds ${guildConfig.embeds || guildConfig.embeds == null ? "on" : "off"}\` - \`on/off\` - ${lang.config.desc.EMBEDS}\n`
-                          : ``) +
-                        (canConfigure ? `\`${botcmd} embed-color ${guildConfig.embedColor}\` - ${lang.config.desc.EMBED_COLOR}\n` : ``) +
-                        (canConfigure
-                          ? `\`${botcmd} embed-user-tags ${guildConfig.embedMentions || guildConfig.embedMentions == null ? "on" : "off"}\` - \`on/off\` - ${lang.config.desc.EMBED_USER_TAGS}\n`
-                          : ``) +
-                        (canConfigure ? `\`${botcmd} emoji-sign-up ${guildConfig.emojiAdd}\` - ${lang.config.desc.EMOJI}\n` : ``) +
-                        (canConfigure ? `\`${botcmd} emoji-drop-out ${guildConfig.emojiRemove}\` - ${lang.config.desc.EMOJI}\n` : ``) +
-                        (canConfigure ? `\`${botcmd} toggle-drop-out\` - ${lang.config.desc.TOGGLE_DROP_OUT}\n` : ``) +
-                        (canConfigure ? `\`${botcmd} prefix-char ${prefix}\` - ${lang.config.desc.PREFIX.replace(/\:CHAR/gi, prefix)}\n` : ``) +
-                        `\n${lang.config.GAME_CONFIGURATION}\n` +
-                        (canConfigure ? `\`${botcmd} add-channel #channel-name\` - ${lang.config.desc.ADD_CHANNEL}\n` : ``) +
-                        (canConfigure ? `\`${botcmd} remove-channel #channel-name\` - ${lang.config.desc.REMOVE_CHANNEL}\n` : ``) +
-                        (canConfigure ? `\`${botcmd} pruning ${guildConfig.pruning ? "on" : "off"}\` - \`on/off\` - ${lang.config.desc.PRUNING}\n` : ``) +
-                        (canConfigure ? `\`${botcmd} prune\` - ${lang.config.desc.PRUNE}\n` : ``) +
-                        (canConfigure
-                          ? `\`${botcmd} private-reminders\` - ${lang.config.desc.PRIVATE_REMINDERS.replace(/\:PR/gi,guildConfig.privateReminders ? "on" : "off")}\n`
-                          : ``) +
-                        (canConfigure ? `\`${botcmd} rechedule-mode ${guildConfig.rescheduleMode}\` - ${lang.config.desc.RESCHEDULE_MODE}\n` : ``)
+                        `\`${botcmd} configuration\` - ${lang.config.desc.CONFIGURATION}\n` +
+                        `\`${botcmd} role role name\` - ${lang.config.desc.ROLE}\n` +
+                        `\`${botcmd} manager-role role name\` - ${lang.config.desc.MANAGER_ROLE}\n` +
+                        `\`${botcmd} password somepassword\` - ${lang.config.desc.PASSWORD_SET}\n` +
+                        `\`${botcmd} password\` - ${lang.config.desc.PASSWORD_CLEAR}\n` +
+                        `\`${botcmd} lang ${guildConfig.lang}\` - ${lang.config.desc.LANG} ${languages.map(l => `\`${l.code}\` (${l.name})`).join(", ")}\n`
                       : ``) +
                     `\n${lang.config.USAGE}\n` +
                     `\`${botcmd} link\` - ${lang.config.desc.LINK}`
                 );
               (<TextChannel>message.channel).send(embed);
+              let embed2 = new discord.MessageEmbed()
+                .setTitle("RPG Schedule Help")
+                .setColor(guildConfig.embedColor)
+                .setDescription(
+                  canConfigure
+                    ? `\n${lang.config.BOT_CONFIGURATION}\n` +
+                        `\`${botcmd} embeds ${guildConfig.embeds || guildConfig.embeds == null ? "on" : "off"}\` - \`on/off\` - ${lang.config.desc.EMBEDS}\n` +
+                        `\`${botcmd} embed-color ${guildConfig.embedColor}\` - ${lang.config.desc.EMBED_COLOR}\n` +
+                        `\`${botcmd} embed-user-tags ${guildConfig.embedMentions || guildConfig.embedMentions == null ? "on" : "off"}\` - \`on/off\` - ${
+                          lang.config.desc.EMBED_USER_TAGS
+                        }\n` +
+                        `\`${botcmd} emoji-sign-up ${guildConfig.emojiAdd}\` - ${lang.config.desc.EMOJI}\n` +
+                        `\`${botcmd} emoji-drop-out ${guildConfig.emojiRemove}\` - ${lang.config.desc.EMOJI}\n` +
+                        `\`${botcmd} toggle-drop-out\` - ${lang.config.desc.TOGGLE_DROP_OUT}\n` +
+                        `\`${botcmd} prefix-char ${prefix}\` - ${lang.config.desc.PREFIX.replace(/\:CHAR/gi, prefix)}\n`
+                    : ``
+                );
+              (<TextChannel>message.channel).send(embed2);
+              let embed3 = new discord.MessageEmbed()
+                .setTitle("RPG Schedule Help")
+                .setColor(guildConfig.embedColor)
+                .setDescription(
+                  canConfigure
+                    ? `\n${lang.config.GAME_CONFIGURATION}\n` +
+                        `\`${botcmd} add-channel #channel-name\` - ${lang.config.desc.ADD_CHANNEL}\n` +
+                        `\`${botcmd} remove-channel #channel-name\` - ${lang.config.desc.REMOVE_CHANNEL}\n` +
+                        `\`${botcmd} pruning ${guildConfig.pruning ? "on" : "off"}\` - \`on/off\` - ${lang.config.desc.PRUNING}\n` +
+                        `\`${botcmd} prune\` - ${lang.config.desc.PRUNE}\n` +
+                        `\`${botcmd} private-reminders\` - ${lang.config.desc.PRIVATE_REMINDERS.replace(/\:PR/gi, guildConfig.privateReminders ? "on" : "off")}\n` +
+                        `\`${botcmd} rechedule-mode ${guildConfig.rescheduleMode}\` - ${lang.config.desc.RESCHEDULE_MODE}\n`
+                    : ``
+                );
+              (<TextChannel>message.channel).send(embed3);
             } else if (cmd === "link") {
               (<TextChannel>message.channel).send(process.env.HOST + config.urls.game.create.path + "?s=" + guildId);
             } else if (cmd === "prune") {
@@ -128,20 +141,27 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
               (<TextChannel>message.channel).send(lang.config.PRUNE);
             } else if (cmd === "configuration") {
               if (canConfigure) {
-                const channel = guildConfig.channels.map(c => {
-                  return guild.channels.cache.get(c);
-                }) || [guild.channels.cache.array().find(c => c instanceof TextChannel)];
+                const channel =
+                  guildConfig.channels.length > 0
+                    ? guildConfig.channels.map(c => {
+                        return guild.channels.cache.get(c);
+                      })
+                    : [guild.channels.cache.array().find(c => c instanceof TextChannel)];
 
                 let embed = new discord.MessageEmbed()
                   .setTitle(`RPG Schedule ${lang.config.CONFIGURATION}`)
                   .setColor(guildConfig.embedColor)
                   .setDescription(
                     `${lang.config.PREFIX}: ${prefix.length ? prefix : "!"}${config.command}\n` +
-                    `${lang.config.GUILD}: \`${guild.name}\`\n` +
-                      `${lang.config.CHANNELS}: \`${channel
-                        .filter(c => c)
-                        .map(c => c.name)
-                        .join(" | ")}\`\n` +
+                      `${lang.config.GUILD}: \`${guild.name}\`\n` +
+                      `${lang.config.CHANNELS}: ${
+                        channel.filter(c => c).length > 0
+                          ? `\`${channel
+                              .filter(c => c)
+                              .map(c => c.name)
+                              .join(" | ")}\``
+                          : "First text channel"
+                      }\n` +
                       `${lang.config.PRUNING}: \`${guildConfig.pruning ? "on" : "off"}\`\n` +
                       `${lang.config.EMBEDS}: \`${!(guildConfig.embeds === false) ? "on" : "off"}\`\n` +
                       `${lang.config.EMBED_COLOR}: \`${guildConfig.embedColor}\`\n` +
@@ -156,7 +176,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                       `${lang.config.DROP_OUTS}: ${guildConfig.dropOut ? `Enabled` : "Disabled"}\n` +
                       `${lang.config.LANGUAGE}: ${guildConfig.lang}\n`
                   );
-                if (author.dmChannel) author.dmChannel.send(embed);
+                if (member) member.send(embed);
               }
             } else if (cmd === "add-channel") {
               if (canConfigure && params[0]) {
@@ -439,7 +459,10 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
               }
             } else if (cmd === "prefix-char") {
               if (canConfigure) {
-                let prefix = params.join("").trim().slice(0,3);
+                let prefix = params
+                  .join("")
+                  .trim()
+                  .slice(0, 3);
                 guildConfig
                   .save({
                     escape: prefix.length ? prefix : "!"
@@ -467,7 +490,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
             } else if (cmd === "reschedule-mode") {
               if (canConfigure) {
                 let mode = params.join("").trim();
-                const options = ["update","repost"];
+                const options = ["update", "repost"];
                 guildConfig
                   .save({
                     rescheduleMode: options.includes(mode) ? mode : "repost"
@@ -479,7 +502,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                     aux.log(err);
                   });
               }
-            // } else if (cmd === "reschedule") {
+              // } else if (cmd === "reschedule") {
               // rescheduleOldGames(guildId);
             } else if (cmd === "password") {
               if (canConfigure) {
@@ -568,11 +591,10 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   });
               }
             } else {
-              (<TextChannel>message.channel).send('Command not recognized');
+              (<TextChannel>message.channel).send("Command not recognized");
             }
-          }
-          catch(err) {
-            aux.log('BotCommandError:', err);
+          } catch (err) {
+            aux.log("BotCommandError:", err);
           }
         }
       }
@@ -613,15 +635,14 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
           }
         }
       }
-    } catch (err) {
-    }
+    } catch (err) {}
   });
 
   client.on("userUpdate", async (oldUser: User, newUser: User) => {
     if (process.env.LOCALENV) return;
     // aux.log(aux.backslash(oldUser.tag));
     if (oldUser.tag != newUser.tag) {
-      const games = await Game.fetchAllBy({ $or: [ { dm: oldUser.tag }, { reserved: new RegExp(aux.backslash(oldUser.tag), "gi") } ] });
+      const games = await Game.fetchAllBy({ $or: [{ dm: oldUser.tag }, { reserved: new RegExp(aux.backslash(oldUser.tag), "gi") }] });
       games.forEach(game => {
         // aux.log(game.adventure);
         if (game.dm === oldUser.tag) game.dm = newUser.tag;
@@ -686,24 +707,24 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
     aux.log(err);
   });
 
-  client.on("shardReady", (id) => {
+  client.on("shardReady", id => {
     aux.log("Client: Shard Ready", id);
   });
 
-  client.on("shardReconnecting", (id) => {
+  client.on("shardReconnecting", id => {
     aux.log("Client: Shard Reconnecting", id);
   });
 
-  client.on("shardResume", (id) => {
+  client.on("shardResume", id => {
     aux.log("Client: Shard Resumed", id);
   });
 
   client.on("invalidated", () => {
-    aux.log('Client: Invalidated');
+    aux.log("Client: Invalidated");
     // setTimeout(() => {
     //   discordLogin(client);
     // }, 60 * 1000);
-  })
+  });
 
   return client;
 };
@@ -736,7 +757,7 @@ const rescheduleOldGames = async (guildId?: string) => {
       $and: [
         {
           frequency: {
-            $ne: '0'
+            $ne: "0"
           }
         },
         {
@@ -761,16 +782,18 @@ const rescheduleOldGames = async (guildId?: string) => {
     games = games.filter(game => client.guilds.cache.array().find(g => g.id === game.s));
     aux.log(`Found ${games.length} games scheduled before now`);
     let count = 0;
-    for(let i = 0; i < games.length; i++) {
+    for (let i = 0; i < games.length; i++) {
       const game = games[i];
 
-      if(game.canReschedule() && !rescheduled.find(g => g.s == game.s && g.c == game.c && g.adventure == game.adventure && g.date == game.date && g.time == game.time && g.timezone == game.timezone)) {
+      if (
+        game.canReschedule() &&
+        !rescheduled.find(g => g.s == game.s && g.c == game.c && g.adventure == game.adventure && g.date == game.date && g.time == game.time && g.timezone == game.timezone)
+      ) {
         rescheduled.push(game);
         count++;
         try {
           await game.reschedule();
-        }
-        catch(err) {
+        } catch (err) {
           const newGames = await Game.fetchAllBy({
             s: game.s,
             c: game.c,
@@ -784,7 +807,7 @@ const rescheduleOldGames = async (guildId?: string) => {
             await game.delete();
           }
         }
-      }   
+      }
     }
 
     aux.log(`rescheduled ${count} games`);
@@ -796,22 +819,22 @@ const rescheduleOldGames = async (guildId?: string) => {
     rescheduled = [];
   }, 5 * 60 * 1000);
   return result;
-}
+};
 
 const pruneOldGames = async (guild?: discord.Guild) => {
   let result: DeleteWriteOpResultObject;
   try {
-    aux.log(`Pruning old games for ${guild ? `${guild.name} server` : 'all servers'}`);
+    aux.log(`Pruning old games for ${guild ? `${guild.name} server` : "all servers"}`);
     const query: FilterQuery<any> = {
       timestamp: {
         $lt: new Date().getTime() - 48 * 3600 * 1000
       }
     };
-    
+
     let games = await Game.fetchAllBy(query);
     games = games.filter(game => client.guilds.cache.array().find(g => g.id === game.s));
     const guildConfigs = await GuildConfig.fetchAll();
-    for(let i = 0; i < games.length; i++) {
+    for (let i = 0; i < games.length; i++) {
       let game = games[i];
       if (!game.discordGuild) continue;
       if (guild && game.discordGuild.id !== guild.id) continue;
@@ -834,7 +857,7 @@ const pruneOldGames = async (guild?: discord.Guild) => {
         aux.log("MessagePruningError:", err);
       }
     }
-    
+
     result = await Game.deleteAllBy(query);
     aux.log(`${result.deletedCount} old games successfully pruned`);
   } catch (err) {
@@ -853,9 +876,9 @@ const postReminders = async (app: Express) => {
       timestamp: {
         $lte: cTime + rt * 60 * 1000
       }
-    }
+    };
   });
-  
+
   const query: FilterQuery<any> = {
     when: "datetime",
     timestamp: {
@@ -877,8 +900,8 @@ const postReminders = async (app: Express) => {
       }
     ]
   };
-  
-  let games = await Game.fetchAllBy(query); 
+
+  let games = await Game.fetchAllBy(query);
   games = games.filter(game => client.guilds.cache.array().find(g => g.id === game.s));
   aux.log(`Posting reminders for ${games.length} games`);
   games.forEach(async game => {
@@ -910,13 +933,10 @@ const postReminders = async (app: Express) => {
       var dm = game.dm.trim().replace("@", "");
       var dmMember = member;
       if (member) dm = member.user.toString();
-    }
-    catch(err) {
-
-    }
+    } catch (err) {}
 
     if (reserved.length == 0) return;
-    
+
     let minPlayers = parseInt(game.minPlayers);
     if (!isNaN(parseInt(game.minPlayers))) minPlayers = 0;
     if (reserved.length < minPlayers) return;
@@ -944,7 +964,7 @@ const postReminders = async (app: Express) => {
     const lang = languages.find(l => l.code === guildConfig.lang) || languages.find(l => l.code === "en");
     const reminder = game.reminder;
 
-    const siUnit = parseInt(reminder) > 60 ? 'HOURS' : 'MINUTES';
+    const siUnit = parseInt(reminder) > 60 ? "HOURS" : "MINUTES";
     const siLabel = lang.game[`STARTING_IN_${siUnit}`].replace(`:${siUnit}`, parseInt(reminder) / (parseInt(reminder) > 60 ? 60 : 1));
 
     if (guildConfig.privateReminders) {
@@ -974,9 +994,8 @@ const postReminders = async (app: Express) => {
 
       try {
         var sent = <Message>await game.discordChannel.send(message);
-      }
-      catch(err) {
-        aux.log('PublicReminderError:', err);
+      } catch (err) {
+        aux.log("PublicReminderError:", err);
       }
 
       game.reminderMessageId = sent.id;
@@ -1000,7 +1019,7 @@ const fixReschedules = async () => {
       $and: [
         {
           frequency: {
-            $ne: '0'
+            $ne: "0"
           }
         },
         {
@@ -1010,21 +1029,20 @@ const fixReschedules = async () => {
         }
       ]
     };
-  
+
     let games = await Game.fetchAllByLimit(query, 50);
     games = games.filter(game => client.guilds.cache.array().find(g => g.id === game.s));
     aux.log(`Found ${games.length} games scheduled before now`);
-    for(let i = 0; i < games.length; i++) {
+    for (let i = 0; i < games.length; i++) {
       const game = games[i];
-  
+
       if (game.when === "datetime") {
         aux.log(game.dm, game.adventure, game.date, game.time, game._id);
         await game.delete();
-      }   
+      }
     }
-  }
-  catch(err) {
-    aux.log('Error')
+  } catch (err) {
+    aux.log("Error");
   }
 };
 

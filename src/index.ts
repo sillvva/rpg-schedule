@@ -65,7 +65,7 @@ else {
   });
   app.use(
     session({
-      secret: process.env.TOKEN,
+      secret: `${process.env.HOST}/${process.env.TOKEN}`,
       resave: false,
       saveUninitialized: false,
       store: store

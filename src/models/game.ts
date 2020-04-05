@@ -287,7 +287,7 @@ export class Game implements GameModel {
       `\n**${lang.game.GM}:** ${dm}` +
       `\n**${lang.game.GAME_NAME}:** ${game.adventure}` +
       `\n**${lang.game.RUN_TIME}:** ${game.runtime} ${lang.game.labels.HOURS}` +
-      (game.hideDate ? `\n**${lang.game.WHEN}:** TBD` : `\n**${lang.game.WHEN}:** ${when}`) +
+      `\n**${lang.game.WHEN}:** ${game.hideDate ? lang.game.labels.TBD : when}` +
       `\n**${lang.game.WHERE}:** ${where}` +
       `\n${description.length > 0 ? `**${lang.game.DESCRIPTION}:**\n${description}\n` : description}` +
       `\n${signups}`;
@@ -358,12 +358,12 @@ export class Game implements GameModel {
         io().emit("game", { action: "updated", gameId: game._id, game: updatedGame });
       } catch (err) {
         aux.log('UpdateGameError:', err);
-        updated.modifiedCount = 0;
+        if (updated) updated.modifiedCount = 0;
       }
       const saved: GameSaveData = {
         _id: game._id,
         message: message,
-        modified: updated.modifiedCount > 0
+        modified: updated && updated.modifiedCount > 0
       };
       return saved;
     } else {
@@ -434,7 +434,7 @@ export class Game implements GameModel {
       const saved: GameSaveData = {
         _id: inserted.insertedId.toString(),
         message: message,
-        modified: updated ? false : updated.modifiedCount > 0
+        modified: updated && updated.modifiedCount > 0
       };
       return saved;
     }

@@ -258,22 +258,24 @@
         });
 
         $('.game .parse-url').each(function() {
-            const exp = /((https?:\/\/)((www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b)([-a-zA-Z0-9()@:%_\+.~#?&//=]*))/gi;
-            const regex = new RegExp(exp);
-            $(this).html($(this).html().replace(regex, `<a href="$1" target="_blank">$3</a>`));
+          // https://regex101.com/r/UzaOB4/1
+          const exp = /(?<![\[\("])((https?:\/\/)((www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b)([-a-zA-Z0-9()@:%_\+.~#?&\/=]*))/gi;
+          const regex = new RegExp(exp);
+          $(this).html($(this).html().replace(regex, `<a href="$1" target="_blank">$3</a>`));
         });
 
         $('.game .parse-md-url').each(function() {
-            const exp = /((https?:\/\/)((www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b)([-a-zA-Z0-9()@:%_\+.~#?&//=]*))/gi;
-            const regex = new RegExp(exp);
-            $(this).html($(this).html().replace(regex, `[$1]($1)`));
+          // https://regex101.com/r/UzaOB4/1
+          const exp = /(?<![\[\("])((https?:\/\/)((www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b)([-a-zA-Z0-9()@:%_\+.~#?&\/=]*))/gi;
+          const regex = new RegExp(exp);
+          $(this).html($(this).html().replace(regex, `[$1]($1)`));
         });
 
         $('.game .parse-url a, .game .parse-md-url a').each(function() {
-            $(this).click(function() {
-                window.open($(this).attr('href'));
-                return false;
-            });
+          $(this).click(function() {
+            window.open($(this).attr('href'));
+            return false;
+          });
         });
 
         $(this).find('.btn').click((ev) => {
