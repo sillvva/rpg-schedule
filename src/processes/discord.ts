@@ -118,7 +118,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                         `\`${botcmd} prefix-char ${prefix}\` - ${lang.config.desc.PREFIX.replace(/\:CHAR/gi, prefix)}\n`
                     : ``
                 );
-              (<TextChannel>message.channel).send(embed2);
+              if (canConfigure) (<TextChannel>message.channel).send(embed2);
               let embed3 = new discord.MessageEmbed()
                 .setTitle("RPG Schedule Help")
                 .setColor(guildConfig.embedColor)
@@ -133,7 +133,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                         `\`${botcmd} rechedule-mode ${guildConfig.rescheduleMode}\` - ${lang.config.desc.RESCHEDULE_MODE}\n`
                     : ``
                 );
-              (<TextChannel>message.channel).send(embed3);
+                if (canConfigure) (<TextChannel>message.channel).send(embed3);
             } else if (cmd === "link") {
               (<TextChannel>message.channel).send(process.env.HOST + config.urls.game.create.path + "?s=" + guildId);
             } else if (cmd === "prune") {
