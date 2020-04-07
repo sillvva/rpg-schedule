@@ -128,6 +128,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                         `\`${botcmd} add-channel #channel-name\` - ${lang.config.desc.ADD_CHANNEL}\n` +
                         `\`${botcmd} remove-channel #channel-name\` - ${lang.config.desc.REMOVE_CHANNEL}\n` +
                         `\`${botcmd} pruning ${guildConfig.pruning ? "on" : "off"}\` - \`on/off\` - ${lang.config.desc.PRUNING}\n` +
+                        `\`${botcmd} prune-interval ${guildConfig.pruneInterval}\` - \`minutes\` - ${lang.config.desc.PRUNEINTERVAL}\n` +
                         `\`${botcmd} prune\` - ${lang.config.desc.PRUNE}\n` +
                         `\`${botcmd} private-reminders\` - ${lang.config.desc.PRIVATE_REMINDERS.replace(/\:PR/gi, guildConfig.privateReminders ? "on" : "off")}\n` +
                         `\`${botcmd} rechedule-mode ${guildConfig.rescheduleMode}\` - ${lang.config.desc.RESCHEDULE_MODE}\n`
@@ -163,6 +164,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                           : "First text channel"
                       }\n` +
                       `${lang.config.PRUNING}: \`${guildConfig.pruning ? "on" : "off"}\`\n` +
+                      `${lang.config.PRUNEINTERVAL}: \`${guildConfig.pruneInterval ? guildConfig.pruneInterval : 48 * 3600 * 1000}\`\n` +
                       `${lang.config.EMBEDS}: \`${!(guildConfig.embeds === false) ? "on" : "off"}\`\n` +
                       `${lang.config.EMBED_COLOR}: \`${guildConfig.embedColor}\`\n` +
                       `${lang.config.EMBED_USER_TAGS}: \`${guildConfig.embedMentions}\`\n` +
@@ -224,6 +226,30 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                   .catch(err => {
                     aux.log(err);
                   });
+              }
+            } else if (cmd === "prune-interval") {
+              if (canConfigure && params[0]) {
+                if (params[0].match(/[0-9]+/i)) {
+                  var pruneInterval = parseInt(params[0]);
+                  if(pruneInterval > 0) {
+                    pruneInterval = pruneInterval * 60 * 1000;
+                  } else {
+                    return;
+                  }
+                  guildConfig
+                    .save({
+                      pruneInterval: pruneInterval
+                    })
+                    .then(result => {
+                      (<TextChannel>message.channel).send(lang.config.PRUNEINTERVAL + (pruneInterval / (60 * 1000)).toString() + "minutes");
+                    })
+                    .catch(err => {
+                      aux.log(err);
+                    });
+                } else {
+                  (<TextChannel>message.channel).send(lang.config.desc.PRUNEINTERVAL_ERROR);
+                  return;
+                }
               }
             } else if (cmd === "embeds") {
               if (canConfigure && params[0]) {
