@@ -64,7 +64,7 @@ export default (options: APIRouteOptions) => {
           client_secret: process.env.CLIENT_SECRET,
           grant_type: "authorization_code",
           code: req.query.code,
-          redirect_uri: `${process.env.SITE_HOST}/login`,
+          redirect_uri: `${process.env.HOST}/login`,
           scope: "identify guilds",
         },
       };
@@ -1051,7 +1051,7 @@ const refreshToken = (access: any) => {
           client_secret: process.env.CLIENT_SECRET,
           grant_type: "refresh_token",
           refresh_token: access.refresh_token,
-          redirect_uri: `${process.env.SITE_HOST}/login`,
+          redirect_uri: `${process.env.HOST}/login`,
           scope: "identify guilds",
         },
       };
