@@ -24,6 +24,7 @@ export interface GuildConfigModel {
   rescheduleMode?: string;
   managerRole?: string;
   escape?: string;
+  pruneInterval?: int;
 }
 
 interface GuildConfigDataModel extends GuildConfigModel {
@@ -49,6 +50,7 @@ export class GuildConfig implements GuildConfigDataModel {
   rescheduleMode: string = 'repost';
   managerRole: string = null;
   escape?: '!';
+  pruneInterval?: int = 48 * 3600 * 1000;
 
   constructor(guildConfig: GuildConfigDataModel = {}) {
     if (!guildConfig._id) this._id = new ObjectId();
@@ -84,7 +86,8 @@ export class GuildConfig implements GuildConfigDataModel {
       privateReminders: this.privateReminders,
       rescheduleMode: this.rescheduleMode,
       managerRole: this.managerRole,
-      escape: this.escape
+      escape: this.escape,
+      pruneInterval: this.pruneInterval ? this.pruneInterval : 48 * 3600 * 1000
     };
   }
 
