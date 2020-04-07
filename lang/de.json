@@ -113,7 +113,7 @@
       "CHANNEL_ADDED": "Kanal hinzugefügt! Stelle sicher, dass der Bot im ausgewählten Kanal Zugriff hat.",
       "CHANNEL_REMOVED": "Kanal entfernt!",
       "PRUNING": "Automatisches Entfernen",
-      "PRUNEINTERVAL": "Spätestens nach X Minuten automatisch entfernen",
+      "PRUNEINTERVAL": "Intervall für Auto-Entfernen",
       "PRUNING_ON": "Automatisches Entfernen wurde aktiviert!",
       "PRUNING_OFF": "Automatisches Entfernen wurde deaktiviert!",
       "PRUNE": "Alte Spiele wurden entfernt.",
