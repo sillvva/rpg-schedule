@@ -77,6 +77,7 @@ export interface GameModel {
   monthlyType: MonthlyType;
   clearReservedOnRepeat: boolean;
   rescheduled: boolean;
+  sequence: number;
 }
 
 interface GameSaveData {
@@ -118,6 +119,7 @@ export class Game implements GameModel {
   monthlyType: MonthlyType = MonthlyType.WEEKDAY;
   clearReservedOnRepeat: boolean = false;
   rescheduled: boolean = false;
+  sequence: number = 1;
 
   private _guild: Guild;
   get discordGuild() {
@@ -180,7 +182,8 @@ export class Game implements GameModel {
       weekdays: this.weekdays,
       monthlyType: this.monthlyType,
       clearReservedOnRepeat: this.clearReservedOnRepeat,
-      rescheduled: this.rescheduled
+      rescheduled: this.rescheduled,
+      sequence: this.sequence
     };
   }
 
@@ -330,6 +333,8 @@ export class Game implements GameModel {
 
     const dbCollection = connection().collection(collection);
     if (game._id) {
+      game.sequence++;
+
       const prev = (await Game.fetch(game._id)).data;
       const updated = await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: game });
       let message: Message;

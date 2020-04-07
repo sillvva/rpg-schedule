@@ -29,6 +29,13 @@ app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, "..", "public")));
 app.use(cookieParser());
 
+app.use("/", async (req, res, next) => {
+  res.set("Access-Control-Allow-Origin", process.env.SITE_HOST);
+  res.set("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS");
+  res.set("Access-Control-Allow-Headers", "authorization, accept, content-type");
+  next();
+});
+
 /**
  * EJS
  */

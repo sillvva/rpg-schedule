@@ -26,6 +26,7 @@ export default {
     login: { path: "/login" },
     logout: { path: "/logout" },
     rss: { path: "/rss/:uid" },
+    ics: { path: "/ics/:uid.ics" },
     timezone: {
       convert: { path: "/tz/:time/:tz" },
       countdown: { path: "/cd/:time/:tz" }
