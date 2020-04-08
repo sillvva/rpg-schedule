@@ -13,13 +13,13 @@ import discord from "./processes/discord";
 import { socket } from "./processes/socket";
 
 import apiRoutes from "./routes/api";
-import initRoutes from "./routes/init";
-import gameRoutes from "./routes/game";
-import infoRoutes from "./routes/info";
-import otherRoutes from "./routes/other";
-import timezoneRoutes from "./routes/timezone";
-import loginRoutes from "./routes/login";
-import redirectRoutes from "./routes/redirects";
+// import initRoutes from "./routes/init";
+// import gameRoutes from "./routes/game";
+// import infoRoutes from "./routes/info";
+// import otherRoutes from "./routes/other";
+// import timezoneRoutes from "./routes/timezone";
+// import loginRoutes from "./routes/login";
+// import redirectRoutes from "./routes/redirects";
 import rssRoutes from "./routes/rss";
 
 const app = express();
@@ -141,13 +141,13 @@ else {
    */
   app.use(apiRoutes({ client: client }));
   app.use(rssRoutes({ client: client }));
-  app.use(loginRoutes());
-  app.use(initRoutes({ client: client }));
-  app.use(gameRoutes({ client: client }));
-  app.use(infoRoutes());
-  app.use(otherRoutes());
-  app.use(timezoneRoutes());
-  app.use(redirectRoutes());
+  // app.use(loginRoutes());
+  // app.use(initRoutes({ client: client }));
+  // app.use(gameRoutes({ client: client }));
+  // app.use(infoRoutes());
+  // app.use(otherRoutes());
+  // app.use(timezoneRoutes());
+  // app.use(redirectRoutes());
   app.use("/", (req: any, res, next) => {
     res.render("home");
   });
