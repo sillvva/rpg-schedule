@@ -211,23 +211,12 @@ export default (options: APIRouteOptions) => {
         client: client,
       })
         .then(async (result: any) => {
-          const user = await User.fetch(result.account.user.id);
-          let updated = false;
-
-          if (req.app.locals.lang) {
-            if (user.lang != req.app.locals.lang.code) {
-              user.lang = req.app.locals.lang.code;
-              updated = true;
-            }
-          }
-
-          if (updated) await user.save();
-
+          const userSettings = await getUserSettings(result.account.user.id, req);
           res.json({
             status: "success",
             token: req.session.api.access.access_token,
             account: result.account,
-            user: user.data,
+            user: userSettings.data,
           });
         })
         .catch((err) => {
@@ -302,11 +291,13 @@ export default (options: APIRouteOptions) => {
         games: req.query.games,
         page: req.query.page,
       })
-        .then((result: any) => {
+        .then(async (result: any) => {
+          const userSettings = await getUserSettings(result.account.user.id, req);
           res.json({
             status: "success",
             token: req.session.api.access.access_token,
             guilds: result.account.guilds,
+            user: userSettings.data,
           });
         })
         .catch((err) => {
@@ -654,7 +645,7 @@ export default (options: APIRouteOptions) => {
 
             game.hideDate = req.body["hideDate"] ? true : false;
             game.clearReservedOnRepeat = req.body["clearReservedOnRepeat"] ? true : false;
-            
+
             game
               .save()
               .then((response) => {
@@ -748,11 +739,10 @@ export default (options: APIRouteOptions) => {
               // game.reserved = reserved.join("\n");
 
               if (Array.isArray(game.reserved)) {
-                const index = game.reserved.findIndex(r => r.id === result.account.user.id || r.tag === result.account.user.tag);
+                const index = game.reserved.findIndex((r) => r.id === result.account.user.id || r.tag === result.account.user.tag);
                 if (index >= 0) {
                   game.reserved.splice(index, 1);
-                }
-                else {
+                } else {
                   game.reserved.push({ id: result.account.user.id, tag: result.account.user.tag });
                 }
               }
@@ -1057,7 +1047,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
                   from: moment(date).utcOffset(parseInt(game.timezone)).fromNow(),
                 };
 
-                game.slot = game.reserved.findIndex(t => t.tag.replace("@", "") === tag || t.id === id) + 1;
+                game.slot = game.reserved.findIndex((t) => t.tag.replace("@", "") === tag || t.id === id) + 1;
                 game.signedup = game.slot > 0 && game.slot <= parseInt(game.players);
                 game.waitlisted = game.slot > parseInt(game.players);
 
@@ -1181,4 +1171,20 @@ const refreshToken = (access: any) => {
       });
     }
   });
+};
+
+const getUserSettings = async (id: string, req: any) => {
+  const userSettings = await User.fetch(id);
+  let updated = false;
+
+  if (req.app.locals.lang) {
+    if (userSettings.lang != req.app.locals.lang.code) {
+      userSettings.lang = req.app.locals.lang.code;
+      updated = true;
+    }
+  }
+
+  if (updated) await userSettings.save();
+
+  return userSettings;
 };
