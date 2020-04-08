@@ -513,7 +513,8 @@ export default (options: APIRouteOptions) => {
       }
 
       if (req.method === "POST") {
-        req.body.reserved = req.body.reserved.replace(/@/g, "");
+        // req.body.reserved = req.body.reserved.replace(/@/g, "");
+
         if (req.body.copy) {
           delete req.query.g;
           req.query.s = req.body.s;
@@ -653,7 +654,7 @@ export default (options: APIRouteOptions) => {
 
             game.hideDate = req.body["hideDate"] ? true : false;
             game.clearReservedOnRepeat = req.body["clearReservedOnRepeat"] ? true : false;
-
+            
             game
               .save()
               .then((response) => {

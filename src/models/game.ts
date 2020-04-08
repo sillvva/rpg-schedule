@@ -734,6 +734,7 @@ export class Game implements GameModel {
   }
   
   static updateReservedList(list: string, guildMembers: GuildMember[]) {
+    if (Array.isArray(list)) return list;
     const rsvps: RSVP[] = [];
     const reserved = list.split(/\r?\n/);
     reserved.forEach(r => {
