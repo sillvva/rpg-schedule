@@ -7,10 +7,11 @@ import cloneDeep from "lodash/cloneDeep";
 
 import { io } from "../processes/socket";
 import { Game, GameMethod, RescheduleMode, GameWhen, MonthlyType } from "../models/game";
+import { SiteSettings } from "../models/site-settings";
 import { GuildConfig } from "../models/guild-config";
 import { Session } from "../models/session";
+import { User } from "../models/user";
 import config from "../models/config";
-import { SiteSettings } from "../models/site-settings";
 import aux from "../appaux";
 
 interface APIRouteOptions {
@@ -174,7 +175,7 @@ export default (options: APIRouteOptions) => {
     }
 
     const storedSession = await Session.fetch(bearer);
-    // aux.log(storedSession, bearer);
+    // aux.log(res.locals.url, storedSession, bearer);
     if (storedSession) {
       req.session.api = storedSession.session.api;
       // console.log((moment().unix() - req.session.api.lastRefreshed) / (60 * 60))
@@ -209,11 +210,70 @@ export default (options: APIRouteOptions) => {
       fetchAccount(req.session.api.access, {
         client: client,
       })
-        .then((result: any) => {
+        .then(async (result: any) => {
+          const user = await User.fetch(result.account.user.id);
+          let updated = false;
+
+          if (req.app.locals.lang) {
+            if (user.lang != req.app.locals.lang.code) {
+              user.lang = req.app.locals.lang.code;
+              updated = true;
+            }
+          }
+
+          if (updated) await user.save();
+
           res.json({
             status: "success",
             token: req.session.api.access.access_token,
             account: result.account,
+            user: user.data,
+          });
+        })
+        .catch((err) => {
+          res.json({
+            status: "error",
+            token: req.session.api.access.access_token,
+            message: `UserAuthError`,
+            code: 9,
+          });
+        });
+    } catch (err) {
+      res.json({
+        status: "error",
+        token: req.session.api.access.access_token,
+        code: 10,
+        message: `UserAuthError`,
+      });
+    }
+  });
+
+  router.post("/auth-api/user", async (req, res, next) => {
+    try {
+      fetchAccount(req.session.api.access, {
+        client: client,
+      })
+        .then(async (result: any) => {
+          const user = await User.fetch(result.account.user.id);
+          let updated = false;
+
+          for (const prop in req.body) {
+            if (typeof user[prop] !== "undefined" && user[prop] !== req.body[prop]) {
+              user[prop] = req.body[prop];
+              updated = true;
+            }
+          }
+
+          if (updated) await user.save();
+
+          delete user._id;
+          delete user.id;
+
+          res.json({
+            status: "success",
+            token: req.session.api.access.access_token,
+            account: result.account,
+            user: user.data,
           });
         })
         .catch((err) => {
@@ -322,6 +382,7 @@ export default (options: APIRouteOptions) => {
         game = await Game.fetch(req.query.g);
         if (game) {
           server = game.s;
+          await game.updateReservedList();
         } else {
           throw new Error("Game not found");
         }
@@ -398,15 +459,13 @@ export default (options: APIRouteOptions) => {
                 !guildMembers.array().find((mem) => {
                   return mem.user.tag === game.dm.trim().replace("@", "");
                 }),
-              reserved: game
-                ? game.reserved
-                    .replace(/@/g, "")
-                    .split(/\r?\n/)
-                    .filter((res) => {
-                      if (res.trim().length === 0) return false;
-                      return !guildMembers.array().find((mem) => mem.user.tag === res.trim());
+              reserved:
+                game && Array.isArray(game.reserved)
+                  ? game.reserved.filter((res) => {
+                      if (res.tag.trim().length === 0) return false;
+                      return !guildMembers.array().find((mem) => mem.user.tag === res.tag.trim() || mem.user.id === res.id);
                     })
-                : [],
+                  : [],
             },
           };
 
@@ -562,15 +621,13 @@ export default (options: APIRouteOptions) => {
                 !guildMembers.array().find((mem) => {
                   return mem.user.tag === game.dm.trim().replace("@", "");
                 }),
-              reserved: game
-                ? game.reserved
-                    .replace(/@/g, "")
-                    .split(/\r?\n/)
-                    .filter((res) => {
-                      if (res.trim().length === 0) return false;
-                      return !guildMembers.array().find((mem) => mem.user.tag === res.trim());
+              reserved:
+                game && Array.isArray(game.reserved)
+                  ? game.reserved.filter((res) => {
+                      if (res.tag.trim().length === 0) return false;
+                      return !guildMembers.array().find((mem) => mem.user.tag === res.tag.trim() || mem.user.id === res.id);
                     })
-                : [],
+                  : [],
             },
           };
 
@@ -579,6 +636,7 @@ export default (options: APIRouteOptions) => {
           }
 
           if (req.method === "POST") {
+            req.body.reserved = Game.updateReservedList(req.body.reserved, guildMembers.array());
             data = Object.assign(data, req.body);
           }
 
@@ -671,21 +729,32 @@ export default (options: APIRouteOptions) => {
     try {
       if (req.body.g) {
         const game = await Game.fetch(req.body.g);
+        if (game) await game.updateReservedList();
         if (game) {
           fetchAccount(req.session.api.access, {
             client: client,
           })
             .then(async (result: any) => {
-              const reserved = game.reserved.split(/\r?\n/);
-              if (reserved[0] == "") reserved.splice(0, 1);
-              if (reserved.find((t) => t === result.account.user.tag)) {
-                reserved.splice(reserved.indexOf(result.account.user.tag), 1);
-              } else {
-                reserved.push(result.account.user.tag);
-                await game.dmCustomInstructions(result.account.user.tag);
-              }
+              // const reserved = game.reserved.split(/\r?\n/);
+              // if (reserved[0] == "") reserved.splice(0, 1);
+              // if (reserved.find((t) => t === result.account.user.tag)) {
+              //   reserved.splice(reserved.indexOf(result.account.user.tag), 1);
+              // } else {
+              //   reserved.push(result.account.user.tag);
+              //   await game.dmCustomInstructions(result.account.user.tag);
+              // }
 
-              game.reserved = reserved.join("\n");
+              // game.reserved = reserved.join("\n");
+
+              if (Array.isArray(game.reserved)) {
+                const index = game.reserved.findIndex(r => r.id === result.account.user.id || r.tag === result.account.user.tag);
+                if (index >= 0) {
+                  game.reserved.splice(index, 1);
+                }
+                else {
+                  game.reserved.push({ id: result.account.user.id, tag: result.account.user.tag });
+                }
+              }
 
               await game.save();
 
@@ -693,7 +762,7 @@ export default (options: APIRouteOptions) => {
                 status: "success",
                 token: token,
                 gameId: game._id,
-                reserved: reserved,
+                reserved: game.reserved,
               });
             })
             .catch((err) => {
@@ -987,7 +1056,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
                   from: moment(date).utcOffset(parseInt(game.timezone)).fromNow(),
                 };
 
-                game.slot = game.reserved.split(/\r?\n/).findIndex((t) => t.trim().replace("@", "") === tag) + 1;
+                game.slot = game.reserved.findIndex(t => t.tag.replace("@", "") === tag || t.id === id) + 1;
                 game.signedup = game.slot > 0 && game.slot <= parseInt(game.players);
                 game.waitlisted = game.slot > parseInt(game.players);
 
@@ -1019,11 +1088,12 @@ const fetchAccount = (token: any, options: AccountOptions) => {
             account: account,
           });
         }
-        throw new Error(error);
+        throw new Error(`OAuth: ${error}`);
       } catch (err) {
         refreshToken(token)
           .then((newToken) => {
-            resolve(fetchAccount(newToken, options));
+            if ((err.message || err).indexOf("OAuth") < 0) reject(err);
+            else resolve(fetchAccount(newToken, options));
           })
           .catch((err) => {
             reject(err);
@@ -1069,14 +1139,6 @@ const refreshToken = (access: any) => {
         }
 
         const token = JSON.parse(body);
-        // req.session.api = {
-        //   ...config.defaults.sessionStatus,
-        //   ...req.session.api,
-        //   ...{
-        //     lastRefreshed: moment().unix()
-        //   }
-        // };
-        // req.session.api.access = token;
 
         aux.log(access.access_token, token.access_token);
 

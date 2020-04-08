@@ -1,5 +1,5 @@
 import mongodb, { ObjectID } from "mongodb";
-import discord, { Message, Guild, TextChannel, MessageEditOptions, MessageEmbed } from "discord.js";
+import discord, { Message, Guild, TextChannel, PermissionFlags, MessageEmbed, GuildMember } from "discord.js";
 import moment from "moment";
 import "moment-recur-ts";
 
@@ -44,6 +44,11 @@ export enum RescheduleMode {
   UPDATE = "update",
 }
 
+export interface RSVP {
+  id?: string;
+  tag: string;
+}
+
 export interface GameModel {
   _id: string | number | ObjectID;
   s: string;
@@ -57,7 +62,7 @@ export interface GameModel {
   dm: string;
   where: string;
   description: string;
-  reserved: string;
+  reserved: RSVP[] | string;
   method: GameMethod;
   customSignup: string;
   when: GameWhen;
@@ -99,7 +104,7 @@ export class Game implements GameModel {
   dm: string;
   where: string;
   description: string;
-  reserved: string;
+  reserved: RSVP[] | string;
   method: GameMethod;
   customSignup: string;
   when: GameWhen;
@@ -121,16 +126,6 @@ export class Game implements GameModel {
   rescheduled: boolean = false;
   sequence: number = 1;
 
-  private _guild: Guild;
-  get discordGuild() {
-    return this._guild;
-  }
-
-  private _channel: TextChannel;
-  get discordChannel() {
-    return this._channel;
-  }
-
   constructor(game: GameModel) {
     Object.entries(game || {}).forEach(([key, value]) => {
       this[key] = value;
@@ -147,6 +142,16 @@ export class Game implements GameModel {
         }
       });
     }
+  }
+
+  private _guild: Guild;
+  get discordGuild() {
+    return this._guild;
+  }
+
+  private _channel: TextChannel;
+  get discordChannel() {
+    return this._channel;
   }
 
   get data(): GameModel {
@@ -231,19 +236,20 @@ export class Game implements GameModel {
       else dm = dmmember.nickname || dm;
     }
 
+    await this.updateReservedList();
+
     let reserved: string[] = [];
     let waitlist: string[] = [];
-    game.reserved
-      .replace(/@/g, "")
-      .split(/\r?\n/)
-      .forEach((res: string) => {
-        if (res.trim().length === 0) return;
-        let member = guildMembers.find((mem) => mem.user.tag.trim() === res.trim());
+    if (Array.isArray(game.reserved)) {
+      game.reserved.forEach((rsvp: RSVP, i) => {
+        if (rsvp.tag.trim().length === 0 && !rsvp.id) return;
+        let member = guildMembers.find((mem) => mem.user.tag.trim() === rsvp.tag.trim() || mem.user.id === rsvp.id);
 
-        let name = res.trim().replace(/\#\d{4}/, "");
+        let name = rsvp.tag.trim().replace(/\#\d{4}/, "");
         if (member) {
           if (guildConfig.embeds === false || guildConfig.embedMentions) name = member.user.toString();
           else name = member.nickname || member.user.username;
+          rsvp.tag = member.user.tag;
         }
 
         if (reserved.length < parseInt(game.players)) {
@@ -252,6 +258,35 @@ export class Game implements GameModel {
           waitlist.push(reserved.length + waitlist.length + 1 + ". " + name);
         }
       });
+    } 
+    // else {
+    //   const rsvp: RSVP[] = [];
+    //   game.reserved
+    //     .replace(/@/g, "")
+    //     .split(/\r?\n/)
+    //     .forEach((res: string) => {
+    //       if (res.trim().length === 0) return;
+    //       let member = guildMembers.find((mem) => mem.user.tag.trim() === res.trim());
+
+    //       const uRSVP: RSVP = { tag: res };
+
+    //       let name = res.trim().replace(/\#\d{4}/, "");
+    //       if (member) {
+    //         if (guildConfig.embeds === false || guildConfig.embedMentions) name = member.user.toString();
+    //         else name = member.nickname || member.user.username;
+    //         uRSVP.id = member.user.id;
+    //       }
+
+    //       rsvp.push(uRSVP);
+
+    //       if (reserved.length < parseInt(game.players)) {
+    //         reserved.push(reserved.length + 1 + ". " + name);
+    //       } else {
+    //         waitlist.push(reserved.length + waitlist.length + 1 + ". " + name);
+    //       }
+    //     });
+    //     game.reserved = rsvp;
+    // }
 
     const eventTimes = aux.parseEventTimes(game.date, game.time, game.timezone, {
       name: game.adventure,
@@ -530,7 +565,7 @@ export class Game implements GameModel {
     this.date = nextDate;
 
     if (this.clearReservedOnRepeat) {
-      this.reserved = "";
+      this.reserved = [];
     }
 
     const guildConfig = await GuildConfig.fetch(this.s);
@@ -680,6 +715,35 @@ export class Game implements GameModel {
     }
 
     return moment(nextDate).format("YYYY-MM-DD");
+  }
+
+  async updateReservedList() {
+    if (typeof this.reserved === "string") {
+      const guildMembers = await this.discordGuild.members.fetch();
+      const rsvps: RSVP[] = [];
+      const reserved = this.reserved.split(/\r?\n/);
+      reserved.forEach(r => {
+        const rsvp: RSVP = { tag: r.trim() };
+        const member = guildMembers.array().find(m => m.user.tag === r.trim());
+        if (member) {
+          rsvp.id = member.user.id;
+        }
+      });
+      this.reserved = rsvps;
+    }
+  }
+  
+  static updateReservedList(list: string, guildMembers: GuildMember[]) {
+    const rsvps: RSVP[] = [];
+    const reserved = list.split(/\r?\n/);
+    reserved.forEach(r => {
+      const rsvp: RSVP = { tag: r.trim() };
+      const member = guildMembers.find(m => m.user.tag === r.trim());
+      if (member) {
+        rsvp.id = member.user.id;
+      }
+    });
+    return rsvps;
   }
 }
 
