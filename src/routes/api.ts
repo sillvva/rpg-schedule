@@ -879,7 +879,6 @@ export default (options: APIRouteOptions) => {
 
   router.get("/api/pledges", async (req, res, next) => {
     const pledges = await aux.patreonPledges();
-    console.log(pledges)
     res.json({
       pledges:
         pledges.status === "success"
