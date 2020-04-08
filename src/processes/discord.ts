@@ -622,6 +622,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
             game.reserved = [...game.reserved.trim().split(/\r?\n/), user.tag].join("\n");
             if (game.reserved.startsWith("\n")) game.reserved = game.reserved.substr(1);
             game.save();
+            game.dmCustomInstructions(user.tag);
           }
         }
         if (reaction.emoji.name === guildConfig.emojiRemove) {

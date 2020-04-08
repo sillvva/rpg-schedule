@@ -585,7 +585,7 @@ export default (options: APIRouteOptions) => {
           if (req.method === "POST") {
             Object.entries(req.body).forEach(([key, value]) => {
               if (key === "_id") return;
-              if (game[key]) game[key] = value;
+              if (typeof game[key] !== "undefined") game[key] = value;
             });
 
             for (let i = 0; i < 7; i++) {
@@ -682,6 +682,7 @@ export default (options: APIRouteOptions) => {
                 reserved.splice(reserved.indexOf(result.account.user.tag), 1);
               } else {
                 reserved.push(result.account.user.tag);
+                await game.dmCustomInstructions(result.account.user.tag);
               }
 
               game.reserved = reserved.join("\n");

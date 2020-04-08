@@ -26,22 +26,22 @@ export enum Frequency {
 
 export enum MonthlyType {
   WEEKDAY = "weekday",
-  DATE = "date"
+  DATE = "date",
 }
 
 export enum GameMethod {
   AUTOMATED = "automated",
-  CUSTOM = "custom"
+  CUSTOM = "custom",
 }
 
 export enum GameWhen {
   DATETIME = "datetime",
-  NOW = "now"
+  NOW = "now",
 }
 
 export enum RescheduleMode {
   REPOST = "repost",
-  UPDATE = "update"
+  UPDATE = "update",
 }
 
 export interface GameModel {
@@ -115,7 +115,7 @@ export class Game implements GameModel {
   pm: string;
   gameImage: string;
   frequency: Frequency;
-  weekdays: boolean[] = [false,false,false,false,false,false,false];
+  weekdays: boolean[] = [false, false, false, false, false, false, false];
   monthlyType: MonthlyType = MonthlyType.WEEKDAY;
   clearReservedOnRepeat: boolean = false;
   rescheduled: boolean = false;
@@ -125,7 +125,7 @@ export class Game implements GameModel {
   get discordGuild() {
     return this._guild;
   }
-  
+
   private _channel: TextChannel;
   get discordChannel() {
     return this._channel;
@@ -138,7 +138,7 @@ export class Game implements GameModel {
     this._guild = discordClient().guilds.cache.get(this.s);
     if (!this._guild) this._guild = discordClient().guilds.resolve(this.s);
     if (this._guild) {
-      this._guild.channels.cache.forEach(c => {
+      this._guild.channels.cache.forEach((c) => {
         if (!this._channel && c instanceof TextChannel) {
           this._channel = c;
         }
@@ -183,22 +183,25 @@ export class Game implements GameModel {
       monthlyType: this.monthlyType,
       clearReservedOnRepeat: this.clearReservedOnRepeat,
       rescheduled: this.rescheduled,
-      sequence: this.sequence
+      sequence: this.sequence,
     };
   }
 
   async save() {
-    if (!connection()) { aux.log("No database connection"); return null; }
+    if (!connection()) {
+      aux.log("No database connection");
+      return null;
+    }
     let channel = this._channel;
     const guild = channel.guild;
     const guildConfig = await GuildConfig.fetch(guild.id);
     const game: GameModel = this.data;
 
     if (guild && !channel) {
-      const textChannels = <TextChannel[]>guild.channels.cache.array().filter(c => c instanceof TextChannel);
-      const channels = guildConfig.channels.filter(c => guild.channels.cache.array().find(gc => gc.id == c)).map(c => guild.channels.cache.get(c));
+      const textChannels = <TextChannel[]>guild.channels.cache.array().filter((c) => c instanceof TextChannel);
+      const channels = guildConfig.channels.filter((c) => guild.channels.cache.array().find((gc) => gc.id == c)).map((c) => guild.channels.cache.get(c));
       if (channels.length === 0 && textChannels.length > 0) channels.push(textChannels[0]);
-      channel = <TextChannel>(channels[0]);
+      channel = <TextChannel>channels[0];
     }
 
     const supportedLanguages = require("../../lang/langs.json");
@@ -206,11 +209,11 @@ export class Game implements GameModel {
       .map((lang: String) => {
         return {
           code: lang,
-          ...require(`../../lang/${lang}.json`)
+          ...require(`../../lang/${lang}.json`),
         };
       })
       .sort((a: any, b: any) => (a.name > b.name ? 1 : -1));
-    const lang = languages.find(l => l.code === guildConfig.lang) || languages.find(l => l.code === "en");
+    const lang = languages.find((l) => l.code === guildConfig.lang) || languages.find((l) => l.code === "en");
 
     moment.locale(lang.code);
 
@@ -219,7 +222,7 @@ export class Game implements GameModel {
       .replace("@", "")
       .replace(/\#\d{4}/, "");
     let guildMembers = (await guild.members.fetch()).array();
-    let dmmember = guildMembers.find(mem => {
+    let dmmember = guildMembers.find((mem) => {
       return mem.user.tag === game.dm.trim().replace("@", "");
     });
     if (dmmember) {
@@ -235,7 +238,7 @@ export class Game implements GameModel {
       .split(/\r?\n/)
       .forEach((res: string) => {
         if (res.trim().length === 0) return;
-        let member = guildMembers.find(mem => mem.user.tag.trim() === res.trim());
+        let member = guildMembers.find((mem) => mem.user.tag.trim() === res.trim());
 
         let name = res.trim().replace(/\#\d{4}/, "");
         if (member) {
@@ -253,7 +256,7 @@ export class Game implements GameModel {
     const eventTimes = aux.parseEventTimes(game.date, game.time, game.timezone, {
       name: game.adventure,
       location: `${guild.name} - ${game.where}`,
-      description: game.description
+      description: game.description,
     });
     const rawDate = eventTimes.rawDate;
     const timezone = "UTC" + (game.timezone >= 0 ? "+" : "") + game.timezone;
@@ -261,9 +264,7 @@ export class Game implements GameModel {
     let description = parseDiscord(game.description, guild);
 
     let signups = "";
-    let automatedInstructions = `\n(${guildConfig.emojiAdd} ${lang.buttons.SIGN_UP}${
-      guildConfig.dropOut ? ` | ${guildConfig.emojiRemove} ${lang.buttons.DROP_OUT}` : ""
-    })`;
+    let automatedInstructions = `\n(${guildConfig.emojiAdd} ${lang.buttons.SIGN_UP}${guildConfig.dropOut ? ` | ${guildConfig.emojiRemove} ${lang.buttons.DROP_OUT}` : ""})`;
     if (game.method === GameMethod.AUTOMATED) {
       if (reserved.length > 0) signups += `\n**${lang.game.RESERVED}:**\n${reserved.join("\n")}\n`;
       if (waitlist.length > 0) signups += `\n**${lang.game.WAITLISTED}:**\n${waitlist.join("\n")}\n`;
@@ -276,10 +277,7 @@ export class Game implements GameModel {
     if (game.when === GameWhen.DATETIME) {
       const date = Game.ISOGameDate(game);
       const tz = Math.round(parseFloat(game.timezone.toString()) * 4) / 4;
-      when =
-        moment(date)
-          .utcOffset(tz)
-          .format(config.formats.dateLong) + ` (${timezone})`;
+      when = moment(date).utcOffset(tz).format(config.formats.dateLong) + ` (${timezone})`;
       game.timestamp = new Date(rawDate).getTime();
     } else if (game.when === GameWhen.NOW) {
       when = lang.game.options.NOW;
@@ -301,23 +299,22 @@ export class Game implements GameModel {
 
     let embed: MessageEmbed;
     if (guildConfig.embeds === false) {
-      if (game && game.gameImage && game.gameImage.trim().length > 0) { 
+      if (game && game.gameImage && game.gameImage.trim().length > 0) {
         embed = new discord.MessageEmbed();
         embed.setColor(guildConfig.embedColor);
-        embed.setImage(game.gameImage.trim().substr(0, 2048)); 
+        embed.setImage(game.gameImage.trim().substr(0, 2048));
       }
-    } 
-    else {
+    } else {
       msg = "";
       embed = new discord.MessageEmbed();
       embed.setColor(guildConfig.embedColor);
       embed.setTitle(game.adventure);
       if (dmmember && dmmember.user.avatarURL()) embed.setAuthor(dm, dmmember.user.avatarURL().substr(0, 2048));
       if (dmmember && dmmember.user.avatarURL()) embed.setThumbnail(dmmember.user.avatarURL().substr(0, 2048));
-      if(description.length > 0) embed.setDescription(description);
+      if (description.length > 0) embed.setDescription(description);
       if (game.hideDate) embed.addField(lang.game.WHEN, lang.game.labels.TBD, true);
       else embed.addField(lang.game.WHEN, when, true);
-      if(game.runtime && game.runtime.trim().length > 0 && game.runtime.trim() != '0') embed.addField(lang.game.RUN_TIME, `${game.runtime} ${lang.game.labels.HOURS}`, true);
+      if (game.runtime && game.runtime.trim().length > 0 && game.runtime.trim() != "0") embed.addField(lang.game.RUN_TIME, `${game.runtime} ${lang.game.labels.HOURS}`, true);
       embed.addField(lang.game.WHERE, where);
       if (guildConfig.embedMentions) embed.addField(lang.game.GM, gmTag);
       if (game.method === GameMethod.AUTOMATED) {
@@ -326,7 +323,12 @@ export class Game implements GameModel {
       } else if (game.method === GameMethod.CUSTOM) {
         embed.addField(lang.game.CUSTOM_SIGNUP_INSTRUCTIONS, game.customSignup);
       }
-      if (!game.hideDate) embed.addField("Links", `[📅 ${lang.game.ADD_TO_CALENDAR}](${eventTimes.googleCal})\n[🗺 ${lang.game.CONVERT_TIME_ZONE}](${eventTimes.convert.timeAndDate})\n[⏰ ${lang.game.COUNTDOWN}](${eventTimes.countdown})`, true);
+      if (!game.hideDate)
+        embed.addField(
+          "Links",
+          `[📅 ${lang.game.ADD_TO_CALENDAR}](${eventTimes.googleCal})\n[🗺 ${lang.game.CONVERT_TIME_ZONE}](${eventTimes.convert.timeAndDate})\n[⏰ ${lang.game.COUNTDOWN}](${eventTimes.countdown})`,
+          true
+        );
       if (game.method === GameMethod.AUTOMATED) embed.setFooter(automatedInstructions);
       if (game && game.gameImage && game.gameImage.trim().length > 0) embed.setImage(game.gameImage.trim().substr(0, 2048));
     }
@@ -342,8 +344,7 @@ export class Game implements GameModel {
         message = await channel.messages.fetch(game.messageId);
         if (message) {
           message = await message.edit(msg, embed);
-        }
-        else {
+        } else {
           if (guildConfig.embeds === false) {
             message = <Message>await channel.send(msg, embed);
           } else {
@@ -362,13 +363,13 @@ export class Game implements GameModel {
         const updatedGame = aux.objectChanges(prev, game);
         io().emit("game", { action: "updated", gameId: game._id, game: updatedGame, guildId: game.s });
       } catch (err) {
-        aux.log('UpdateGameError:', err);
+        aux.log("UpdateGameError:", err);
         if (updated) updated.modifiedCount = 0;
       }
       const saved: GameSaveData = {
         _id: game._id,
         message: message,
-        modified: updated && updated.modifiedCount > 0
+        modified: updated && updated.modifiedCount > 0,
       };
       return saved;
     } else {
@@ -382,30 +383,27 @@ export class Game implements GameModel {
         } else {
           message = <Message>await channel.send(embed);
         }
-        
+
         try {
           if (game.method === GameMethod.AUTOMATED) await message.react(guildConfig.emojiAdd);
-        }
-        catch(err) {
+        } catch (err) {
           if (!aux.isEmoji(guildConfig.emojiAdd)) {
             gcUpdated = true;
-            guildConfig.emojiAdd = '➕';
+            guildConfig.emojiAdd = "➕";
             if (game.method === GameMethod.AUTOMATED) await message.react(guildConfig.emojiAdd);
           }
         }
         try {
           if (game.method === GameMethod.AUTOMATED && guildConfig.dropOut) await message.react(guildConfig.emojiRemove);
-        }
-        catch(err) {
+        } catch (err) {
           if (!aux.isEmoji(guildConfig.emojiRemove)) {
             gcUpdated = true;
-            guildConfig.emojiRemove = '➖';
+            guildConfig.emojiRemove = "➖";
             if (game.method === GameMethod.AUTOMATED && guildConfig.dropOut) await message.react(guildConfig.emojiRemove);
           }
         }
-      }
-      catch(err) {
-        aux.log('InsertGameError:', game.s, err);
+      } catch (err) {
+        aux.log("InsertGameError:", game.s, err);
       }
 
       if (gcUpdated) {
@@ -427,13 +425,11 @@ export class Game implements GameModel {
                 inserted.insertedId
             );
             await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { pm: pm.id } });
-          }
-          catch(err) {
-            aux.log('EditLinkError:', err);
+          } catch (err) {
+            aux.log("EditLinkError:", err);
           }
         }
-      }
-      else {
+      } else {
         aux.log(`GameMessageNotPostedError:\n`, game.s, `${msg}\n`, embed);
       }
 
@@ -442,14 +438,17 @@ export class Game implements GameModel {
       const saved: GameSaveData = {
         _id: inserted.insertedId.toString(),
         message: message,
-        modified: updated && updated.modifiedCount > 0
+        modified: updated && updated.modifiedCount > 0,
       };
       return saved;
     }
   }
 
   static async fetch(gameId: string | number | ObjectID): Promise<Game> {
-    if (!connection()) { aux.log("No database connection"); return null; }
+    if (!connection()) {
+      aux.log("No database connection");
+      return null;
+    }
     const game = await connection()
       .collection(collection)
       .findOne({ _id: new ObjectId(gameId) });
@@ -457,42 +456,43 @@ export class Game implements GameModel {
   }
 
   static async fetchBy(key: string, value: any): Promise<Game> {
-    if (!connection()) { aux.log("No database connection"); return null; }
+    if (!connection()) {
+      aux.log("No database connection");
+      return null;
+    }
     const query: mongodb.FilterQuery<any> = aux.fromEntries([[key, value]]);
-    const game: GameModel = await connection()
-      .collection(collection)
-      .findOne(query);
+    const game: GameModel = await connection().collection(collection).findOne(query);
     return game ? new Game(game) : null;
   }
 
   static async fetchAllBy(query: mongodb.FilterQuery<any>): Promise<Game[]> {
-    if (!connection()) { aux.log("No database connection"); return []; }
-    const games: GameModel[] = await connection()
-      .collection(collection)
-      .find(query)
-      .toArray();
-    return games.map(game => {
+    if (!connection()) {
+      aux.log("No database connection");
+      return [];
+    }
+    const games: GameModel[] = await connection().collection(collection).find(query).toArray();
+    return games.map((game) => {
       return new Game(game);
     });
   }
 
   static async fetchAllByLimit(query: mongodb.FilterQuery<any>, limit: number): Promise<Game[]> {
-    if (!connection()) { aux.log("No database connection"); return []; }
-    const games: GameModel[] = await connection()
-      .collection(collection)
-      .find(query)
-      .limit(limit)
-      .toArray();
-    return games.map(game => {
+    if (!connection()) {
+      aux.log("No database connection");
+      return [];
+    }
+    const games: GameModel[] = await connection().collection(collection).find(query).limit(limit).toArray();
+    return games.map((game) => {
       return new Game(game);
     });
   }
 
   static async deleteAllBy(query: mongodb.FilterQuery<any>) {
-    if (!connection()) { aux.log("No database connection"); return null; }
-    return await connection()
-      .collection(collection)
-      .deleteMany(query);
+    if (!connection()) {
+      aux.log("No database connection");
+      return null;
+    }
+    return await connection().collection(collection).deleteMany(query);
   }
 
   public getWeekdays() {
@@ -513,8 +513,14 @@ export class Game implements GameModel {
     const nextDate = Game.getNextDate(moment(this.date), validDays, Number(this.frequency), this.monthlyType);
     const nextISO = `${nextDate.replace(/-/g, "")}T${this.time.replace(/:/g, "")}00${this.timezone >= 0 ? "+" : "-"}${aux.parseTimeZoneISO(this.timezone)}`;
     const nextGamePassed = new Date(nextISO).getTime() <= new Date().getTime();
-    return gameEnded && !this.rescheduled && !nextGamePassed && ((this.frequency == Frequency.DAILY || this.frequency == Frequency.MONTHLY) ||
-            ((this.frequency == Frequency.WEEKLY || this.frequency == Frequency.BIWEEKLY) && validDays.length > 0));
+    return (
+      gameEnded &&
+      !this.rescheduled &&
+      !nextGamePassed &&
+      (this.frequency == Frequency.DAILY ||
+        this.frequency == Frequency.MONTHLY ||
+        ((this.frequency == Frequency.WEEKLY || this.frequency == Frequency.BIWEEKLY) && validDays.length > 0))
+    );
   }
 
   async reschedule() {
@@ -530,8 +536,7 @@ export class Game implements GameModel {
     const guildConfig = await GuildConfig.fetch(this.s);
     if (guildConfig.rescheduleMode === RescheduleMode.UPDATE) {
       await this.save();
-    }
-    else if (guildConfig.rescheduleMode === RescheduleMode.REPOST) {
+    } else if (guildConfig.rescheduleMode === RescheduleMode.REPOST) {
       let data = cloneDeep(this.data);
       delete data._id;
       const game = new Game(data);
@@ -556,7 +561,10 @@ export class Game implements GameModel {
   }
 
   async delete(options: any = {}) {
-    if (!connection()) { aux.log("No database connection"); return null; }
+    if (!connection()) {
+      aux.log("No database connection");
+      return null;
+    }
 
     const result = await this.softDelete(this._id);
 
@@ -570,7 +578,7 @@ export class Game implements GameModel {
           const message = await channel.messages.fetch(game.messageId);
           if (message) {
             message.delete().catch((err) => {
-              aux.log('Attempted to delete announcement message.');
+              aux.log("Attempted to delete announcement message.");
               // aux.log(err);
             });
           }
@@ -584,7 +592,7 @@ export class Game implements GameModel {
           const message = await channel.messages.fetch(game.reminderMessageId);
           if (message) {
             message.delete().catch((err) => {
-              aux.log('Attempted to delete reminder message.');
+              aux.log("Attempted to delete reminder message.");
               // aux.log(err);
             });
           }
@@ -596,12 +604,12 @@ export class Game implements GameModel {
       try {
         if (game.pm) {
           const guildMembers = await channel.guild.members.fetch();
-          const dm = guildMembers.find(m => m.user.tag === game.dm);
+          const dm = guildMembers.find((m) => m.user.tag === game.dm);
           if (dm && dm.user.dmChannel) {
             const pm = await dm.user.dmChannel.messages.fetch(game.pm);
             if (pm) {
               pm.delete().catch((err) => {
-                aux.log('Attempted to delete game edit link pm.');
+                aux.log("Attempted to delete game edit link pm.");
                 // aux.log(err);
               });
             }
@@ -616,34 +624,43 @@ export class Game implements GameModel {
     return result;
   }
 
+  async dmCustomInstructions(tag: string) {
+    if (this.method === "automated" && this.customSignup.trim().length > 0 && this.discordGuild) {
+      const guildMembers = await this.discordGuild.members.fetch();
+      const dmmember = guildMembers.array().find((m) => m.user.tag === this.dm.trim());
+      const member = guildMembers.array().find((m) => m.user.tag === tag.trim());
+      if (member) {
+        member.send(`A message from ${(dmmember || this.dm).toString()} for ${this.adventure}:\n${this.customSignup.replace(/`/g, "")}`);
+      }
+    }
+  }
+
   static ISOGameDate(game: GameModel) {
     return `${game.date.replace(/-/g, "")}T${game.time.replace(/:/g, "")}00${game.timezone >= 0 ? "+" : "-"}${aux.parseTimeZoneISO(game.timezone)}`;
   }
 
   static getNextDate(baseDate: moment.Moment, validDays: string[], frequency: Frequency, monthlyType: MonthlyType) {
-    if (frequency == Frequency.NO_REPEAT)
-        return null;
-  
+    if (frequency == Frequency.NO_REPEAT) return null;
+
     let dateGenerator;
     let nextDate = baseDate;
 
-    switch(frequency) {
+    switch (frequency) {
       case Frequency.DAILY:
-        nextDate = moment(baseDate).add(1, 'days');
+        nextDate = moment(baseDate).add(1, "days");
         break;
       case Frequency.WEEKLY: // weekly
-        if (validDays === undefined || validDays.length === 0)
-          break;
+        if (validDays === undefined || validDays.length === 0) break;
         dateGenerator = moment(baseDate).recur().every(validDays).daysOfWeek();
         nextDate = dateGenerator.next(1)[0];
         break;
       case Frequency.BIWEEKLY: // biweekly
-        if (validDays === undefined || validDays.length === 0)
-          break;
+        if (validDays === undefined || validDays.length === 0) break;
         // this is a compound interval...
         dateGenerator = moment(baseDate).recur().every(validDays).daysOfWeek();
         nextDate = dateGenerator.next(1)[0];
-        while(nextDate.week() - moment(baseDate).week() == 1) { // if the next date is in the same week, diff = 0. if it is just next week, diff = 1, so keep going forward.
+        while (nextDate.week() - moment(baseDate).week() == 1) {
+          // if the next date is in the same week, diff = 0. if it is just next week, diff = 1, so keep going forward.
           dateGenerator = moment(nextDate).recur().every(validDays).daysOfWeek();
           nextDate = dateGenerator.next(1)[0];
         }
@@ -654,28 +671,27 @@ export class Game implements GameModel {
           const validDay = moment(baseDate).day();
           dateGenerator = moment(baseDate).recur().every(validDay).daysOfWeek().every(weekOfMonth).weeksOfMonthByDay();
           nextDate = dateGenerator.next(1)[0];
-        }
-        else {
-          nextDate = moment(baseDate).add(1, 'month');
+        } else {
+          nextDate = moment(baseDate).add(1, "month");
         }
         break;
       default:
         throw new Error(`invalid frequency ${frequency} specified`);
     }
-  
-    return moment(nextDate).format('YYYY-MM-DD');
+
+    return moment(nextDate).format("YYYY-MM-DD");
   }
 }
 
 const parseDiscord = (text: string, guild: Guild) => {
   try {
-    guild.members.cache.array().forEach(mem => {
+    guild.members.cache.array().forEach((mem) => {
       text = text.replace(new RegExp(`\@${aux.backslash(mem.user.tag)}`, "gi"), mem.toString());
     });
-    guild.channels.cache.array().forEach(c => {
+    guild.channels.cache.array().forEach((c) => {
       text = text.replace(new RegExp(`\#${aux.backslash(c.name)}`, "gi"), c.toString());
     });
-    guild.roles.cache.array().forEach(role => {
+    guild.roles.cache.array().forEach((role) => {
       if (!role.mentionable) return;
       text = text.replace(new RegExp(`\@${aux.backslash(role.name)}`, "gi"), role.toString());
     });
