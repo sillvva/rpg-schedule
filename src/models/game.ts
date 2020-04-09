@@ -583,7 +583,7 @@ export class Game implements GameModel {
           const del2 = await Game.softDelete(id);
           if (del2.deletedCount == 0) {
             this.rescheduled = true;
-            this.save();
+            await this.save();
           }
         }
         io().emit("game", { action: "rescheduled", gameId: this._id, newGameId: newGame._id });
