@@ -559,37 +559,44 @@ export class Game implements GameModel {
   }
 
   async reschedule() {
-    const validDays = this.getWeekdays();
-    const nextDate = Game.getNextDate(moment(this.date), validDays, Number(this.frequency), this.monthlyType);
-    aux.log(`Rescheduling ${this.s}: ${this.adventure} from ${this.date} (${this.time}) to ${nextDate} (${this.time})`);
-    this.date = nextDate;
+    try {
+      const validDays = this.getWeekdays();
+      const nextDate = Game.getNextDate(moment(this.date), validDays, Number(this.frequency), this.monthlyType);
+      aux.log(`Rescheduling ${this.s}: ${this.adventure} from ${this.date} (${this.time}) to ${nextDate} (${this.time})`);
+      this.date = nextDate;
 
-    if (this.clearReservedOnRepeat) {
-      this.reserved = [];
-    }
-
-    const guildConfig = await GuildConfig.fetch(this.s);
-    if (guildConfig.rescheduleMode === RescheduleMode.UPDATE) {
-      await this.save();
-    } else if (guildConfig.rescheduleMode === RescheduleMode.REPOST) {
-      let data = cloneDeep(this.data);
-      delete data._id;
-      const game = new Game(data);
-      const newGame = await game.save();
-      const del = await this.delete();
-      if (del.deletedCount == 0) {
-        const del2 = await this.softDelete(this._id);
-        if (del2.deletedCount == 0) {
-          this.reminded = true;
-          await this.save();
-        }
+      if (this.clearReservedOnRepeat) {
+        this.reserved = "";
       }
-      io().emit("game", { action: "rescheduled", gameId: this._id, newGameId: newGame._id, guildId: game.s });
+
+      const guildConfig = await GuildConfig.fetch(this.s);
+      if (guildConfig.rescheduleMode === RescheduleMode.UPDATE) {
+        await this.save();
+      } else if (guildConfig.rescheduleMode === RescheduleMode.REPOST) {
+        let data = cloneDeep(this.data);
+        const id = data._id;
+        delete data._id;
+        const game = new Game(data);
+        const newGame = await game.save();
+        const del = await this.delete();
+        if (del.deletedCount == 0) {
+          const del2 = await Game.softDelete(id);
+          if (del2.deletedCount == 0) {
+            this.rescheduled = true;
+            this.save();
+          }
+        }
+        io().emit("game", { action: "rescheduled", gameId: this._id, newGameId: newGame._id });
+      }
+      return true;
     }
-    return true;
+    catch(err) {
+      aux.log(err.message || err);
+      return false;
+    }
   }
 
-  async softDelete(_id: string | number | mongodb.ObjectID) {
+  static async softDelete(_id: string | number | mongodb.ObjectID) {
     return await connection()
       .collection(collection)
       .deleteOne({ _id: new ObjectId(_id) });
@@ -598,10 +605,15 @@ export class Game implements GameModel {
   async delete(options: any = {}) {
     if (!connection()) {
       aux.log("No database connection");
-      return null;
+      return { deletedCount: 0 };
     }
 
-    const result = await this.softDelete(this._id);
+    try {
+      var result = await Game.softDelete(this._id);
+    }
+    catch(err) {
+      aux.log(err.message || err);
+    }
 
     const { sendWS = true } = options;
     const game: GameModel = this;
