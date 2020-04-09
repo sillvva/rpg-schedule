@@ -175,7 +175,8 @@ export default (options: APIRouteOptions) => {
     }
 
     const storedSession = await Session.fetch(bearer);
-    // aux.log(res.locals.url, storedSession, bearer);
+    // aux.log(bearer, res.locals.url);
+    // aux.log(JSON.stringify(storedSession));
     if (storedSession) {
       req.session.api = storedSession.session.api;
       // console.log((moment().unix() - req.session.api.lastRefreshed) / (60 * 60))
