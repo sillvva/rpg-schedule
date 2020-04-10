@@ -37,9 +37,9 @@ export class Session implements SessionDataModel {
         expires_in: 604800,
         refresh_token: "",
         scope: "identify guilds",
-        token_type: "Bearer"
-      }
-    }
+        token_type: "Bearer",
+      },
+    },
   };
 
   constructor(session: SessionDataModel) {
@@ -54,7 +54,7 @@ export class Session implements SessionDataModel {
       _id: this._id,
       expires: this.expires,
       token: this.token,
-      session: this.session
+      session: this.session,
     };
   }
 
@@ -74,9 +74,7 @@ export class Session implements SessionDataModel {
 
   static async fetch(token: string): Promise<Session> {
     if (!connection()) throw new Error("No database connection");
-    const data = await connection()
-      .collection(collection)
-      .findOne({ token: token });
+    const data = await connection().collection(collection).findOne({ token: token });
     if (data) return new Session(data);
     else return null;
   }

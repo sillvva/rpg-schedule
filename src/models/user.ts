@@ -16,7 +16,7 @@ interface UserDataModel extends UserModel {
 export class User implements UserDataModel {
   _id: string | number | ObjectID;
   id: string;
-  lang: string = 'en';
+  lang: string = "en";
 
   constructor(session: UserDataModel) {
     Object.entries(session).forEach(([key, value]) => {
@@ -28,7 +28,7 @@ export class User implements UserDataModel {
     return {
       _id: this._id,
       id: this.id,
-      lang: this.lang
+      lang: this.lang,
     };
   }
 
@@ -41,14 +41,12 @@ export class User implements UserDataModel {
 
   static async fetch(id: string): Promise<User> {
     if (!connection()) throw new Error("No database connection");
-    const data = await connection()
-      .collection(collection)
-      .findOne({ id: id });
+    const data = await connection().collection(collection).findOne({ id: id });
     if (data) return new User(data);
     else {
       const user = new User({ _id: new ObjectId(), id: id });
       await user.save();
       return user;
-    };
+    }
   }
 }
