@@ -195,6 +195,7 @@ export default (options: APIRouteOptions) => {
             res.json({
               status: "error",
               message: err.message || err,
+              reauthenticate: true,
               code: 19,
             });
           });
