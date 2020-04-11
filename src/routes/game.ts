@@ -60,7 +60,7 @@ export default (options: GameRouteOptions) => {
         }
       }
 
-      if (Array.isArray(game.reserved)) {
+      if (game && Array.isArray(game.reserved)) {
         game.reserved = game.reserved.map((r) => r.tag).join("\n");
       }
 
