@@ -31,7 +31,7 @@ export default (options: GameRouteOptions) => {
       qm: req.query.m,
       qy: req.query.y,
       qd: req.query.d,
-      moment: moment
+      moment: moment,
     });
   });
 
@@ -59,9 +59,9 @@ export default (options: GameRouteOptions) => {
           game = new Game(req.body);
         }
       }
-      
+
       if (Array.isArray(game.reserved)) {
-        game.reserved = game.reserved.map(r => r.tag).join("\n");
+        game.reserved = game.reserved.map((r) => r.tag).join("\n");
       }
 
       if (server) {
@@ -73,8 +73,8 @@ export default (options: GameRouteOptions) => {
 
           const guildConfig = await GuildConfig.fetch(guild.id);
           const guildMembers = await guild.members.fetch();
-          const member = req.account.user && guildMembers.array().find(m => m.id === req.account.user.id);
-          const userGuild = req.account.guilds.find(g => g.id === guild.id);
+          const member = req.account.user && guildMembers.array().find((m) => m.id === req.account.user.id);
+          const userGuild = req.account.guilds.find((g) => g.id === guild.id);
           if (guildConfig && !(member && req.account.user.tag === config.author)) {
             password = guildConfig.password;
             // A role is required to post on the server
@@ -86,7 +86,7 @@ export default (options: GameRouteOptions) => {
               } else {
                 if (member) {
                   // User does not have the require role
-                  if (!member.roles.cache.find(r => r.name.toLowerCase().trim() === guildConfig.role.toLowerCase().trim())) {
+                  if (!member.roles.cache.find((r) => r.name.toLowerCase().trim() === guildConfig.role.toLowerCase().trim())) {
                     res.redirect(config.urls.game.dashboard.path);
                     return;
                   }
@@ -99,8 +99,8 @@ export default (options: GameRouteOptions) => {
             }
           }
 
-          const textChannels = <TextChannel[]>guild.channels.cache.array().filter(c => c instanceof TextChannel);
-          const channels = guildConfig.channels.filter(c => guild.channels.cache.array().find(gc => gc.id == c)).map(c => guild.channels.cache.get(c));
+          const textChannels = <TextChannel[]>guild.channels.cache.array().filter((c) => c instanceof TextChannel);
+          const channels = guildConfig.channels.filter((c) => guild.channels.cache.array().find((gc) => gc.id == c)).map((c) => guild.channels.cache.get(c));
           if (channels.length === 0 && textChannels.length > 0) channels.push(textChannels[0]);
 
           if (channels.length === 0) {
@@ -132,37 +132,41 @@ export default (options: GameRouteOptions) => {
             gameImage: "",
             frequency: "",
             monthlyType: MonthlyType.WEEKDAY,
-            weekdays: [false,false,false,false,false,false,false],
+            weekdays: [false, false, false, false, false, false, false],
             clearReservedOnRepeat: false,
             env: process.env,
             is: {
               newgame: !req.query.g ? true : false,
               editgame: req.query.g ? true : false,
-              locked: password ? true : false
+              locked: password ? true : false,
             },
             password: password ? password : false,
             enums: {
               GameMethod: GameMethod,
               GameWhen: GameWhen,
               RescheduleMode: RescheduleMode,
-              MonthlyType: MonthlyType
+              MonthlyType: MonthlyType,
             },
             guildConfig: guildConfig,
             errors: {
               other: null,
               minPlayers: game && (isNaN(parseInt(game.minPlayers || "1")) || parseInt(game.minPlayers || "1") > parseInt(game.players || "0")),
               maxPlayers: game && (isNaN(parseInt(game.players || "0")) || parseInt(game.minPlayers || "1") > parseInt(game.players || "0")),
-              dm: game && !guildMembers.array().find(mem => {
-                return mem.user.tag === game.dm.trim().replace("@", "");
-              }),
-              reserved: game ? game.reserved
-                .replace(/@/g, "")
-                .split(/\r?\n/)
-                .filter(res => {
-                  if (res.trim().length === 0) return false;
-                  return !guildMembers.array().find(mem => mem.user.tag === res.trim());
-                }) : []
-            }
+              dm:
+                game &&
+                !guildMembers.array().find((mem) => {
+                  return mem.user.tag === game.dm.trim().replace("@", "");
+                }),
+              reserved: game
+                ? game.reserved
+                    .replace(/@/g, "")
+                    .split(/\r?\n/)
+                    .filter((res) => {
+                      if (res.trim().length === 0) return false;
+                      return !guildMembers.array().find((mem) => mem.user.tag === res.trim());
+                    })
+                : [],
+            },
           };
 
           if (req.query.g) {
@@ -179,24 +183,23 @@ export default (options: GameRouteOptions) => {
             });
 
             for (let i = 0; i < 7; i++) {
-              game.weekdays[i] = req.body['weekday'+i] ? true : false; // have to manually re-set falses b/c form data isn't sent if the checkbox is not checked
+              game.weekdays[i] = req.body["weekday" + i] ? true : false; // have to manually re-set falses b/c form data isn't sent if the checkbox is not checked
             }
             data.weekdays = game.weekdays;
 
-            game.hideDate = req.body['hideDate'] ? true : false;
-            game.clearReservedOnRepeat = req.body['clearReservedOnRepeat'] ? true : false;
+            game.hideDate = req.body["hideDate"] ? true : false;
+            game.clearReservedOnRepeat = req.body["clearReservedOnRepeat"] ? true : false;
 
             game
               .save()
-              .then(response => {
+              .then((response) => {
                 if (response.modified) res.redirect(config.urls.game.create.path + "?g=" + response._id);
                 else res.render("game", data);
               })
-              .catch(err => {
+              .catch((err) => {
                 if (err.message.startsWith("DM")) {
                   data.errors.dm = err.message;
-                }
-                else {
+                } else {
                   data.errors.other = err.message || err;
                 }
                 res.render("game", data);
@@ -220,8 +223,11 @@ export default (options: GameRouteOptions) => {
       if (req.query.g) {
         const game = await Game.fetch(req.query.g);
         if (game) {
+          if (Array.isArray(game.reserved)) {
+            game.reserved = game.reserved.map((r) => r.tag).join("\n");
+          }
           const reserved = game.reserved.split(/\r?\n/);
-          if (reserved.find(t => t === req.account.user.tag)) {
+          if (reserved.find((t) => t === req.account.user.tag)) {
             reserved.splice(reserved.indexOf(req.account.user.tag), 1);
           } else {
             reserved.push(req.account.user.tag);
@@ -244,7 +250,7 @@ export default (options: GameRouteOptions) => {
       if (req.query.g) {
         const game = await Game.fetch(req.query.g);
         if (!game) throw new Error("Game not found");
-        game.delete({ sendWS: false }).then(response => {
+        game.delete({ sendWS: false }).then((response) => {
           if (req.account) {
             res.redirect(config.urls.game.dashboard.path);
           } else {
@@ -266,12 +272,12 @@ export default (options: GameRouteOptions) => {
         const result = guildConfig.password === req.query.p;
         req.session.status = {
           ...config.defaults.sessionStatus,
-          ...req.session.status
+          ...req.session.status,
         };
         if (result) {
           req.session.status.loggedInTo.push(req.query.s);
         } else {
-          req.session.status.loggedInTo = req.session.status.loggedInTo.filter(s => s !== req.query.s);
+          req.session.status.loggedInTo = req.session.status.loggedInTo.filter((s) => s !== req.query.s);
         }
         res.status(200).json({ result: result });
       } else {
