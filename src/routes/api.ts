@@ -205,6 +205,7 @@ export default (options: APIRouteOptions) => {
       res.json({
         status: "error",
         message: "Invalid Session",
+        reauthenticate: true,
         code: 18,
       });
     }
@@ -295,7 +296,7 @@ export default (options: APIRouteOptions) => {
       fetchAccount(req.session.api.access, {
         client: client,
         guilds: true,
-        games: req.query.games,
+        games: !!req.query.games,
         page: req.query.page,
         ip: req.app.locals.ip
       })
@@ -963,7 +964,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
                   account.guilds.push({
                     id: guild.id,
                     name: guild.name,
-                    icon: `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=128`,
+                    icon: guild.icon ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=128` : "/images/logo2.png",
                     permission: false,
                     isAdmin: false,
                     member: member,
