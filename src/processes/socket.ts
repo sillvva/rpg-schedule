@@ -4,7 +4,7 @@ import http from "http";
 let _io: SocketIO.Server;
 
 export function socket(httpServer: http.Server) {
-  _io = SocketIO(httpServer);
+  _io = SocketIO.listen(httpServer);
 
   _io.on("connection", (socket) => {
     // console.log("Client connected!");

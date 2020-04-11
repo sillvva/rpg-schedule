@@ -172,5 +172,9 @@
       "LANG": "Set the bot's language. Supported:",
       "RESCHEDULE_MODE": "Options: `repost` (default, creates new announcement post), `update` (updates original announcement post)"
     }
+  },
+  "messages": {
+    "DM_WAITLIST": "You are currently slot :NUM on the waitlist.",
+    "DM_INSTRUCTIONS": "A message from :DM for :EVENT"
   }
 }
