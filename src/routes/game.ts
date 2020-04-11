@@ -74,7 +74,7 @@ export default (options: GameRouteOptions) => {
           if (guildConfig && !(member && req.account.user.tag === config.author)) {
             password = guildConfig.password;
             // A role is required to post on the server
-            if (guildConfig.role && !userGuild.isAdmin) {
+            if (guildConfig.role && !(userGuild && userGuild.isAdmin)) {
               // User is not logged in
               if (!req.account) {
                 res.redirect(config.urls.login.path);

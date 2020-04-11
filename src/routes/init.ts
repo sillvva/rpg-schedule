@@ -45,6 +45,7 @@ export default (options: any) => {
     };
 
     try {
+      console.log(req.session.id, req.session.status);
       const storedSession = await connection()
         .collection("sessions")
         .findOne({ _id: req.session.id });
@@ -56,8 +57,20 @@ export default (options: any) => {
         const access = req.session.status.access;
         if (access.token_type) {
           // Refresh token
-          const headers = {
-            "Content-Type": "application/x-www-form-urlencoded"
+          const requestData = {
+            url: "https://discordapp.com/api/v6/oauth2/token",
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded"
+            },
+            form: {
+              client_id: process.env.CLIENT_ID,
+              client_secret: process.env.CLIENT_SECRET,
+              grant_type: "refresh_token",
+              refresh_token: access.refresh_token,
+              redirect_uri: process.env.HOST + config.urls.login.path,
+              scope: "identify guilds"
+            }
           };
 
           // if (!req.session.status.lastRefreshed || req.session.status.lastRefreshed + 300 < moment().unix()) {

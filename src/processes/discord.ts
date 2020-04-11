@@ -730,15 +730,15 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
     aux.log(err);
   });
 
-  client.on("shardReady", (id) => {
+  client.on("shardReady", id => {
     aux.log("Client: Shard Ready", id);
   });
 
-  client.on("shardReconnecting", (id) => {
+  client.on("shardReconnecting", id => {
     aux.log("Client: Shard Reconnecting", id);
   });
 
-  client.on("shardResume", (id) => {
+  client.on("shardResume", id => {
     aux.log("Client: Shard Resumed", id);
   });
 
