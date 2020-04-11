@@ -12,20 +12,29 @@ import config from "./models/config";
 import discord from "./processes/discord";
 import { socket } from "./processes/socket";
 
-import initRoutes from "./routes/init";
-import gameRoutes from "./routes/game";
-import infoRoutes from "./routes/info";
-import otherRoutes from "./routes/other";
-import timezoneRoutes from "./routes/timezone";
-import loginRoutes from "./routes/login";
-import redirectRoutes from "./routes/redirects";
+import apiRoutes from "./routes/api";
+// import initRoutes from "./routes/init";
+// import gameRoutes from "./routes/game";
+// import infoRoutes from "./routes/info";
+// import otherRoutes from "./routes/other";
+// import timezoneRoutes from "./routes/timezone";
+// import loginRoutes from "./routes/login";
+// import redirectRoutes from "./routes/redirects";
 import rssRoutes from "./routes/rss";
 
 const app = express();
 
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, "..", "public")));
 app.use(cookieParser());
+
+app.use("/", async (req, res, next) => {
+  res.set("Access-Control-Allow-Origin", process.env.HOST);
+  res.set("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS");
+  res.set("Access-Control-Allow-Headers", "authorization, accept, content-type");
+  next();
+});
 
 /**
  * EJS
@@ -130,14 +139,15 @@ else {
   /**
    * Routes
    */
+  app.use(apiRoutes({ client: client }));
   app.use(rssRoutes({ client: client }));
-  app.use(loginRoutes());
-  app.use(initRoutes({ client: client }));
-  app.use(gameRoutes({ client: client }));
-  app.use(infoRoutes());
-  app.use(otherRoutes());
-  app.use(timezoneRoutes());
-  app.use(redirectRoutes());
+  // app.use(loginRoutes());
+  // app.use(initRoutes({ client: client }));
+  // app.use(gameRoutes({ client: client }));
+  // app.use(infoRoutes());
+  // app.use(otherRoutes());
+  // app.use(timezoneRoutes());
+  // app.use(redirectRoutes());
   app.use("/", (req: any, res, next) => {
     res.render("home");
   });

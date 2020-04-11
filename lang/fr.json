@@ -172,5 +172,9 @@
       "LANG": "Définissez la langue du bot. Prise en charge:",
       "RESCHEDULE_MODE": ""
     }
+  },
+  "messages": {
+    "DM_WAITLIST": "Vous êtes actuellement à l'emplacement :NUM sur la liste d'attente.",
+    "DM_INSTRUCTIONS": "Un message de :DM pour :EVENT"
   }
 }

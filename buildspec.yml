@@ -6,5 +6,11 @@ phases:
       # Install dependencies needed for running application
       - npm install
 
+      # Build Project
+      - npm run build
+
       # Upgrade AWS CLI to the latest version
       - pip install --upgrade awscli
+artifacts:
+  files:
+    - '**/*'
