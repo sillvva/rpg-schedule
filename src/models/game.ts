@@ -210,6 +210,8 @@ export class Game implements GameModel {
     let channel = this._channel;
     const guild = channel.guild;
     const guildConfig = await GuildConfig.fetch(guild.id);
+
+    await this.updateReservedList();
     const game: GameModel = this.data;
 
     if (guild && !channel) {
@@ -236,8 +238,6 @@ export class Game implements GameModel {
       if (guildConfig.embeds === false) dm = gmTag;
       else dm = dmmember.nickname || dm;
     }
-
-    await this.updateReservedList();
 
     let reserved: string[] = [];
     let waitlist: string[] = [];
@@ -750,7 +750,9 @@ export class Game implements GameModel {
         if (member) {
           rsvp.id = member.user.id;
         }
+        rsvps.push(rsvp);
       });
+      console.log(rsvps);
       this.reserved = rsvps;
     }
   }
