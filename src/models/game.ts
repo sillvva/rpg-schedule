@@ -374,7 +374,9 @@ export class Game implements GameModel {
       game.sequence++;
 
       const prev = (await Game.fetch(game._id)).data;
-      const updated = await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: game });
+      const gameData = cloneDeep(game);
+      delete gameData._id;
+      const updated = await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: gameData });
       let message: Message;
       try {
         message = await channel.messages.fetch(game.messageId);
