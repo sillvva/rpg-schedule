@@ -231,6 +231,7 @@ export default (options: GameRouteOptions) => {
             reserved.splice(reserved.indexOf(req.account.user.tag), 1);
           } else {
             reserved.push(req.account.user.tag);
+            game.dmCustomInstructions(req.account.user.tag);
           }
 
           game.reserved = reserved.join("\n");
