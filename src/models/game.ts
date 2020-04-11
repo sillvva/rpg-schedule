@@ -752,7 +752,6 @@ export class Game implements GameModel {
         }
         rsvps.push(rsvp);
       });
-      console.log(rsvps);
       this.reserved = rsvps;
     }
   }
