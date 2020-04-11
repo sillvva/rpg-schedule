@@ -630,11 +630,15 @@ export class Game implements GameModel {
       const member = guildMembers.array().find((m) => m.user.tag === tag.trim());
 
       if (member) {
-        const lang = gmLanguages.find((l) => l.code === guildConfig.lang) || gmLanguages.find((l) => l.code === "en");
+        const lang = gmLanguages.find((l: any) => l.code === guildConfig.lang) || gmLanguages.find((l: any) => l.code === "en");
+
+        if (Array.isArray(this.reserved)) {
+          this.reserved = this.reserved.map((r) => r.tag).join("\n");
+        }
 
         let waitlisted = "";
-        if (Array.isArray(this.reserved) && this.reserved.findIndex((r) => r.id === member.user.id || r.tag === member.user.tag) + 1 > parseInt(this.players)) {
-          const slotNum = this.reserved.findIndex((r) => r.id === member.user.id || r.tag === member.user.tag) + 1 - parseInt(this.players);
+        if (this.reserved.split(/\r?\n/g).filter(r => r.length > 0).findIndex((r) => r.trim() === member.user.tag.trim()) + 1 > parseInt(this.players)) {
+          const slotNum = this.reserved.split(/\r?\n/g).filter(r => r.length > 0).findIndex((r) => r.trim() === member.user.tag.trim()) + 1 - parseInt(this.players);
           waitlisted = `\n\n${lang.messages.DM_WAITLIST.replace(":NUM", slotNum)}`;
         }
 
