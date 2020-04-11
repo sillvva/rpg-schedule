@@ -615,6 +615,9 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
       }
       const game = await Game.fetchBy("messageId", message.id);
       if (game && user.id !== message.author.id) {
+        if (Array.isArray(game.reserved)) {
+          game.reserved = game.reserved.map(r => r.tag).join("\n");
+        }
         const guildConfig = await GuildConfig.fetch(game.s);
         if (reaction.emoji.name === guildConfig.emojiAdd) {
           reaction.users.remove(<UserResolvable>user);
@@ -644,6 +647,9 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
     if (oldUser.tag != newUser.tag) {
       const games = await Game.fetchAllBy({ $or: [{ dm: oldUser.tag }, { reserved: new RegExp(aux.backslash(oldUser.tag), "gi") }] });
       games.forEach(game => {
+        if (Array.isArray(game.reserved)) {
+          game.reserved = game.reserved.map(r => r.tag).join("\n");
+        }
         // aux.log(game.adventure);
         if (game.dm === oldUser.tag) game.dm = newUser.tag;
         if (game.reserved.includes(oldUser.tag)) game.reserved = game.reserved.replace(new RegExp(aux.backslash(oldUser.tag), "gi"), newUser.tag);
@@ -784,6 +790,10 @@ const rescheduleOldGames = async (guildId?: string) => {
     let count = 0;
     for (let i = 0; i < games.length; i++) {
       const game = games[i];
+      
+      if (Array.isArray(game.reserved)) {
+        game.reserved = game.reserved.map(r => r.tag).join("\n");
+      }
 
       if (
         game.canReschedule() &&
@@ -912,6 +922,10 @@ const postReminders = async (app: Express) => {
 
     const reserved: string[] = [];
     const reservedUsers: discord.GuildMember[] = [];
+      
+    if (Array.isArray(game.reserved)) {
+      game.reserved = game.reserved.map(r => r.tag).join("\n");
+    }
 
     try {
       var where = game.where;

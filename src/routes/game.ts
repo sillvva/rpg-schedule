@@ -59,6 +59,10 @@ export default (options: GameRouteOptions) => {
           game = new Game(req.body);
         }
       }
+      
+      if (Array.isArray(game.reserved)) {
+        game.reserved = game.reserved.map(r => r.tag).join("\n");
+      }
 
       if (server) {
         let guild: Guild = client.guilds.cache.get(server);
@@ -137,10 +141,6 @@ export default (options: GameRouteOptions) => {
               locked: password ? true : false
             },
             password: password ? password : false,
-            // host: process.env.HOST,
-            // account: req.account,
-            // lang: req.lang.selected,
-            // langs: req.lang.list,
             enums: {
               GameMethod: GameMethod,
               GameWhen: GameWhen,

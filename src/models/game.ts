@@ -225,6 +225,10 @@ export class Game implements GameModel {
       else dm = dmmember.nickname || dm;
     }
 
+    if (Array.isArray(game.reserved)) {
+      game.reserved = game.reserved.map(r => r.tag).join("\n");
+    }
+
     let reserved: string[] = [];
     let waitlist: string[] = [];
     game.reserved

@@ -45,7 +45,7 @@ export default (options: any) => {
     };
 
     try {
-      console.log(req.session.id, req.session.status);
+      // console.log(req.session.id, req.session.status);
       const storedSession = await connection()
         .collection("sessions")
         .findOne({ _id: req.session.id });
@@ -256,6 +256,10 @@ export default (options: any) => {
                     .utcOffset(parseInt(game.timezone))
                     .fromNow()
                 };
+      
+                if (Array.isArray(game.reserved)) {
+                  game.reserved = game.reserved.map(r => r.tag).join("\n");
+                }
 
                 game.slot = game.reserved.split(/\r?\n/).findIndex(t => t.trim().replace("@", "") === tag) + 1;
                 game.signedup = game.slot > 0 && game.slot <= parseInt(game.players);
