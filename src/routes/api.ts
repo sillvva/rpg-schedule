@@ -25,6 +25,7 @@ export default (options: APIRouteOptions) => {
   router.use("/api", async (req, res, next) => {
     const siteSettings = await SiteSettings.fetch(process.env.SITE);
 
+    req.app.locals.ip = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
     req.app.locals.settings = siteSettings.data;
 
     try {
@@ -94,9 +95,10 @@ export default (options: APIRouteOptions) => {
         fetchAccount(token, {
           client: client,
           guilds: true,
+          ip: req.app.locals.ip
         })
           .then(async (result: any) => {
-            const storedSession = await Session.fetch(token);
+            const storedSession = await Session.fetch(token.access_token, req.app.locals.ip);
             if (storedSession) storedSession.delete();
 
             const d = new Date();
@@ -104,6 +106,7 @@ export default (options: APIRouteOptions) => {
             const session = new Session({
               expires: d,
               token: token.access_token,
+              ip: req.app.locals.ip,
               session: {
                 api: {
                   lastRefreshed: moment().unix(),
@@ -119,7 +122,7 @@ export default (options: APIRouteOptions) => {
             });
 
             await session.save();
-            aux.log("success", token.access_token);
+            // aux.log("success", token.access_token);
 
             res.json({
               status: "success",
@@ -158,6 +161,7 @@ export default (options: APIRouteOptions) => {
     const langs = req.app.locals.langs;
     const selectedLang = req.cookies.lang && langs.map((l) => l.code).includes(req.cookies.lang) ? req.cookies.lang : "en";
 
+    req.app.locals.ip = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
     req.app.locals.lang = merge(cloneDeep(langs.find((lang: any) => lang.code === "en")), cloneDeep(langs.find((lang: any) => lang.code === selectedLang)));
 
     res.locals.lang = req.app.locals.lang;
@@ -174,14 +178,14 @@ export default (options: APIRouteOptions) => {
       });
     }
 
-    const storedSession = await Session.fetch(bearer);
+    const storedSession = await Session.fetch(bearer, req.app.locals.ip);
     // aux.log(bearer, res.locals.url);
     // aux.log(JSON.stringify(storedSession));
     if (storedSession) {
       req.session.api = storedSession.session.api;
       // console.log((moment().unix() - req.session.api.lastRefreshed) / (60 * 60))
       if ((moment().unix() - req.session.api.lastRefreshed) / (60 * 60) >= 12) {
-        refreshToken(req.session.api.access)
+        refreshToken(req.session.api.access, req.app.locals.ip)
           .then((newToken) => {
             // console.log(newToken);
             req.session.api.access = newToken;
@@ -210,6 +214,7 @@ export default (options: APIRouteOptions) => {
     try {
       fetchAccount(req.session.api.access, {
         client: client,
+        ip: req.app.locals.ip
       })
         .then(async (result: any) => {
           const userSettings = await getUserSettings(result.account.user.id, req);
@@ -242,6 +247,7 @@ export default (options: APIRouteOptions) => {
     try {
       fetchAccount(req.session.api.access, {
         client: client,
+        ip: req.app.locals.ip
       })
         .then(async (result: any) => {
           const user = await User.fetch(result.account.user.id);
@@ -291,6 +297,7 @@ export default (options: APIRouteOptions) => {
         guilds: true,
         games: req.query.games,
         page: req.query.page,
+        ip: req.app.locals.ip
       })
         .then(async (result: any) => {
           const userSettings = await getUserSettings(result.account.user.id, req);
@@ -324,6 +331,7 @@ export default (options: APIRouteOptions) => {
       fetchAccount(req.session.api.access, {
         client: client,
         guilds: true,
+        ip: req.app.locals.ip
       })
         .then(async (result: any) => {
           if (!req.body.id) throw new Error("Server configuration not found");
@@ -538,7 +546,7 @@ export default (options: APIRouteOptions) => {
             if (guildConfig.role && !isAdmin) {
               // Ensure user is logged in
               try {
-                await fetchAccount(token, { client: client });
+                await fetchAccount(token, { client: client, ip: req.app.locals.ip });
               } catch (err) {
                 return res.json({
                   status: "error",
@@ -726,6 +734,7 @@ export default (options: APIRouteOptions) => {
         if (game) {
           fetchAccount(req.session.api.access, {
             client: client,
+            ip: req.app.locals.ip
           })
             .then(async (result: any) => {
               // const reserved = game.reserved.split(/\r?\n/);
@@ -827,6 +836,7 @@ export default (options: APIRouteOptions) => {
     try {
       fetchAccount(req.session.api.access, {
         client: client,
+        ip: req.app.locals.ip
       })
         .then(async (result: any) => {
           if (Object.keys(req.body).length > 0) {
@@ -909,6 +919,7 @@ enum GamesPages {
 
 interface AccountOptions {
   client: Client;
+  ip: string;
   guilds?: Boolean;
   games?: Boolean;
   page?: GamesPages;
@@ -1083,7 +1094,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
         }
         throw new Error(`OAuth: ${error}`);
       } catch (err) {
-        refreshToken(token)
+        refreshToken(token, options.ip)
           .then((newToken) => {
             if ((err.message || err).indexOf("OAuth") < 0) reject(err);
             else resolve(fetchAccount(newToken, options));
@@ -1096,10 +1107,9 @@ const fetchAccount = (token: any, options: AccountOptions) => {
   });
 };
 
-const refreshToken = (access: any) => {
+const refreshToken = (access: any, ip: string) => {
   return new Promise(async (resolve, reject) => {
-    // const storedSession = await Session.fetch(req.session.bearer);
-    const storedSession = await Session.fetch(access.access_token);
+    const storedSession = await Session.fetch(access.access_token, ip);
     if (access.token_type) {
       // Refresh token
       const headers = {
@@ -1143,6 +1153,7 @@ const refreshToken = (access: any) => {
           const session = new Session({
             expires: d,
             token: token.access_token,
+            ip: ip,
             session: {
               api: {
                 lastRefreshed: moment().unix(),
