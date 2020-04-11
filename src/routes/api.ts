@@ -205,6 +205,7 @@ export default (options: APIRouteOptions) => {
       res.json({
         status: "error",
         message: "Invalid Session",
+        reauthenticate: true,
         code: 18,
       });
     }
