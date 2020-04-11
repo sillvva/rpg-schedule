@@ -151,7 +151,7 @@ const parseEventTimes = (date: string, time: string, timezone: number, event?: E
       timee: `https://timee.io/${d}?${convertExtras.join("")}`,
       timeAndDate: `https://www.timeanddate.com/worldclock/converter.html?iso=${d}&p1=1440`
     },
-    countdown: `https://www.timeanddate.com/countdown/generic?iso=${d}&p0=1440${convert2Extras.join("")}`,
+    countdown: `https://www.webcountdown.net/?c=${rawDate.getTime() / 1000}`,
     googleCal: `http://www.google.com/calendar/render?action=TEMPLATE&dates=${isoutc}/${isoutc}&trp=false${googleCalExtras.join("")}`
   };
 };
