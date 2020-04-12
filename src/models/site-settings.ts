@@ -3,16 +3,23 @@ import db from "../db";
 const connection = db.connection;
 const collection = "siteSettings";
 
+interface Credit {
+  type: string;
+  name: string;
+}
+
 export interface SiteSettingModel {
   site: string;
   maintenanceTime: number;
   maintenanceDuration: number;
+  credits: Credit[]
 }
 
 export class SiteSettings implements SiteSettingModel {
   site: string = process.env.SITE;
   maintenanceTime: number = 0;
   maintenanceDuration: number = 0;
+  credits: Credit[] = [];
 
   constructor(session: SiteSettingModel) {
     Object.entries(session).forEach(([key, value]) => {
@@ -24,7 +31,8 @@ export class SiteSettings implements SiteSettingModel {
     return {
       site: this.site,
       maintenanceTime: this.maintenanceTime,
-      maintenanceDuration: this.maintenanceDuration
+      maintenanceDuration: this.maintenanceDuration,
+      credits: this.credits
     };
   }
 
@@ -42,7 +50,7 @@ export class SiteSettings implements SiteSettingModel {
       .findOne({ site: site });
     if (data) return new SiteSettings(data);
     else {
-      const siteSettings = new SiteSettings({ site: process.env.SITE, maintenanceTime: 0, maintenanceDuration: 0 });
+      const siteSettings = new SiteSettings({ site: process.env.SITE, maintenanceTime: 0, maintenanceDuration: 0, credits: [] });
       await siteSettings.save();
       return siteSettings;
     };

@@ -98,7 +98,7 @@ export default (options: APIRouteOptions) => {
           ip: req.app.locals.ip
         })
           .then(async (result: any) => {
-            const storedSession = await Session.fetch(token.access_token, req.app.locals.ip);
+            const storedSession = await Session.fetch(token.access_token);
             if (storedSession) storedSession.delete();
 
             const d = new Date();
@@ -106,7 +106,6 @@ export default (options: APIRouteOptions) => {
             const session = new Session({
               expires: d,
               token: token.access_token,
-              ip: req.app.locals.ip,
               session: {
                 api: {
                   lastRefreshed: moment().unix(),
@@ -178,14 +177,14 @@ export default (options: APIRouteOptions) => {
       });
     }
 
-    const storedSession = await Session.fetch(bearer, req.app.locals.ip);
+    const storedSession = await Session.fetch(bearer);
     // aux.log(bearer, res.locals.url);
     // aux.log(JSON.stringify(storedSession));
     if (storedSession) {
       req.session.api = storedSession.session.api;
       // console.log((moment().unix() - req.session.api.lastRefreshed) / (60 * 60))
       if ((moment().unix() - req.session.api.lastRefreshed) / (60 * 60) >= 12) {
-        refreshToken(req.session.api.access, req.app.locals.ip)
+        refreshToken(req.session.api.access)
           .then((newToken) => {
             // console.log(newToken);
             req.session.api.access = newToken;
@@ -306,7 +305,7 @@ export default (options: APIRouteOptions) => {
           res.json({
             status: "success",
             token: req.session.api.access.access_token,
-            guilds: result.account.guilds,
+            account: result.account,
             user: userSettings.data,
           });
         })
@@ -315,6 +314,7 @@ export default (options: APIRouteOptions) => {
             status: "error",
             token: req.session.api.access.access_token,
             message: `GuildsAPI: FetchAccountError: ${err}`,
+            reauthenticate: true,
             code: 11,
           });
         });
@@ -913,10 +913,10 @@ export default (options: APIRouteOptions) => {
 };
 
 enum GamesPages {
-  upcoming = "upcoming",
-  myGames = "my-games",
-  calendar = "calendar",
-  server = "server",
+  Upcoming = "upcoming",
+  MyGames = "my-games",
+  Calendar = "calendar",
+  Server = "server",
 }
 
 interface AccountOptions {
@@ -1006,7 +1006,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
               return guild;
             });
 
-            if (options.page === GamesPages.server) {
+            if (options.page === GamesPages.Server) {
               account.guilds = account.guilds.filter((g) => account.guilds.find((s) => s.id === g.id && (s.isAdmin || config.author == tag)));
             }
 
@@ -1020,7 +1020,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
                 },
               };
 
-              if (options.page === GamesPages.myGames) {
+              if (options.page === GamesPages.MyGames) {
                 gameOptions.$or = [
                   {
                     dm: tag,
@@ -1033,7 +1033,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
                 ];
               }
 
-              if (options.page === GamesPages.upcoming) {
+              if (options.page === GamesPages.Upcoming) {
                 gameOptions.timestamp = {
                   $gt: new Date().getTime(),
                 };
@@ -1042,6 +1042,12 @@ const fetchAccount = (token: any, options: AccountOptions) => {
                     $ne: tag,
                   };
                 }
+              }
+
+              if (options.page === GamesPages.Calendar) {
+                gameOptions.timestamp = {
+                  $gt: new Date().getTime(),
+                };
               }
 
               const games: any[] = await Game.fetchAllBy(gameOptions);
@@ -1078,7 +1084,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
               return guild;
             });
 
-            if (options.page === GamesPages.upcoming || options.page === GamesPages.myGames) {
+            if (options.page === GamesPages.Upcoming || options.page === GamesPages.MyGames) {
               account.guilds.sort((a, b) => {
                 if (a.games.length === 0 && b.games.length === 0) return a.name < b.name ? -1 : 1;
                 if (a.games.length === 0) return 1;
@@ -1096,7 +1102,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
         }
         throw new Error(`OAuth: ${error}`);
       } catch (err) {
-        refreshToken(token, options.ip)
+        refreshToken(token)
           .then((newToken) => {
             if ((err.message || err).indexOf("OAuth") < 0) reject(err);
             else resolve(fetchAccount(newToken, options));
@@ -1109,9 +1115,9 @@ const fetchAccount = (token: any, options: AccountOptions) => {
   });
 };
 
-const refreshToken = (access: any, ip: string) => {
+const refreshToken = (access: any) => {
   return new Promise(async (resolve, reject) => {
-    const storedSession = await Session.fetch(access.access_token, ip);
+    const storedSession = await Session.fetch(access.access_token);
     if (access.token_type) {
       // Refresh token
       const headers = {
@@ -1155,7 +1161,6 @@ const refreshToken = (access: any, ip: string) => {
           const session = new Session({
             expires: d,
             token: token.access_token,
-            ip: ip,
             session: {
               api: {
                 lastRefreshed: moment().unix(),

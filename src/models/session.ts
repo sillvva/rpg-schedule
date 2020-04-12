@@ -7,7 +7,6 @@ const collection = "sessions";
 export interface SessionModel {
   expires: Date;
   token: String;
-  ip: String;
   session: {
     api: {
       lastRefreshed: Number;
@@ -30,7 +29,6 @@ export class Session implements SessionDataModel {
   _id: string | number | ObjectID;
   expires: Date = new Date();
   token: String = "";
-  ip: String = "";
   session = {
     api: {
       lastRefreshed: 0,
@@ -56,7 +54,6 @@ export class Session implements SessionDataModel {
       _id: this._id,
       expires: this.expires,
       token: this.token,
-      ip: this.ip,
       session: this.session,
     };
   }
@@ -75,9 +72,9 @@ export class Session implements SessionDataModel {
       .deleteOne({ _id: new ObjectID(this._id) });
   }
 
-  static async fetch(token: string, ip: string): Promise<Session> {
+  static async fetch(token: string): Promise<Session> {
     if (!connection()) throw new Error("No database connection");
-    const data = await connection().collection(collection).findOne({ token: token, ip: ip });
+    const data = await connection().collection(collection).findOne({ token: token });
     if (data) return new Session(data);
     else return null;
   }
