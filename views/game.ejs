@@ -123,15 +123,9 @@
                     </div>
                 </div>
             <% } else { %>
-                <input type="hidden" name="method" id="method" value="<%= method %>">
+                <input type="hidden" name="method" id="method" value="<%= method %>"> 
                 <input type="hidden" name="when" id="when" value="<%= when %>">
             <% } %>
-        </div>
-        <div id="method__custom">
-            <div class="form-group">
-                <label for="customSignup" class="col-form-label"><%= lang.game.CUSTOM_SIGNUP_INSTRUCTIONS %></label>
-                <input type="text" class="form-control" id="customSignup" name="customSignup" value="<%= customSignup %>">
-            </div>
         </div>
         <div id="when__datetime" class="row">
             <div class="form-group col-sm-6 col-md-3">
@@ -238,7 +232,7 @@
             <% if (clearReservedOnRepeat) { %><input type="hidden" name="clearReservedOnRepeat" value="true" /><% } %>
         <% } %>
         <div class="row">
-            <div class="col-sm-5">
+            <div class="col-sm-3">
                 <div class="form-group">
                     <label for="reserved" class="col-form-label"><%= lang.game.RESERVED_SLOTS %></label>
                     <textarea class="form-control" id="reserved" name="reserved" rows="7" placeholder="Username#1234"><%= reserved %></textarea>
@@ -254,11 +248,23 @@
                 </div>
                 <% } %>
             </div>
-            <div class="col-sm-7">
+            <div class="col-sm-4">
+                <div class="form-group">
+                    <label for="customSignup" class="col-form-label"><%= lang.game.CUSTOM_SIGNUP_INSTRUCTIONS %></label>
+                    <textarea class="form-control" id="customSignup" name="customSignup" rows="7" maxlength="1500" onkeyup="document.getElementById('cs-len').innerHTML = this.value.length"><%= customSignup %></textarea>
+                    <div>
+                        <small>
+                            <span id="method__custom"><%= lang.game.SIGNUP_INSTRUCTIONS_DESC %></span> 
+                            (<span id="cs-len"><%= customSignup.length %></span> / <%= lang.game.MAX %> <span id="cs-max">1500</span> <%= lang.game.CHARACTERS %>)
+                        </small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-5">
                 <div class="form-group">
                     <label for="description" class="col-form-label"><%= lang.game.DESCRIPTION %></label>
-                    <textarea class="form-control" id="description" name="description" rows="7" maxlength="<%= guildConfig.embeds ? 1500 : 1500 %>" onkeyup="document.getElementById('desc-len').innerHTML = this.value.length"><%= description %></textarea>
-                    <small><%= lang.game.labels.DISCORD_FORMATTING %> (<span id="desc-len"><%= description.length %></span> / <%= lang.game.MAX %> <%= guildConfig.embeds ? 1500 : 1500 %> <%= lang.game.CHARACTERS %>)</small>
+                    <textarea class="form-control" id="description" name="description" rows="7" maxlength="1500" onkeyup="document.getElementById('desc-len').innerHTML = this.value.length"><%= description %></textarea>
+                    <small><%= lang.game.labels.DISCORD_FORMATTING %> (<span id="desc-len"><%= description.length %></span> / <%= lang.game.MAX %> <span id="desc-max">1500</span> <%= lang.game.CHARACTERS %>)</small>
                 </div>
             </div>
         </div>
@@ -292,6 +298,8 @@
     </form>
 </div>
 <script type="text/javascript">
+    const postMaxLength = 1500;
+
     $('#method').change(function() {
         const sel = $(this).val();
         $('#method__custom').addClass('d-none');
@@ -300,10 +308,16 @@
 
         if (sel === '<%= enums.GameMethod.AUTOMATED %>') {
             $('#method-desc').html('<%= lang.game.labels.AUTOMATED_SIGNUP_DESC %>');
-            $('#when').val('datetime').change();
-        } else  if (sel === '<%= enums.GameMethod.CUSTOM %>') {
             $('#method__custom').removeClass('d-none');
+            $('#when').val('datetime').change();
+            $('#description, #customSignup').off("change").off("keyup");
+            $('#customSignup').attr("maxlength", postMaxLength);
+            $('#cs-max').html(postMaxLength);
+            $('#description').attr("maxlength", postMaxLength);
+            $('#desc-max').html(postMaxLength);
+        } else  if (sel === '<%= enums.GameMethod.CUSTOM %>') {
             $('#customSignup').attr('required','');
+            longTextLength();
         }
     }).change();
 
@@ -325,6 +339,19 @@
             $('#method').val('custom').change();
         }
     }).change();
+
+    function longTextLength() {
+        $('#description, #customSignup').change(function() {
+            $('#customSignup').attr("maxlength", postMaxLength - $('#description').val().length);
+            $('#cs-max').html(postMaxLength - $('#description').val().length);
+            $('#description').attr("maxlength", postMaxLength - $('#customSignup').val().length);
+            $('#desc-max').html(postMaxLength - $('#customSignup').val().length);
+        }).change().keyup(function() { $(this).change(); });
+    }
+
+    <% if (method === enums.GameMethod.CUSTOM) { %>
+    longTextLength();
+    <% } %>
 
     $('#frequency, #monthlyType').change(function() {
         const frequency = $('#frequency').val();

@@ -217,7 +217,7 @@
             %>
             <li>
               <%= pledge.patron.attributes.full_name %>
-              <% if (pledge.patron.attributes.vanity && !pledge.patron.url.startsWith('https://www.patreon.com/user')) { %>
+              <% if (pledge.patron.attributes.vanity && pledge.patron.url && !pledge.patron.url.startsWith('https://www.patreon.com/user')) { %>
                 (<a href="<%= pledge.patron.attributes.url %>" target="_blank"><%= pledge.patron.attributes.vanity %></a>)
               <% } %>
             </li>

@@ -37,6 +37,7 @@
     "SIGN_UP_METHOD": "Sign Up Method",
     "WHEN": "When",
     "CUSTOM_SIGNUP_INSTRUCTIONS": "Custom Signup Instructions",
+    "SIGNUP_INSTRUCTIONS_DESC": "Instructions will be DM'd to users who sign up via the automated method.",
     "FREQUENCY": "Frequency",
     "WEEKDAYS": "Weekdays",
     "DATE": "Date",
@@ -172,5 +173,9 @@
       "LANG": "Set the bot's language. Supported:",
       "RESCHEDULE_MODE": "Options: `repost` (default, creates new announcement post), `update` (updates original announcement post)"
     }
+  },
+  "messages": {
+    "DM_WAITLIST": "You are currently slot :NUM on the waitlist.",
+    "DM_INSTRUCTIONS": "A message from :DM for :EVENT"
   }
 }

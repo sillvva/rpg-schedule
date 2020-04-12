@@ -60,7 +60,7 @@ export default (options: GameRouteOptions) => {
         }
       }
 
-      if (Array.isArray(game.reserved)) {
+      if (game && Array.isArray(game.reserved)) {
         game.reserved = game.reserved.map((r) => r.tag).join("\n");
       }
 
@@ -231,6 +231,7 @@ export default (options: GameRouteOptions) => {
             reserved.splice(reserved.indexOf(req.account.user.tag), 1);
           } else {
             reserved.push(req.account.user.tag);
+            game.dmCustomInstructions(req.account.user.tag);
           }
 
           game.reserved = reserved.join("\n");

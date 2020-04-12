@@ -81,10 +81,17 @@ const parseConfigParam = (paths: Object, param: String, value: String): any => {
   );
 };
 
-const objectChanges = (before: {}, after: {}) => {
+const objectChanges = (before: Object | Array<any>, after: Object | Array<any>) => {
   return _.toPairs(after).reduce((result, [key, value]) => {
     if (before[key] !== value) {
       result[key] = value instanceof Object && before[key] instanceof Object ? objectChanges(value, before[key]) : value;
+      if (Array.isArray(before[key])) {
+        let arr = [];
+        for(let i in after[key]) {
+          arr.push(after[key][i]);
+        }
+        result[key] = arr;
+      }
     }
     return result;
   }, {});
