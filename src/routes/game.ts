@@ -2,7 +2,7 @@ import express from "express";
 import moment from "moment";
 import discord, { Guild, TextChannel } from "discord.js";
 
-import { Game, MonthlyType, GameMethod, GameWhen, RescheduleMode } from "../models/game";
+import { Game, MonthlyType, GameMethod, GameWhen, RescheduleMode, RSVP } from "../models/game";
 import { GuildConfig } from "../models/guild-config";
 import config from "../models/config";
 
@@ -155,15 +155,14 @@ export default (options: GameRouteOptions) => {
               dm:
                 game &&
                 !guildMembers.array().find((mem) => {
-                  return mem.user.tag === game.dm.trim().replace("@", "");
+                  return mem.user.tag === (<RSVP>game.dm).tag.trim().replace("@", "") || mem.user.id === (<RSVP>game.dm).id;
                 }),
-              reserved:
-                game && Array.isArray(game.reserved)
-                  ? game.reserved.filter((res) => {
-                      if (res.tag.trim().length === 0) return false;
-                      return !guildMembers.array().find((mem) => mem.user.tag === res.tag.trim() || mem.user.id === res.id);
-                    })
-                  : [],
+              reserved: game
+                ? (<RSVP[]>game.reserved).filter((res) => {
+                    if (res.tag.trim().length === 0) return false;
+                    return !guildMembers.array().find((mem) => mem.user.tag === res.tag.trim() || mem.user.id === res.id);
+                  })
+                : [],
             },
           };
 
@@ -227,9 +226,7 @@ export default (options: GameRouteOptions) => {
           // } else {
           //   reserved.push(req.account.user.tag);
           // }
-
           // game.reserved = reserved.join("\n");
-
           // const result = await game.save();
         }
       }

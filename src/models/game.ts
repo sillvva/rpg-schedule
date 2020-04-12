@@ -69,7 +69,7 @@ export interface GameModel {
   runtime: string;
   minPlayers: string;
   players: string;
-  dm: string;
+  dm: RSVP | string;
   where: string;
   description: string;
   reserved: RSVP[] | string;
@@ -111,7 +111,7 @@ export class Game implements GameModel {
   runtime: string;
   minPlayers: string;
   players: string;
-  dm: string;
+  dm: RSVP | string;
   where: string;
   description: string;
   reserved: RSVP[] | string;
@@ -222,16 +222,16 @@ export class Game implements GameModel {
     }
 
     const lang = gmLanguages.find((l) => l.code === guildConfig.lang) || gmLanguages.find((l) => l.code === "en");
+    const guildMembers = (await guild.members.fetch()).array();
 
     moment.locale(lang.code);
 
-    let dm = game.dm
+    let dm = (<RSVP>game.dm).tag
       .trim()
       .replace("@", "")
       .replace(/\#\d{4}/, "");
-    let guildMembers = (await guild.members.fetch()).array();
     let dmmember = guildMembers.find((mem) => {
-      return mem.user.tag === game.dm.trim().replace("@", "");
+      return mem.user.tag === (<RSVP>game.dm).tag.trim().replace("@", "");
     });
     if (dmmember) {
       var gmTag = dmmember.user.toString();
@@ -241,53 +241,23 @@ export class Game implements GameModel {
 
     let reserved: string[] = [];
     let waitlist: string[] = [];
-    if (Array.isArray(game.reserved)) {
-      game.reserved.forEach((rsvp: RSVP, i) => {
-        if (rsvp.tag.trim().length === 0 && !rsvp.id) return;
-        let member = guildMembers.find((mem) => mem.user.tag.trim() === rsvp.tag.trim() || mem.user.id === rsvp.id);
+    (<RSVP[]>game.reserved).forEach((rsvp: RSVP, i) => {
+      if (rsvp.tag.trim().length === 0 && !rsvp.id) return;
+      let member = guildMembers.find((mem) => mem.user.tag.trim() === rsvp.tag.trim() || mem.user.id === rsvp.id);
 
-        let name = rsvp.tag.trim().replace(/\#\d{4}/, "");
-        if (member) {
-          if (guildConfig.embeds === false || guildConfig.embedMentions) name = member.user.toString();
-          else name = member.nickname || member.user.username;
-          rsvp.tag = member.user.tag;
-        }
+      let name = rsvp.tag.trim().replace(/\#\d{4}/, "");
+      if (member) {
+        if (guildConfig.embeds === false || guildConfig.embedMentions) name = member.user.toString();
+        else name = member.nickname || member.user.username;
+        rsvp.tag = member.user.tag;
+      }
 
-        if (reserved.length < parseInt(game.players)) {
-          reserved.push(reserved.length + 1 + ". " + name);
-        } else {
-          waitlist.push(reserved.length + waitlist.length + 1 + ". " + name);
-        }
-      });
-    }
-    // else {
-    //   const rsvp: RSVP[] = [];
-    //   game.reserved
-    //     .replace(/@/g, "")
-    //     .split(/\r?\n/)
-    //     .forEach((res: string) => {
-    //       if (res.trim().length === 0) return;
-    //       let member = guildMembers.find((mem) => mem.user.tag.trim() === res.trim());
-
-    //       const uRSVP: RSVP = { tag: res };
-
-    //       let name = res.trim().replace(/\#\d{4}/, "");
-    //       if (member) {
-    //         if (guildConfig.embeds === false || guildConfig.embedMentions) name = member.user.toString();
-    //         else name = member.nickname || member.user.username;
-    //         uRSVP.id = member.user.id;
-    //       }
-
-    //       rsvp.push(uRSVP);
-
-    //       if (reserved.length < parseInt(game.players)) {
-    //         reserved.push(reserved.length + 1 + ". " + name);
-    //       } else {
-    //         waitlist.push(reserved.length + waitlist.length + 1 + ". " + name);
-    //       }
-    //     });
-    //     game.reserved = rsvp;
-    // }
+      if (reserved.length < parseInt(game.players)) {
+        reserved.push(reserved.length + 1 + ". " + name);
+      } else {
+        waitlist.push(reserved.length + waitlist.length + 1 + ". " + name);
+      }
+    });
 
     const eventTimes = aux.parseEventTimes(game.date, game.time, game.timezone, {
       name: game.adventure,
@@ -677,19 +647,19 @@ export class Game implements GameModel {
       const guild = this.discordGuild;
       const guildMembers = await guild.members.fetch();
       const guildConfig = await GuildConfig.fetch(guild.id);
-      const dmmember = guildMembers.array().find((m) => m.user.tag === this.dm.trim());
+      const dmmember = guildMembers.array().find((m) => m.user.tag === (<RSVP>this.dm).tag.trim() || m.user.id === (<RSVP>this.dm).id);
       const member = guildMembers.array().find((m) => m.user.tag === tag.trim());
 
       if (member) {
         const lang = gmLanguages.find((l) => l.code === guildConfig.lang) || gmLanguages.find((l) => l.code === "en");
 
         let waitlisted = "";
-        if (Array.isArray(this.reserved) && this.reserved.findIndex((r) => r.id === member.user.id || r.tag === member.user.tag) + 1 > parseInt(this.players)) {
-          const slotNum = this.reserved.findIndex((r) => r.id === member.user.id || r.tag === member.user.tag) + 1 - parseInt(this.players);
+        if ((<RSVP[]>this.reserved).findIndex((r) => r.id === member.user.id || r.tag === member.user.tag) + 1 > parseInt(this.players)) {
+          const slotNum = (<RSVP[]>this.reserved).findIndex((r) => r.id === member.user.id || r.tag === member.user.tag) + 1 - parseInt(this.players);
           waitlisted = `\n\n${lang.messages.DM_WAITLIST.replace(":NUM", slotNum)}`;
         }
 
-        member.send(`${lang.messages.DM_INSTRUCTIONS.replace(":DM", (dmmember || this.dm).toString()).replace(":EVENT", this.adventure)}:\n${this.customSignup}${waitlisted}`);
+        member.send(`${lang.messages.DM_INSTRUCTIONS.replace(":DM", (dmmember || (<RSVP>this.dm).tag).toString()).replace(":EVENT", this.adventure)}:\n${this.customSignup}${waitlisted}`);
       }
     }
   }
@@ -742,13 +712,21 @@ export class Game implements GameModel {
   }
 
   async updateReservedList() {
+    let guildMembers: discord.Collection<string, GuildMember>;
+    if (typeof this.dm === "string") {
+      if (!guildMembers) guildMembers = await this.discordGuild.members.fetch();
+      const rsvp: RSVP = { tag: this.dm.trim() };
+      const member = guildMembers.array().find(m => m.user.tag === (<string>this.dm).trim());
+      if (member) rsvp.id = member.user.id;
+      this.dm = rsvp;
+    }
     if (typeof this.reserved === "string") {
-      const guildMembers = await this.discordGuild.members.fetch();
+      if (!guildMembers) guildMembers = await this.discordGuild.members.fetch();
       const rsvps: RSVP[] = [];
       const reserved = this.reserved.split(/\r?\n/);
       reserved.forEach((r) => {
         const rsvp: RSVP = { tag: r.trim() };
-        const member = guildMembers.array().find((m) => m.user.tag === r.trim());
+        const member = guildMembers.array().find(m => m.user.tag === r.trim());
         if (member) {
           rsvp.id = member.user.id;
         }

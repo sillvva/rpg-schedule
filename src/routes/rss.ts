@@ -4,7 +4,7 @@ import express from "express";
 import moment from "moment";
 
 import config from "../models/config";
-import { Game } from "../models/game";
+import { Game, RSVP } from "../models/game";
 
 export default (options: any) => {
   const router = express.Router();
@@ -124,37 +124,40 @@ export default (options: any) => {
       },
     };
 
-    if (signedup) {
-      gameOptions.$or = [{ dm: tag }, { reserved: { $regex: tag } }];
-    }
+    // if (signedup) {
+    //   gameOptions.$or = [{ dm: tag }, { reserved: { $regex: tag } }];
+    // }
 
     const games = await Game.fetchAllBy(gameOptions);
 
     const { error, value } = ics.createEvents(
-      games.map((game) => {
-        game.updateReservedList();
-        const d = new Date(game.timestamp);
-        return {
-          uid: `${game._id}@rpg-schedule.com`,
-          title: game.adventure,
-          start: [d.getFullYear(), d.getMonth() + 1, d.getDate(), d.getHours(), d.getMinutes()],
-          duration: { hours: game.runtime },
-          description: game.description,
-          categories: ["RPG Schedule", game.discordGuild.name],
-          location: game.where,
-          organizer: { name: game.dm, email: `${game.dm.replace(/[^a-z0-9_.]/gi, "")}@rpg-schedule.com` },
-          attendees: Array.isArray(game.reserved)
-            ? game.reserved
-                .filter((r) => r.tag.trim().length > 0)
-                .map((r, i) => ({
-                  name: r,
-                  rsvp: parseInt(game.players) - i > 0,
-                  email: `${r.id.replace(/[^a-z0-9_.]/gi, "")}@rpg-schedule.com`,
-                }))
-            : [],
-          sequence: game.sequence,
-        };
-      })
+      games
+        .filter((game) => {
+          game.updateReservedList();
+          return signedup ? (<RSVP>game.dm).tag === tag || (<RSVP[]>game.reserved).find((r) => r.tag === tag) : true;
+        })
+        .map((game) => {
+          game.updateReservedList();
+          const d = new Date(game.timestamp);
+          return {
+            uid: `${game._id}@rpg-schedule.com`,
+            title: game.adventure,
+            start: [d.getFullYear(), d.getMonth() + 1, d.getDate(), d.getHours(), d.getMinutes()],
+            duration: { hours: game.runtime },
+            description: game.description,
+            categories: ["RPG Schedule", game.discordGuild.name],
+            location: game.where,
+            organizer: { name: (<RSVP>game.dm).tag, email: `${(<RSVP>game.dm).tag.replace(/[^a-z0-9_.]/gi, "")}@rpg-schedule.com` },
+            attendees: (<RSVP[]>game.reserved)
+              .filter((r) => r.tag.trim().length > 0)
+              .map((r, i) => ({
+                name: r,
+                rsvp: parseInt(game.players) - i > 0,
+                email: `${r.id.replace(/[^a-z0-9_.]/gi, "")}@rpg-schedule.com`,
+              })),
+            sequence: game.sequence,
+          };
+        })
     );
 
     if (error) {

@@ -6,7 +6,7 @@ import merge from "lodash/merge";
 import cloneDeep from "lodash/cloneDeep";
 
 import { io } from "../processes/socket";
-import { Game, GameMethod, RescheduleMode, GameWhen, MonthlyType } from "../models/game";
+import { Game, GameMethod, RescheduleMode, GameWhen, MonthlyType, RSVP } from "../models/game";
 import { SiteSettings } from "../models/site-settings";
 import { GuildConfig } from "../models/guild-config";
 import { Session } from "../models/session";
@@ -25,7 +25,7 @@ export default (options: APIRouteOptions) => {
   router.use("/api", async (req, res, next) => {
     const siteSettings = await SiteSettings.fetch(process.env.SITE);
 
-    req.app.locals.ip = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    req.app.locals.ip = req.ip || req.headers["x-forwarded-for"] || req.connection.remoteAddress;
     req.app.locals.settings = siteSettings.data;
 
     try {
@@ -95,7 +95,7 @@ export default (options: APIRouteOptions) => {
         fetchAccount(token, {
           client: client,
           guilds: true,
-          ip: req.app.locals.ip
+          ip: req.app.locals.ip,
         })
           .then(async (result: any) => {
             const storedSession = await Session.fetch(token.access_token);
@@ -160,7 +160,7 @@ export default (options: APIRouteOptions) => {
     const langs = req.app.locals.langs;
     const selectedLang = req.cookies.lang && langs.map((l) => l.code).includes(req.cookies.lang) ? req.cookies.lang : "en";
 
-    req.app.locals.ip = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    req.app.locals.ip = req.ip || req.headers["x-forwarded-for"] || req.connection.remoteAddress;
     req.app.locals.lang = merge(cloneDeep(langs.find((lang: any) => lang.code === "en")), cloneDeep(langs.find((lang: any) => lang.code === selectedLang)));
 
     res.locals.lang = req.app.locals.lang;
@@ -215,7 +215,7 @@ export default (options: APIRouteOptions) => {
     try {
       fetchAccount(req.session.api.access, {
         client: client,
-        ip: req.app.locals.ip
+        ip: req.app.locals.ip,
       })
         .then(async (result: any) => {
           const userSettings = await getUserSettings(result.account.user.id, req);
@@ -248,7 +248,7 @@ export default (options: APIRouteOptions) => {
     try {
       fetchAccount(req.session.api.access, {
         client: client,
-        ip: req.app.locals.ip
+        ip: req.app.locals.ip,
       })
         .then(async (result: any) => {
           const user = await User.fetch(result.account.user.id);
@@ -298,7 +298,7 @@ export default (options: APIRouteOptions) => {
         guilds: true,
         games: !!req.query.games,
         page: req.query.page,
-        ip: req.app.locals.ip
+        ip: req.app.locals.ip,
       })
         .then(async (result: any) => {
           const userSettings = await getUserSettings(result.account.user.id, req);
@@ -333,7 +333,7 @@ export default (options: APIRouteOptions) => {
       fetchAccount(req.session.api.access, {
         client: client,
         guilds: true,
-        ip: req.app.locals.ip
+        ip: req.app.locals.ip,
       })
         .then(async (result: any) => {
           if (!req.body.id) throw new Error("Server configuration not found");
@@ -459,15 +459,14 @@ export default (options: APIRouteOptions) => {
               dm:
                 game &&
                 !guildMembers.array().find((mem) => {
-                  return mem.user.tag === game.dm.trim().replace("@", "");
+                  return mem.user.tag === (<RSVP>game.dm).tag.trim().replace("@", "") || mem.user.id === (<RSVP>game.dm).id;
                 }),
-              reserved:
-                game && Array.isArray(game.reserved)
-                  ? game.reserved.filter((res) => {
-                      if (res.tag.trim().length === 0) return false;
-                      return !guildMembers.array().find((mem) => mem.user.tag === res.tag.trim() || mem.user.id === res.id);
-                    })
-                  : [],
+              reserved: game
+                ? (<RSVP[]>game.reserved).filter((res) => {
+                    if (res.tag.trim().length === 0) return false;
+                    return !guildMembers.array().find((mem) => mem.user.tag === res.tag.trim() || mem.user.id === res.id);
+                  })
+                : [],
             },
           };
 
@@ -566,6 +565,8 @@ export default (options: APIRouteOptions) => {
             }
           }
 
+          if (game) await game.updateReservedList();
+
           const textChannels = <TextChannel[]>guild.channels.cache.array().filter((c) => c instanceof TextChannel);
           const channels = guildConfig.channels.filter((c) => guild.channels.cache.array().find((gc) => gc.id == c)).map((c) => guild.channels.cache.get(c));
           if (channels.length === 0 && textChannels.length > 0) channels.push(textChannels[0]);
@@ -622,15 +623,14 @@ export default (options: APIRouteOptions) => {
               dm:
                 game &&
                 !guildMembers.array().find((mem) => {
-                  return mem.user.tag === game.dm.trim().replace("@", "");
+                  return mem.user.tag === (<RSVP>game.dm).tag.trim().replace("@", "") || mem.user.id === (<RSVP>game.dm).id;
                 }),
-              reserved:
-                game && Array.isArray(game.reserved)
-                  ? game.reserved.filter((res) => {
-                      if (res.tag.trim().length === 0) return false;
-                      return !guildMembers.array().find((mem) => mem.user.tag === res.tag.trim() || mem.user.id === res.id);
-                    })
-                  : [],
+              reserved: game
+                ? (<RSVP[]>game.reserved).filter((res) => {
+                    if (res.tag.trim().length === 0) return false;
+                    return !guildMembers.array().find((mem) => mem.user.tag === res.tag.trim() || mem.user.id === res.id);
+                  })
+                : [],
             },
           };
 
@@ -736,7 +736,7 @@ export default (options: APIRouteOptions) => {
         if (game) {
           fetchAccount(req.session.api.access, {
             client: client,
-            ip: req.app.locals.ip
+            ip: req.app.locals.ip,
           })
             .then(async (result: any) => {
               // const reserved = game.reserved.split(/\r?\n/);
@@ -838,7 +838,7 @@ export default (options: APIRouteOptions) => {
     try {
       fetchAccount(req.session.api.access, {
         client: client,
-        ip: req.app.locals.ip
+        ip: req.app.locals.ip,
       })
         .then(async (result: any) => {
           if (Object.keys(req.body).length > 0) {

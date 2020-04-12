@@ -625,7 +625,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
           //   }
           // }
           if (Array.isArray(game.reserved)) {
-            if (!game.reserved.find(r => r.id === user.id || r.tag == user.tag)) {
+            if (!game.reserved.find((r) => r.id === user.id || r.tag == user.tag)) {
               game.reserved.push({ id: user.id, tag: user.tag });
               game.save();
               game.dmCustomInstructions(user.tag);
@@ -645,9 +645,8 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
           //   }
           // }
           if (Array.isArray(game.reserved)) {
-            if (game.reserved.find(r => r.tag === user.tag || r.id === user.id) && guildConfig.dropOut) {
-              game.reserved = game.reserved
-                .filter(r => r.tag !== user.tag && !(r.id && r.id === user.id));
+            if (game.reserved.find((r) => r.tag === user.tag || r.id === user.id) && guildConfig.dropOut) {
+              game.reserved = game.reserved.filter((r) => r.tag !== user.tag && !(r.id && r.id === user.id));
               game.save();
             }
           }
@@ -664,8 +663,8 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
       games.forEach(async (game) => {
         await game.updateReservedList();
         if (game.dm === oldUser.tag) game.dm = newUser.tag;
-        if (Array.isArray(game.reserved) && game.reserved.find(r => r.tag === oldUser.tag)) {
-          game.reserved = game.reserved.map(r => {
+        if (Array.isArray(game.reserved) && game.reserved.find((r) => r.tag === oldUser.tag)) {
+          game.reserved = game.reserved.map((r) => {
             if (r.tag === oldUser.tag) r.tag = newUser.tag;
             return r;
           });
@@ -730,15 +729,15 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
     aux.log(err);
   });
 
-  client.on("shardReady", id => {
+  client.on("shardReady", (id) => {
     aux.log("Client: Shard Ready", id);
   });
 
-  client.on("shardReconnecting", id => {
+  client.on("shardReconnecting", (id) => {
     aux.log("Client: Shard Reconnecting", id);
   });
 
-  client.on("shardResume", id => {
+  client.on("shardResume", (id) => {
     aux.log("Client: Shard Resumed", id);
   });
 
@@ -962,8 +961,8 @@ const postReminders = async (app: Express) => {
         }
       });
 
-      const member = guildMembers.array().find((mem) => mem.user.tag === game.dm.trim().replace("@", ""));
-      var dm = game.dm.trim().replace("@", "");
+      const member = guildMembers.array().find((mem) => mem.user.tag === (<RSVP>game.dm).tag.trim().replace("@", "") || mem.user.id === (<RSVP>game.dm).id);
+      var dm = (<RSVP>game.dm).tag.trim().replace("@", "");
       var dmMember = member;
       if (member) dm = member.user.toString();
     } catch (err) {}
