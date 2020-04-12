@@ -1023,7 +1023,27 @@ const fetchAccount = (token: any, options: AccountOptions) => {
               if (options.page === GamesPages.MyGames) {
                 gameOptions.$or = [
                   {
+                    "dm.tag": tag,
+                  },
+                  {
+                    "dm.id": id,
+                  },
+                  {
                     dm: tag,
+                  },
+                  {
+                    reserved: {
+                      $elemMatch: {
+                        tag: tag,
+                      },
+                    },
+                  },
+                  {
+                    reserved: {
+                      $elemMatch: {
+                        id: id,
+                      },
+                    },
                   },
                   {
                     reserved: {
@@ -1039,7 +1059,23 @@ const fetchAccount = (token: any, options: AccountOptions) => {
                 };
                 if (tag !== config.author) {
                   gameOptions.dm = {
-                    $ne: tag,
+                    $and: [
+                      {
+                        "dm.tag": {
+                          $ne: tag,
+                        },
+                      },
+                      {
+                        "dm.id": {
+                          $ne: id,
+                        },
+                      },
+                      {
+                        dm: {
+                          $ne: tag,
+                        },
+                      },
+                    ],
                   };
                 }
               }
