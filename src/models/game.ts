@@ -525,6 +525,7 @@ export class Game implements GameModel {
     const nextDate = Game.getNextDate(moment(this.date), validDays, Number(this.frequency), this.monthlyType);
     aux.log(`Rescheduling ${this.s}: ${this.adventure} from ${this.date} (${this.time}) to ${nextDate} (${this.time})`);
     this.date = nextDate;
+    this.reminded = false;
 
     if (this.clearReservedOnRepeat) {
       this.reserved = "";
@@ -542,7 +543,7 @@ export class Game implements GameModel {
       if (del.deletedCount == 0) {
         const del2 = await this.softDelete(this._id);
         if (del2.deletedCount == 0) {
-          this.reminded = true;
+          this.rescheduled = true;
           await this.save();
         }
       }
