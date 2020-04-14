@@ -130,7 +130,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                         `\`${botcmd} pruning ${guildConfig.pruning ? "on" : "off"}\` - \`on/off\` - ${lang.config.desc.PRUNING}\n` +
                         `\`${botcmd} prune\` - ${lang.config.desc.PRUNE}\n` +
                         `\`${botcmd} private-reminders\` - ${lang.config.desc.PRIVATE_REMINDERS.replace(/\:PR/gi, guildConfig.privateReminders ? "on" : "off")}\n` +
-                        `\`${botcmd} rechedule-mode ${guildConfig.rescheduleMode}\` - ${lang.config.desc.RESCHEDULE_MODE}\n`
+                        `\`${botcmd} reschedule-mode ${guildConfig.rescheduleMode}\` - ${lang.config.desc.RESCHEDULE_MODE}\n`
                     : ``
                 );
                 if (canConfigure) (<TextChannel>message.channel).send(embed3);
