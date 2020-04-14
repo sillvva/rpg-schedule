@@ -299,6 +299,7 @@ export default (options: APIRouteOptions) => {
         games: !!req.query.games,
         page: req.query.page,
         ip: req.app.locals.ip,
+        search: req.query.search,
       })
         .then(async (result: any) => {
           const userSettings = await getUserSettings(result.account.user.id, req);
@@ -314,7 +315,7 @@ export default (options: APIRouteOptions) => {
             status: "error",
             token: req.session.api.access.access_token,
             message: `GuildsAPI: FetchAccountError: ${err}`,
-            reauthenticate: true,
+            reauthenticate: (typeof (err.message || err) === "string" ? err.message || err : "").indexOf("OAuth:") >= 0,
             code: 11,
           });
         });
@@ -922,9 +923,10 @@ enum GamesPages {
 interface AccountOptions {
   client: Client;
   ip: string;
-  guilds?: Boolean;
-  games?: Boolean;
+  guilds?: boolean;
+  games?: boolean;
   page?: GamesPages;
+  search?: string;
 }
 
 const fetchAccount = (token: any, options: AccountOptions) => {
@@ -941,7 +943,6 @@ const fetchAccount = (token: any, options: AccountOptions) => {
 
     request(requestData, async (error, response, body) => {
       try {
-        // console.log(requestData, response.statusCode);
         if (!error && response.statusCode === 200) {
           const response = JSON.parse(body);
           const { username, discriminator, id, avatar } = response;
@@ -960,25 +961,32 @@ const fetchAccount = (token: any, options: AccountOptions) => {
 
           if (options.guilds) {
             client.guilds.cache.forEach((guild) => {
+              const guildInfo = {
+                id: guild.id,
+                name: guild.name,
+                icon: guild.icon ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=128` : "/images/logo2.png",
+                permission: false,
+                isAdmin: false,
+                member: null,
+                channels: guild.channels,
+                announcementChannels: [],
+                config: new GuildConfig({ guild: guild.id }),
+                games: [],
+              };
               guild.members.cache.forEach((member) => {
                 if (member.id === id) {
-                  account.guilds.push({
-                    id: guild.id,
-                    name: guild.name,
-                    icon: guild.icon ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=128` : "/images/logo2.png",
-                    permission: false,
-                    isAdmin: false,
-                    member: member,
-                    channels: guild.channels,
-                    announcementChannels: [],
-                    config: new GuildConfig({ guild: guild.id }),
-                    games: [],
-                  });
+                  guildInfo.member = member;
+                  if (!options.search) account.guilds.push(guildInfo);
                 }
               });
-
-              account.guilds = account.guilds.filter((guild) => !guild.config.hidden || config.author == tag);
+              if (options.search) {
+                if (new RegExp(options.search, "gi").test(guild.name)) {
+                  account.guilds.push(guildInfo);
+                }
+              }
             });
+
+            account.guilds = account.guilds.filter((guild) => (!guild.config.hidden && !options.search) || config.author == tag);
 
             const guildConfigs = await GuildConfig.fetchAllBy({
               guild: {
@@ -998,15 +1006,17 @@ const fetchAccount = (token: any, options: AccountOptions) => {
               if (channels.length === 0 && textChannels.length > 0) channels.push(textChannels[0]);
               guild.announcementChannels = channels;
 
-              guild.permission = guildConfig.role ? !!member.roles.cache.find((r) => r.name.toLowerCase().trim() === (guildConfig.role || "").toLowerCase().trim()) : true;
-              guild.isAdmin =
-                member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) ||
-                member.roles.cache.find((r) => r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim());
+              if (member)
+                guild.permission = guildConfig.role ? !!member.roles.cache.find((r) => r.name.toLowerCase().trim() === (guildConfig.role || "").toLowerCase().trim()) : true;
+              if (member)
+                guild.isAdmin =
+                  member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) ||
+                  member.roles.cache.find((r) => r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim());
               guild.config = guildConfig;
               return guild;
             });
 
-            if (options.page === GamesPages.Server) {
+            if (options.page === GamesPages.Server && !options.search) {
               account.guilds = account.guilds.filter((g) => account.guilds.find((s) => s.id === g.id && (s.isAdmin || config.author == tag)));
             }
 
@@ -1138,6 +1148,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
         }
         throw new Error(`OAuth: ${error}`);
       } catch (err) {
+        console.log(err);
         refreshToken(token)
           .then((newToken) => {
             if ((err.message || err).indexOf("OAuth") < 0) reject(err);
