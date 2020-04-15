@@ -290,6 +290,8 @@ export class Game implements GameModel {
       game.timestamp = new Date().getTime();
     }
 
+    game.xWeeks = Math.max(1, parseInt(`${game.xWeeks}`));
+
     let msg =
       `\n**${lang.game.GM}:** ${dm}` +
       `\n**${lang.game.GAME_NAME}:** ${game.adventure}` +
