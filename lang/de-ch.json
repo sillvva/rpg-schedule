@@ -80,7 +80,7 @@
       "NO_REPEAT": "Nicht wiederholen",
       "DAILY": "Täglich",
       "WEEKLY": "Wöchentlich",
-      "BIWEEKLY": "Jede zweite Woche",
+      "BIWEEKLY": "Jede X Woche",
       "MONTHLY": "Monatlich",
       "DATE": "Datum",
       "WEEKDAY": "Wochentag"

@@ -133,6 +133,7 @@ export default (options: GameRouteOptions) => {
             frequency: "",
             monthlyType: MonthlyType.WEEKDAY,
             weekdays: [false, false, false, false, false, false, false],
+            xWeeks: 2,
             clearReservedOnRepeat: false,
             env: process.env,
             is: {
