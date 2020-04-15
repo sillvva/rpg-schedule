@@ -1,4 +1,4 @@
-import { Client, GuildMember, Permissions, TextChannel, Guild } from "discord.js";
+import { Client, GuildMember, Permissions, TextChannel, Guild, GuildChannel } from "discord.js";
 import express from "express";
 import moment from "moment";
 import request from "request";
@@ -13,6 +13,7 @@ import { Session } from "../models/session";
 import { User } from "../models/user";
 import config from "../models/config";
 import aux from "../appaux";
+import game from "./game";
 
 interface APIRouteOptions {
   client: Client;
@@ -435,6 +436,7 @@ export default (options: APIRouteOptions) => {
             frequency: "0",
             monthlyType: MonthlyType.WEEKDAY,
             weekdays: [false, false, false, false, false, false, false],
+            xWeeks: 2,
             clearReservedOnRepeat: false,
             env: {
               REMINDERS: process.env.REMINDERS,
@@ -602,6 +604,7 @@ export default (options: APIRouteOptions) => {
             frequency: "",
             monthlyType: MonthlyType.WEEKDAY,
             weekdays: [false, false, false, false, false, false, false],
+            xWeeks: 2,
             clearReservedOnRepeat: false,
             env: process.env,
             is: {
@@ -649,11 +652,6 @@ export default (options: APIRouteOptions) => {
               if (key === "_id") return;
               if (typeof game[key] !== "undefined") game[key] = value;
             });
-
-            for (let i = 0; i < 7; i++) {
-              game.weekdays[i] = req.body["weekday" + i] ? true : false; // have to manually re-set falses b/c form data isn't sent if the checkbox is not checked
-            }
-            data.weekdays = game.weekdays;
 
             game.hideDate = req.body["hideDate"] ? true : false;
             game.clearReservedOnRepeat = req.body["clearReservedOnRepeat"] ? true : false;
@@ -968,7 +966,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
                 permission: false,
                 isAdmin: false,
                 member: null,
-                channels: guild.channels,
+                channels: guild.channels.cache.filter(c => c instanceof TextChannel),
                 announcementChannels: [],
                 config: new GuildConfig({ guild: guild.id }),
                 games: [],
@@ -1001,8 +999,10 @@ const fetchAccount = (token: any, options: AccountOptions) => {
               const guildConfig = guildConfigs.find((gc) => gc.guild === guild.id) || new GuildConfig({ guild: guild.id });
               const member: GuildMember = guild.member;
 
-              const textChannels = <TextChannel[]>guild.channels.cache.array().filter((c) => c instanceof TextChannel);
-              const channels = guildConfig.channels.filter((c) => guild.channels.cache.array().find((gc) => gc.id == c)).map((c) => guild.channels.cache.get(c));
+              const textChannels = <TextChannel[]>guild.channels;
+              const channels = guildConfig.channels
+                .filter((c) => guild.channels.find((gc: GuildChannel) => gc.id == c && gc.members.array().find((m) => member && m.user.id === member.user.id)))
+                .map((c) => guild.channels.find((gc: GuildChannel) => gc.id === c));
               if (channels.length === 0 && textChannels.length > 0) channels.push(textChannels[0]);
               guild.announcementChannels = channels;
 
@@ -1097,30 +1097,32 @@ const fetchAccount = (token: any, options: AccountOptions) => {
               }
 
               const games: any[] = await Game.fetchAllBy(gameOptions);
-              games.forEach(async (game) => {
-                if (!game.discordGuild) return;
-                await game.updateReservedList();
+              games
+                .filter((game) => game.discordChannel.members.array().find((m: GuildMember) => m.user.id === id))
+                .forEach(async (game) => {
+                  if (!game.discordGuild) return;
+                  await game.updateReservedList();
 
-                const date = Game.ISOGameDate(game);
-                game.moment = {
-                  raw: `${game.date} ${game.time} UTC${game.timezone < 0 ? "-" : "+"}${Math.abs(game.timezone)}`,
-                  isoutc: `${new Date(`${game.date} ${game.time} UTC${game.timezone < 0 ? "-" : "+"}${Math.abs(game.timezone)}`)
-                    .toISOString()
-                    .replace(/[^0-9T]/gi, "")
-                    .slice(0, 13)}00Z`,
-                  iso: date,
-                  date: moment(date).utcOffset(parseInt(game.timezone)).format(config.formats.dateLong),
-                  calendar: moment(date).utcOffset(parseInt(game.timezone)).calendar(),
-                  from: moment(date).utcOffset(parseInt(game.timezone)).fromNow(),
-                };
+                  const date = Game.ISOGameDate(game);
+                  game.moment = {
+                    raw: `${game.date} ${game.time} UTC${game.timezone < 0 ? "-" : "+"}${Math.abs(game.timezone)}`,
+                    isoutc: `${new Date(`${game.date} ${game.time} UTC${game.timezone < 0 ? "-" : "+"}${Math.abs(game.timezone)}`)
+                      .toISOString()
+                      .replace(/[^0-9T]/gi, "")
+                      .slice(0, 13)}00Z`,
+                    iso: date,
+                    date: moment(date).utcOffset(parseInt(game.timezone)).format(config.formats.dateLong),
+                    calendar: moment(date).utcOffset(parseInt(game.timezone)).calendar(),
+                    from: moment(date).utcOffset(parseInt(game.timezone)).fromNow(),
+                  };
 
-                game.slot = (Array.isArray(game.reserved) ? game.reserved : game.reserved.split(/\r?\n/g)).findIndex((t) => t.tag.replace("@", "") === tag || t.id === id) + 1;
-                game.signedup = game.slot > 0 && game.slot <= parseInt(game.players);
-                game.waitlisted = game.slot > parseInt(game.players);
+                  game.slot = (Array.isArray(game.reserved) ? game.reserved : game.reserved.split(/\r?\n/g)).findIndex((t) => t.tag.replace("@", "") === tag || t.id === id) + 1;
+                  game.signedup = game.slot > 0 && game.slot <= parseInt(game.players);
+                  game.waitlisted = game.slot > parseInt(game.players);
 
-                const gi = account.guilds.findIndex((g) => g.id === game.s);
-                account.guilds[gi].games.push(game);
-              });
+                  const gi = account.guilds.findIndex((g) => g.id === game.s);
+                  account.guilds[gi].games.push(game);
+                });
             }
 
             account.guilds = account.guilds.map((guild) => {

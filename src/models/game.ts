@@ -89,6 +89,7 @@ export interface GameModel {
   gameImage: string;
   frequency: Frequency;
   weekdays: boolean[];
+  xWeeks: number;
   monthlyType: MonthlyType;
   clearReservedOnRepeat: boolean;
   rescheduled: boolean;
@@ -131,6 +132,7 @@ export class Game implements GameModel {
   gameImage: string;
   frequency: Frequency;
   weekdays: boolean[] = [false, false, false, false, false, false, false];
+  xWeeks: number = 2;
   monthlyType: MonthlyType = MonthlyType.WEEKDAY;
   clearReservedOnRepeat: boolean = false;
   rescheduled: boolean = false;
@@ -195,6 +197,7 @@ export class Game implements GameModel {
       gameImage: this.gameImage,
       frequency: this.frequency,
       weekdays: this.weekdays,
+      xWeeks: this.xWeeks,
       monthlyType: this.monthlyType,
       clearReservedOnRepeat: this.clearReservedOnRepeat,
       rescheduled: this.rescheduled,
@@ -289,6 +292,8 @@ export class Game implements GameModel {
       when = lang.game.options.NOW;
       game.timestamp = new Date().getTime();
     }
+
+    game.xWeeks = Math.max(1, parseInt(`${game.xWeeks}`));
 
     let msg =
       `\n**${lang.game.GM}:** ${dm}` +
@@ -518,7 +523,7 @@ export class Game implements GameModel {
     const validDays = this.getWeekdays();
     const hours = isNaN(parseFloat(this.runtime.trim())) ? 0 : Math.abs(parseFloat(this.runtime.trim()));
     const gameEnded = this.timestamp + hours * 3600 * 1000 < new Date().getTime();
-    const nextDate = Game.getNextDate(moment(this.date), validDays, Number(this.frequency), this.monthlyType);
+    const nextDate = Game.getNextDate(moment(this.date), validDays, Number(this.frequency), this.monthlyType, this.xWeeks);
     const nextISO = `${nextDate.replace(/-/g, "")}T${this.time.replace(/:/g, "")}00${this.timezone >= 0 ? "+" : "-"}${aux.parseTimeZoneISO(this.timezone)}`;
     const nextGamePassed = new Date(nextISO).getTime() <= new Date().getTime();
     return (
@@ -534,7 +539,7 @@ export class Game implements GameModel {
   async reschedule() {
     try {
       const validDays = this.getWeekdays();
-      const nextDate = Game.getNextDate(moment(this.date), validDays, Number(this.frequency), this.monthlyType);
+      const nextDate = Game.getNextDate(moment(this.date), validDays, Number(this.frequency), this.monthlyType, this.xWeeks);
       aux.log(`Rescheduling ${this.s}: ${this.adventure} from ${this.date} (${this.time}) to ${nextDate} (${this.time})`);
       this.date = nextDate;
 
@@ -668,7 +673,7 @@ export class Game implements GameModel {
     return `${game.date.replace(/-/g, "")}T${game.time.replace(/:/g, "")}00${game.timezone >= 0 ? "+" : "-"}${aux.parseTimeZoneISO(game.timezone)}`;
   }
 
-  static getNextDate(baseDate: moment.Moment, validDays: string[], frequency: Frequency, monthlyType: MonthlyType) {
+  static getNextDate(baseDate: moment.Moment, validDays: string[], frequency: Frequency, monthlyType: MonthlyType, xWeeks: number = 2) {
     if (frequency == Frequency.NO_REPEAT) return null;
 
     let dateGenerator;
@@ -688,7 +693,7 @@ export class Game implements GameModel {
         // this is a compound interval...
         dateGenerator = moment(baseDate).recur().every(validDays).daysOfWeek();
         nextDate = dateGenerator.next(1)[0];
-        while (nextDate.week() - moment(baseDate).week() == 1) {
+        while (nextDate.week() - moment(baseDate).week() < xWeeks) {
           // if the next date is in the same week, diff = 0. if it is just next week, diff = 1, so keep going forward.
           dateGenerator = moment(nextDate).recur().every(validDays).daysOfWeek();
           nextDate = dateGenerator.next(1)[0];
