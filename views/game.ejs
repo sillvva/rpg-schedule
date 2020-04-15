@@ -174,7 +174,7 @@
         </div>
         <% if (env.RESCHEDULING) { %>
             <div id="when__frequency" class="row">
-                <div class="col-sm-6 col-lg-3">
+                <div class="col-freq col-sm-6 col-lg-3">
                     <div class="form-group">
                         <label for="frequency" class="col-form-label"><%= lang.game.FREQUENCY %></label>
                         <select class="form-control" id="frequency" name="frequency">
@@ -191,7 +191,7 @@
                 </div>
                 <div class="form-group col-sm-6 col-lg-4 col-xl-3">
                     <div>
-                        <label class="col-form-label"><%= lang.game.WHEN_REPEAT %>:</label>
+                        <label class="col-form-label"><%= lang.game.WHEN_REPEAT %></label>
                     </div>
                     <div>
                         <label class="col-form-label">
@@ -200,7 +200,13 @@
                         </label>
                     </div>
                 </div>
-                <div class="col-sm-12 col-lg-5 col-xl-6">
+                <div class="form-group col-xweeks col-sm-3 col-lg-2 d-none">
+                    <div>
+                        <label class="col-form-label"><%= lang.game.options.BIWEEKLY %></label>
+                        <input type="number" name="xWeeks" id="xWeeks" min="1" value="<%= xWeeks %>" class="form-control" style="width: 100%;" />
+                    </div>
+                </div>
+                <div class="col-wm col-sm-12 col-lg-5 col-xl-6">
                     <div class="row">
                         <div class="form-group col" id="monthly-type-container">
                             <label for="frequency" class="col-form-label"><%= lang.game.MONTHLY_TYPE %></label>
@@ -232,7 +238,7 @@
             <% if (clearReservedOnRepeat) { %><input type="hidden" name="clearReservedOnRepeat" value="true" /><% } %>
         <% } %>
         <div class="row">
-            <div class="col-sm-3">
+            <div class="col-sm-5 col-md-4 col-lg-3">
                 <div class="form-group">
                     <label for="reserved" class="col-form-label"><%= lang.game.RESERVED_SLOTS %></label>
                     <textarea class="form-control" id="reserved" name="reserved" rows="7" placeholder="Username#1234"><%= reserved %></textarea>
@@ -248,23 +254,23 @@
                 </div>
                 <% } %>
             </div>
-            <div class="col-sm-4">
+            <div class="col-sm-7 col-md-8 col-lg-4">
                 <div class="form-group">
                     <label for="customSignup" class="col-form-label"><%= lang.game.CUSTOM_SIGNUP_INSTRUCTIONS %></label>
                     <textarea class="form-control" id="customSignup" name="customSignup" rows="7" maxlength="1500" onkeyup="document.getElementById('cs-len').innerHTML = this.value.length"><%= customSignup %></textarea>
                     <div>
                         <small>
-                            <span id="method__custom"><%= lang.game.SIGNUP_INSTRUCTIONS_DESC %></span> 
+                            <span id="method__custom"><%= lang.game.labels.DISCORD_FORMATTING %>. <%= lang.game.SIGNUP_INSTRUCTIONS_DESC %></span>
                             (<span id="cs-len"><%= customSignup.length %></span> / <%= lang.game.MAX %> <span id="cs-max">1500</span> <%= lang.game.CHARACTERS %>)
                         </small>
                     </div>
                 </div>
             </div>
-            <div class="col-sm-5">
+            <div class="col-lg-5">
                 <div class="form-group">
                     <label for="description" class="col-form-label"><%= lang.game.DESCRIPTION %></label>
                     <textarea class="form-control" id="description" name="description" rows="7" maxlength="1500" onkeyup="document.getElementById('desc-len').innerHTML = this.value.length"><%= description %></textarea>
-                    <small><%= lang.game.labels.DISCORD_FORMATTING %> (<span id="desc-len"><%= description.length %></span> / <%= lang.game.MAX %> <span id="desc-max">1500</span> <%= lang.game.CHARACTERS %>)</small>
+                    <small><%= lang.game.labels.DISCORD_FORMATTING %>. (<span id="desc-len"><%= description.length %></span> / <%= lang.game.MAX %> <span id="desc-max">1500</span> <%= lang.game.CHARACTERS %>)</small>
                 </div>
             </div>
         </div>
@@ -359,12 +365,26 @@
         $("#weekdays-container").addClass("d-none");
         $("#monthly-type-container").addClass("d-none");
         $('#date').removeAttr("disabled");
+        $('.col-freq').removeClass('col-lg-2').addClass('col-lg-3');
+        $('.col-freq .form-control').removeClass('pl-1').removeClass('pr-0');
+        $('.col-wm').removeClass('col-sm-9').addClass('col-sm-12');
+        $('.col-wm').removeClass('col-lg-4').addClass('col-lg-5');
+        $('.col-wm').removeClass('col-xl-5').addClass('col-xl-6');
+        $('.col-xweeks').addClass('d-none');
         if (frequency == '0') {
             $('#next-date').addClass('d-none');
         } else {
             if (['2','3'].includes(frequency)) {
                 $('#weekdays-container').removeClass("d-none");
                 $('#weekdays-container').removeClass("col-sm-6");
+                if (frequency == '3') {
+                    $('.col-freq').removeClass('col-lg-3').addClass('col-lg-2');
+                    $('.col-freq .form-control').addClass('pl-1').addClass('pr-0');
+                    $('.col-wm').removeClass('col-sm-12').addClass('col-sm-9');
+                    $('.col-wm').removeClass('col-lg-5').addClass('col-lg-4');
+                    $('.col-wm').removeClass('col-xl-6').addClass('col-xl-5');
+                    $('.col-xweeks').removeClass('d-none');
+                }
             }
             if (frequency == '4' && monthlyType == '<%= enums.MonthlyType.WEEKDAY %>') {
                 $('#monthly-type-container').removeClass("d-none");
@@ -372,7 +392,7 @@
             if (frequency == '4' && monthlyType == '<%= enums.MonthlyType.DATE %>') {
                 $('#monthly-type-container').removeClass("d-none");;
             }
-            updateNextDate($('#date').val(), frequency, monthlyType, $('#monthlyDate').val());
+            updateNextDate($('#date').val(), frequency, monthlyType, $('#monthlyDate').val(), $('#xWeeks').val());
             $('#next-date').removeClass('d-none');
         }
     });//.change();
@@ -382,14 +402,21 @@
         $(this).mouseup(function() {
             // we want the function to determine the "valid weekdays" only after the click is finished
             setTimeout(function() {
-                updateNextDate($('#date').val(), $('#frequency').val(), $('#monthlyType').val(), $('#monthlyDate').val());
+                updateNextDate($('#date').val(), $('#frequency').val(), $('#monthlyType').val(), $('#monthlyDate').val(), $('#xWeeks').val());
             }, 100);
             
         });
     });
 
     $('#monthlyDate').change(function() {
-        updateNextDate($('#date').val(), $('#frequency').val(), $('#monthlyType').val(), $('#monthlyDate').val());
+        updateNextDate($('#date').val(), $('#frequency').val(), $('#monthlyType').val(), $('#monthlyDate').val(), $('#xWeeks').val());
+    })
+    .keyup(function() {
+        $(this).change();
+    });
+
+    $('#xWeeks').change(function() {
+        updateNextDate($('#date').val(), $('#frequency').val(), $('#monthlyType').val(), $('#monthlyDate').val(), $('#xWeeks').val());
     })
     .keyup(function() {
         $(this).change();
@@ -402,8 +429,8 @@
         $(this).html(dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1));
     });
 
-    const updateNextDate = (currentDate, freq, monthlyType, monthlyDate) => {
-        const nextDate = getRecurrenceDate(currentDate, freq, monthlyType, monthlyDate);
+    const updateNextDate = (currentDate, freq, monthlyType, monthlyDate, xWeeks) => {
+        const nextDate = getRecurrenceDate(currentDate, freq, monthlyType, monthlyDate, parseInt(xWeeks));
         $('#nextDate').html(moment(nextDate).format('l'));
     }
 
@@ -467,7 +494,7 @@
         };
     };
 
-    const getRecurrenceDate = (baseDate, frequency, monthlyType, weekOfMonth, monthlyDate) => {
+    const getRecurrenceDate = (baseDate, frequency, monthlyType, monthlyDate, xWeeks) => {
         if (frequency == 0)
             return moment(baseDate).format('YYYY-MM-DD');
 
@@ -494,7 +521,7 @@
                 // this is a compound interval...
                 dateGenerator = moment(baseDate).recur().every(validDays).daysOfWeek();
                 nextDate = dateGenerator.next(1)[0];
-                while(nextDate.week() - moment(baseDate).week() == 1) { // if the next date is in the same week, diff = 0. if it is just next week, diff = 1, so keep going forward.
+                while(nextDate.week() - moment(baseDate).week() < (xWeeks || 2)) { // if the next date is in the same week, diff = 0. if it is just next week, diff = 1, so keep going forward.
                     dateGenerator = moment(nextDate).recur().every(validDays).daysOfWeek();
                     nextDate = dateGenerator.next(1)[0];
                 }

@@ -111,7 +111,7 @@ input:disabled, input:read-only {
 
 #weekdays-selector {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(55px, 1fr));
     grid-gap: 4px;
 }
 

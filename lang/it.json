@@ -78,7 +78,7 @@
       "NO_REPEAT": "Non si ripete",
       "DAILY": "Quotidiana",
       "WEEKLY": "Settimanale",
-      "BIWEEKLY": "Bisettimanale",
+      "BIWEEKLY": "Ogni X settimanale",
       "MONTHLY": "Mensile",
       "DATE": "Data",
       "WEEKDAY": "Giorno feriale"
