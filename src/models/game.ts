@@ -272,8 +272,8 @@ export class Game implements GameModel {
     let signups = "";
     let automatedInstructions = `\n(${guildConfig.emojiAdd} ${lang.buttons.SIGN_UP}${guildConfig.dropOut ? ` | ${guildConfig.emojiRemove} ${lang.buttons.DROP_OUT}` : ""})`;
     if (game.method === GameMethod.AUTOMATED) {
-      if (reserved.length > 0) signups += `\n**${lang.game.RESERVED}:**\n${reserved.join("\n")}\n`;
-      if (waitlist.length > 0) signups += `\n**${lang.game.WAITLISTED}:**\n${waitlist.join("\n")}\n`;
+      if (reserved.length > 0) signups += `\n**${lang.game.RESERVED}: (${reserved.length}/${game.players})**\n${reserved.join("\n")}\n`;
+      if (waitlist.length > 0) signups += `\n**${lang.game.WAITLISTED} (${waitlist.length}):**\n${waitlist.join("\n")}\n`;
       signups += automatedInstructions;
     } else if (game.method === GameMethod.CUSTOM) {
       signups += `\n${game.customSignup}`;
