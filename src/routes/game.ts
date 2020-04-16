@@ -1,6 +1,6 @@
 import express from "express";
 import moment from "moment";
-import discord, { Guild, TextChannel } from "discord.js";
+import discord, { Guild, TextChannel, Permissions, GuildChannel } from "discord.js";
 
 import { Game, MonthlyType, GameMethod, GameWhen, RescheduleMode } from "../models/game";
 import { GuildConfig } from "../models/guild-config";
@@ -99,12 +99,18 @@ export default (options: GameRouteOptions) => {
             }
           }
 
-          const textChannels = <TextChannel[]>guild.channels.cache.array().filter((c) => c instanceof TextChannel);
-          const channels = guildConfig.channels.filter((c) => guild.channels.cache.array().find((gc) => gc.id == c)).map((c) => guild.channels.cache.get(c));
-          if (channels.length === 0 && textChannels.length > 0) channels.push(textChannels[0]);
+          let channels: TextChannel[];
+          if (req.account && req.account.guilds && req.account.guilds.find((g) => g.id === server)) {
+            const accGuild = req.account.guilds.find((g) => g.id === server);
+            channels = <TextChannel[]>accGuild.announcementChannels;
+          } else {
+            channels = <TextChannel[]>guildConfig.channels
+              .filter((c) => guild.channels.cache.array().find((gc: GuildChannel) => gc.id == c && gc.permissionsFor(guild.roles.everyone).has(Permissions.FLAGS.SEND_MESSAGES)))
+              .map((c) => guild.channels.cache.array().find((gc: GuildChannel) => gc.id === c));
+          }
 
           if (channels.length === 0) {
-            throw new Error("Discord channel not found. Make sure your server has a text channel.");
+            throw new Error("You do not have permission to post in any announcement channels.");
           }
 
           let data: any = {
@@ -113,7 +119,7 @@ export default (options: GameRouteOptions) => {
             channels: channels,
             s: server,
             c: channels[0].id,
-            dm: req.account ? req.account.user.tag : "",
+            dm: req.account && req.account.user ? req.account.user.tag : "",
             adventure: "",
             runtime: "",
             where: "",
