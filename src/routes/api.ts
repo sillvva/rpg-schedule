@@ -1001,7 +1001,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
 
               const textChannels = <TextChannel[]>guild.channels;
               const channels = guildConfig.channels
-                .filter((c) => guild.channels.find((gc: GuildChannel) => gc.id == c && gc.members.array().find((m) => member && m.user.id === member.user.id)))
+                .filter((c) => guild.channels.find((gc: GuildChannel) => gc.id == c && member && gc.permissionsFor(member.id).has(Permissions.FLAGS.SEND_MESSAGES)))
                 .map((c) => guild.channels.find((gc: GuildChannel) => gc.id === c));
               if (channels.length === 0 && textChannels.length > 0) channels.push(textChannels[0]);
               guild.announcementChannels = channels;
