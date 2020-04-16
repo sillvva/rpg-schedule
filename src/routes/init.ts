@@ -42,6 +42,7 @@ export default (options: any) => {
       },
       guilds: [],
       user: null,
+      permissions: Permissions.FLAGS,
     };
 
     const parsedURLs = aux.parseConfigURLs(config.urls);
