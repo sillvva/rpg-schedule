@@ -1001,7 +1001,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
 
               const textChannels = <TextChannel[]>guild.channels;
               const channels = guildConfig.channels
-                .filter((c) => guild.channels.find((gc: GuildChannel) => gc.id == c && member && gc.permissionsFor(member.id).has(Permissions.FLAGS.SEND_MESSAGES)))
+                .filter((c) => guild.channels.find((gc: GuildChannel) => gc.id == c && gc.permissionsFor(id).has(Permissions.FLAGS.SEND_MESSAGES)))
                 .map((c) => guild.channels.find((gc: GuildChannel) => gc.id === c));
               if (channels.length === 0 && textChannels.length > 0) channels.push(textChannels[0]);
               guild.announcementChannels = channels;
@@ -1098,7 +1098,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
 
               const games: any[] = await Game.fetchAllBy(gameOptions);
               games
-                .filter((game) => game.discordChannel.members.array().find((m: GuildMember) => m.user.id === id))
+                .filter((game) => game.discordChannel.permissionsFor(id).has(Permissions.FLAGS.VIEW_CHANNEL))
                 .forEach(async (game) => {
                   if (!game.discordGuild) return;
                   await game.updateReservedList();
