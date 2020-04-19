@@ -110,7 +110,7 @@ export default (options: GameRouteOptions) => {
           }
 
           if (channels.length === 0) {
-            throw new Error("You do not have permission to post in any announcement channels.");
+            throw new Error("You do not have permission to post in any announcement channels on this server.");
           }
 
           let data: any = {

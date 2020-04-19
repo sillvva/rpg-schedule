@@ -193,7 +193,6 @@ export default (options: any) => {
               const channels = guildConfig.channels
                 .filter((c) => guild.channels.find((gc: GuildChannel) => gc.id == c && member && gc.permissionsFor(member.id).has(Permissions.FLAGS.SEND_MESSAGES)))
                 .map((c) => guild.channels.find((gc: GuildChannel) => gc.id === c));
-              if (channels.length === 0 && textChannels.length > 0) channels.push(textChannels[0]);
               guild.announcementChannels = channels;
 
               guild.isAdmin =
