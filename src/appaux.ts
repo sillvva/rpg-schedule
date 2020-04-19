@@ -1,4 +1,7 @@
-import _ from "lodash";
+import cloneDeep from "lodash/cloneDeep";
+import isEqual from "lodash/isEqual";
+import fromPairs from "lodash/fromPairs";
+import toPairs from "lodash/toPairs";
 import moment from "moment";
 import axios from "axios";
 
@@ -18,32 +21,32 @@ const patreonPledges = async () => {
     const url = `https://www.patreon.com/api/oauth2/api/campaigns/${campaignId}/pledges`;
     const response = await axios.get(url, {
       headers: {
-        authorization: `Bearer ${accessToken}`
-      }
+        authorization: `Bearer ${accessToken}`,
+      },
     });
     const data = response.data;
-    const rewards = data.included.filter(i => i.type === "reward" && i.id > 0);
-    const pledges = data.data.filter(i => i.type === "pledge" && i.id > 0);
-    const users = data.included.filter(i => i.type === "user" && i.id > 0);
+    const rewards = data.included.filter((i) => i.type === "reward" && i.id > 0);
+    const pledges = data.data.filter((i) => i.type === "pledge" && i.id > 0);
+    const users = data.included.filter((i) => i.type === "user" && i.id > 0);
     const result = [];
-    pledges.forEach(pledge => {
+    pledges.forEach((pledge) => {
       const rewardId = pledge.relationships.reward.data.id;
-      const reward = rewards.find(r => r.id === rewardId);
+      const reward = rewards.find((r) => r.id === rewardId);
       const patronId = pledge.relationships.patron.data.id;
-      const user = users.find(u => u.id === patronId);
+      const user = users.find((u) => u.id === patronId);
       result.push({
         patron: user,
-        reward: reward
+        reward: reward,
       });
     });
     return {
       status: "success",
-      data: result
+      data: result,
     };
   } catch (err) {
     return {
       status: "error",
-      error: err
+      error: err,
     };
   }
 };
@@ -54,7 +57,7 @@ const log = (...content: any) => {
 
 const parseConfigURLs = (paths: Object) => {
   let urls: Path[] = [];
-  _.toPairs(paths).forEach((entry: any) => {
+  toPairs(paths).forEach((entry: any) => {
     const [id, path] = entry;
     if (path.hasOwnProperty("path")) {
       urls.push(path);
@@ -67,9 +70,9 @@ const parseConfigURLs = (paths: Object) => {
 };
 
 const parseConfigParam = (paths: Object, param: String, value: String): any => {
-  const parsedPaths = _.cloneDeep(paths);
-  return _.fromPairs(
-    _.toPairs(parsedPaths).map((entry: any) => {
+  const parsedPaths = cloneDeep(paths);
+  return fromPairs(
+    toPairs(parsedPaths).map((entry: any) => {
       let [id, path] = entry;
       if (path.hasOwnProperty("path")) {
         path.url = path.url.replace(`:${param}`, value);
@@ -82,16 +85,9 @@ const parseConfigParam = (paths: Object, param: String, value: String): any => {
 };
 
 const objectChanges = (before: Object | Array<any>, after: Object | Array<any>) => {
-  return _.toPairs(after).reduce((result, [key, value]) => {
-    if (before[key] !== value) {
-      result[key] = value instanceof Object && before[key] instanceof Object ? objectChanges(value, before[key]) : value;
-      if (Array.isArray(before[key])) {
-        let arr = [];
-        for(let i in after[key]) {
-          arr.push(after[key][i]);
-        }
-        result[key] = arr;
-      }
+  return toPairs(after).reduce((result, [key, value]) => {
+    if (!isEqual(before[key], value)) {
+      result[key] = value;
     }
     return result;
   }, {});
@@ -149,10 +145,10 @@ const parseEventTimes = (date: string, time: string, timezone: number, event?: E
     isoutc: isoutc,
     convert: {
       timee: `https://timee.io/${d}?${convertExtras.join("")}`,
-      timeAndDate: `https://www.timeanddate.com/worldclock/converter.html?iso=${d}&p1=1440`
+      timeAndDate: `https://www.timeanddate.com/worldclock/converter.html?iso=${d}&p1=1440`,
     },
     countdown: `https://www.timeanddate.com/countdown/generic?iso=${d}&p0=1440${convert2Extras.join("")}`,
-    googleCal: `http://www.google.com/calendar/render?action=TEMPLATE&dates=${isoutc}/${isoutc}&trp=false${googleCalExtras.join("")}`
+    googleCal: `http://www.google.com/calendar/render?action=TEMPLATE&dates=${isoutc}/${isoutc}&trp=false${googleCalExtras.join("")}`,
   };
 };
 
@@ -176,7 +172,7 @@ export default {
   parseTimeZoneISO: parseTimeZoneISO,
   parseEventTimes: parseEventTimes,
   objectChanges: objectChanges,
-  fromEntries: _.fromPairs,
+  fromEntries: fromPairs,
   backslash: backslash,
   timer: timer,
   isEmoji: isEmoji,

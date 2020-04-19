@@ -966,7 +966,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
                 permission: false,
                 isAdmin: false,
                 member: null,
-                channels: guild.channels.cache.filter(c => c instanceof TextChannel),
+                channels: guild.channels.cache.filter((c) => c instanceof TextChannel),
                 announcementChannels: [],
                 config: new GuildConfig({ guild: guild.id }),
                 games: [],
@@ -1068,25 +1068,23 @@ const fetchAccount = (token: any, options: AccountOptions) => {
                   $gt: new Date().getTime(),
                 };
                 if (tag !== config.author) {
-                  gameOptions.dm = {
-                    $and: [
-                      {
-                        "dm.tag": {
-                          $ne: tag,
-                        },
+                  gameOptions.$and = [
+                    {
+                      "dm.tag": {
+                        $ne: tag,
                       },
-                      {
-                        "dm.id": {
-                          $ne: id,
-                        },
+                    },
+                    {
+                      "dm.id": {
+                        $ne: id,
                       },
-                      {
-                        dm: {
-                          $ne: tag,
-                        },
+                    },
+                    {
+                      dm: {
+                        $ne: tag,
                       },
-                    ],
-                  };
+                    },
+                  ];
                 }
               }
 

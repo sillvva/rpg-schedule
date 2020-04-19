@@ -718,7 +718,7 @@ export class Game implements GameModel {
 
   async updateReservedList() {
     let guildMembers: discord.Collection<string, GuildMember>;
-    if (typeof this.dm === "string") {
+    if (this.dm && typeof this.dm === "string") {
       if (!guildMembers) guildMembers = await this.discordGuild.members.fetch();
       const rsvp: RSVP = { tag: this.dm.trim() };
       const member = guildMembers.array().find(m => m.user.tag === (<string>this.dm).trim());

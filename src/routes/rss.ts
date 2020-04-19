@@ -147,7 +147,7 @@ export default (options: any) => {
             description: game.description,
             categories: ["RPG Schedule", game.discordGuild.name],
             location: game.where,
-            organizer: { name: (<RSVP>game.dm).tag, email: `${(<RSVP>game.dm).tag.replace(/[^a-z0-9_.]/gi, "")}@rpg-schedule.com` },
+            organizer: { name: (<RSVP>game.dm).tag, email: `${((<RSVP>game.dm).tag || "").replace(/[^a-z0-9_.]/gi, "")}@rpg-schedule.com` },
             attendees: (<RSVP[]>game.reserved)
               .filter((r) => r.tag.trim().length > 0)
               .map((r, i) => ({
