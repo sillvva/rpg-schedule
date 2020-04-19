@@ -105,7 +105,7 @@ export default (options: GameRouteOptions) => {
             channels = <TextChannel[]>accGuild.announcementChannels;
           } else {
             channels = <TextChannel[]>guildConfig.channels
-              .filter((c) => guild.channels.cache.array().find((gc: GuildChannel) => gc.id == c && gc.permissionsFor(guild.roles.everyone).has(Permissions.FLAGS.SEND_MESSAGES)))
+              .filter((c) => guild.channels.cache.array().find((gc: GuildChannel) => gc.id == c && gc.permissionsFor(guild.roles.everyone).has(Permissions.FLAGS.VIEW_CHANNEL)))
               .map((c) => guild.channels.cache.array().find((gc: GuildChannel) => gc.id === c));
           }
 

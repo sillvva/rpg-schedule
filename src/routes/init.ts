@@ -191,7 +191,7 @@ export default (options: any) => {
 
               const textChannels = <TextChannel[]>guild.channels;
               const channels = guildConfig.channels
-                .filter((c) => guild.channels.find((gc: GuildChannel) => gc.id == c && member && gc.permissionsFor(member.id).has(Permissions.FLAGS.SEND_MESSAGES)))
+                .filter((c) => guild.channels.find((gc: GuildChannel) => gc.id == c && member && gc.permissionsFor(member.id).has(Permissions.FLAGS.VIEW_CHANNEL)))
                 .map((c) => guild.channels.find((gc: GuildChannel) => gc.id === c));
               guild.announcementChannels = channels;
 
