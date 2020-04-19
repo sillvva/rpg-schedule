@@ -45,12 +45,12 @@
         <h2 class="guild-name">
             <img class="guild-icon" src="<%= guild.icon && guild.icon.length > 0 ? guild.icon : `/images/logo2.png` %>" alt="" />
             <%= guild.name %>
-            <% if ((account.viewing.dashboard || account.viewing.server) && (guild.permission || guild.isAdmin)) { %>
+            <% if ((account.viewing.dashboard || account.viewing.server) && (guild.permission || guild.isAdmin) && guild.announcementChannels.length > 0) { %>
                 <a href="<%= config.urls.game.create.path %>?s=<%= guild.id %>" class="btn btn-primary btn-sm float-right"><%= lang.buttons.NEW_GAME %></a>
             <% } %>
         </h2>
         <div class="games">
-            <% if (guild.games.length === 0) { %>
+            <% if (guild.games.filter(game => game.discordChannel.permissionsFor(account.user.id).has(account.permissions.VIEW_CHANNEL)).length === 0) { %>
                 <div class="no-games">
                     <% if (account.viewing.dashboard) { %>
                         <%= lang.dashboard.EMPTY_MY_GAMES %>
@@ -59,7 +59,7 @@
                     <% } %>
                 </div>
             <% } %>
-            <% guild.games.forEach(game => { %>
+            <% guild.games.filter(game => game.discordChannel.permissionsFor(account.user.id).has(account.permissions.VIEW_CHANNEL)).forEach(game => { %>
                 <% if (account.viewing.server || (guild.permission && account.viewing.dashboard && account.user.tag === game.dm)) { %>
                     <div class="game my-games" id="<%= game._id %>" onclick="window.location = `<%= config.urls.game.create.path %>?g=<%= game._id %>`;">
                         <h4 class="game-name"><%= game.adventure %></h4>
@@ -91,7 +91,7 @@
                         <div class="game-reserved"><strong><%= lang.game.WAITLISTED %>:</strong> <%= Math.max(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0) - parseInt(game.players)%></div>
                     </div>
                 <% } else if (account.viewing.games) { %>
-                    <div class="game upcoming" id="<%= game._id %>">
+                    <div class="game upcoming rsvp" id="<%= game._id %>">
                         <h4 class="game-name"><%= game.adventure %></h4>
                         <div class="game-dm">
                             <strong><%= lang.game.GM %>:</strong>

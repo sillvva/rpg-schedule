@@ -1,4 +1,4 @@
-import { Client, Permissions, GuildMember } from "discord.js";
+import { Client, Permissions, GuildMember, GuildChannel, TextChannel } from "discord.js";
 import express from "express";
 import request from "request";
 import moment from "moment";
@@ -19,7 +19,7 @@ export default (options: any) => {
 
   router.use("/", async (req: any, res, next) => {
     const langs = req.app.locals.langs;
-    const selectedLang = req.cookies.lang && langs.map(l => l.code).includes(req.cookies.lang) ? req.cookies.lang : "en";
+    const selectedLang = req.cookies.lang && langs.map((l) => l.code).includes(req.cookies.lang) ? req.cookies.lang : "en";
 
     req.lang = merge(cloneDeep(langs.find((lang: any) => lang.code === "en")), cloneDeep(langs.find((lang: any) => lang.code === selectedLang)));
 
@@ -38,17 +38,19 @@ export default (options: any) => {
         server: res.locals.urlPath === config.urls.game.server.path,
         calendar: res.locals.urlPath === config.urls.game.calendar.path,
         game: res.locals.urlPath === config.urls.game.create.path,
-        about: res.locals.urlPath === config.urls.about.path
+        about: res.locals.urlPath === config.urls.about.path,
       },
       guilds: [],
-      user: null
+      user: null,
+      permissions: Permissions.FLAGS,
     };
+
+    const parsedURLs = aux.parseConfigURLs(config.urls);
+    res.locals.account = req.account;
 
     try {
       // console.log(req.session.id, req.session.status);
-      const storedSession = await connection()
-        .collection("sessions")
-        .findOne({ _id: req.session.id });
+      const storedSession = await connection().collection("sessions").findOne({ _id: req.session.id });
       if (storedSession) {
         req.session.status = storedSession.session.status;
       }
@@ -61,7 +63,7 @@ export default (options: any) => {
             url: "https://discordapp.com/api/v6/oauth2/token",
             method: "POST",
             headers: {
-              "Content-Type": "application/x-www-form-urlencoded"
+              "Content-Type": "application/x-www-form-urlencoded",
             },
             form: {
               client_id: process.env.CLIENT_ID,
@@ -69,16 +71,21 @@ export default (options: any) => {
               grant_type: "refresh_token",
               refresh_token: access.refresh_token,
               redirect_uri: process.env.HOST + config.urls.login.path,
-              scope: "identify guilds"
-            }
+              scope: "identify guilds",
+            },
           };
 
           if (!req.session.status.lastRefreshed || req.session.status.lastRefreshed + 300 < moment().unix()) {
-            request(requestData, function(error, response, body) {
+            request(requestData, function (error, response, body) {
               if (error || response.statusCode !== 200) {
-                console.log(response.statusCode);
-                if (response.statusCode == 400) res.redirect(config.urls.login.path);
-                else res.render("error", { message: `Discord OAuth: ${response.statusCode}<br />${error}` });
+                if (parsedURLs.find((path) => path.session && res.locals.urlPath === path.path)) {
+                  console.log(response.statusCode);
+                  if (response.statusCode == 400) res.redirect(config.urls.login.path);
+                  else res.render("error", { message: `Discord OAuth: ${response.statusCode}<br />${error}` });
+                }
+                else {
+                  next();
+                }
                 return;
               }
 
@@ -87,8 +94,8 @@ export default (options: any) => {
                 ...config.defaults.sessionStatus,
                 ...req.session.status,
                 ...{
-                  lastRefreshed: moment().unix()
-                }
+                  lastRefreshed: moment().unix(),
+                },
               };
               req.session.status.access = token;
               delete req.session.redirect;
@@ -98,17 +105,14 @@ export default (options: any) => {
             init(req, res, next, access);
           }
         } else {
-          res.locals.account = req.account;
-          if (req.account.viewing.home) next();
+          if (!parsedURLs.find((path) => path.session && res.locals.urlPath === path.path)) next();
           else res.redirect(config.urls.login.path + "?redirect=" + escape(req.originalUrl));
         }
       } else {
-        res.locals.account = req.account;
-        if (req.account.viewing.home) next();
+        if (!parsedURLs.find((path) => path.session && res.locals.urlPath === path.path)) next();
         else res.redirect(config.urls.login.path + "?redirect=" + escape(req.originalUrl));
       }
     } catch (e) {
-      res.locals.account = req.account;
       res.render("error", { message: "init.ts:2:<br />" + e.message });
     }
   });
@@ -119,21 +123,21 @@ export default (options: any) => {
 
   const init = async (req: any, res: express.Response, next: express.NextFunction, token: any) => {
     const parsedURLs = aux.parseConfigURLs(config.urls);
-    if (!parsedURLs.find(path => path.session && res.locals.urlPath === path.path)) {
+    if (!parsedURLs.find((path) => path.session && res.locals.urlPath === path.path) && !(token && token.access_token)) {
       next();
       return;
     }
-
-    const guildPermission = parsedURLs.find(path => path.guildPermission && res.locals.urlPath === path.path) ? true : false;
-    const loadGames = parsedURLs.find(path => path.loadGames && res.locals.urlPath === path.path) ? true : false;
+    
+    const guildPermission = parsedURLs.find((path) => path.guildPermission && res.locals.urlPath === path.path) ? true : false;
+    const loadGames = parsedURLs.find((path) => path.loadGames && res.locals.urlPath === path.path) ? true : false;
 
     request(
       {
         url: "https://discordapp.com/api/users/@me",
         method: "GET",
         headers: {
-          authorization: `${token.token_type} ${token.access_token}`
-        }
+          authorization: `${token.token_type} ${token.access_token}`,
+        },
       },
       async (error, response, body) => {
         try {
@@ -146,14 +150,14 @@ export default (options: any) => {
               ...response,
               ...{
                 tag: tag,
-                avatarURL: `https://cdn.discordapp.com/avatars/${id}/${avatar}.png?size=128`
-              }
+                avatarURL: `https://cdn.discordapp.com/avatars/${id}/${avatar}.png?size=128`,
+              },
             };
 
             const guildIds = [];
 
-            client.guilds.cache.forEach(guild => {
-              guild.members.cache.forEach(member => {
+            client.guilds.cache.forEach((guild) => {
+              guild.members.cache.forEach((member) => {
                 if (member.id === id) {
                   guildIds.push(guild.id);
                   req.account.guilds.push({
@@ -163,9 +167,10 @@ export default (options: any) => {
                     permission: false,
                     member: member,
                     isAdmin: false,
-                    channels: guild.channels,
+                    channels: guild.channels.cache.array().filter((channel) => channel.type == "text"),
+                    announcementChannels: [],
                     config: new GuildConfig({ guild: guild.id }),
-                    games: []
+                    games: [],
                   });
                 }
               });
@@ -173,29 +178,36 @@ export default (options: any) => {
 
             const guildConfigs = await GuildConfig.fetchAllBy({
               guild: {
-                $in: guildIds
-              }
+                $in: guildIds,
+              },
             });
 
-            req.account.guilds = req.account.guilds.map(guild => {
-              const guildConfig = guildConfigs.find(gc => gc.guild === guild.id) || new GuildConfig({ guild: guild.id });
+            req.account.guilds = req.account.guilds.map((guild) => {
+              const guildConfig = guildConfigs.find((gc) => gc.guild === guild.id) || new GuildConfig({ guild: guild.id });
               const member: GuildMember = guild.member;
-              guild.permission = guildConfig.role ? member.roles.cache.find(r => r.name.toLowerCase().trim() === (guildConfig.role || "").toLowerCase().trim()) : true;
+              guild.permission = guildConfig.role ? member.roles.cache.find((r) => r.name.toLowerCase().trim() === (guildConfig.role || "").toLowerCase().trim()) : true;
+
+              const textChannels = <TextChannel[]>guild.channels;
+              const channels = guildConfig.channels
+                .filter((c) => guild.channels.find((gc: GuildChannel) => gc.id == c && member && gc.permissionsFor(member.id).has(Permissions.FLAGS.VIEW_CHANNEL)))
+                .map((c) => guild.channels.find((gc: GuildChannel) => gc.id === c));
+              guild.announcementChannels = channels;
+
               guild.isAdmin =
                 member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) ||
-                member.roles.cache.find(r => r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim());
+                member.roles.cache.find((r) => r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim());
               guild.config = guildConfig;
               return guild;
             });
 
             // Manage Server Page
             if (req.account.viewing.server) {
-              req.account.guilds = req.account.guilds.filter(g => req.account.guilds.find(s => s.id === g.id && (s.isAdmin || config.author == tag)));
+              req.account.guilds = req.account.guilds.filter((g) => req.account.guilds.find((s) => s.id === g.id && (s.isAdmin || config.author == tag)));
             }
 
             // Page requires permission to post games and guild is not hidden
             if (guildPermission) {
-              req.account.guilds = req.account.guilds.filter(guild => !guild.config.hidden || config.author == tag);
+              req.account.guilds = req.account.guilds.filter((guild) => !guild.config.hidden || config.author == tag);
             }
 
             if (loadGames) {
@@ -204,38 +216,38 @@ export default (options: any) => {
                   $in: req.account.guilds.reduce((i, g) => {
                     i.push(g.id);
                     return i;
-                  }, [])
-                }
+                  }, []),
+                },
               };
 
               // My Games Page
               if (req.account.viewing.dashboard) {
                 gameOptions.$or = [
                   {
-                    dm: tag
+                    dm: tag,
                   },
                   {
                     reserved: {
-                      $regex: tag.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&")
-                    }
-                  }
+                      $regex: tag.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&"),
+                    },
+                  },
                 ];
               }
 
               // Upcoming Games Page
               if (req.account.viewing.games) {
                 gameOptions.timestamp = {
-                  $gt: new Date().getTime()
+                  $gt: new Date().getTime(),
                 };
                 if (tag !== config.author) {
                   gameOptions.dm = {
-                    $ne: tag
+                    $ne: tag,
                   };
                 }
               }
 
               const games: any[] = await Game.fetchAllBy(gameOptions);
-              games.forEach(game => {
+              games.forEach((game) => {
                 if (!game.discordGuild) return;
 
                 const date = Game.ISOGameDate(game);
@@ -246,32 +258,26 @@ export default (options: any) => {
                     .replace(/[^0-9T]/gi, "")
                     .slice(0, 13)}00Z`,
                   iso: date,
-                  date: moment(date)
-                    .utcOffset(parseInt(game.timezone))
-                    .format(config.formats.dateLong),
-                  calendar: moment(date)
-                    .utcOffset(parseInt(game.timezone))
-                    .calendar(),
-                  from: moment(date)
-                    .utcOffset(parseInt(game.timezone))
-                    .fromNow()
+                  date: moment(date).utcOffset(parseInt(game.timezone)).format(config.formats.dateLong),
+                  calendar: moment(date).utcOffset(parseInt(game.timezone)).calendar(),
+                  from: moment(date).utcOffset(parseInt(game.timezone)).fromNow(),
                 };
-      
+
                 if (Array.isArray(game.reserved)) {
-                  game.reserved = game.reserved.map(r => r.tag).join("\n");
+                  game.reserved = game.reserved.map((r) => r.tag).join("\n");
                 }
 
-                game.slot = game.reserved.split(/\r?\n/).findIndex(t => t.trim().replace("@", "") === tag) + 1;
+                game.slot = game.reserved.split(/\r?\n/).findIndex((t) => t.trim().replace("@", "") === tag) + 1;
                 game.signedup = game.slot > 0 && game.slot <= parseInt(game.players);
                 game.waitlisted = game.slot > parseInt(game.players);
 
-                const gi = req.account.guilds.findIndex(g => g.id === game.s);
+                const gi = req.account.guilds.findIndex((g) => g.id === game.s);
                 req.account.guilds[gi].games.push(game);
               });
             }
 
             if (req.account.viewing.games || req.account.viewing.dashboard) {
-              req.account.guilds = req.account.guilds.map(guild => {
+              req.account.guilds = req.account.guilds.map((guild) => {
                 guild.games.sort((a, b) => {
                   return a.timestamp < b.timestamp ? -1 : 1;
                 });

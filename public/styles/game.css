@@ -59,7 +59,11 @@ input:disabled, input:read-only {
 }
 
 .game.upcoming {
-    padding: 10px 10px 50px; position: relative;
+    position: relative;
+}
+
+.game.upcoming.rsvp {
+    padding: 10px 10px 50px;
 }
 
 .game:hover {
