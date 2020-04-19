@@ -46,11 +46,7 @@ export default (options: any) => {
     };
 
     const parsedURLs = aux.parseConfigURLs(config.urls);
-    if (!parsedURLs.find((path) => path.session && res.locals.urlPath === path.path)) {
-      res.locals.account = req.account;
-      next();
-      return;
-    }
+    res.locals.account = req.account;
 
     try {
       // console.log(req.session.id, req.session.status);
@@ -82,9 +78,14 @@ export default (options: any) => {
           if (!req.session.status.lastRefreshed || req.session.status.lastRefreshed + 300 < moment().unix()) {
             request(requestData, function (error, response, body) {
               if (error || response.statusCode !== 200) {
-                console.log(response.statusCode);
-                if (response.statusCode == 400) res.redirect(config.urls.login.path);
-                else res.render("error", { message: `Discord OAuth: ${response.statusCode}<br />${error}` });
+                if (parsedURLs.find((path) => path.session && res.locals.urlPath === path.path)) {
+                  console.log(response.statusCode);
+                  if (response.statusCode == 400) res.redirect(config.urls.login.path);
+                  else res.render("error", { message: `Discord OAuth: ${response.statusCode}<br />${error}` });
+                }
+                else {
+                  next();
+                }
                 return;
               }
 
@@ -104,17 +105,14 @@ export default (options: any) => {
             init(req, res, next, access);
           }
         } else {
-          res.locals.account = req.account;
-          if (req.account.viewing.home) next();
+          if (!parsedURLs.find((path) => path.session && res.locals.urlPath === path.path)) next();
           else res.redirect(config.urls.login.path + "?redirect=" + escape(req.originalUrl));
         }
       } else {
-        res.locals.account = req.account;
-        if (req.account.viewing.home) next();
+        if (!parsedURLs.find((path) => path.session && res.locals.urlPath === path.path)) next();
         else res.redirect(config.urls.login.path + "?redirect=" + escape(req.originalUrl));
       }
     } catch (e) {
-      res.locals.account = req.account;
       res.render("error", { message: "init.ts:2:<br />" + e.message });
     }
   });
@@ -125,7 +123,7 @@ export default (options: any) => {
 
   const init = async (req: any, res: express.Response, next: express.NextFunction, token: any) => {
     const parsedURLs = aux.parseConfigURLs(config.urls);
-    if (!parsedURLs.find((path) => path.session && res.locals.urlPath === path.path)) {
+    if (!parsedURLs.find((path) => path.session && res.locals.urlPath === path.path) && !(token && token.access_token)) {
       next();
       return;
     }
