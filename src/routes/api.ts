@@ -1067,25 +1067,6 @@ const fetchAccount = (token: any, options: AccountOptions) => {
                 gameOptions.timestamp = {
                   $gt: new Date().getTime(),
                 };
-                if (tag !== config.author) {
-                  gameOptions.$and = [
-                    {
-                      "dm.tag": {
-                        $ne: tag,
-                      },
-                    },
-                    {
-                      "dm.id": {
-                        $ne: id,
-                      },
-                    },
-                    {
-                      dm: {
-                        $ne: tag,
-                      },
-                    },
-                  ];
-                }
               }
 
               if (options.page === GamesPages.Calendar) {
