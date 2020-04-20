@@ -402,9 +402,11 @@ export default (options: APIRouteOptions) => {
           const guildConfig = await GuildConfig.fetch(guild.id);
           const guildMembers = await guild.members.fetch();
 
-          const textChannels = <TextChannel[]>guild.channels.cache.array().filter((c) => c instanceof TextChannel);
-          const channels = guildConfig.channels.filter((c) => guild.channels.cache.array().find((gc) => gc.id == c)).map((c) => guild.channels.cache.get(c));
-          if (channels.length === 0 && textChannels.length > 0) channels.push(textChannels[0]);
+          const channels = <TextChannel[]>(
+            guildConfig.channels
+              .filter((c) => guild.channels.cache.array().find((gc: GuildChannel) => gc.id == c && gc.permissionsFor(guild.roles.everyone).has(Permissions.FLAGS.VIEW_CHANNEL)))
+              .map((c) => guild.channels.cache.array().find((gc: GuildChannel) => gc.id === c))
+          );
 
           if (channels.length === 0) {
             throw new Error("Discord channel not found. Make sure your server has a text channel.");
@@ -1001,7 +1003,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
 
               const textChannels = <TextChannel[]>guild.channels;
               const channels = guildConfig.channels
-                .filter((c) => guild.channels.find((gc: GuildChannel) => gc.id == c && gc.permissionsFor(id).has(Permissions.FLAGS.SEND_MESSAGES)))
+                .filter((c) => guild.channels.find((gc: GuildChannel) => gc.id == c && gc.permissionsFor(id).has(Permissions.FLAGS.VIEW_CHANNEL)))
                 .map((c) => guild.channels.find((gc: GuildChannel) => gc.id === c));
               if (channels.length === 0 && textChannels.length > 0) channels.push(textChannels[0]);
               guild.announcementChannels = channels;
@@ -1129,7 +1131,6 @@ const fetchAccount = (token: any, options: AccountOptions) => {
         }
         throw new Error(`OAuth: ${error}`);
       } catch (err) {
-        console.log(err);
         refreshToken(token)
           .then((newToken) => {
             if ((err.message || err).indexOf("OAuth") < 0) reject(err);

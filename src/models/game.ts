@@ -718,27 +718,41 @@ export class Game implements GameModel {
 
   async updateReservedList() {
     let guildMembers: discord.Collection<string, GuildMember>;
-    if (this.dm && typeof this.dm === "string") {
-      if (!guildMembers) guildMembers = await this.discordGuild.members.fetch();
-      const rsvp: RSVP = { tag: this.dm.trim() };
-      const member = guildMembers.array().find(m => m.user.tag === (<string>this.dm).trim());
-      if (member) rsvp.id = member.user.id;
-      this.dm = rsvp;
+    let updated = false;
+    try {
+      if (this.dm && typeof this.dm === "string") {
+        if (!guildMembers) guildMembers = await this.discordGuild.members.fetch();
+        const rsvp: RSVP = { tag: (<string>this.dm).trim() };
+        const member = guildMembers.array().find(m => m.user.tag === (<string>this.dm).trim());
+        if (member) rsvp.id = member.user.id;
+        this.dm = rsvp;
+        updated = true;
+      }
     }
-    if (typeof this.reserved === "string") {
-      if (!guildMembers) guildMembers = await this.discordGuild.members.fetch();
-      const rsvps: RSVP[] = [];
-      const reserved = this.reserved.split(/\r?\n/);
-      reserved.forEach((r) => {
-        const rsvp: RSVP = { tag: r.trim() };
-        const member = guildMembers.array().find(m => m.user.tag === r.trim());
-        if (member) {
-          rsvp.id = member.user.id;
-        }
-        rsvps.push(rsvp);
-      });
-      this.reserved = rsvps;
+    catch(err) {
+      console.log(err.message);
     }
+    try {
+      if (typeof this.reserved === "string") {
+        if (!guildMembers) guildMembers = await this.discordGuild.members.fetch();
+        const rsvps: RSVP[] = [];
+        const reserved = this.reserved.split(/\r?\n/);
+        reserved.forEach((r) => {
+          const rsvp: RSVP = { tag: r.trim() };
+          const member = guildMembers.array().find(m => m.user.tag === r.trim());
+          if (member) {
+            rsvp.id = member.user.id;
+          }
+          rsvps.push(rsvp);
+        });
+        this.reserved = rsvps;
+        updated = true;
+      }
+    }
+    catch(err) {
+      console.log(err.message);
+    }
+    if (updated) this.save();
   }
 
   static updateReservedList(list: string, guildMembers: GuildMember[]) {
