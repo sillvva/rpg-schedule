@@ -187,7 +187,6 @@ export default (options: any) => {
               const member: GuildMember = guild.member;
               guild.permission = guildConfig.role ? member.roles.cache.find((r) => r.name.toLowerCase().trim() === (guildConfig.role || "").toLowerCase().trim()) : true;
 
-              const textChannels = <TextChannel[]>guild.channels;
               const channels = guildConfig.channels
                 .filter((c) => guild.channels.find((gc: GuildChannel) => gc.id == c && member && gc.permissionsFor(member.id).has(Permissions.FLAGS.VIEW_CHANNEL)))
                 .map((c) => guild.channels.find((gc: GuildChannel) => gc.id === c));
