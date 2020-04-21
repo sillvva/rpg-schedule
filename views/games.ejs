@@ -50,7 +50,7 @@
             <% } %>
         </h2>
         <div class="games">
-            <% if (guild.games.filter(game => account.viewing.games && game.discordChannel.permissionsFor(account.user.id).has(account.permissions.VIEW_CHANNEL)).length === 0) { %>
+            <% if (guild.games.filter(game => account.viewing.server || account.viewing.dashboard || game.discordChannel.permissionsFor(account.user.id).has(account.permissions.VIEW_CHANNEL)).length === 0) { %>
                 <div class="no-games">
                     <% if (account.viewing.dashboard) { %>
                         <%= lang.dashboard.EMPTY_MY_GAMES %>
@@ -60,7 +60,7 @@
                 </div>
             <% } %>
             <% guild.games.filter(game => account.viewing.server || account.viewing.dashboard || game.discordChannel.permissionsFor(account.user.id).has(account.permissions.VIEW_CHANNEL)).forEach(game => { %>
-                <% if (account.viewing.server || (guild.permission && account.viewing.dashboard && account.user.tag === game.dm)) { %>
+                <% if (guild.isAdmin || account.viewing.server || (account.viewing.dashboard && account.user.tag === game.dm)) { %>
                     <div class="game my-games" id="<%= game._id %>" onclick="window.location = `<%= config.urls.game.create.path %>?g=<%= game._id %>`;">
                         <h4 class="game-name"><%= game.adventure %></h4>
                         <% if (account.viewing.server) { %>
