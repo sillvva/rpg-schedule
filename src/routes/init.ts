@@ -185,7 +185,6 @@ export default (options: any) => {
             req.account.guilds = req.account.guilds.map((guild) => {
               const guildConfig = guildConfigs.find((gc) => gc.guild === guild.id) || new GuildConfig({ guild: guild.id });
               const member: GuildMember = guild.member;
-              guild.permission = guildConfig.role ? member.roles.cache.find((r) => r.name.toLowerCase().trim() === (guildConfig.role || "").toLowerCase().trim()) : true;
 
               const channels = guildConfig.channels
                 .filter((c) => guild.channels.find((gc: GuildChannel) => gc.id == c && member && gc.permissionsFor(member.id).has(Permissions.FLAGS.VIEW_CHANNEL)))
@@ -195,6 +194,9 @@ export default (options: any) => {
               guild.isAdmin =
                 member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) ||
                 member.roles.cache.find((r) => r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim());
+  
+              guild.permission = guildConfig.role && !guild.isAdmin ? member.roles.cache.find((r) => r.name.toLowerCase().trim() === (guildConfig.role || "").toLowerCase().trim()) : true;
+
               guild.config = guildConfig;
               return guild;
             });
