@@ -6,8 +6,8 @@
     "NEW_GAME": "Nuovo gioco",
     "EDIT_GAME": "Modifica gioco",
     "DELETE_GAME": "Elimina gioco",
-    "SIGN_UP": "Registrati",
-    "DROP_OUT": "Esci"
+    "SIGN_UP": "Prenotati",
+    "DROP_OUT": "Disdici"
   },
   "nav": {
     "GAMES": "Giochi",
@@ -47,11 +47,11 @@
     "REMINDER_FOR": "Promemoria per",
     "STARTING_IN_MINUTES": "A partire da :MINUTES minuti",
     "STARTING_IN_HOURS": "A partire da :HOURS ore",
-    "RESERVED_SLOTS": "Slot riservati (1 per riga)",
-    "RESERVED": "Riservati",
-    "WAITLISTED": "Lista d'attesa",
+    "RESERVED_SLOTS": "Slot prenotati (1 per riga)",
+    "RESERVED": "Prenotati",
+    "WAITLISTED": "Riserve",
     "DESCRIPTION": "Descrizione",
-    "EDIT_LINK": "Puoi modificare il tuo gioco `: SERVER_NAME` -`: GAME_NAME` qui:",
+    "EDIT_LINK": "Puoi modificare il tuo gioco `:SERVER_NAME` -`:GAME_NAME` qui:",
     "MAX": "Massimo",
     "CHARACTERS": "Caratteri",
     "NO_PLAYERS": "Nessun giocatore",
