@@ -82,8 +82,7 @@ export default (options: any) => {
                   console.log(response.statusCode);
                   if (response.statusCode == 400) res.redirect(config.urls.login.path);
                   else res.render("error", { message: `Discord OAuth: ${response.statusCode}<br />${error}` });
-                }
-                else {
+                } else {
                   next();
                 }
                 return;
@@ -127,7 +126,7 @@ export default (options: any) => {
       next();
       return;
     }
-    
+
     const guildPermission = parsedURLs.find((path) => path.guildPermission && res.locals.urlPath === path.path) ? true : false;
     const loadGames = parsedURLs.find((path) => path.loadGames && res.locals.urlPath === path.path) ? true : false;
 
@@ -186,7 +185,9 @@ export default (options: any) => {
               const guildConfig = guildConfigs.find((gc) => gc.guild === guild.id) || new GuildConfig({ guild: guild.id });
               const member: GuildMember = guild.member;
 
-              const channels = guildConfig.channels
+              let gcChannels = guildConfig.channels;
+              if (guild.channels.length > 0 && gcChannels.length == 0) gcChannels.push(guild.channels[0].id);
+              const channels = gcChannels
                 .filter((c) => guild.channels.find((gc: GuildChannel) => gc.id == c && member && gc.permissionsFor(member.id).has(Permissions.FLAGS.VIEW_CHANNEL)))
                 .map((c) => guild.channels.find((gc: GuildChannel) => gc.id === c));
               guild.announcementChannels = channels;
@@ -194,8 +195,9 @@ export default (options: any) => {
               guild.isAdmin =
                 member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) ||
                 member.roles.cache.find((r) => r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim());
-  
-              guild.permission = guildConfig.role && !guild.isAdmin ? member.roles.cache.find((r) => r.name.toLowerCase().trim() === (guildConfig.role || "").toLowerCase().trim()) : true;
+
+              guild.permission =
+                guildConfig.role && !guild.isAdmin ? member.roles.cache.find((r) => r.name.toLowerCase().trim() === (guildConfig.role || "").toLowerCase().trim()) : true;
 
               guild.config = guildConfig;
               return guild;
