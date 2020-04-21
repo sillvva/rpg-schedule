@@ -5,14 +5,14 @@
 
     <script src="/scripts/moment.js"></script>
     <script src="/scripts/socket.io.js"></script>
-    <link rel="stylesheet" href="/styles/calendar.css">
+    <link rel="stylesheet" href="/styles/calendar.css" />
     <link rel="stylesheet" href="/styles/game.css" />
 
     <%- include('head', {account: account, env: env}); %>
 
     <script src="/locale/<%= lang.code %>.js"></script>
     <script type="text/javascript">
-    moment.locale('<%= lang.code %>');
+      moment.locale("<%= lang.code %>");
     </script>
   </head>
   <body>
@@ -38,18 +38,11 @@
       <div class="form-row">
         <div class="col-12 col-lg">
           <div class="calendar">
-            <%
-            const weekdays = [0,1,2,3,4,5,6].map(d => {
-              return moment().day(d).format('dddd')
-            });
-            weekdays.forEach((d, i) => {
-              %>
-                <div class="col cal-header bg-primary">
-                  <span class="wd"></span>
-                </div>
-              <%
-            })
-            %>
+            <% const weekdays = [0,1,2,3,4,5,6].map(d => { return moment().day(d).format('dddd') }); weekdays.forEach((d, i) => { %>
+            <div class="col cal-header bg-primary">
+              <span class="wd"></span>
+            </div>
+            <% }) %>
           </div>
           <div id="game-calendar" class="calendar mb-2"></div>
         </div>
@@ -60,280 +53,299 @@
       </div>
     </div>
     <script type="text/javascript">
-    const user = '<%= account.user.tag %>';
-    const baseDate = moment();
-    let selMonth = <%= qm || "baseDate.month()" %>;
-    let selYear = <%= qy || "baseDate.year()" %>;
-    let selDate = <%= qd || "baseDate.date()" %>;
-    const weekdays = [0,1,2,3,4,5,6].map(d => {
-      return moment().day(d).format('dddd')
-    });
-    let allGuilds = <%- JSON.stringify(account.guilds.filter(g => g.permission).map(g => {
-      return {
-        id: g.id,
-        name: g.name
-      };
-    })) %>;
-    let allGames = <%- JSON.stringify(account.guilds.filter(guild => guild.games.length > 0).reduce((acc, guild) => {
-      return acc.concat(guild.games.map(g => {
-        delete g._guild;
-        delete g._channel;
-        g.guild = {
-          id: guild.id,
-          name: guild.name,
-          icon: guild.icon
+      const user = '<%= account.user.tag %>';
+      const baseDate = moment();
+      let selMonth = <%= qm || "baseDate.month()" %>;
+      let selYear = <%= qy || "baseDate.year()" %>;
+      let selDate = <%= qd || "baseDate.date()" %>;
+      const weekdays = [0,1,2,3,4,5,6].map(d => {
+        return moment().day(d).format('dddd')
+      });
+      let allGuilds = <%- JSON.stringify(account.guilds.filter(g => g.permission).map(g => {
+        return {
+          id: g.id,
+          name: g.name
         };
-        return g;
-      }));
-    }, [])) %>;
-    allGames = allGames.filter(function(g) { return g.date >= moment().format("YYYY-MM-DD") && !g.hideDate; });
-    function daysInMonth(month, year) { return new Date(year, month, 0).getDate(); }
-    function renderCalendar() {
-      if (selMonth === baseDate.month() && selYear === baseDate.year() && selDate === baseDate.date()) {
-        $('#today').attr('disabled', 'disabled');
-      }
-      else {
-        $('#today').removeAttr('disabled');
-      }
-      if (selMonth === baseDate.month() && selYear === baseDate.year()) {
-        
-        $('#prev_month').attr('disabled', 'disabled');
-      }
-      else {
-        $('#prev_month').removeAttr('disabled');
-      }
-      let md = 1;
-      let curmonth = false;
-      let out = '';
-      let i = 1;
-      const fd = new Date(selYear, selMonth, md).toString();
-      const fwdi = weekdays.findIndex(function(d) { return d.slice(0,3) === fd.slice(0,3); });
-      do {
-        weekdays.forEach((d, di) => {
-          if (di === fwdi) curmonth = true;
-          const dx = `${selYear}-${selMonth+1 < 10 ? '0' : ''}${selMonth+1}-${md < 10 ? '0' : ''}${md}`;
-          out += `<div class="col cal-day ${curmonth ? `cal-day-curmonth ${md === selDate ? 'selected' : ''}` : ''}" ${curmonth ? `date="${dx}"` : ''}>`;
-          if(curmonth) {
-            const games = allGames.filter(g => g.date === dx);
-            out += `<span class="cal-date" date="${dx}"></span><br />`;
-            if (games.length > 0) out += `<span class="cal-games-count ${games.find(g => g.dm === user || g.reserved.indexOf(user) >= 0) ? 'selected' : ''}">${games.length}</span>`;
-          }
-          out += `</div>`;
-          if (md === daysInMonth(selMonth + 1, selYear)) curmonth = false;
-          if (curmonth) md++;
-          i++;
-        });
-        out += `<div class="w-100"></div>`;
-      } while(i < daysInMonth(selMonth + 1, selYear) + fwdi);
-      const dx = `${selYear}-${selMonth+1 < 10 ? '0' : ''}${selMonth+1}-${selDate < 10 ? '0' : ''}${selDate}`;
-      $('#game-calendar').html(out);
+      })) %>;
+      let allGames = <%- JSON.stringify(account.guilds.filter(guild => guild.games.length > 0).reduce((acc, guild) => {
+        return acc.concat(guild.games.map(g => {
+          delete g._guild;
+          delete g._channel;
+          g.guild = {
+            id: guild.id,
+            name: guild.name,
+            icon: guild.icon
+          };
+          return g;
+        }));
+      }, [])) %>;
+      allGames = allGames.filter(function(g) { return g.date >= moment().format("YYYY-MM-DD") && !g.hideDate; });
+      function daysInMonth(month, year) { return new Date(year, month, 0).getDate(); }
+      function renderCalendar() {
+        if (selMonth === baseDate.month() && selYear === baseDate.year() && selDate === baseDate.date()) {
+          $('#today').attr('disabled', 'disabled');
+        }
+        else {
+          $('#today').removeAttr('disabled');
+        }
+        if (selMonth === baseDate.month() && selYear === baseDate.year()) {
 
-      const calName = moment(`${selYear}-${selMonth+1 < 10 ? '0' : ''}${selMonth+1}-${selDate < 10 ? '0' : ''}${selDate}T00:00:00`).format('LL');
+          $('#prev_month').attr('disabled', 'disabled');
+        }
+        else {
+          $('#prev_month').removeAttr('disabled');
+        }
+        let md = 1;
+        let curmonth = false;
+        let out = '';
+        let i = 1;
+        const fd = new Date(selYear, selMonth, md).toString();
+        const fwdi = weekdays.findIndex(function(d) { return d.slice(0,3) === fd.slice(0,3); });
+        do {
+          weekdays.forEach((d, di) => {
+            if (di === fwdi) curmonth = true;
+            const dx = `${selYear}-${selMonth+1 < 10 ? '0' : ''}${selMonth+1}-${md < 10 ? '0' : ''}${md}`;
+            out += `<div class="col cal-day ${curmonth ? `cal-day-curmonth ${md === selDate ? 'selected' : ''}` : ''}" ${curmonth ? `date="${dx}"` : ''}>`;
+            if(curmonth) {
+              const games = allGames.filter(g => g.date === dx);
+              out += `<span class="cal-date" date="${dx}"></span><br />`;
+              if (games.length > 0) out += `<span class="cal-games-count ${games.find(g => g.dm === user || g.reserved.indexOf(user) >= 0) ? 'selected' : ''}">${games.length}</span>`;
+            }
+            out += `</div>`;
+            if (md === daysInMonth(selMonth + 1, selYear)) curmonth = false;
+            if (curmonth) md++;
+            i++;
+          });
+          out += `<div class="w-100"></div>`;
+        } while(i < daysInMonth(selMonth + 1, selYear) + fwdi);
+        const dx = `${selYear}-${selMonth+1 < 10 ? '0' : ''}${selMonth+1}-${selDate < 10 ? '0' : ''}${selDate}`;
+        $('#game-calendar').html(out);
 
-      out = '';
-      const dateGames = allGames.filter(g => g.date === dx);
-      if (dateGames.length > 0) {
-        dateGames.sort(function(a, b) {
-          return a.moment.isoutc > b.moment.isoutc ? 1 : -1;
-        }).forEach(function(game) {
-          out += `<div class="game upcoming" id="${game._id}">
-            <h4 class="game-name">${game.adventure}</h4>
-            <div class="row">
-              <div class="col-12 col-md-8">
-                <div class="game-time">
-                  <strong><%= lang.game.WHEN %>:</strong>
-                  ${game.timestamp > new Date().getTime() ? `
-                    <span data-datetime="${game.moment.raw}" data-iso="${game.moment.iso}">${game.moment.calendar} (${game.moment.from})</span>
-                  ` : `
-                    <span data-datetime="${game.moment.raw}" data-iso="${game.moment.iso}" class="text-danger">${game.moment.date} (${game.moment.from})</span>
-                  `}
+        const calName = moment(`${selYear}-${selMonth+1 < 10 ? '0' : ''}${selMonth+1}-${selDate < 10 ? '0' : ''}${selDate}T00:00:00`).format('LL');
+
+        out = '';
+        const dateGames = allGames.filter(g => g.date === dx);
+        if (dateGames.length > 0) {
+          dateGames.sort(function(a, b) {
+            return a.moment.isoutc > b.moment.isoutc ? 1 : -1;
+          }).forEach(function(game) {
+            out += `<div class="game upcoming" id="${game._id}">
+              <h4 class="game-name">${game.adventure}</h4>
+              <div class="row">
+                <div class="col-12 col-md-8">
+                  <div class="game-time">
+                    <strong><%= lang.game.WHEN %>:</strong>
+                    ${game.timestamp > new Date().getTime() ? `
+                      <span data-datetime="${game.moment.raw}" data-iso="${game.moment.iso}">${game.moment.calendar} (${game.moment.from})</span>
+                    ` : `
+                      <span data-datetime="${game.moment.raw}" data-iso="${game.moment.iso}" class="text-danger">${game.moment.date} (${game.moment.from})</span>
+                    `}
+                  </div>
+                  <div>
+                    <a href="http://www.google.com/calendar/render?action=TEMPLATE&text=${escape(game.adventure)}&dates=${game.moment.isoutc}/${game.moment.isoutc}&location=${escape(`${game.guild.name} - ${game.where}`)}&trp=false&sprop=&details=${escape(game.description)}" target="_blank" rel="nofollow" onclick="event.stopPropagation();">Add to Google Calendar</a>
+                  </div>
+                  <div class="game-guild text-truncate">
+                    <strong><%= lang.game.SERVER %>:</strong>
+                    ${game.guild.name}
+                  </div>
+                  <div class="where parse-url">
+                    <strong><%= lang.game.WHERE %>:</strong>
+                    ${game.where}
+                  </div>
                 </div>
-                <div>
-                  <a href="http://www.google.com/calendar/render?action=TEMPLATE&text=${escape(game.adventure)}&dates=${game.moment.isoutc}/${game.moment.isoutc}&location=${escape(`${game.guild.name} - ${game.where}`)}&trp=false&sprop=&details=${escape(game.description)}" target="_blank" rel="nofollow" onclick="event.stopPropagation();">Add to Google Calendar</a>
+                <div class="col-12 col-md-4">
+                  <div class="game-dm text-truncate">
+                    <strong><%= lang.game.GM %>:</strong>
+                    ${game.dm.replace(/#\d{4}/g, '')}
+                  </div>
+                  <div class="game-reserved">
+                    <strong><%= lang.game.RESERVED %>:</strong>
+                    ${Math.min(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0)} / ${game.players}
+                    ${game.signedup ? `(#${game.slot})` : ``}
+                  </div>
+                  <div class="game-reserved">
+                    <strong><%= lang.game.WAITLISTED %>:</strong>
+                    ${Math.max(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0) - parseInt(game.players)}
+                    ${game.waitlisted ? `(#${game.slot})` : ``}
+                  </div>
+                  <div class="game-description parse-md-url" data-iso="${game.moment.iso}">
+                    **${game.adventure}:**
+
+                    **<%= lang.game.DATE %>:** %DATE%
+
+                    **<%= lang.game.RUN_TIME %>:** ${game.runtime} <%= lang.game.labels.HOURS %>
+
+                    **<%= lang.game.WHERE %>:** ${game.where}
+
+                    **<%= lang.game.DESCRIPTION %>:**
+
+                    ${game.description}
+                  </div>
                 </div>
-                <div class="game-guild text-truncate">
-                  <strong><%= lang.game.SERVER %>:</strong>
-                  ${game.guild.name}
-                </div>
-                <div class="where parse-url">
-                  <strong><%= lang.game.WHERE %>:</strong>
-                  ${game.where}
-                </div>
+                ${game.method === "automated" ? `
+                  <div class="buttons">
+                    ${!game.signedup && !game.waitlisted ? `
+                      <a href="<%= config.urls.game.rsvp.path %>?g=${game._id}&return=${escape(`<%= config.urls.game.calendar.path %>?y=${selYear}&m=${selMonth}&d=${selDate}`)}" class="btn btn-success btn-sm"><%= lang.buttons.SIGN_UP %></a>
+                    ` : `
+                      <a href="<%= config.urls.game.rsvp.path %>?g=${game._id}&return=${escape(`<%= config.urls.game.calendar.path %>?y=${selYear}&m=${selMonth}&d=${selDate}`)}" class="btn btn-danger btn-sm"><%= lang.buttons.DROP_OUT %></a>
+                    `}
+                  </div>
+                ` : ``}
               </div>
-              <div class="col-12 col-md-4">
-                <div class="game-dm text-truncate">
-                  <strong><%= lang.game.GM %>:</strong>
-                  ${game.dm.replace(/#\d{4}/g, '')}
-                </div>
-                <div class="game-reserved">
-                  <strong><%= lang.game.RESERVED %>:</strong>
-                  ${Math.min(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0)} / ${game.players}
-                  ${game.signedup ? `(#${game.slot})` : ``}
-                </div>
-                <div class="game-reserved">
-                  <strong><%= lang.game.WAITLISTED %>:</strong>
-                  ${Math.max(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0) - parseInt(game.players)}
-                  ${game.waitlisted ? `(#${game.slot})` : ``}
-                </div>
-                <div class="game-description parse-md-url" data-iso="${game.moment.iso}">
-                  **${game.adventure}:**
+            </div>`;
+          });
+        }
+        else {
+          out = `<h5 class="text-md-center" style="line-height: 50px;">No games available</h5>`;
+        }
+        $('#events-list').html(out);
 
-                  **<%= lang.game.DATE %>:** %DATE%
+        parseDates();
 
-                  **<%= lang.game.RUN_TIME %>:** ${game.runtime} <%= lang.game.labels.HOURS %>
-
-                  **<%= lang.game.WHERE %>:** ${game.where}
-
-                  **<%= lang.game.DESCRIPTION %>:**
-
-                  ${game.description}
-                </div>
-              </div>
-              ${game.method === "automated" ? `
-                <div class="buttons">
-                  ${!game.signedup && !game.waitlisted ? `
-                    <a href="<%= config.urls.game.rsvp.path %>?g=${game._id}&return=${escape(`<%= config.urls.game.calendar.path %>?y=${selYear}&m=${selMonth}&d=${selDate}`)}" class="btn btn-success btn-sm"><%= lang.buttons.SIGN_UP %></a>
-                  ` : `
-                    <a href="<%= config.urls.game.rsvp.path %>?g=${game._id}&return=${escape(`<%= config.urls.game.calendar.path %>?y=${selYear}&m=${selMonth}&d=${selDate}`)}" class="btn btn-danger btn-sm"><%= lang.buttons.DROP_OUT %></a>
-                  `}
-                </div>
-              ` : ``}
-            </div>
-          </div>`;
-        });
-      }
-      else {
-        out = `<h5 class="text-md-center" style="line-height: 50px;">No games available</h5>`;
-      }
-      $('#events-list').html(out);
-
-      parseDates();
-      
-      $('#calendar-name, #calendar-name-2').html(`
-        ${calName} 
-        <a href="<%= config.urls.game.calendar.path %>?y=${selYear}&m=${selMonth}&d=${selDate}">
-          <svg width="24" height="24" viewBox="0 0 24 24" style="vertical-align: initial;"><path fill="currentColor" d="M10.59,13.41C11,13.8 11,14.44 10.59,14.83C10.2,15.22 9.56,15.22 9.17,14.83C7.22,12.88 7.22,9.71 9.17,7.76V7.76L12.71,4.22C14.66,2.27 17.83,2.27 19.78,4.22C21.73,6.17 21.73,9.34 19.78,11.29L18.29,12.78C18.3,11.96 18.17,11.14 17.89,10.36L18.36,9.88C19.54,8.71 19.54,6.81 18.36,5.64C17.19,4.46 15.29,4.46 14.12,5.64L10.59,9.17C9.41,10.34 9.41,12.24 10.59,13.41M13.41,9.17C13.8,8.78 14.44,8.78 14.83,9.17C16.78,11.12 16.78,14.29 14.83,16.24V16.24L11.29,19.78C9.34,21.73 6.17,21.73 4.22,19.78C2.27,17.83 2.27,14.66 4.22,12.71L5.71,11.22C5.7,12.04 5.83,12.86 6.11,13.65L5.64,14.12C4.46,15.29 4.46,17.19 5.64,18.36C6.81,19.54 8.71,19.54 9.88,18.36L13.41,14.83C14.59,13.66 14.59,11.76 13.41,10.59C13,10.2 13,9.56 13.41,9.17Z" /></svg>
-        </a>
-        ${allGuilds.length && `<div class="float-right float-md-none btn-group">
-          <a ${allGuilds.length === 1 && `href="<%= config.urls.game.create.path %>?s=${allGuilds[0].id}&date=${selYear}-${selMonth+1 < 10 ? '0' : ''}${selMonth+1}-${selDate < 10 ? '0' : ''}${selDate}"`} target="_blank" class="add-games-menu text-success ${allGuilds.length > 1 ? `dropdown-toggle` : ``}" ${allGuilds.length > 1 ? `data-toggle="dropdown" data-display="static" aria-haspopup="true" aria-expanded="false"` : ``}>
-            <svg width="30" height="30" viewBox="0 0 24 24" class="mt-n1 mt-md-n3"><path fill="currentColor" d="M17,13H13V17H11V13H7V11H11V7H13V11H17M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z" /></svg>
+        $('#calendar-name, #calendar-name-2').html(`
+          ${calName}
+          <a href="<%= config.urls.game.calendar.path %>?y=${selYear}&m=${selMonth}&d=${selDate}">
+            <svg width="24" height="24" viewBox="0 0 24 24" style="vertical-align: initial;"><path fill="currentColor" d="M10.59,13.41C11,13.8 11,14.44 10.59,14.83C10.2,15.22 9.56,15.22 9.17,14.83C7.22,12.88 7.22,9.71 9.17,7.76V7.76L12.71,4.22C14.66,2.27 17.83,2.27 19.78,4.22C21.73,6.17 21.73,9.34 19.78,11.29L18.29,12.78C18.3,11.96 18.17,11.14 17.89,10.36L18.36,9.88C19.54,8.71 19.54,6.81 18.36,5.64C17.19,4.46 15.29,4.46 14.12,5.64L10.59,9.17C9.41,10.34 9.41,12.24 10.59,13.41M13.41,9.17C13.8,8.78 14.44,8.78 14.83,9.17C16.78,11.12 16.78,14.29 14.83,16.24V16.24L11.29,19.78C9.34,21.73 6.17,21.73 4.22,19.78C2.27,17.83 2.27,14.66 4.22,12.71L5.71,11.22C5.7,12.04 5.83,12.86 6.11,13.65L5.64,14.12C4.46,15.29 4.46,17.19 5.64,18.36C6.81,19.54 8.71,19.54 9.88,18.36L13.41,14.83C14.59,13.66 14.59,11.76 13.41,10.59C13,10.2 13,9.56 13.41,9.17Z" /></svg>
           </a>
-          ${allGuilds.length > 1 ? `<div class="bg-primary dropdown-menu dropdown-menu-right dropdown-menu-md-left">
-            ${allGuilds.map(g => {
-              return `<a href="<%= config.urls.game.create.path %>?s=${g.id}&date=${selYear}-${selMonth+1 < 10 ? '0' : ''}${selMonth+1}-${selDate < 10 ? '0' : ''}${selDate}" target="_blank" class="dropdown-item bg-primary text-white">${g.name}</a>`;
-            }).join("\n")}
-          </div>` : ''}
-        </div>`}
-      `);
-      $('.cal-header').each(function(i) {
-        $(this).children('.wd').html(moment().day(i).format('dddd').slice(0,1).toUpperCase());
+          ${allGuilds.length && `<div class="float-right float-md-none btn-group">
+            <a ${allGuilds.length === 1 && `href="<%= config.urls.game.create.path %>?s=${allGuilds[0].id}&date=${selYear}-${selMonth+1 < 10 ? '0' : ''}${selMonth+1}-${selDate < 10 ? '0' : ''}${selDate}"`} target="_blank" class="add-games-menu text-success ${allGuilds.length > 1 ? `dropdown-toggle` : ``}" ${allGuilds.length > 1 ? `data-toggle="dropdown" data-display="static" aria-haspopup="true" aria-expanded="false"` : ``}>
+              <svg width="30" height="30" viewBox="0 0 24 24" class="mt-n1 mt-md-n3"><path fill="currentColor" d="M17,13H13V17H11V13H7V11H11V7H13V11H17M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z" /></svg>
+            </a>
+            ${allGuilds.length > 1 ? `<div class="bg-primary dropdown-menu dropdown-menu-right dropdown-menu-md-left">
+              ${allGuilds.map(g => {
+                return `<a href="<%= config.urls.game.create.path %>?s=${g.id}&date=${selYear}-${selMonth+1 < 10 ? '0' : ''}${selMonth+1}-${selDate < 10 ? '0' : ''}${selDate}" target="_blank" class="dropdown-item bg-primary text-white">${g.name}</a>`;
+              }).join("\n")}
+            </div>` : ''}
+          </div>`}
+        `);
+        $('.cal-header').each(function(i) {
+          $(this).children('.wd').html(moment().day(i).format('dddd').slice(0,1).toUpperCase());
+        });
+        $('.cal-date').each(function() {
+          const date = $(this).attr('date');
+          $(this).html(moment(`${date}T00:00:00`).format('D'));
+        });
+        $(`.cal-day-curmonth`).click(function() {
+          const date = $(this).attr('date');
+          selDate = moment(`${date}T00:00:00`).date();
+          renderCalendar();
+        });
+
+        $(`.cal-day-curmonth[date="${baseDate.format('YYYY-MM-DD')}"]`).css('background-color', 'rgba(255,255,255,0.27');
+
+        function regexReplace(regex, str, replace, negativeGroups) {
+          let m;
+          while ((m = regex.exec(str)) !== null) {
+            // This is necessary to avoid infinite loops with zero-width matches
+            if (m.index === regex.lastIndex) {
+                regex.lastIndex++;
+            }
+
+            // The result can be accessed through the `m`-variable.
+            if (negativeGroups && !Array.isArray(negativeGroups)) negativeGroups = [negativeGroups];
+            if (m.length > 0 && (!negativeGroups || negativeGroups.length == 0 || !negativeGroups.find(g => m[g]))) {
+              str = str.replace(m[0], replace);
+              m.forEach(function (match, index) {
+                const mStr = new RegExp(`\\$${index}`, "g");
+                str = str.replace(mStr, match);
+              })
+            }
+          }
+          return str;
+        }
+
+        $('.game.upcoming').each(function() {
+          $(this).click(() => {
+            const desc = $(this).find('.game-description');
+            let description = desc
+              .html()
+              .split("\n").map(l => l.trim()).join("\n");
+
+            const iso = desc.get(0).dataset.iso;
+            description = description.replace(/%DATE%/gi, moment(iso).format('<%= config.formats.dateLong %>'));
+
+            const md = new Remarkable({
+              html: false
+            });
+
+            alertify.alert('Game Description', md.render(description)).set('transition', 'zoom');
+          });
+
+          $('.game .parse-url').each(function() {
+            // https://regex101.com/r/UzaOB4/1
+            const regex = /([\[\("])?((https?:\/\/)((www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b)([-a-zA-Z0-9()@:%_\+.~#?&\/=]*))/gm;
+            $(this).html(regexReplace(regex, $(this).html(), `<a href="$2" target="_blank">$4</a>`, 1));
+          });
+
+          $('.game .parse-md-url').each(function() {
+            // https://regex101.com/r/UzaOB4/1
+            const regex = /([\[\("])?((https?:\/\/)((www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b)([-a-zA-Z0-9()@:%_\+.~#?&\/=]*))/gm;
+            $(this).html(regexReplace(regex, $(this).html(), `[$2]($2)`, 1));
+          });
+
+          $('.game .parse-url a, .game .parse-md-url a').each(function() {
+            $(this).click(function() {
+              window.open($(this).attr('href'));
+              return false;
+            });
+          });
+
+          $(this).find('.btn').click((ev) => {
+            ev.stopPropagation();
+          });
+        });
+      }
+
+      $('#today').click(function() {
+        selMonth = baseDate.month();
+        selYear = baseDate.year();
+        selDate = baseDate.date();
+        renderCalendar();
       });
-      $('.cal-date').each(function() {
-        const date = $(this).attr('date');
-        $(this).html(moment(`${date}T00:00:00`).format('D'));
+      $('#next_month').click(function() {
+        selYear = selMonth === 11 ? selYear+1 : selYear;
+        selMonth = selMonth === 11 ? 0 : selMonth+1;
+        selDate = selMonth === baseDate.month() && selYear === baseDate.year() ? baseDate.date() : 1;
+        renderCalendar();
       });
-      $(`.cal-day-curmonth`).click(function() {
-        const date = $(this).attr('date');
-        selDate = moment(`${date}T00:00:00`).date();
+      $('#prev_month').click(function() {
+        selYear = selMonth === 0 ? selYear-1 : selYear;
+        selMonth = selMonth === 0 ? 11 : selMonth-1;
+        selDate = selMonth === baseDate.month() && selYear === baseDate.year() ? baseDate.date() : 1;
         renderCalendar();
       });
 
-      $(`.cal-day-curmonth[date="${baseDate.format('YYYY-MM-DD')}"]`).css('background-color', 'rgba(255,255,255,0.27');
-
-      $('.game.upcoming').each(function() {
-        $(this).click(() => {
-          const desc = $(this).find('.game-description');
-          let description = desc
-            .html()
-            .split("\n").map(l => l.trim()).join("\n");
-          
-          const iso = desc.get(0).dataset.iso;
-          description = description.replace(/%DATE%/gi, moment(iso).format('<%= config.formats.dateLong %>'));
-
-          const md = new Remarkable({
-            html: false
-          });
-
-          alertify.alert('Game Description', md.render(description)).set('transition', 'zoom');
+      const parseDates = function() {
+        $('[data-datetime]').each(function() {
+          const date = $(this).get(0).dataset.datetime;
+          const iso = $(this).get(0).dataset.iso;
+          const parsed = {
+            calendar: moment(iso).calendar(),
+            from: moment(iso).fromNow()
+          };
+          $(this).html(`${parsed.calendar} (${parsed.from})`);
+          if (new Date().getTime() >= new Date(date).getTime()) {
+            $(this).addClass('text-danger');
+          }
         });
+      };
 
-        $('.game .parse-url').each(function() {
-          // https://regex101.com/r/UzaOB4/1
-          const exp = /(?<![\[\("])((https?:\/\/)((www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b)([-a-zA-Z0-9()@:%_\+.~#?&\/=]*))/gi;
-          const regex = new RegExp(exp);
-          $(this).html($(this).html().replace(regex, `<a href="$1" target="_blank">$3</a>`));
-        });
-
-        $('.game .parse-md-url').each(function() {
-          // https://regex101.com/r/UzaOB4/1
-          const exp = /(?<![\[\("])((https?:\/\/)((www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b)([-a-zA-Z0-9()@:%_\+.~#?&\/=]*))/gi;
-          const regex = new RegExp(exp);
-          $(this).html($(this).html().replace(regex, `[$1]($1)`));
-        });
-
-        $('.game .parse-url a, .game .parse-md-url a').each(function() {
-          $(this).click(function() {
-            window.open($(this).attr('href'));
-            return false;
-          });
-        });
-
-        $(this).find('.btn').click((ev) => {
-          ev.stopPropagation();
-        });
-      });
-    }
-
-    $('#today').click(function() {
-      selMonth = baseDate.month();
-      selYear = baseDate.year();
-      selDate = baseDate.date();
       renderCalendar();
-    });
-    $('#next_month').click(function() {
-      selYear = selMonth === 11 ? selYear+1 : selYear;
-      selMonth = selMonth === 11 ? 0 : selMonth+1;
-      selDate = selMonth === baseDate.month() && selYear === baseDate.year() ? baseDate.date() : 1;
-      renderCalendar();
-    });
-    $('#prev_month').click(function() {
-      selYear = selMonth === 0 ? selYear-1 : selYear;
-      selMonth = selMonth === 0 ? 11 : selMonth-1;
-      selDate = selMonth === baseDate.month() && selYear === baseDate.year() ? baseDate.date() : 1;
-      renderCalendar();
-    });
-
-    const parseDates = function() {
-      $('[data-datetime]').each(function() {
-        const date = $(this).get(0).dataset.datetime;
-        const iso = $(this).get(0).dataset.iso;
-        const parsed = {
-          calendar: moment(iso).calendar(),
-          from: moment(iso).fromNow()
-        };
-        $(this).html(`${parsed.calendar} (${parsed.from})`);
-        if (new Date().getTime() >= new Date(date).getTime()) {
-          $(this).addClass('text-danger');
-        }
-      });
-    };
-
-    renderCalendar();
-    parseDates();
-    setInterval(function() {
+      parseDates();
+      setInterval(function() {
         parseDates();
-    }, 30 * 1000);
+      }, 30 * 1000);
 
-    const socket = io();
+      const socket = io();
 
-    socket.on('game', response => {
+      socket.on('game', response => {
         if (response.action === 'updated') {
-            
+
         } else if (response.action === 'deleted') {
-            $('#'+response.gameId+'.game').remove();
-            renderCalendar();
+          $('#'+response.gameId+'.game').remove();
+          renderCalendar();
         }
-    });
+      });
     </script>
     <% include foot.ejs %>
   </body>
