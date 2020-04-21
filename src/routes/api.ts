@@ -1,4 +1,4 @@
-import { Client, GuildMember, Permissions, TextChannel, Guild, GuildChannel } from "discord.js";
+import { Client, GuildMember, Permissions, TextChannel, Guild, GuildChannel, Collection } from "discord.js";
 import express from "express";
 import moment from "moment";
 import request from "request";
@@ -402,11 +402,10 @@ export default (options: APIRouteOptions) => {
           const guildConfig = await GuildConfig.fetch(guild.id);
           const guildMembers = await guild.members.fetch();
 
-          const channels = <TextChannel[]>(
-            guildConfig.channels
-              .filter((c) => guild.channels.cache.array().find((gc: GuildChannel) => gc.id == c && gc.permissionsFor(guild.roles.everyone).has(Permissions.FLAGS.VIEW_CHANNEL)))
-              .map((c) => guild.channels.cache.array().find((gc: GuildChannel) => gc.id === c))
-          );
+          let gcChannels: string[] = guildConfig.channels;
+          const firstChannel = guild.channels.cache.find((gc) => gc.permissionsFor(guild.roles.everyone).has(Permissions.FLAGS.VIEW_CHANNEL));
+          if (firstChannel && gcChannels.length == 0) gcChannels.push(firstChannel.id);
+          const channels = gcChannels.filter((c) => guild.channels.cache.find((gc) => gc.id == c)).map((c) => guild.channels.cache.get(c));
 
           if (channels.length === 0) {
             throw new Error("Discord channel not found. Make sure your server has a text channel.");
@@ -572,9 +571,10 @@ export default (options: APIRouteOptions) => {
 
           if (game) await game.updateReservedList();
 
-          const textChannels = <TextChannel[]>guild.channels.cache.array().filter((c) => c instanceof TextChannel);
-          const channels = guildConfig.channels.filter((c) => guild.channels.cache.array().find((gc) => gc.id == c)).map((c) => guild.channels.cache.get(c));
-          if (channels.length === 0 && textChannels.length > 0) channels.push(textChannels[0]);
+          let gcChannels: string[] = guildConfig.channels;
+          const firstChannel = guild.channels.cache.find((gc) => gc.permissionsFor(guild.roles.everyone).has(Permissions.FLAGS.VIEW_CHANNEL));
+          if (firstChannel && gcChannels.length == 0) gcChannels.push(firstChannel.id);
+          const channels = gcChannels.filter((c) => guild.channels.cache.find((gc) => gc.id == c)).map((c) => guild.channels.cache.get(c));
 
           if (channels.length === 0) {
             throw new Error("Discord channel not found. Make sure your server has a text channel.");
@@ -1001,19 +1001,20 @@ const fetchAccount = (token: any, options: AccountOptions) => {
               const guildConfig = guildConfigs.find((gc) => gc.guild === guild.id) || new GuildConfig({ guild: guild.id });
               const member: GuildMember = guild.member;
 
-              const textChannels = <TextChannel[]>guild.channels;
-              const channels = guildConfig.channels
+              let gcChannels: string[] = guildConfig.channels;
+              const firstChannel = (<Collection<string, GuildChannel>>guild.channels).find((gc) => gc.permissionsFor(guild.roles.everyone).has(Permissions.FLAGS.VIEW_CHANNEL));
+              if (firstChannel && gcChannels.length == 0) gcChannels.push(firstChannel.id);
+              const channels = gcChannels
                 .filter((c) => guild.channels.find((gc: GuildChannel) => gc.id == c && gc.permissionsFor(id).has(Permissions.FLAGS.VIEW_CHANNEL)))
                 .map((c) => guild.channels.find((gc: GuildChannel) => gc.id === c));
-              if (channels.length === 0 && textChannels.length > 0) channels.push(textChannels[0]);
               guild.announcementChannels = channels;
 
-              if (member)
-                guild.permission = guildConfig.role ? !!member.roles.cache.find((r) => r.name.toLowerCase().trim() === (guildConfig.role || "").toLowerCase().trim()) : true;
               if (member)
                 guild.isAdmin =
                   member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) ||
                   member.roles.cache.find((r) => r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim());
+              if (member)
+                guild.permission = guildConfig.role && !guild.isAdmin ? !!member.roles.cache.find((r) => r.name.toLowerCase().trim() === (guildConfig.role || "").toLowerCase().trim()) : true;
               guild.config = guildConfig;
               return guild;
             });
