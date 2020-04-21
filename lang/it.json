@@ -51,7 +51,7 @@
     "RESERVED": "Prenotati",
     "WAITLISTED": "Riserve",
     "DESCRIPTION": "Descrizione",
-    "EDIT_LINK": "Puoi modificare il tuo gioco `: SERVER_NAME` -`: GAME_NAME` qui:",
+    "EDIT_LINK": "Puoi modificare il tuo gioco `:SERVER_NAME` -`:GAME_NAME` qui:",
     "MAX": "Massimo",
     "CHARACTERS": "Caratteri",
     "NO_PLAYERS": "Nessun giocatore",
