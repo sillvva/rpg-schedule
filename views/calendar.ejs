@@ -132,7 +132,7 @@
             return a.moment.isoutc > b.moment.isoutc ? 1 : -1;
           }).forEach(function(game) {
             out += `<div class="game upcoming" id="${game._id}">
-              <h4 class="game-name">${stripHtml(game.adventure)}</h4>
+              <h4 class="game-name">${game.adventure}</h4>
               <div class="row">
                 <div class="col-12 col-md-8">
                   <div class="game-time">
@@ -152,7 +152,7 @@
                   </div>
                   <div class="where parse-url">
                     <strong><%= lang.game.WHERE %>:</strong>
-                    ${stripHtml(game.where)}
+                    ${game.where}
                   </div>
                 </div>
                 <div class="col-12 col-md-4">
@@ -171,17 +171,17 @@
                     ${game.waitlisted ? `(#${game.slot})` : ``}
                   </div>
                   <div class="game-description parse-md-url" data-iso="${game.moment.iso}">
-                    **${stripHtml(game.adventure)}:**
+                    **${game.adventure}:**
 
                     **<%= lang.game.DATE %>:** %DATE%
 
                     **<%= lang.game.RUN_TIME %>:** ${game.runtime} <%= lang.game.labels.HOURS %>
 
-                    **<%= lang.game.WHERE %>:** ${stripHtml(game.where)}
+                    **<%= lang.game.WHERE %>:** ${game.where}
 
                     **<%= lang.game.DESCRIPTION %>:**
 
-                    ${stripHtml(game.description)}
+                    ${game.description}
                   </div>
                 </div>
                 ${game.method === "automated" ? `
@@ -348,13 +348,6 @@
           renderCalendar();
         }
       });
-
-      function stripHtml(html)
-      {
-        var tmp = document.createElement("DIV");
-        tmp.innerHTML = html;
-        return tmp.textContent || tmp.innerText || "";
-      }
     </script>
     <% include foot.ejs %>
   </body>
