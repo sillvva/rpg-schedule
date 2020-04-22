@@ -43,15 +43,18 @@
             <div class="form-group col-sm-6">
                 <label for="channel" class="col-form-label"><%= lang.game.CHANNEL %></label>
                 <% if (is.editgame) { %>
-                    <input type="text" readonly class="form-control" id="channel" name="channel" value="<%= channel %>">
+                    <input type="text" readonly class="form-control" id="channelName" value="<%= channel %> <%= channels.find(ch => ch.id === c).parent ? `(${channels.find(ch => ch.id === c).parent.name})` : "" %>">
+                    <input type="hidden" id="channel" name="channel" value="<%= channel %>">
                     <input type="hidden" name="c" value="<%= c %>">
-                <% } else if (channels.length === 1) { %>
-                    <input type="text" readonly class="form-control" id="channel" name="channel" value="<%= channels[0].name %>">
-                    <input type="hidden" name="c" value="<%= channels[0].id %>">
                 <% } else { %>
                     <select class="form-control" id="c" name="c">
                         <% channels.forEach(c => {
-                            %><option value="<%= c.id %>"><%= c.name %></option><%
+                            %>
+                            <option value="<%= c.id %>">
+                                <%= c.name %>
+                                <%= c.parent ? `(${c.parent.name})` : "" %>
+                            </option>
+                            <%
                         }) %>
                     </select>
                     <input type="hidden" id="channel" name="channel" value="<%= channels[0].name %>">
