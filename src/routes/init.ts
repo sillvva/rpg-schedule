@@ -274,12 +274,6 @@ export default (options: any) => {
                 game.signedup = game.slot > 0 && game.slot <= parseInt(game.players);
                 game.waitlisted = game.slot > parseInt(game.players);
 
-                for (let i in game) {
-                  if (typeof game[i] === "string") {
-                    game[i] = game[i].replace(/<\/?[a-z][^>]+(>|$)/gi, "");
-                  }
-                }
-
                 const gi = req.account.guilds.findIndex((g) => g.id === game.s);
                 req.account.guilds[gi].games.push(game);
               });
