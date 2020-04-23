@@ -71,6 +71,8 @@
         return acc.concat(guild.games.map(g => {
           delete g._guild;
           delete g._channel;
+          delete g.gameImage;
+          delete g.customSignup;
           g.guild = {
             id: guild.id,
             name: guild.name,

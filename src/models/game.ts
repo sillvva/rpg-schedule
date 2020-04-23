@@ -146,6 +146,11 @@ export class Game implements GameModel {
       if (key == "dm" && typeof value != "string" && value.tag) value = value.tag;
       this[key] = value;
     });
+    for (let i in this.data) {
+      if (typeof this[i] === "string") {
+        this[i] = this[i].replace(/<\/?(\w+)((\s+\w+(\s*=\s*(?:".*?"|'.*?'|[\^'">\s]+))?)+\s*|\s*)\/?>/gm, "");
+      }
+    }
     this._guild = discordClient().guilds.cache.get(this.s);
     if (!this._guild) this._guild = discordClient().guilds.resolve(this.s);
     if (this._guild) {
