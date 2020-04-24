@@ -802,7 +802,7 @@ const rescheduleOldGames = async (guildId?: string) => {
 
     let games = await Game.fetchAllBy(query);
     games = games.filter((game) => client.guilds.cache.array().find((g) => g.id === game.s));
-    aux.log(`Found ${games.length} games scheduled before now`);
+    if (games.length > 0) aux.log(`Found ${games.length} games scheduled before now`);
     let count = 0;
     for (let i = 0; i < games.length; i++) {
       const game = games[i];
@@ -832,7 +832,7 @@ const rescheduleOldGames = async (guildId?: string) => {
       }
     }
 
-    aux.log(`rescheduled ${count} games`);
+    if (games.length > 0) aux.log(`Rescheduled ${count} games`);
   } catch (err) {
     aux.log("GameReschedulingError:", err);
   }
@@ -881,7 +881,7 @@ const pruneOldGames = async (guild?: discord.Guild) => {
     }
 
     result = await Game.deleteAllBy(query);
-    aux.log(`${result.deletedCount} old games successfully pruned`);
+    if (result.deletedCount > 0) aux.log(`${result.deletedCount} old games successfully pruned`);
   } catch (err) {
     aux.log("GamePruningError:", err);
   }
