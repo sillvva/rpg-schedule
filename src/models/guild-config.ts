@@ -55,6 +55,8 @@ export class GuildConfig implements GuildConfigDataModel {
     Object.entries(guildConfig).forEach(([key, value]) => {
       this[key] = value;
     });
+
+    // Strip HTML Tags from Data
     for (let i in this.data) {
       if (typeof this[i] === "string") {
         this[i] = this[i].replace(/<\/?(\w+)((\s+\w+(\s*=\s*(?:".*?"|'.*?'|[\^'">\s]+))?)+\s*|\s*)\/?>/gm, "");

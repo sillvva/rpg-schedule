@@ -25,6 +25,8 @@ export class SiteSettings implements SiteSettingModel {
     Object.entries(session).forEach(([key, value]) => {
       this[key] = value;
     });
+    
+    // Strip HTML Tags from Data
     for (let i in this.data) {
       if (typeof this[i] === "string") {
         this[i] = this[i].replace(/<\/?(\w+)((\s+\w+(\s*=\s*(?:".*?"|'.*?'|[\^'">\s]+))?)+\s*|\s*)\/?>/gm, "");
