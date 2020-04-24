@@ -1003,7 +1003,9 @@ const fetchAccount = (token: any, options: AccountOptions) => {
 
               let gcChannels: string[] = guildConfig.channels;
               const firstChannel = (<Collection<string, GuildChannel>>guild.channels).find((gc) => gc.permissionsFor(guild.roles.everyone).has(Permissions.FLAGS.VIEW_CHANNEL));
-              if (firstChannel && gcChannels.length == 0) gcChannels.push(firstChannel.id);
+              if (firstChannel && guild.channels.length > 0 && (gcChannels.length == 0 || !guild.channels.find((gc: GuildChannel) => gcChannels.find((c) => gc.id === c)))) {
+                gcChannels.push(firstChannel.id);
+              }
               const channels = gcChannels
                 .filter((c) => guild.channels.find((gc: GuildChannel) => gc.id == c && gc.permissionsFor(id).has(Permissions.FLAGS.VIEW_CHANNEL)))
                 .map((c) => guild.channels.find((gc: GuildChannel) => gc.id === c));
