@@ -1,4 +1,4 @@
-import { Client, Permissions, GuildMember, GuildChannel, TextChannel } from "discord.js";
+import { Client, Permissions, GuildMember, GuildChannel, Collection } from "discord.js";
 import express from "express";
 import request from "request";
 import moment from "moment";
@@ -165,6 +165,7 @@ export default (options: any) => {
                     permission: false,
                     member: member,
                     isAdmin: false,
+                    roles: guild.roles,
                     channels: guild.channels.cache.array().filter((channel) => channel.type == "text"),
                     announcementChannels: [],
                     config: new GuildConfig({ guild: guild.id }),
@@ -185,8 +186,9 @@ export default (options: any) => {
               const member: GuildMember = guild.member;
 
               let gcChannels = guildConfig.channels;
-              if (guild.channels.length > 0 && (gcChannels.length == 0 || !guild.channels.find((gc: GuildChannel) => gcChannels.find((c) => gc.id === c)))) {
-                gcChannels.push(guild.channels[0].id);
+              const firstChannel = (<Collection<string, GuildChannel>>guild.channels).find((gc) => gc.permissionsFor(guild.roles.everyone).has(Permissions.FLAGS.VIEW_CHANNEL));
+              if (firstChannel && guild.channels.length > 0 && (gcChannels.length == 0 || !guild.channels.find((gc: GuildChannel) => gcChannels.find((c) => gc.id === c)))) {
+                gcChannels.push(firstChannel.id);
               }
               const channels = gcChannels
                 .filter((c) => guild.channels.find((gc: GuildChannel) => gc.id === c && member && gc.permissionsFor(member.id).has(Permissions.FLAGS.VIEW_CHANNEL)))

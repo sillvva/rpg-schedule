@@ -208,16 +208,18 @@ export class Game implements GameModel {
       aux.log("No database connection");
       return null;
     }
+
     let channel = this._channel;
     const guild = channel.guild;
     const guildConfig = await GuildConfig.fetch(guild.id);
     const game: GameModel = this.data;
 
-    if (guild && !channel) {
-      const textChannels = <TextChannel[]>guild.channels.cache.array().filter((c) => c instanceof TextChannel);
-      const channels = guildConfig.channels.filter((c) => guild.channels.cache.array().find((gc) => gc.id == c)).map((c) => guild.channels.cache.get(c));
-      if (channels.length === 0 && textChannels.length > 0) channels.push(textChannels[0]);
-      channel = <TextChannel>channels[0];
+    if (this.c && !this.discordGuild.channels.cache.find(c => c.id === this.c)) {
+      guildConfig.channel.slice(guildConfig.channel.indexOf(this.c), 1);
+      await guildConfig.save();
+      await this.delete();
+      aux.log("Channel deleted");
+      return null;
     }
 
     const lang = gmLanguages.find((l) => l.code === guildConfig.lang) || gmLanguages.find((l) => l.code === "en");
