@@ -275,10 +275,10 @@ export class Game implements GameModel {
     let description = parseDiscord(game.description, guild);
 
     let signups = "";
+    if (reserved.length > 0) signups += `\n**${lang.game.RESERVED}: (${reserved.length}/${game.players})**\n${reserved.join("\n")}\n`;
+    if (waitlist.length > 0) signups += `\n**${lang.game.WAITLISTED} (${waitlist.length}):**\n${waitlist.join("\n")}\n`;
     let automatedInstructions = `\n(${guildConfig.emojiAdd} ${lang.buttons.SIGN_UP}${guildConfig.dropOut ? ` | ${guildConfig.emojiRemove} ${lang.buttons.DROP_OUT}` : ""})`;
     if (game.method === GameMethod.AUTOMATED) {
-      if (reserved.length > 0) signups += `\n**${lang.game.RESERVED}: (${reserved.length}/${game.players})**\n${reserved.join("\n")}\n`;
-      if (waitlist.length > 0) signups += `\n**${lang.game.WAITLISTED} (${waitlist.length}):**\n${waitlist.join("\n")}\n`;
       signups += automatedInstructions;
     } else if (game.method === GameMethod.CUSTOM) {
       signups += `\n${game.customSignup}`;
@@ -332,12 +332,11 @@ export class Game implements GameModel {
       if (game.runtime && game.runtime.trim().length > 0 && game.runtime.trim() != "0") embed.addField(lang.game.RUN_TIME, `${game.runtime} ${lang.game.labels.HOURS}`, true);
       embed.addField(lang.game.WHERE, where);
       if (guildConfig.embedMentions) embed.addField(lang.game.GM, gmTag);
-      if (game.method === GameMethod.AUTOMATED) {
-        embed.addField(`${lang.game.RESERVED} (${reserved.length}/${game.players})`, reserved.length > 0 ? reserved.join("\n") : lang.game.NO_PLAYERS, true);
-        if (waitlist.length > 0) embed.addField(`${lang.game.WAITLISTED} (${waitlist.length})`, waitlist.join("\n"), true);
-      } else if (game.method === GameMethod.CUSTOM) {
+      if (game.method === GameMethod.CUSTOM) {
         embed.addField(lang.game.CUSTOM_SIGNUP_INSTRUCTIONS, game.customSignup);
       }
+      embed.addField(`${lang.game.RESERVED} (${reserved.length}/${game.players})`, reserved.length > 0 ? reserved.join("\n") : lang.game.NO_PLAYERS, true);
+      if (waitlist.length > 0) embed.addField(`${lang.game.WAITLISTED} (${waitlist.length})`, waitlist.join("\n"), true);
       if (!game.hideDate)
         embed.addField(
           "Links",
