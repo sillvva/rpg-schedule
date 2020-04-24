@@ -185,9 +185,11 @@ export default (options: any) => {
               const member: GuildMember = guild.member;
 
               let gcChannels = guildConfig.channels;
-              if (guild.channels.length > 0 && gcChannels.length == 0) gcChannels.push(guild.channels[0].id);
+              if (guild.channels.length > 0 && (gcChannels.length == 0 || !guild.channels.find((gc: GuildChannel) => gcChannels.find((c) => gc.id === c)))) {
+                gcChannels.push(guild.channels[0].id);
+              }
               const channels = gcChannels
-                .filter((c) => guild.channels.find((gc: GuildChannel) => gc.id == c && member && gc.permissionsFor(member.id).has(Permissions.FLAGS.VIEW_CHANNEL)))
+                .filter((c) => guild.channels.find((gc: GuildChannel) => gc.id === c && member && gc.permissionsFor(member.id).has(Permissions.FLAGS.VIEW_CHANNEL)))
                 .map((c) => guild.channels.find((gc: GuildChannel) => gc.id === c));
               guild.announcementChannels = channels;
 
