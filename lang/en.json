@@ -176,6 +176,7 @@
   },
   "messages": {
     "DM_WAITLIST": "You are currently slot :NUM on the waitlist.",
-    "DM_INSTRUCTIONS": "A message from :DM for :EVENT"
+    "DM_INSTRUCTIONS": "A message from :DM for :EVENT",
+    "YOURE_IN": "You're in! You've secured a spot for **:GAME** in **:SERVER**."
   }
 }
