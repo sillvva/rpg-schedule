@@ -79,8 +79,7 @@ export default (options: any) => {
             request(requestData, function (error, response, body) {
               if (error || response.statusCode !== 200) {
                 if (parsedURLs.find((path) => path.session && res.locals.urlPath === path.path)) {
-                  console.log(response.statusCode);
-                  if (response.statusCode == 400) res.redirect(config.urls.login.path);
+                  if (!response || response.statusCode == 400) res.redirect(config.urls.login.path);
                   else res.render("error", { message: `Discord OAuth: ${response.statusCode}<br />${error}` });
                 } else {
                   next();
