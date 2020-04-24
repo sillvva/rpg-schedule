@@ -175,6 +175,7 @@
   },
   "messages": {
     "DM_WAITLIST": "Vous êtes actuellement à l'emplacement :NUM sur la liste d'attente.",
-    "DM_INSTRUCTIONS": "Un message de :DM pour :EVENT"
+    "DM_INSTRUCTIONS": "Un message de :DM pour :EVENT",
+    "YOURE_IN": "Vous y êtes! Vous avez obtenu une place pour :GAME dans :SERVER."
   }
 }

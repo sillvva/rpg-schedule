@@ -175,6 +175,7 @@
   },
   "messages": {
     "DM_WAITLIST": "В настоящее время вы находитесь в слоте :NUM в списке ожидания.",
-    "DM_INSTRUCTIONS": "Сообщение от :DM для :EVENT"
+    "DM_INSTRUCTIONS": "Сообщение от :DM для :EVENT",
+    "YOURE_IN": "Ты в! Вы получили место для :GAME в :SERVER."
   }
 }

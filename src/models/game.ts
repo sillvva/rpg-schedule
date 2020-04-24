@@ -290,17 +290,19 @@ export class Game implements GameModel {
       signups += `\n${game.customSignup}`;
     }
 
-    let when = "";
+    let when = "",
+      gameDate;
     if (game.when === GameWhen.DATETIME) {
       const date = Game.ISOGameDate(game);
       const tz = Math.round(parseFloat(game.timezone.toString()) * 4) / 4;
       when = moment(date).utcOffset(tz).format(config.formats.dateLong) + ` (${timezone})`;
-      game.timestamp = new Date(rawDate).getTime();
+      gameDate = new Date(rawDate);
     } else if (game.when === GameWhen.NOW) {
       when = lang.game.options.NOW;
-      game.timestamp = new Date().getTime();
+      gameDate = new Date();
     }
 
+    game.timestamp = gameDate.getTime();
     game.xWeeks = Math.max(1, parseInt(`${game.xWeeks}`));
 
     let msg =
@@ -324,12 +326,14 @@ export class Game implements GameModel {
         embed.setImage(game.gameImage.trim().substr(0, 2048));
       }
     } else {
+      const urlRegex = /^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$\%&'\(\)\*\+,;=.]+$/gi;
+
       msg = "";
       embed = new discord.MessageEmbed();
       embed.setColor(guildConfig.embedColor);
       embed.setTitle(game.adventure);
-      if (dmmember && dmmember.user.avatarURL()) embed.setAuthor(dm, dmmember.user.avatarURL().substr(0, 2048));
-      if (dmmember && dmmember.user.avatarURL()) embed.setThumbnail(dmmember.user.avatarURL().substr(0, 2048));
+      embed.setAuthor(dm, dmmember && dmmember.user.avatarURL() && urlRegex.test(dmmember.user.avatarURL()) ? dmmember.user.avatarURL().substr(0, 2048) : null);
+      if (dmmember && dmmember.user.avatarURL() && urlRegex.test(dmmember.user.avatarURL())) embed.setThumbnail(dmmember.user.avatarURL().substr(0, 2048));
       if (description.length > 0) embed.setDescription(description);
       if (game.hideDate) embed.addField(lang.game.WHEN, lang.game.labels.TBD, true);
       else embed.addField(lang.game.WHEN, when, true);
@@ -349,7 +353,8 @@ export class Game implements GameModel {
           true
         );
       if (game.method === GameMethod.AUTOMATED) embed.setFooter(automatedInstructions);
-      if (game && game.gameImage && game.gameImage.trim().length > 0) embed.setImage(game.gameImage.trim().substr(0, 2048));
+      if (game && game.gameImage && game.gameImage.trim().length > 0 && urlRegex.test(game.gameImage.trim())) embed.setImage(game.gameImage.trim().substr(0, 2048));
+      if (!this.hideDate) embed.setTimestamp(gameDate);
     }
 
     const dbCollection = connection().collection(collection);
@@ -381,6 +386,13 @@ export class Game implements GameModel {
         prev._id = prev._id.toString();
         game._id = game._id.toString();
 
+        if (
+          (Array.isArray(prev.reserved) ? prev.reserved : prev.reserved.split(/\r?\n/g)).length >
+          (Array.isArray(game.reserved) ? game.reserved : game.reserved.split(/\r?\n/g)).length
+        ) {
+          this.dmNextWaitlist();
+        }
+        
         const updatedGame = aux.objectChanges(prev, game);
         io().emit("game", { action: "updated", gameId: game._id, game: updatedGame, guildId: game.s });
       } catch (err) {
@@ -675,6 +687,42 @@ export class Game implements GameModel {
         member.send(`${lang.messages.DM_INSTRUCTIONS.replace(":DM", (dmmember || (<RSVP>this.dm).tag).toString()).replace(":EVENT", this.adventure)}:\n${this.customSignup}${waitlisted}`);
       }
     }
+  }
+
+  async dmNextWaitlist() {
+    const guildMembers = (await this.discordGuild.members.fetch()).array();
+    const guildConfig = await GuildConfig.fetch(this.discordGuild.id);
+    const lang = gmLanguages.find((l) => l.code === guildConfig.lang) || gmLanguages.find((l) => l.code === "en");
+    const reserved = Array.isArray(this.reserved) ? this.reserved : this.reserved.replace(/@/g, "").split(/\r?\n/);
+    reserved.forEach((res: any, index) => {
+      if (Array.isArray(this.reserved)) {
+        var member = guildMembers.find((mem) => mem.user.tag.trim() === res.tag.trim() || mem.user.id === res.id);
+      } else {
+        if (res.trim().length === 0) return;
+        var member = guildMembers.find((mem) => mem.user.tag.trim() === res.trim());
+      }
+
+      if (index + 1 === parseInt(this.players)) {
+        const embed = new MessageEmbed();
+
+        let message = lang.messages.YOURE_IN;
+        message = message.replace(
+          ":GAME",
+          this.messageId
+            ? `[${this.adventure}](https://discordapp.com/channels/${this.discordGuild.id}/${this.discordChannel.id}/${this.messageId})`
+            : this.adventure
+        );
+        message = message.replace(":SERVER", this.discordGuild.name);
+        embed.setDescription(message);
+
+        embed.addField(lang.game.WHERE, parseDiscord(this.where, this.discordGuild));
+
+        const eventTimes = aux.parseEventTimes(this.date, this.time, this.timezone);
+        if (!this.hideDate) embed.setTimestamp(new Date(eventTimes.rawDate));
+
+        member.send(embed);
+      }
+    });
   }
 
   static ISOGameDate(game: GameModel) {
