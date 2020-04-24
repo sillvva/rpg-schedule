@@ -43,7 +43,7 @@
             <div class="form-group col-sm-6">
                 <label for="channel" class="col-form-label"><%= lang.game.CHANNEL %></label>
                 <% if (is.editgame) { %>
-                    <input type="text" readonly class="form-control" id="channelName" value="<%= channel %> <%= channels.find(ch => ch.id === c).parent ? `(${channels.find(ch => ch.id === c).parent.name})` : "" %>">
+                    <input type="text" readonly class="form-control" id="channelName" value="<%= channel %> <%= channels.find(ch => ch.id === c) && channels.find(ch => ch.id === c).parent ? `(${channels.find(ch => ch.id === c).parent.name})` : "" %>">
                     <input type="hidden" id="channel" name="channel" value="<%= channel %>">
                     <input type="hidden" name="c" value="<%= c %>">
                 <% } else { %>
@@ -58,6 +58,11 @@
                         }) %>
                     </select>
                     <input type="hidden" id="channel" name="channel" value="<%= channels[0].name %>">
+                <% } %>
+                <% if (!channels.find(ch => ch.id === c)) { %>
+                    <div>
+                        <small class="error">Channel not found on server</small>
+                    </div>
                 <% } %>
             </div>
         </div>

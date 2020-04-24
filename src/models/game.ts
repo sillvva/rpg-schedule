@@ -310,6 +310,8 @@ export class Game implements GameModel {
       game.gameImage = "";
     }
 
+    const urlRegex = /^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$\%&'\(\)\*\+,;=.]+$/gi;
+
     let embed: MessageEmbed;
     if (guildConfig.embeds === false) {
       if (game && game.gameImage && game.gameImage.trim().length > 0) {
@@ -322,8 +324,8 @@ export class Game implements GameModel {
       embed = new discord.MessageEmbed();
       embed.setColor(guildConfig.embedColor);
       embed.setTitle(game.adventure);
-      if (dmmember && dmmember.user.avatarURL()) embed.setAuthor(dm, dmmember.user.avatarURL().substr(0, 2048));
-      if (dmmember && dmmember.user.avatarURL()) embed.setThumbnail(dmmember.user.avatarURL().substr(0, 2048));
+      if (dmmember && dmmember.user.avatarURL() && urlRegex.test(dmmember.user.avatarURL())) embed.setAuthor(dm, dmmember.user.avatarURL().substr(0, 2048));
+      if (dmmember && dmmember.user.avatarURL() && urlRegex.test(dmmember.user.avatarURL())) embed.setThumbnail(dmmember.user.avatarURL().substr(0, 2048));
       if (description.length > 0) embed.setDescription(description);
       if (game.hideDate) embed.addField(lang.game.WHEN, lang.game.labels.TBD, true);
       else embed.addField(lang.game.WHEN, when, true);
@@ -343,7 +345,7 @@ export class Game implements GameModel {
           true
         );
       if (game.method === GameMethod.AUTOMATED) embed.setFooter(automatedInstructions);
-      if (game && game.gameImage && game.gameImage.trim().length > 0) embed.setImage(game.gameImage.trim().substr(0, 2048));
+      if (game && game.gameImage && game.gameImage.trim().length > 0 && urlRegex.test(game.gameImage.trim())) embed.setImage(game.gameImage.trim().substr(0, 2048));
     }
 
     const dbCollection = connection().collection(collection);
