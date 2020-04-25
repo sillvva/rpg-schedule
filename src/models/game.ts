@@ -231,13 +231,21 @@ export class Game implements GameModel {
       .replace("@", "")
       .replace(/\#\d{4}/, "");
     let guildMembers = (await guild.members.fetch()).array();
+    const dmParts = game.dm.trim().split("#");
     let dmmember = guildMembers.find((mem) => {
-      return mem.user.tag === game.dm.trim().replace("@", "");
+      return mem.user.tag === game.dm.trim().replace("@", "") || (mem.user.username === dmParts[0].trim() && mem.user.discriminator === dmParts[1].trim());
     });
     if (dmmember) {
       var gmTag = dmmember.user.toString();
       if (guildConfig.embeds === false) dm = gmTag;
       else dm = dmmember.nickname || dm;
+    }
+    else {
+      return {
+        _id: "",
+        message: null,
+        modified: false,
+      };
     }
 
     if (Array.isArray(game.reserved)) {
