@@ -60,7 +60,7 @@
                 </div>
             <% } %>
             <% guild.games.filter(game => account.viewing.server || account.viewing.dashboard || game.discordChannel.permissionsFor(account.user.id).has(account.permissions.VIEW_CHANNEL)).forEach(game => { %>
-                <% if ((account.viewing.server || account.viewing.dashboard) && (guild.isAdmin || (account.viewing.dashboard && account.user.tag === game.dm))) { %>
+                <% if ((account.viewing.server && (guild.isAdmin || account.user.tag === config.author)) || (account.viewing.dashboard && account.user.tag === game.dm)) { %>
                     <div class="game my-games" id="<%= game._id %>" onclick="window.location = `<%= config.urls.game.create.path %>?g=<%= game._id %>`;">
                         <h4 class="game-name"><%= game.adventure %></h4>
                         <% if (account.viewing.server) { %>
