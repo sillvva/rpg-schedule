@@ -214,7 +214,7 @@ export class Game implements GameModel {
     const guildConfig = await GuildConfig.fetch(guild.id);
     const game: GameModel = this.data;
 
-    if (this.c && !this.discordGuild.channels.cache.find(c => c.id === this.c)) {
+    if (this.c && !this.discordGuild.channels.cache.find((c) => c.id === this.c)) {
       guildConfig.channel.slice(guildConfig.channel.indexOf(this.c), 1);
       await guildConfig.save();
       await this.delete();
@@ -441,14 +441,11 @@ export class Game implements GameModel {
         updated = await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { messageId: message.id } });
         if (dmmember) {
           try {
-            const pm: any = await dmmember.send(
-              lang.game.EDIT_LINK.replace(/\:server_name/gi, guild.name).replace(/\:game_name/gi, game.adventure) +
-                "\n" +
-                host +
-                config.urls.game.create.path +
-                "?g=" +
-                inserted.insertedId
-            );
+            const dmEmbed = new MessageEmbed();
+            dmEmbed.setColor(guildConfig.embedColor);
+            dmEmbed.setTitle(`[${guild.name}] ${game.adventure}`);
+            dmEmbed.setURL(host + config.urls.game.create.path + "?g=" + inserted.insertedId);
+            const pm: any = await dmmember.send(dmEmbed);
             await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { pm: pm.id } });
           } catch (err) {
             aux.log("EditLinkError:", err);
@@ -681,7 +678,13 @@ export class Game implements GameModel {
           waitlisted = `\n\n${lang.messages.DM_WAITLIST.replace(":NUM", slotNum)}`;
         }
 
-        member.send(`${lang.messages.DM_INSTRUCTIONS.replace(":DM", (dmmember || this.dm).toString()).replace(":EVENT", this.adventure)}:\n${this.customSignup}${waitlisted}`);
+        const dmEmbed = new MessageEmbed();
+        dmEmbed.setDescription(`${this.customSignup}${waitlisted}`);
+        dmEmbed.setColor(guildConfig.embedColor);
+
+        member.send(`${lang.messages.DM_INSTRUCTIONS.replace(":DM", (dmmember || this.dm).toString()).replace(":EVENT", `**${this.adventure}**`)}:`, {
+          embed: dmEmbed
+        });
       }
     }
   }
@@ -701,13 +704,12 @@ export class Game implements GameModel {
 
       if (index + 1 === parseInt(this.players)) {
         const embed = new MessageEmbed();
+        embed.setColor(guildConfig.embedColor);
 
         let message = lang.messages.YOURE_IN;
         message = message.replace(
           ":GAME",
-          this.messageId
-            ? `[${this.adventure}](https://discordapp.com/channels/${this.discordGuild.id}/${this.discordChannel.id}/${this.messageId})`
-            : this.adventure
+          this.messageId ? `[${this.adventure}](https://discordapp.com/channels/${this.discordGuild.id}/${this.discordChannel.id}/${this.messageId})` : this.adventure
         );
         message = message.replace(":SERVER", this.discordGuild.name);
         embed.setDescription(message);
