@@ -446,7 +446,7 @@ export class Game implements GameModel {
             dmEmbed.setTitle(lang.buttons.EDIT_GAME);
             dmEmbed.setURL(host + config.urls.game.create.path + "?g=" + inserted.insertedId);
             dmEmbed.addField(lang.game.SERVER, guild.name, true);
-            dmEmbed.addField(lang.game.GAME_NAME, game.adventure, true);
+            dmEmbed.addField(lang.game.GAME_NAME, `[${game.adventure}](https://discordapp.com/channels/${this.discordGuild.id}/${this.discordChannel.id}/${this.messageId})`, true);
             const pm = await dmmember.send(dmEmbed);
             if (pm && pm.id) await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { pm: pm.id } });
           } catch (err) {
@@ -681,11 +681,13 @@ export class Game implements GameModel {
         }
 
         const dmEmbed = new MessageEmbed();
+        dmEmbed.setTitle(this.adventure);
+        dmEmbed.setURL(`https://discordapp.com/channels/${this.discordGuild.id}/${this.discordChannel.id}/${this.messageId}`);
         dmEmbed.setDescription(`${this.customSignup}${waitlisted}`);
         dmEmbed.setColor(guildConfig.embedColor);
 
-        member.send(`${lang.messages.DM_INSTRUCTIONS.replace(":DM", (dmmember || this.dm).toString()).replace(":EVENT", `**${this.adventure}**`)}:`, {
-          embed: dmEmbed
+        member.send(`${lang.messages.DM_INSTRUCTIONS.replace(":DM", (dmmember || this.dm).toString()).replace(" :EVENT", ``)}:`, {
+          embed: dmEmbed,
         });
       }
     }
