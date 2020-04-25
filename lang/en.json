@@ -26,7 +26,7 @@
   "game": {
     "SERVER": "Server",
     "CHANNEL": "Channel",
-    "GAME_NAME": "Game / Adventure Name",
+    "GAME_NAME": "Event Name",
     "RUN_TIME": "Run Time",
     "MIN_PLAYERS": "Min Players",
     "MAX_PLAYERS": "Max Players",

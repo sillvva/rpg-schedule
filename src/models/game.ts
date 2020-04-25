@@ -443,10 +443,12 @@ export class Game implements GameModel {
           try {
             const dmEmbed = new MessageEmbed();
             dmEmbed.setColor(guildConfig.embedColor);
-            dmEmbed.setTitle(`[${guild.name}] ${game.adventure}`);
+            dmEmbed.setTitle(lang.buttons.EDIT_GAME);
             dmEmbed.setURL(host + config.urls.game.create.path + "?g=" + inserted.insertedId);
-            const pm: any = await dmmember.send(dmEmbed);
-            await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { pm: pm.id } });
+            dmEmbed.addField(lang.game.SERVER, guild.name, true);
+            dmEmbed.addField(lang.game.GAME_NAME, game.adventure, true);
+            const pm = await dmmember.send(dmEmbed);
+            if (pm && pm.id) await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { pm: pm.id } });
           } catch (err) {
             aux.log("EditLinkError:", err);
           }
