@@ -532,6 +532,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
   });
 
   client.on("channelDelete", async (channel: GuildChannel) => {
+    if (!channel) return;
     const channelId = channel.id;
     const guildId = channel.guild.id;
     const guildConfig = await GuildConfig.fetch(guildId);
@@ -540,14 +541,16 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
       guildConfig.channel.splice(guildConfig.channel.indexOf(channelId), 1);
       await guildConfig.save();
 
-      const games = await Game.fetchAllBy({
-        s: guildId,
-        c: channelId
-      });
-
-      games.forEach(async (game) => {
-        await game.delete();
-      });
+      if (guildId && channelId) {
+        const games = await Game.fetchAllBy({
+          s: guildId,
+          c: channelId
+        });
+  
+        games.forEach(async (game) => {
+          await game.delete();
+        });
+      }
     }
   });
 
