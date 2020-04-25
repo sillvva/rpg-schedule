@@ -1,4 +1,4 @@
-import discord, { TextChannel, Client, Message, UserResolvable, User } from "discord.js";
+import discord, { TextChannel, Client, Message, UserResolvable, User, GuildChannel } from "discord.js";
 import { DeleteWriteOpResultObject, FilterQuery } from "mongodb";
 import { Express } from "express";
 
@@ -684,6 +684,30 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
       if (process.env.LOCALENV && message.channel.guild.id != "532564186023329792") return;
       game.delete().then((result) => {
         aux.log("Game deleted");
+      });
+    }
+  });
+
+  /**
+   * Discord.JS - channelDelete
+   * Delete the games in the channel and remove the channel id from the guild configuration
+   */
+  client.on("channelDelete", async (channel: GuildChannel) => {
+    const channelId = channel.id;
+    const guildId = channel.guild.id;
+    const guildConfig = await GuildConfig.fetch(guildId);
+    if (!Array.isArray(guildConfig.channel)) guildConfig.channel = [guildConfig.channel];
+    if (guildConfig.channel.includes(channelId)) {
+      guildConfig.channel.splice(guildConfig.channel.indexOf(channelId), 1);
+      await guildConfig.save();
+
+      const games = await Game.fetchAllBy({
+        s: guildId,
+        c: channelId
+      });
+
+      games.forEach(async (game) => {
+        await game.delete();
       });
     }
   });

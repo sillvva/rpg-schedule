@@ -1,4 +1,4 @@
-import { Client, GuildMember, Permissions, TextChannel, Guild, GuildChannel, Collection } from "discord.js";
+import { Client, GuildMember, Permissions, TextChannel, Guild, GuildChannel, Collection, RoleManager } from "discord.js";
 import express from "express";
 import moment from "moment";
 import request from "request";
@@ -929,6 +929,20 @@ interface AccountOptions {
   search?: string;
 }
 
+interface AccountGuild {
+  id: string;
+  name: string;
+  icon: string;
+  permission: boolean;
+  isAdmin: boolean;
+  member: GuildMember;
+  roles: RoleManager;
+  channels: Collection<string, GuildChannel>;
+  announcementChannels: GuildChannel[];
+  config: GuildConfig;
+  games: Game[];
+}
+
 const fetchAccount = (token: any, options: AccountOptions) => {
   const client = options.client;
 
@@ -961,13 +975,14 @@ const fetchAccount = (token: any, options: AccountOptions) => {
 
           if (options.guilds) {
             client.guilds.cache.forEach((guild) => {
-              const guildInfo = {
+              const guildInfo: AccountGuild = {
                 id: guild.id,
                 name: guild.name,
                 icon: guild.icon ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=128` : "/images/logo2.png",
                 permission: false,
                 isAdmin: false,
                 member: null,
+                roles: guild.roles,
                 channels: guild.channels.cache.filter((c) => c instanceof TextChannel),
                 announcementChannels: [],
                 config: new GuildConfig({ guild: guild.id }),
@@ -997,13 +1012,13 @@ const fetchAccount = (token: any, options: AccountOptions) => {
               },
             });
 
-            account.guilds = account.guilds.map((guild) => {
+            account.guilds = account.guilds.map((guild: AccountGuild) => {
               const guildConfig = guildConfigs.find((gc) => gc.guild === guild.id) || new GuildConfig({ guild: guild.id });
               const member: GuildMember = guild.member;
 
               let gcChannels: string[] = guildConfig.channels;
-              const firstChannel = (<Collection<string, GuildChannel>>guild.channels).find((gc) => gc.permissionsFor(guild.roles.everyone).has(Permissions.FLAGS.VIEW_CHANNEL));
-              if (firstChannel && guild.channels.length > 0 && (gcChannels.length == 0 || !guild.channels.find((gc: GuildChannel) => gcChannels.find((c) => gc.id === c)))) {
+              const firstChannel = guild.channels.find((gc) => gc.permissionsFor(guild.roles.everyone).has(Permissions.FLAGS.VIEW_CHANNEL));
+              if (firstChannel && guild.channels.array().length > 0 && (gcChannels.length == 0 || !guild.channels.find((gc) => !!gcChannels.find((c) => gc.id === c)))) {
                 gcChannels.push(firstChannel.id);
               }
               const channels = gcChannels
@@ -1012,11 +1027,13 @@ const fetchAccount = (token: any, options: AccountOptions) => {
               guild.announcementChannels = channels;
 
               if (member)
-                guild.isAdmin =
+                guild.isAdmin = !!(
                   member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) ||
-                  member.roles.cache.find((r) => r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim());
+                  member.roles.cache.find((r) => r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim())
+                );
               if (member)
-                guild.permission = guildConfig.role && !guild.isAdmin ? !!member.roles.cache.find((r) => r.name.toLowerCase().trim() === (guildConfig.role || "").toLowerCase().trim()) : true;
+                guild.permission =
+                  guildConfig.role && !guild.isAdmin ? !!member.roles.cache.find((r) => r.name.toLowerCase().trim() === (guildConfig.role || "").toLowerCase().trim()) : true;
               guild.config = guildConfig;
               return guild;
             });
