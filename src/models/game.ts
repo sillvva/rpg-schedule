@@ -682,7 +682,7 @@ export class Game implements GameModel {
 
         const dmEmbed = new MessageEmbed();
         dmEmbed.setDescription(
-          `[${this.adventure}](https://discordapp.com/channels/${this.discordGuild.id}/${this.discordChannel.id}/${this.messageId})\n${this.customSignup}${waitlisted}`
+          `**[${this.adventure}](https://discordapp.com/channels/${this.discordGuild.id}/${this.discordChannel.id}/${this.messageId})**\n${this.customSignup}${waitlisted}`
         );
         dmEmbed.setColor(guildConfig.embedColor);
 
