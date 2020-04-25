@@ -208,16 +208,18 @@ export class Game implements GameModel {
       aux.log("No database connection");
       return null;
     }
+
     let channel = this._channel;
     const guild = channel.guild;
     const guildConfig = await GuildConfig.fetch(guild.id);
     const game: GameModel = this.data;
 
-    if (guild && !channel) {
-      const textChannels = <TextChannel[]>guild.channels.cache.array().filter((c) => c instanceof TextChannel);
-      const channels = guildConfig.channels.filter((c) => guild.channels.cache.array().find((gc) => gc.id == c)).map((c) => guild.channels.cache.get(c));
-      if (channels.length === 0 && textChannels.length > 0) channels.push(textChannels[0]);
-      channel = <TextChannel>channels[0];
+    if (this.c && !this.discordGuild.channels.cache.find((c) => c.id === this.c)) {
+      guildConfig.channel.slice(guildConfig.channel.indexOf(this.c), 1);
+      await guildConfig.save();
+      await this.delete();
+      aux.log("Channel deleted");
+      return null;
     }
 
     const lang = gmLanguages.find((l) => l.code === guildConfig.lang) || gmLanguages.find((l) => l.code === "en");
@@ -275,26 +277,28 @@ export class Game implements GameModel {
     let description = parseDiscord(game.description, guild);
 
     let signups = "";
+    if (reserved.length > 0) signups += `\n**${lang.game.RESERVED}: (${reserved.length}/${game.players})**\n${reserved.join("\n")}\n`;
+    if (waitlist.length > 0) signups += `\n**${lang.game.WAITLISTED} (${waitlist.length}):**\n${waitlist.join("\n")}\n`;
     let automatedInstructions = `\n(${guildConfig.emojiAdd} ${lang.buttons.SIGN_UP}${guildConfig.dropOut ? ` | ${guildConfig.emojiRemove} ${lang.buttons.DROP_OUT}` : ""})`;
     if (game.method === GameMethod.AUTOMATED) {
-      if (reserved.length > 0) signups += `\n**${lang.game.RESERVED}: (${reserved.length}/${game.players})**\n${reserved.join("\n")}\n`;
-      if (waitlist.length > 0) signups += `\n**${lang.game.WAITLISTED} (${waitlist.length}):**\n${waitlist.join("\n")}\n`;
       signups += automatedInstructions;
     } else if (game.method === GameMethod.CUSTOM) {
       signups += `\n${game.customSignup}`;
     }
 
-    let when = "";
+    let when = "",
+      gameDate;
     if (game.when === GameWhen.DATETIME) {
       const date = Game.ISOGameDate(game);
       const tz = Math.round(parseFloat(game.timezone.toString()) * 4) / 4;
       when = moment(date).utcOffset(tz).format(config.formats.dateLong) + ` (${timezone})`;
-      game.timestamp = new Date(rawDate).getTime();
+      gameDate = new Date(rawDate);
     } else if (game.when === GameWhen.NOW) {
       when = lang.game.options.NOW;
-      game.timestamp = new Date().getTime();
+      gameDate = new Date();
     }
 
+    game.timestamp = gameDate.getTime();
     game.xWeeks = Math.max(1, parseInt(`${game.xWeeks}`));
 
     let msg =
@@ -324,7 +328,7 @@ export class Game implements GameModel {
       embed = new discord.MessageEmbed();
       embed.setColor(guildConfig.embedColor);
       embed.setTitle(game.adventure);
-      if (dmmember && dmmember.user.avatarURL() && urlRegex.test(dmmember.user.avatarURL())) embed.setAuthor(dm, dmmember.user.avatarURL().substr(0, 2048));
+      embed.setAuthor(dm, dmmember && dmmember.user.avatarURL() && urlRegex.test(dmmember.user.avatarURL()) ? dmmember.user.avatarURL().substr(0, 2048) : null);
       if (dmmember && dmmember.user.avatarURL() && urlRegex.test(dmmember.user.avatarURL())) embed.setThumbnail(dmmember.user.avatarURL().substr(0, 2048));
       if (description.length > 0) embed.setDescription(description);
       if (game.hideDate) embed.addField(lang.game.WHEN, lang.game.labels.TBD, true);
@@ -332,12 +336,11 @@ export class Game implements GameModel {
       if (game.runtime && game.runtime.trim().length > 0 && game.runtime.trim() != "0") embed.addField(lang.game.RUN_TIME, `${game.runtime} ${lang.game.labels.HOURS}`, true);
       embed.addField(lang.game.WHERE, where);
       if (guildConfig.embedMentions) embed.addField(lang.game.GM, gmTag);
-      if (game.method === GameMethod.AUTOMATED) {
-        embed.addField(`${lang.game.RESERVED} (${reserved.length}/${game.players})`, reserved.length > 0 ? reserved.join("\n") : lang.game.NO_PLAYERS, true);
-        if (waitlist.length > 0) embed.addField(`${lang.game.WAITLISTED} (${waitlist.length})`, waitlist.join("\n"), true);
-      } else if (game.method === GameMethod.CUSTOM) {
+      if (game.method === GameMethod.CUSTOM) {
         embed.addField(lang.game.CUSTOM_SIGNUP_INSTRUCTIONS, game.customSignup);
       }
+      embed.addField(`${lang.game.RESERVED} (${reserved.length}/${game.players})`, reserved.length > 0 ? reserved.join("\n") : lang.game.NO_PLAYERS, true);
+      if (waitlist.length > 0) embed.addField(`${lang.game.WAITLISTED} (${waitlist.length})`, waitlist.join("\n"), true);
       if (!game.hideDate)
         embed.addField(
           "Links",
@@ -346,6 +349,7 @@ export class Game implements GameModel {
         );
       if (game.method === GameMethod.AUTOMATED) embed.setFooter(automatedInstructions);
       if (game && game.gameImage && game.gameImage.trim().length > 0 && urlRegex.test(game.gameImage.trim())) embed.setImage(game.gameImage.trim().substr(0, 2048));
+      if (!this.hideDate) embed.setTimestamp(gameDate);
     }
 
     const dbCollection = connection().collection(collection);
@@ -374,6 +378,14 @@ export class Game implements GameModel {
         game._id = game._id.toString();
 
         const updatedGame = aux.objectChanges(prev, game);
+
+        if (
+          (Array.isArray(prev.reserved) ? prev.reserved : prev.reserved.split(/\r?\n/g)).length >
+          (Array.isArray(game.reserved) ? game.reserved : game.reserved.split(/\r?\n/g)).length
+        ) {
+          this.dmNextWaitlist();
+        }
+
         io().emit("game", { action: "updated", gameId: game._id, game: updatedGame });
       } catch (err) {
         aux.log("UpdateGameError:", err);
@@ -429,15 +441,14 @@ export class Game implements GameModel {
         updated = await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { messageId: message.id } });
         if (dmmember) {
           try {
-            const pm: any = await dmmember.send(
-              lang.game.EDIT_LINK.replace(/\:server_name/gi, guild.name).replace(/\:game_name/gi, game.adventure) +
-                "\n" +
-                host +
-                config.urls.game.create.path +
-                "?g=" +
-                inserted.insertedId
-            );
-            await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { pm: pm.id } });
+            const dmEmbed = new MessageEmbed();
+            dmEmbed.setColor(guildConfig.embedColor);
+            dmEmbed.setTitle(lang.buttons.EDIT_GAME);
+            dmEmbed.setURL(host + config.urls.game.create.path + "?g=" + inserted.insertedId);
+            dmEmbed.addField(lang.game.SERVER, guild.name, true);
+            dmEmbed.addField(lang.game.GAME_NAME, `[${game.adventure}](https://discordapp.com/channels/${this.discordGuild.id}/${this.discordChannel.id}/${this.messageId})`, true);
+            const pm = await dmmember.send(dmEmbed);
+            if (pm && pm.id) await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { pm: pm.id } });
           } catch (err) {
             aux.log("EditLinkError:", err);
           }
@@ -651,14 +662,70 @@ export class Game implements GameModel {
         }
 
         let waitlisted = "";
-        if (this.reserved.split(/\r?\n/g).filter(r => r.length > 0).findIndex((r) => r.trim() === member.user.tag.trim()) + 1 > parseInt(this.players)) {
-          const slotNum = this.reserved.split(/\r?\n/g).filter(r => r.length > 0).findIndex((r) => r.trim() === member.user.tag.trim()) + 1 - parseInt(this.players);
+        if (
+          this.reserved
+            .split(/\r?\n/g)
+            .filter((r) => r.length > 0)
+            .findIndex((r) => r.trim() === member.user.tag.trim()) +
+            1 >
+          parseInt(this.players)
+        ) {
+          const slotNum =
+            this.reserved
+              .split(/\r?\n/g)
+              .filter((r) => r.length > 0)
+              .findIndex((r) => r.trim() === member.user.tag.trim()) +
+            1 -
+            parseInt(this.players);
           waitlisted = `\n\n${lang.messages.DM_WAITLIST.replace(":NUM", slotNum)}`;
         }
 
-        member.send(`${lang.messages.DM_INSTRUCTIONS.replace(":DM", (dmmember || this.dm).toString()).replace(":EVENT", this.adventure)}:\n${this.customSignup}${waitlisted}`);
+        const dmEmbed = new MessageEmbed();
+        dmEmbed.setDescription(
+          `**[${this.adventure}](https://discordapp.com/channels/${this.discordGuild.id}/${this.discordChannel.id}/${this.messageId})**\n${this.customSignup}${waitlisted}`
+        );
+        dmEmbed.setColor(guildConfig.embedColor);
+
+        member.send(`${lang.messages.DM_INSTRUCTIONS.replace(":DM", (dmmember || this.dm).toString()).replace(" :EVENT", ``)}:`, {
+          embed: dmEmbed,
+        });
       }
     }
+  }
+
+  async dmNextWaitlist() {
+    const guildMembers = (await this.discordGuild.members.fetch()).array();
+    const guildConfig = await GuildConfig.fetch(this.discordGuild.id);
+    const lang = gmLanguages.find((l) => l.code === guildConfig.lang) || gmLanguages.find((l) => l.code === "en");
+    const reserved = Array.isArray(this.reserved) ? this.reserved : this.reserved.replace(/@/g, "").split(/\r?\n/);
+    reserved.forEach((res: any, index) => {
+      if (Array.isArray(this.reserved)) {
+        var member = guildMembers.find((mem) => mem.user.tag.trim() === res.tag.trim() || mem.user.id === res.id);
+      } else {
+        if (res.trim().length === 0) return;
+        var member = guildMembers.find((mem) => mem.user.tag.trim() === res.trim());
+      }
+
+      if (index + 1 === parseInt(this.players)) {
+        const embed = new MessageEmbed();
+        embed.setColor(guildConfig.embedColor);
+
+        let message = lang.messages.YOURE_IN;
+        message = message.replace(
+          ":GAME",
+          this.messageId ? `[${this.adventure}](https://discordapp.com/channels/${this.discordGuild.id}/${this.discordChannel.id}/${this.messageId})` : this.adventure
+        );
+        message = message.replace(":SERVER", this.discordGuild.name);
+        embed.setDescription(message);
+
+        embed.addField(lang.game.WHERE, parseDiscord(this.where, this.discordGuild));
+
+        const eventTimes = aux.parseEventTimes(this.date, this.time, this.timezone);
+        if (!this.hideDate) embed.setTimestamp(new Date(eventTimes.rawDate));
+
+        member.send(embed);
+      }
+    });
   }
 
   static ISOGameDate(game: GameModel) {

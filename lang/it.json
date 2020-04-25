@@ -171,6 +171,7 @@
   },
   "messages": {
     "DM_WAITLIST": "Attualmente sei nello slot :NUM della lista d'attesa.",
-    "DM_INSTRUCTIONS": "Un messaggio di :DM per :EVENT"
+    "DM_INSTRUCTIONS": "Un messaggio di :DM per :EVENT",
+    "YOURE_IN": "Sei in! Hai ottenuto un posto per :GAME in :SERVER."
   }
 }

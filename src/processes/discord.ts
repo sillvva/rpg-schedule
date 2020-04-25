@@ -1,4 +1,4 @@
-import discord, { TextChannel, Client, Message, UserResolvable, User } from "discord.js";
+import discord, { TextChannel, Client, Message, UserResolvable, User, GuildChannel, MessageEmbed } from "discord.js";
 import { DeleteWriteOpResultObject, FilterQuery, ObjectID } from "mongodb";
 import { Express } from "express";
 import fromPairs from "lodash/fromPairs";
@@ -531,6 +531,26 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
     }
   });
 
+  client.on("channelDelete", async (channel: GuildChannel) => {
+    const channelId = channel.id;
+    const guildId = channel.guild.id;
+    const guildConfig = await GuildConfig.fetch(guildId);
+    if (!Array.isArray(guildConfig.channel)) guildConfig.channel = [guildConfig.channel];
+    if (guildConfig.channel.includes(channelId)) {
+      guildConfig.channel.splice(guildConfig.channel.indexOf(channelId), 1);
+      await guildConfig.save();
+
+      const games = await Game.fetchAllBy({
+        s: guildId,
+        c: channelId
+      });
+
+      games.forEach(async (game) => {
+        await game.delete();
+      });
+    }
+  });
+
   /**
    * Add events to non-cached messages
    */
@@ -842,18 +862,21 @@ const postReminders = async (app: Express) => {
 
     if (guildConfig.privateReminders) {
       try {
-        let message = `${lang.game.REMINDER_FOR} **${game.adventure.replace(/\*/gi, "")}**\n`;
-        message += `**${lang.game.WHEN}:** ${siLabel}\n`;
-        message += `**${lang.game.SERVER}:** ${game.discordGuild && game.discordGuild.name}\n`;
-        message += `**${lang.game.WHERE}:** ${where}\n`;
-        message += `**${lang.game.GM}:** ${dmMember ? (dmMember.nickname ? dmMember.nickname : dmMember.user && dmMember.user.username) : game.dm}\n`;
+        const dmEmbed = new MessageEmbed();
+        dmEmbed.setColor(guildConfig.embedColor);
+        dmEmbed.setTitle(`${lang.game.REMINDER_FOR} **${game.adventure.replace(/\*/gi, "")}**\n`);
+        dmEmbed.setURL(`https://discordapp.com/channels/${game.discordGuild.id}/${game.discordChannel.id}/${game.messageId}`);
+        dmEmbed.addField(lang.game.WHEN, siLabel, true);
+        if (game.discordGuild) dmEmbed.addField(lang.game.SERVER, game.discordGuild.name, true);
+        dmEmbed.addField(lang.game.GM, dmMember ? (dmMember.nickname ? dmMember.nickname : dmMember.user && dmMember.user.username) : game.dm, true);
+        dmEmbed.addField(lang.game.WHERE, where);
 
         for (const member of reservedUsers) {
-          if (member && member.user) member.user.send(message);
+          if (member && member.user) member.user.send(dmEmbed);
           if (dmMember && dmMember.user && member && member.user && dmMember.user.username == member.user.username) dmMember = null;
         }
 
-        if (dmMember && dmMember.user) dmMember.user.send(message);
+        if (dmMember && dmMember.user) dmMember.user.send(dmEmbed);
       } catch (err) {
         aux.log(err);
       }

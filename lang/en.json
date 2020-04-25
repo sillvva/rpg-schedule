@@ -26,7 +26,7 @@
   "game": {
     "SERVER": "Server",
     "CHANNEL": "Channel",
-    "GAME_NAME": "Game / Adventure Name",
+    "GAME_NAME": "Event Name",
     "RUN_TIME": "Run Time",
     "MIN_PLAYERS": "Min Players",
     "MAX_PLAYERS": "Max Players",
@@ -176,6 +176,7 @@
   },
   "messages": {
     "DM_WAITLIST": "You are currently slot :NUM on the waitlist.",
-    "DM_INSTRUCTIONS": "A message from :DM for :EVENT"
+    "DM_INSTRUCTIONS": "A message from :DM for :EVENT",
+    "YOURE_IN": "You're in! You've secured a spot for **:GAME** in **:SERVER**."
   }
 }
