@@ -544,9 +544,9 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
       if (guildId && channelId) {
         const games = await Game.fetchAllBy({
           s: guildId,
-          c: channelId
+          c: channelId,
         });
-  
+
         games.forEach(async (game) => {
           await game.delete();
         });
@@ -802,113 +802,119 @@ const postReminders = async (app: Express) => {
     if (!game.discordChannel) return;
     if (game.reminded) return;
 
-    const reserved: string[] = [];
-    const reservedUsers: discord.GuildMember[] = [];
-
-    if (Array.isArray(game.reserved)) {
-      game.reserved = game.reserved.map((r) => r.tag).join("\n");
-    }
-
     try {
-      var where = game.where;
-      game.reserved.split(/\r?\n/).forEach((res) => {
-        if (res.trim().length === 0) return;
-        let member = game.discordGuild.members.cache.array().find((mem) => mem.user.tag === res.trim().replace("@", ""));
+      const reserved: string[] = [];
+      const reservedUsers: discord.GuildMember[] = [];
 
-        let name = res.trim().replace("@", "");
-        if (member) name = member.user.toString();
-        if (member) reservedUsers.push(member);
+      if (Array.isArray(game.reserved)) {
+        game.reserved = game.reserved.map((r) => r.tag).join("\n");
+      }
 
-        if (reserved.length < parseInt(game.players)) {
-          reserved.push(name);
-        }
-      });
-
-      const guildMembers = await game.discordGuild.members.fetch();
-      const member = guildMembers.array().find((mem) => mem.user.tag === game.dm.trim().replace("@", ""));
-      var dm = game.dm.trim().replace("@", "");
-      var dmMember = member;
-      if (member) dm = member.user.toString();
-    } catch (err) {}
-
-    if (reserved.length == 0) return;
-
-    let minPlayers = parseInt(game.minPlayers);
-    if (!isNaN(parseInt(game.minPlayers))) minPlayers = 0;
-    if (reserved.length < minPlayers) return;
-
-    try {
-      game.reminded = true;
-      game.save();
-    } catch (err) {
-      aux.log(err);
-      return;
-    }
-
-    const channels = game.where.match(/#[a-z0-9\-_]+/gi);
-    if (channels) {
-      channels.forEach((chan) => {
-        const guildChannel = game.discordGuild.channels.cache.array().find((c) => c.name === chan.replace(/#/, ""));
-        if (guildChannel) {
-          where = game.where.replace(chan, guildChannel.toString());
-        }
-      });
-    }
-
-    const guildConfig = await GuildConfig.fetch(game.discordGuild.id);
-    const languages = app.locals.langs;
-    const lang = languages.find((l) => l.code === guildConfig.lang) || languages.find((l) => l.code === "en");
-    const reminder = game.reminder;
-
-    const siUnit = parseInt(reminder) > 60 ? "HOURS" : "MINUTES";
-    const siLabel = lang.game[`STARTING_IN_${siUnit}`].replace(`:${siUnit}`, parseInt(reminder) / (parseInt(reminder) > 60 ? 60 : 1));
-
-    if (guildConfig.privateReminders) {
       try {
-        const dmEmbed = new MessageEmbed();
-        dmEmbed.setColor(guildConfig.embedColor);
-        dmEmbed.setTitle(`${lang.game.REMINDER_FOR} **${game.adventure.replace(/\*/gi, "")}**\n`);
-        dmEmbed.setURL(`https://discordapp.com/channels/${game.discordGuild.id}/${game.discordChannel.id}/${game.messageId}`);
-        dmEmbed.addField(lang.game.WHEN, siLabel, true);
-        if (game.discordGuild) dmEmbed.addField(lang.game.SERVER, game.discordGuild.name, true);
-        dmEmbed.addField(lang.game.GM, dmMember ? (dmMember.nickname ? dmMember.nickname : dmMember.user && dmMember.user.username) : game.dm, true);
-        dmEmbed.addField(lang.game.WHERE, where);
+        var where = game.where;
+        game.reserved.split(/\r?\n/).forEach((res) => {
+          if (res.trim().length === 0) return;
+          let member = game.discordGuild.members.cache.array().find((mem) => mem.user.tag === res.trim().replace("@", ""));
 
-        for (const member of reservedUsers) {
-          try {
-            if (member && member.user) member.user.send(dmEmbed);
-            if (dmMember && dmMember.user && member && member.user && dmMember.user.username == member.user.username) dmMember = null;
+          let name = res.trim().replace("@", "");
+          if (member) name = member.user.toString();
+          if (member) reservedUsers.push(member);
+
+          if (reserved.length < parseInt(game.players)) {
+            reserved.push(name);
           }
-          catch(err) {
+        });
 
-          }
-        }
+        const guildMembers = await game.discordGuild.members.fetch();
+        const member = guildMembers.array().find((mem) => mem.user.tag === game.dm.trim().replace("@", ""));
+        var dm = game.dm.trim().replace("@", "");
+        var dmMember = member;
+        if (member) dm = member.user.toString();
+      } catch (err) {}
 
-        if (dmMember && dmMember.user) dmMember.user.send(dmEmbed);
+      if (reserved.length == 0) return;
+
+      let minPlayers = parseInt(game.minPlayers);
+      if (!isNaN(parseInt(game.minPlayers))) minPlayers = 0;
+      if (reserved.length < minPlayers) return;
+
+      try {
+        game.reminded = true;
+        game.save(true);
       } catch (err) {
         aux.log(err);
+        return;
       }
-    } else {
-      try {
-        let message = `${lang.game.REMINDER_FOR} **${game.adventure.replace(/\*/gi, "")}**\n`;
-        message += `**${lang.game.WHEN}:** ${siLabel}\n`;
-        message += `**${lang.game.WHERE}:** ${where}\n\n`;
-        message += `**${lang.game.GM}:** ${dm}\n`;
-        message += `**${lang.game.RESERVED}:**\n`;
-        message += `${reserved.join(`\n`)}`;
 
+      const channels = game.where.match(/#[a-z0-9\-_]+/gi);
+      if (channels) {
+        channels.forEach((chan) => {
+          const guildChannel = game.discordGuild.channels.cache.array().find((c) => c.name === chan.replace(/#/, ""));
+          if (guildChannel) {
+            where = game.where.replace(chan, guildChannel.toString());
+          }
+        });
+      }
+
+      const guildConfig = await GuildConfig.fetch(game.discordGuild.id);
+      const languages = app.locals.langs;
+      const lang = languages.find((l) => l.code === guildConfig.lang) || languages.find((l) => l.code === "en");
+      const reminder = game.reminder;
+
+      const siUnit = parseInt(reminder) > 60 ? "HOURS" : "MINUTES";
+      const siLabel = lang.game[`STARTING_IN_${siUnit}`].replace(`:${siUnit}`, parseInt(reminder) / (parseInt(reminder) > 60 ? 60 : 1));
+
+      if (guildConfig.privateReminders) {
         try {
-          var sent = <Message>await game.discordChannel.send(message);
-        } catch (err) {
-          aux.log("PublicReminderError:", err);
-        }
+          const dmEmbed = new MessageEmbed();
+          dmEmbed.setColor(guildConfig.embedColor);
+          dmEmbed.setTitle(`${lang.game.REMINDER_FOR} **${game.adventure.replace(/\*/gi, "")}**\n`);
+          dmEmbed.setURL(`https://discordapp.com/channels/${game.discordGuild.id}/${game.discordChannel.id}/${game.messageId}`);
+          dmEmbed.addField(lang.game.WHEN, siLabel, true);
+          if (game.discordGuild) dmEmbed.addField(lang.game.SERVER, game.discordGuild.name, true);
+          dmEmbed.addField(lang.game.GM, dmMember ? (dmMember.nickname ? dmMember.nickname : dmMember.user && dmMember.user.username) : game.dm, true);
+          dmEmbed.addField(lang.game.WHERE, where);
 
-        game.reminderMessageId = sent.id;
-        game.save();
+          for (const member of reservedUsers) {
+            try {
+              if (member) member.send(dmEmbed);
+              if (dmMember && dmMember.user && member && member.user && dmMember.user.username == member.user.username) dmMember = null;
+            } catch (err) {
+              aux.log("PrivateMemberReminderError:", member && member.user && member.user.tag, err);
+            }
+          }
+
+          try {
+            if (dmMember) dmMember.send(dmEmbed);
+          } catch (err) {
+            aux.log("PrivateGMReminderError:", dmMember && dmMember.user && dmMember.user.tag, err);
+          }
+        } catch (err) {
+          aux.log("PrivateReminderError:", err);
+        }
+      } else {
+        try {
+          let message = `${lang.game.REMINDER_FOR} **${game.adventure.replace(/\*/gi, "")}**\n`;
+          message += `**${lang.game.WHEN}:** ${siLabel}\n`;
+          message += `**${lang.game.WHERE}:** ${where}\n\n`;
+          message += `**${lang.game.GM}:** ${dm}\n`;
+          message += `**${lang.game.RESERVED}:**\n`;
+          message += `${reserved.join(`\n`)}`;
+
+          try {
+            var sent = <Message>await game.discordChannel.send(message);
+          } catch (err) {
+            aux.log("PublicReminderError:", err);
+          }
+
+          game.reminderMessageId = sent.id;
+          game.save();
+        } catch (err) {
+          aux.log("PublicReminderSaveError:", err);
+        }
       }
-      catch(err) {
-        aux.log("PublicReminderError:", err);
-      }
+    } catch (err) {
+      aux.log("GameReminderError:", err);
     }
   });
 };
