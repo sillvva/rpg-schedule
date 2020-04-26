@@ -734,7 +734,7 @@ export class Game implements GameModel {
         const eventTimes = aux.parseEventTimes(this.date, this.time, this.timezone);
         if (!this.hideDate) embed.setTimestamp(new Date(eventTimes.rawDate));
 
-        member.send(embed);
+        if (member) member.send(embed);
       }
     });
   }
