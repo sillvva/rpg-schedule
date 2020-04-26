@@ -203,7 +203,7 @@ export class Game implements GameModel {
     };
   }
 
-  async save() {
+  async save(force: boolean = false) {
     if (!connection()) {
       aux.log("No database connection");
       return null;
@@ -244,7 +244,7 @@ export class Game implements GameModel {
         var gmTag = dmmember.user.toString();
         if (guildConfig.embeds === false) dm = gmTag;
         else dm = dmmember.nickname || dm;
-      } else if (!game._id) {
+      } else if (!game._id && !force) {
         return {
           _id: "",
           message: null,

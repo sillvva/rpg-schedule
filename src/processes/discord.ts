@@ -840,7 +840,7 @@ const postReminders = async (app: Express) => {
 
       try {
         game.reminded = true;
-        game.save();
+        game.save(true);
       } catch (err) {
         aux.log(err);
         return;
