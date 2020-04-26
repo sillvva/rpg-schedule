@@ -209,12 +209,12 @@ export class Game implements GameModel {
       return null;
     }
 
-    try {
-      let channel = this._channel;
-      const guild = channel.guild;
-      const guildConfig = await GuildConfig.fetch(guild.id);
-      const game: GameModel = this.data;
+    let channel = this._channel;
+    const guild = channel.guild;
+    const guildConfig = await GuildConfig.fetch(guild.id);
+    const game: GameModel = this.data;
 
+    try {
       if (this.c && !this.discordGuild.channels.cache.find((c) => c.id === this.c)) {
         guildConfig.channel.slice(guildConfig.channel.indexOf(this.c), 1);
         await guildConfig.save();
@@ -480,7 +480,18 @@ export class Game implements GameModel {
         return saved;
       }
     } catch (err) {
-      aux.log("GameSaveError", err);
+      aux.log("GameSaveError", game._id, err);
+
+      if (game._id) {
+        const dbCollection = connection().collection(collection);
+        await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: game });
+      }
+
+      return {
+        _id: "",
+        message: null,
+        modified: false,
+      };
     }
   }
 
