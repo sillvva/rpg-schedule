@@ -875,8 +875,13 @@ const postReminders = async (app: Express) => {
         dmEmbed.addField(lang.game.WHERE, where);
 
         for (const member of reservedUsers) {
-          if (member && member.user) member.user.send(dmEmbed);
-          if (dmMember && dmMember.user && member && member.user && dmMember.user.username == member.user.username) dmMember = null;
+          try {
+            if (member && member.user) member.user.send(dmEmbed);
+            if (dmMember && dmMember.user && member && member.user && dmMember.user.username == member.user.username) dmMember = null;
+          }
+          catch(err) {
+
+          }
         }
 
         if (dmMember && dmMember.user) dmMember.user.send(dmEmbed);
@@ -884,21 +889,26 @@ const postReminders = async (app: Express) => {
         aux.log(err);
       }
     } else {
-      let message = `${lang.game.REMINDER_FOR} **${game.adventure.replace(/\*/gi, "")}**\n`;
-      message += `**${lang.game.WHEN}:** ${siLabel}\n`;
-      message += `**${lang.game.WHERE}:** ${where}\n\n`;
-      message += `**${lang.game.GM}:** ${dm}\n`;
-      message += `**${lang.game.RESERVED}:**\n`;
-      message += `${reserved.join(`\n`)}`;
-
       try {
-        var sent = <Message>await game.discordChannel.send(message);
-      } catch (err) {
+        let message = `${lang.game.REMINDER_FOR} **${game.adventure.replace(/\*/gi, "")}**\n`;
+        message += `**${lang.game.WHEN}:** ${siLabel}\n`;
+        message += `**${lang.game.WHERE}:** ${where}\n\n`;
+        message += `**${lang.game.GM}:** ${dm}\n`;
+        message += `**${lang.game.RESERVED}:**\n`;
+        message += `${reserved.join(`\n`)}`;
+
+        try {
+          var sent = <Message>await game.discordChannel.send(message);
+        } catch (err) {
+          aux.log("PublicReminderError:", err);
+        }
+
+        game.reminderMessageId = sent.id;
+        game.save();
+      }
+      catch(err) {
         aux.log("PublicReminderError:", err);
       }
-
-      game.reminderMessageId = sent.id;
-      game.save();
     }
   });
 };
