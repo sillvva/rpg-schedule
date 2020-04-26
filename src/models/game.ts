@@ -233,14 +233,17 @@ export class Game implements GameModel {
     let guildMembers = (await guild.members.fetch()).array();
     const dmParts = game.dm.trim().split("#");
     let dmmember = guildMembers.find((mem) => {
-      return mem.user.tag === game.dm.trim().replace("@", "") || (mem.user.username === dmParts[0].trim() && mem.user.discriminator === dmParts[1].trim());
+      return (
+        (game.dm && mem.user.tag === game.dm.trim().replace("@", "")) ||
+        (dmParts[0] && dmParts[1] && mem.user.username === dmParts[0].trim() && mem.user.discriminator === dmParts[1].trim()) ||
+        (dmParts[0] && mem.user.username === dmParts[0].trim())
+      );
     });
     if (dmmember) {
       var gmTag = dmmember.user.toString();
       if (guildConfig.embeds === false) dm = gmTag;
       else dm = dmmember.nickname || dm;
-    }
-    else {
+    } else {
       return {
         _id: "",
         message: null,
