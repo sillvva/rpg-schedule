@@ -482,7 +482,7 @@ export class Game implements GameModel {
     } catch (err) {
       aux.log("GameSaveError", game._id, err);
 
-      if (game._id) {
+      if (game._id && force) {
         const dbCollection = connection().collection(collection);
         await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: game });
       }
