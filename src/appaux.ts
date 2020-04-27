@@ -1,5 +1,5 @@
 import _ from "lodash";
-import moment, { weekdays } from "moment";
+import moment from "moment";
 import "moment-recur-ts";
 import axios from "axios";
 import { GameModel } from "./models/game";
