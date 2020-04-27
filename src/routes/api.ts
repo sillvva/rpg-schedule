@@ -1117,6 +1117,8 @@ const fetchAccount = (token: any, options: AccountOptions) => {
                     from: moment(date).utcOffset(parseInt(game.timezone)).fromNow(),
                   };
 
+                  game.reserved = game.reserved.filter(r => r.tag);
+
                   game.slot = (Array.isArray(game.reserved) ? game.reserved : game.reserved.split(/\r?\n/g)).findIndex((t) => t.tag.replace("@", "") === tag || t.id === id) + 1;
                   game.signedup = game.slot > 0 && game.slot <= parseInt(game.players);
                   game.waitlisted = game.slot > parseInt(game.players);

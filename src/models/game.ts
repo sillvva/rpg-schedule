@@ -142,14 +142,14 @@ export class Game implements GameModel {
     Object.entries(game || {}).forEach(([key, value]) => {
       this[key] = value;
     });
-    
+
     // Strip HTML Tags from Data
     for (let i in this.data) {
       if (typeof this[i] === "string") {
         this[i] = this[i].replace(/<\/?(\w+)((\s+\w+(\s*=\s*(?:".*?"|'.*?'|[\^'">\s]+))?)+\s*|\s*)\/?>/gm, "");
       }
     }
-    
+
     this._guild = discordClient().guilds.cache.get(this.s);
     if (!this._guild) this._guild = discordClient().guilds.resolve(this.s);
     if (this._guild) {
@@ -213,7 +213,7 @@ export class Game implements GameModel {
     };
   }
 
-  async save() {
+  async save(force: boolean = false) {
     if (!connection()) {
       aux.log("No database connection");
       return null;
@@ -225,255 +225,285 @@ export class Game implements GameModel {
     await this.updateReservedList();
     const game: GameModel = this.data;
 
-    if (guild && !channel) {
-      const textChannels = <TextChannel[]>guild.channels.cache.array().filter((c) => c instanceof TextChannel);
-      const channels = guildConfig.channels.filter((c) => guild.channels.cache.array().find((gc) => gc.id == c)).map((c) => guild.channels.cache.get(c));
-      if (channels.length === 0 && textChannels.length > 0) channels.push(textChannels[0]);
-      channel = <TextChannel>channels[0];
-    }
-
-    const lang = gmLanguages.find((l) => l.code === guildConfig.lang) || gmLanguages.find((l) => l.code === "en");
-    const guildMembers = (await guild.members.fetch()).array();
-
-    moment.locale(lang.code);
-
-    let dm = (<RSVP>game.dm).tag
-      .trim()
-      .replace("@", "")
-      .replace(/\#\d{4}/, "");
-    let dmmember = guildMembers.find((mem) => {
-      return mem.user.tag === (<RSVP>game.dm).tag.trim().replace("@", "");
-    });
-    if (dmmember) {
-      var gmTag = dmmember.user.toString();
-      if (guildConfig.embeds === false) dm = gmTag;
-      else dm = dmmember.nickname || dm;
-    }
-
-    let reserved: string[] = [];
-    let waitlist: string[] = [];
-    (<RSVP[]>game.reserved).forEach((rsvp: RSVP, i) => {
-      if (rsvp.tag.trim().length === 0 && !rsvp.id) return;
-      let member = guildMembers.find((mem) => mem.user.tag.trim() === rsvp.tag.trim() || mem.user.id === rsvp.id);
-
-      let name = rsvp.tag.trim().replace(/\#\d{4}/, "");
-      if (member) {
-        if (guildConfig.embeds === false || guildConfig.embedMentions) name = member.user.toString();
-        else name = member.nickname || member.user.username;
-        rsvp.tag = member.user.tag;
+    try {
+      if (guild && !channel) {
+        const textChannels = <TextChannel[]>guild.channels.cache.array().filter((c) => c instanceof TextChannel);
+        const channels = guildConfig.channels.filter((c) => guild.channels.cache.array().find((gc) => gc.id == c)).map((c) => guild.channels.cache.get(c));
+        if (channels.length === 0 && textChannels.length > 0) channels.push(textChannels[0]);
+        channel = <TextChannel>channels[0];
       }
 
-      if (reserved.length < parseInt(game.players)) {
-        reserved.push(reserved.length + 1 + ". " + name);
+      const lang = gmLanguages.find((l) => l.code === guildConfig.lang) || gmLanguages.find((l) => l.code === "en");
+      const guildMembers = (await guild.members.fetch()).array();
+
+      moment.locale(lang.code);
+
+      let dm = (<RSVP>game.dm).tag
+        .trim()
+        .replace("@", "")
+        .replace(/\#\d{4}/, "");
+      const dmParts = (<RSVP>game.dm).tag.split("#");
+      let dmmember = guildMembers.find((mem) => {
+        return (
+          (game.dm && mem.user.tag === (<RSVP>game.dm).tag.trim().replace("@", "")) ||
+          (dmParts[0] && dmParts[1] && mem.user.username === dmParts[0].trim() && mem.user.discriminator === dmParts[1].trim()) ||
+          (dmParts[0] && mem.user.username === dmParts[0].trim())
+        );
+      });
+      if (dmmember) {
+        var gmTag = dmmember.user.toString();
+        if (guildConfig.embeds === false) dm = gmTag;
+        else dm = dmmember.nickname || dm;
+      } else if (!game._id && !force) {
+        return {
+          _id: "",
+          message: null,
+          modified: false,
+        };
+      }
+
+      game.reserved = (<RSVP[]>game.reserved).filter((r) => r.tag);
+
+      let reserved: string[] = [];
+      let waitlist: string[] = [];
+      (<RSVP[]>game.reserved).forEach((rsvp: RSVP, i) => {
+        if (rsvp.tag.trim().length === 0 && !rsvp.id) return;
+        let member = guildMembers.find((mem) => mem.user.tag.trim() === rsvp.tag.trim() || mem.user.id === rsvp.id);
+
+        let name = rsvp.tag.trim().replace(/\#\d{4}/, "");
+        if (member) {
+          if (guildConfig.embeds === false || guildConfig.embedMentions) name = member.user.toString();
+          else name = member.nickname || member.user.username;
+          rsvp.tag = member.user.tag;
+        }
+
+        if (reserved.length < parseInt(game.players)) {
+          reserved.push(reserved.length + 1 + ". " + name);
+        } else {
+          waitlist.push(reserved.length + waitlist.length + 1 + ". " + name);
+        }
+      });
+
+      const eventTimes = aux.parseEventTimes(game.date, game.time, game.timezone, {
+        name: game.adventure,
+        location: `${guild.name} - ${game.where}`,
+        description: game.description,
+      });
+      const rawDate = eventTimes.rawDate;
+      const timezone = "UTC" + (game.timezone >= 0 ? "+" : "") + game.timezone;
+      const where = parseDiscord(game.where, guild);
+      let description = parseDiscord(game.description, guild);
+
+      let signups = "";
+      let automatedInstructions = `\n(${guildConfig.emojiAdd} ${lang.buttons.SIGN_UP}${guildConfig.dropOut ? ` | ${guildConfig.emojiRemove} ${lang.buttons.DROP_OUT}` : ""})`;
+      if (game.method === GameMethod.AUTOMATED) {
+        if (reserved.length > 0) signups += `\n**${lang.game.RESERVED}:**\n${reserved.join("\n")}\n`;
+        if (waitlist.length > 0) signups += `\n**${lang.game.WAITLISTED}:**\n${waitlist.join("\n")}\n`;
+        signups += automatedInstructions;
+      } else if (game.method === GameMethod.CUSTOM) {
+        signups += `\n${game.customSignup}`;
+      }
+
+      let when = "",
+        gameDate;
+      if (game.when === GameWhen.DATETIME) {
+        const date = Game.ISOGameDate(game);
+        const tz = Math.round(parseFloat(game.timezone.toString()) * 4) / 4;
+        when = moment(date).utcOffset(tz).format(config.formats.dateLong) + ` (${timezone})`;
+        gameDate = new Date(rawDate);
+      } else if (game.when === GameWhen.NOW) {
+        when = lang.game.options.NOW;
+        gameDate = new Date();
+      }
+
+      game.timestamp = gameDate.getTime();
+      game.xWeeks = Math.max(1, parseInt(`${game.xWeeks}`));
+
+      let msg =
+        `\n**${lang.game.GM}:** ${dm}` +
+        `\n**${lang.game.GAME_NAME}:** ${game.adventure}` +
+        `\n**${lang.game.RUN_TIME}:** ${game.runtime} ${lang.game.labels.HOURS}` +
+        `\n**${lang.game.WHEN}:** ${game.hideDate ? lang.game.labels.TBD : when}` +
+        `\n**${lang.game.WHERE}:** ${where}` +
+        `\n${description.length > 0 ? `**${lang.game.DESCRIPTION}:**\n${description}\n` : description}` +
+        `\n${signups}`;
+
+      if (game.gameImage.trim().length > 2048) {
+        game.gameImage = "";
+      }
+
+      let embed: MessageEmbed;
+      if (guildConfig.embeds === false) {
+        if (game && game.gameImage && game.gameImage.trim().length > 0) {
+          embed = new discord.MessageEmbed();
+          embed.setColor(guildConfig.embedColor);
+          embed.setImage(game.gameImage.trim().substr(0, 2048));
+        }
       } else {
-        waitlist.push(reserved.length + waitlist.length + 1 + ". " + name);
-      }
-    });
+        const urlRegex = /^((([A-Za-z]{3,9}:(?:\/\/)?)(?:[\-;:&=\+\$,\w]+@)?[A-Za-z0-9\.\-]+|(?:www\.|[\-;:&=\+\$,\w]+@)[A-Za-z0-9\.\-]+)((?:\/[\+~%\/\.\w\-_]*)?\??(?:[\-\+=&;%@\.\w_]*)#?(?:[\.\!\/\\\w]*))?)$/gi;
 
-    const eventTimes = aux.parseEventTimes(game.date, game.time, game.timezone, {
-      name: game.adventure,
-      location: `${guild.name} - ${game.where}`,
-      description: game.description,
-    });
-    const rawDate = eventTimes.rawDate;
-    const timezone = "UTC" + (game.timezone >= 0 ? "+" : "") + game.timezone;
-    const where = parseDiscord(game.where, guild);
-    let description = parseDiscord(game.description, guild);
-
-    let signups = "";
-    let automatedInstructions = `\n(${guildConfig.emojiAdd} ${lang.buttons.SIGN_UP}${guildConfig.dropOut ? ` | ${guildConfig.emojiRemove} ${lang.buttons.DROP_OUT}` : ""})`;
-    if (game.method === GameMethod.AUTOMATED) {
-      if (reserved.length > 0) signups += `\n**${lang.game.RESERVED}:**\n${reserved.join("\n")}\n`;
-      if (waitlist.length > 0) signups += `\n**${lang.game.WAITLISTED}:**\n${waitlist.join("\n")}\n`;
-      signups += automatedInstructions;
-    } else if (game.method === GameMethod.CUSTOM) {
-      signups += `\n${game.customSignup}`;
-    }
-
-    let when = "",
-      gameDate;
-    if (game.when === GameWhen.DATETIME) {
-      const date = Game.ISOGameDate(game);
-      const tz = Math.round(parseFloat(game.timezone.toString()) * 4) / 4;
-      when = moment(date).utcOffset(tz).format(config.formats.dateLong) + ` (${timezone})`;
-      gameDate = new Date(rawDate);
-    } else if (game.when === GameWhen.NOW) {
-      when = lang.game.options.NOW;
-      gameDate = new Date();
-    }
-
-    game.timestamp = gameDate.getTime();
-    game.xWeeks = Math.max(1, parseInt(`${game.xWeeks}`));
-
-    let msg =
-      `\n**${lang.game.GM}:** ${dm}` +
-      `\n**${lang.game.GAME_NAME}:** ${game.adventure}` +
-      `\n**${lang.game.RUN_TIME}:** ${game.runtime} ${lang.game.labels.HOURS}` +
-      `\n**${lang.game.WHEN}:** ${game.hideDate ? lang.game.labels.TBD : when}` +
-      `\n**${lang.game.WHERE}:** ${where}` +
-      `\n${description.length > 0 ? `**${lang.game.DESCRIPTION}:**\n${description}\n` : description}` +
-      `\n${signups}`;
-
-    if (game.gameImage.trim().length > 2048) {
-      game.gameImage = "";
-    }
-
-    let embed: MessageEmbed;
-    if (guildConfig.embeds === false) {
-      if (game && game.gameImage && game.gameImage.trim().length > 0) {
+        msg = "";
         embed = new discord.MessageEmbed();
         embed.setColor(guildConfig.embedColor);
-        embed.setImage(game.gameImage.trim().substr(0, 2048));
+        embed.setTitle(game.adventure);
+        embed.setAuthor(dm, dmmember && dmmember.user.avatarURL() && urlRegex.test(dmmember.user.avatarURL()) ? dmmember.user.avatarURL().substr(0, 2048) : null);
+        if (dmmember && dmmember.user.avatarURL() && urlRegex.test(dmmember.user.avatarURL())) embed.setThumbnail(dmmember.user.avatarURL().substr(0, 2048));
+        if (description.length > 0) embed.setDescription(description);
+        if (game.hideDate) embed.addField(lang.game.WHEN, lang.game.labels.TBD, true);
+        else embed.addField(lang.game.WHEN, when, true);
+        if (game.runtime && game.runtime.trim().length > 0 && game.runtime.trim() != "0") embed.addField(lang.game.RUN_TIME, `${game.runtime} ${lang.game.labels.HOURS}`, true);
+        embed.addField(lang.game.WHERE, where);
+        if (guildConfig.embedMentions) embed.addField(lang.game.GM, gmTag);
+        if (game.method === GameMethod.AUTOMATED) {
+          embed.addField(`${lang.game.RESERVED} (${reserved.length}/${game.players})`, reserved.length > 0 ? reserved.join("\n") : lang.game.NO_PLAYERS, true);
+          if (waitlist.length > 0) embed.addField(`${lang.game.WAITLISTED} (${waitlist.length})`, waitlist.join("\n"), true);
+        } else if (game.method === GameMethod.CUSTOM) {
+          embed.addField(lang.game.CUSTOM_SIGNUP_INSTRUCTIONS, game.customSignup);
+        }
+        if (!game.hideDate)
+          embed.addField(
+            "Links",
+            `[📅 ${lang.game.ADD_TO_CALENDAR}](${eventTimes.googleCal})\n[🗺 ${lang.game.CONVERT_TIME_ZONE}](${eventTimes.convert.timeAndDate})\n[⏰ ${lang.game.COUNTDOWN}](${eventTimes.countdown})`,
+            true
+          );
+        if (game.method === GameMethod.AUTOMATED) embed.setFooter(automatedInstructions);
+        if (game && game.gameImage && game.gameImage.trim().length > 0 && urlRegex.test(game.gameImage.trim())) embed.setImage(game.gameImage.trim().substr(0, 2048));
+        if (!this.hideDate) embed.setTimestamp(gameDate);
       }
-    } else {
-      const urlRegex = /^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$\%&'\(\)\*\+,;=.]+$/gi;
 
-      msg = "";
-      embed = new discord.MessageEmbed();
-      embed.setColor(guildConfig.embedColor);
-      embed.setTitle(game.adventure);
-      embed.setAuthor(dm, dmmember && dmmember.user.avatarURL() && urlRegex.test(dmmember.user.avatarURL()) ? dmmember.user.avatarURL().substr(0, 2048) : null);
-      if (dmmember && dmmember.user.avatarURL() && urlRegex.test(dmmember.user.avatarURL())) embed.setThumbnail(dmmember.user.avatarURL().substr(0, 2048));
-      if (description.length > 0) embed.setDescription(description);
-      if (game.hideDate) embed.addField(lang.game.WHEN, lang.game.labels.TBD, true);
-      else embed.addField(lang.game.WHEN, when, true);
-      if (game.runtime && game.runtime.trim().length > 0 && game.runtime.trim() != "0") embed.addField(lang.game.RUN_TIME, `${game.runtime} ${lang.game.labels.HOURS}`, true);
-      embed.addField(lang.game.WHERE, where);
-      if (guildConfig.embedMentions) embed.addField(lang.game.GM, gmTag);
-      if (game.method === GameMethod.AUTOMATED) {
-        embed.addField(`${lang.game.RESERVED} (${reserved.length}/${game.players})`, reserved.length > 0 ? reserved.join("\n") : lang.game.NO_PLAYERS, true);
-        if (waitlist.length > 0) embed.addField(`${lang.game.WAITLISTED} (${waitlist.length})`, waitlist.join("\n"), true);
-      } else if (game.method === GameMethod.CUSTOM) {
-        embed.addField(lang.game.CUSTOM_SIGNUP_INSTRUCTIONS, game.customSignup);
-      }
-      if (!game.hideDate)
-        embed.addField(
-          "Links",
-          `[📅 ${lang.game.ADD_TO_CALENDAR}](${eventTimes.googleCal})\n[🗺 ${lang.game.CONVERT_TIME_ZONE}](${eventTimes.convert.timeAndDate})\n[⏰ ${lang.game.COUNTDOWN}](${eventTimes.countdown})`,
-          true
-        );
-      if (game.method === GameMethod.AUTOMATED) embed.setFooter(automatedInstructions);
-      if (game && game.gameImage && game.gameImage.trim().length > 0 && urlRegex.test(game.gameImage.trim())) embed.setImage(game.gameImage.trim().substr(0, 2048));
-      if (!this.hideDate) embed.setTimestamp(gameDate);
-    }
+      const dbCollection = connection().collection(collection);
+      if (game._id) {
+        game.sequence++;
 
-    const dbCollection = connection().collection(collection);
-    if (game._id) {
-      game.sequence++;
+        const prev = (await Game.fetch(game._id)).data;
+        const gameData = cloneDeep(game);
+        delete gameData._id;
+        const updated = await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: gameData });
+        let message: Message;
+        try {
+          message = await channel.messages.fetch(game.messageId);
+          if (message) {
+            if (message.author.id === process.env.CLIENT_ID) {
+              message = await message.edit(msg, embed);
+            }
+          } else {
+            if (guildConfig.embeds === false) {
+              message = <Message>await channel.send(msg, embed);
+            } else {
+              message = <Message>await channel.send(embed);
+            }
 
-      const prev = (await Game.fetch(game._id)).data;
-      const gameData = cloneDeep(game);
-      delete gameData._id;
-      const updated = await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: gameData });
-      let message: Message;
-      try {
-        message = await channel.messages.fetch(game.messageId);
-        if (message) {
-          message = await message.edit(msg, embed);
-        } else {
+            if (message) {
+              await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: { messageId: message.id } });
+              game.messageId = message.id;
+            }
+          }
+
+          prev._id = prev._id.toString();
+          game._id = game._id.toString();
+
+          if ((Array.isArray(prev.reserved) ? prev.reserved : prev.reserved.split(/\r?\n/g)).length > game.reserved.length) {
+            this.dmNextWaitlist();
+          }
+
+          const updatedGame = aux.objectChanges(prev, game);
+          io().emit("game", { action: "updated", gameId: game._id, game: updatedGame, guildId: game.s });
+        } catch (err) {
+          aux.log("UpdateGameError:", err);
+          if (updated) updated.modifiedCount = 0;
+        }
+        const saved: GameSaveData = {
+          _id: game._id,
+          message: message,
+          modified: updated && updated.modifiedCount > 0,
+        };
+        return saved;
+      } else {
+        const inserted = await dbCollection.insertOne(game);
+        let message: Message;
+        let gcUpdated = false;
+
+        try {
           if (guildConfig.embeds === false) {
             message = <Message>await channel.send(msg, embed);
           } else {
             message = <Message>await channel.send(embed);
           }
 
-          if (message) {
-            await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: { messageId: message.id } });
-            game.messageId = message.id;
-          }
-        }
-
-        prev._id = prev._id.toString();
-        game._id = game._id.toString();
-
-        if (
-          (Array.isArray(prev.reserved) ? prev.reserved : prev.reserved.split(/\r?\n/g)).length >
-          (Array.isArray(game.reserved) ? game.reserved : game.reserved.split(/\r?\n/g)).length
-        ) {
-          this.dmNextWaitlist();
-        }
-        
-        const updatedGame = aux.objectChanges(prev, game);
-        io().emit("game", { action: "updated", gameId: game._id, game: updatedGame, guildId: game.s });
-      } catch (err) {
-        aux.log("UpdateGameError:", err);
-        if (updated) updated.modifiedCount = 0;
-      }
-      const saved: GameSaveData = {
-        _id: game._id,
-        message: message,
-        modified: updated && updated.modifiedCount > 0,
-      };
-      return saved;
-    } else {
-      const inserted = await dbCollection.insertOne(game);
-      let message: Message;
-      let gcUpdated = false;
-
-      try {
-        if (guildConfig.embeds === false) {
-          message = <Message>await channel.send(msg, embed);
-        } else {
-          message = <Message>await channel.send(embed);
-        }
-
-        try {
-          if (game.method === GameMethod.AUTOMATED) await message.react(guildConfig.emojiAdd);
-        } catch (err) {
-          if (!aux.isEmoji(guildConfig.emojiAdd)) {
-            gcUpdated = true;
-            guildConfig.emojiAdd = "➕";
-            if (game.method === GameMethod.AUTOMATED) await message.react(guildConfig.emojiAdd);
-          }
-        }
-        try {
-          if (game.method === GameMethod.AUTOMATED && guildConfig.dropOut) await message.react(guildConfig.emojiRemove);
-        } catch (err) {
-          if (!aux.isEmoji(guildConfig.emojiRemove)) {
-            gcUpdated = true;
-            guildConfig.emojiRemove = "➖";
-            if (game.method === GameMethod.AUTOMATED && guildConfig.dropOut) await message.react(guildConfig.emojiRemove);
-          }
-        }
-      } catch (err) {
-        aux.log("InsertGameError:", game.s, err);
-      }
-
-      if (gcUpdated) {
-        guildConfig.save(guildConfig.data);
-        guildConfig.updateReactions();
-      }
-
-      let updated;
-      if (message) {
-        updated = await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { messageId: message.id } });
-        if (dmmember) {
           try {
-            const pm: any = await dmmember.send(
-              lang.game.EDIT_LINK.replace(/\:server_name/gi, guild.name).replace(/\:game_name/gi, game.adventure) +
-                "\n" +
-                host +
-                config.urls.game.create.path +
-                "?g=" +
-                inserted.insertedId
-            );
-            await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { pm: pm.id } });
+            if (game.method === GameMethod.AUTOMATED) await message.react(guildConfig.emojiAdd);
           } catch (err) {
-            aux.log("EditLinkError:", err);
+            if (!aux.isEmoji(guildConfig.emojiAdd)) {
+              gcUpdated = true;
+              guildConfig.emojiAdd = "➕";
+              if (game.method === GameMethod.AUTOMATED) await message.react(guildConfig.emojiAdd);
+            }
           }
+          try {
+            if (game.method === GameMethod.AUTOMATED && guildConfig.dropOut) await message.react(guildConfig.emojiRemove);
+          } catch (err) {
+            if (!aux.isEmoji(guildConfig.emojiRemove)) {
+              gcUpdated = true;
+              guildConfig.emojiRemove = "➖";
+              if (game.method === GameMethod.AUTOMATED && guildConfig.dropOut) await message.react(guildConfig.emojiRemove);
+            }
+          }
+        } catch (err) {
+          aux.log("InsertGameError:", game.s, err);
         }
-      } else {
-        aux.log(`GameMessageNotPostedError:\n`, game.s, `${msg}\n`, embed);
+
+        if (gcUpdated) {
+          guildConfig.save(guildConfig.data);
+          guildConfig.updateReactions();
+        }
+
+        let updated;
+        if (message) {
+          updated = await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { messageId: message.id } });
+          if (dmmember) {
+            try {
+              const dmEmbed = new MessageEmbed();
+              dmEmbed.setColor(guildConfig.embedColor);
+              dmEmbed.setTitle(lang.buttons.EDIT_GAME);
+              dmEmbed.setURL(host + config.urls.game.create.path + "?g=" + inserted.insertedId);
+              dmEmbed.addField(lang.game.SERVER, guild.name, true);
+              dmEmbed.addField(
+                lang.game.GAME_NAME,
+                `[${game.adventure}](https://discordapp.com/channels/${this.discordGuild.id}/${this.discordChannel.id}/${this.messageId})`,
+                true
+              );
+              const pm = await dmmember.send(dmEmbed);
+              await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { pm: pm.id } });
+            } catch (err) {
+              aux.log("EditLinkError:", err);
+            }
+          }
+        } else {
+          aux.log(`GameMessageNotPostedError:\n`, game.s, `${msg}\n`, embed);
+        }
+
+        io().emit("game", { action: "new", gameId: inserted.insertedId.toString(), guildId: game.s });
+
+        const saved: GameSaveData = {
+          _id: inserted.insertedId.toString(),
+          message: message,
+          modified: updated && updated.modifiedCount > 0,
+        };
+        return saved;
+      }
+    } catch (err) {
+      aux.log("GameSaveError", game._id, err);
+
+      if (game._id && force) {
+        const dbCollection = connection().collection(collection);
+        await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: game });
       }
 
-      io().emit("game", { action: "new", gameId: inserted.insertedId.toString(), guildId: game.s });
-
-      const saved: GameSaveData = {
-        _id: inserted.insertedId.toString(),
-        message: message,
-        modified: updated && updated.modifiedCount > 0,
+      return {
+        _id: "",
+        message: null,
+        modified: false,
       };
-      return saved;
     }
   }
 
@@ -684,7 +714,15 @@ export class Game implements GameModel {
           waitlisted = `\n\n${lang.messages.DM_WAITLIST.replace(":NUM", slotNum)}`;
         }
 
-        member.send(`${lang.messages.DM_INSTRUCTIONS.replace(":DM", (dmmember || (<RSVP>this.dm).tag).toString()).replace(":EVENT", this.adventure)}:\n${this.customSignup}${waitlisted}`);
+        const dmEmbed = new MessageEmbed();
+        dmEmbed.setDescription(
+          `**[${this.adventure}](https://discordapp.com/channels/${this.discordGuild.id}/${this.discordChannel.id}/${this.messageId})**\n${this.customSignup}${waitlisted}`
+        );
+        dmEmbed.setColor(guildConfig.embedColor);
+
+        member.send(`${lang.messages.DM_INSTRUCTIONS.replace(":DM", (dmmember || this.dm).toString()).replace(" :EVENT", ``)}:`, {
+          embed: dmEmbed,
+        });
       }
     }
   }
@@ -705,12 +743,12 @@ export class Game implements GameModel {
       if (index + 1 === parseInt(this.players)) {
         const embed = new MessageEmbed();
 
+        embed.setColor(guildConfig.embedColor);
+
         let message = lang.messages.YOURE_IN;
         message = message.replace(
           ":GAME",
-          this.messageId
-            ? `[${this.adventure}](https://discordapp.com/channels/${this.discordGuild.id}/${this.discordChannel.id}/${this.messageId})`
-            : this.adventure
+          this.messageId ? `[${this.adventure}](https://discordapp.com/channels/${this.discordGuild.id}/${this.discordChannel.id}/${this.messageId})` : this.adventure
         );
         message = message.replace(":SERVER", this.discordGuild.name);
         embed.setDescription(message);
@@ -720,7 +758,7 @@ export class Game implements GameModel {
         const eventTimes = aux.parseEventTimes(this.date, this.time, this.timezone);
         if (!this.hideDate) embed.setTimestamp(new Date(eventTimes.rawDate));
 
-        member.send(embed);
+        if (member) member.send(embed);
       }
     });
   }
@@ -779,13 +817,12 @@ export class Game implements GameModel {
       if (this.dm && typeof this.dm === "string") {
         if (!guildMembers) guildMembers = await this.discordGuild.members.fetch();
         const rsvp: RSVP = { tag: (<string>this.dm).trim() };
-        const member = guildMembers.array().find(m => m.user.tag === (<string>this.dm).trim());
+        const member = guildMembers.array().find((m) => m.user.tag === (<string>this.dm).trim());
         if (member) rsvp.id = member.user.id;
         this.dm = rsvp;
         updated = true;
       }
-    }
-    catch(err) {
+    } catch (err) {
       console.log(err.message);
     }
     try {
@@ -795,17 +832,16 @@ export class Game implements GameModel {
         const reserved = this.reserved.split(/\r?\n/);
         reserved.forEach((r) => {
           const rsvp: RSVP = { tag: r.trim() };
-          const member = guildMembers.array().find(m => m.user.tag === r.trim());
+          const member = guildMembers.array().find((m) => m.user.tag === r.trim());
           if (member) {
             rsvp.id = member.user.id;
           }
           rsvps.push(rsvp);
         });
-        this.reserved = rsvps;
+        this.reserved = rsvps.filter((r) => r.tag);
         updated = true;
       }
-    }
-    catch(err) {
+    } catch (err) {
       console.log(err.message);
     }
     if (updated) this.save();
