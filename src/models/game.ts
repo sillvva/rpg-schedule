@@ -402,9 +402,14 @@ export class Game implements GameModel {
           prev._id = prev._id.toString();
           game._id = game._id.toString();
 
-          if ((Array.isArray(prev.reserved) ? prev.reserved : prev.reserved.split(/\r?\n/g)).length > game.reserved.length) {
-            this.dmNextWaitlist();
-          }
+          this.dmNextWaitlist(
+            Array.isArray(prev.reserved)
+              ? prev.reserved
+              : prev.reserved.split(/\r?\n/g).map((t) => {
+                  tag: t;
+                }),
+            game.reserved
+          );
 
           const updatedGame = aux.objectChanges(prev, game);
           io().emit("game", { action: "updated", gameId: game._id, game: updatedGame, guildId: game.s });
@@ -727,7 +732,12 @@ export class Game implements GameModel {
     }
   }
 
-  async dmNextWaitlist() {
+  async dmNextWaitlist(pReserved, gReserved) {
+    if (pReserved.length <= gReserved.length) return;
+    if (gReserved.length < parseInt(this.players)) return;
+    const pMaxPlayer = (pReserved[parseInt(this.players) - 1] || { tag: "" }).tag;
+    const gMaxPlayer = (gReserved[parseInt(this.players) - 1] || { tag: "" }).tag;
+    if (pMaxPlayer.trim() == gMaxPlayer.trim()) return;
     const guildMembers = (await this.discordGuild.members.fetch()).array();
     const guildConfig = await GuildConfig.fetch(this.discordGuild.id);
     const lang = gmLanguages.find((l) => l.code === guildConfig.lang) || gmLanguages.find((l) => l.code === "en");
