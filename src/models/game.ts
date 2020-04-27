@@ -391,12 +391,10 @@ export class Game implements GameModel {
 
           const updatedGame = aux.objectChanges(prev, game);
 
-          if (
-            (Array.isArray(prev.reserved) ? prev.reserved : prev.reserved.split(/\r?\n/g)).length >
-            (Array.isArray(game.reserved) ? game.reserved : game.reserved.split(/\r?\n/g)).length
-          ) {
-            this.dmNextWaitlist();
-          }
+          this.dmNextWaitlist(
+            Array.isArray(prev.reserved) ? prev.reserved : prev.reserved.split(/\r?\n/g),
+            Array.isArray(game.reserved) ? game.reserved : game.reserved.split(/\r?\n/g)
+          );
 
           io().emit("game", { action: "updated", gameId: game._id, game: updatedGame });
         } catch (err) {
@@ -723,7 +721,14 @@ export class Game implements GameModel {
     }
   }
 
-  async dmNextWaitlist() {
+  async dmNextWaitlist(pReserved, gReserved) {
+    if (pReserved.length <= gReserved.length) return;
+    if (gReserved.length < parseInt(this.players)) return;
+    const pMaxPlayer =
+      typeof pReserved[parseInt(this.players) - 1] === "string" ? pReserved[parseInt(this.players) - 1] : (pReserved[parseInt(this.players) - 1] || { tag: "" }).tag;
+    const gMaxPlayer =
+      typeof gReserved[parseInt(this.players) - 1] === "string" ? gReserved[parseInt(this.players) - 1] : (gReserved[parseInt(this.players) - 1] || { tag: "" }).tag;
+    if (pMaxPlayer.trim() == gMaxPlayer.trim()) return;
     const guildMembers = (await this.discordGuild.members.fetch()).array();
     const guildConfig = await GuildConfig.fetch(this.discordGuild.id);
     const lang = gmLanguages.find((l) => l.code === guildConfig.lang) || gmLanguages.find((l) => l.code === "en");
@@ -735,11 +740,9 @@ export class Game implements GameModel {
         if (res.trim().length === 0) return;
         var member = guildMembers.find((mem) => mem.user.tag.trim() === res.trim());
       }
-
       if (index + 1 === parseInt(this.players)) {
         const embed = new MessageEmbed();
         embed.setColor(guildConfig.embedColor);
-
         let message = lang.messages.YOURE_IN;
         message = message.replace(
           ":GAME",
@@ -747,12 +750,9 @@ export class Game implements GameModel {
         );
         message = message.replace(":SERVER", this.discordGuild.name);
         embed.setDescription(message);
-
         embed.addField(lang.game.WHERE, parseDiscord(this.where, this.discordGuild));
-
         const eventTimes = aux.parseEventTimes(this.date, this.time, this.timezone);
         if (!this.hideDate) embed.setTimestamp(new Date(eventTimes.rawDate));
-
         if (member) member.send(embed);
       }
     });
