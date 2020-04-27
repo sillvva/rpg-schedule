@@ -125,13 +125,16 @@ interface Event {
 }
 
 const parseEventTimes = (event: GameModel) => {
+  if (!event.date || !event.time || event.timezone == null) {
+    return {};
+  }
   const raw = `${event.date} ${event.time} UTC${event.timezone < 0 ? "-" : "+"}${Math.abs(event.timezone)}`;
   const isoutcStart = `${new Date(raw)
     .toISOString()
     .replace(/[^0-9T]/gi, "")
     .slice(0, 13)}00Z`;
   const endTime = new Date(raw);
-  endTime.setHours(endTime.getHours() + parseFloat(event.runtime));
+  endTime.setHours(endTime.getHours() + parseFloat(event.runtime || '0'));
   const isoutcEnd = `${endTime
     .toISOString()
     .replace(/[^0-9T]/gi, "")
