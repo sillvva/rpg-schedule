@@ -489,16 +489,62 @@
         }
     };
 
-    const getTZUrls = (date, time, gmtOffset) => {
-        const d = new Date(`${date.replace(/-/g, "/").replace(/UTC\//, "UTC-")} ${time} UTC${gmtOffset < 0 ? '-' : '+'}${Math.abs(gmtOffset)}`).toISOString().replace(/[^0-9T]/gi,"").slice(0,13);
+    const getTZUrls = () => {
+        const date = $('#date').val();
+        const time = $('#time').val();
+        const gmtOffset = $('#timezone').val();
+        const runtime = $('#runtime').val();
+        const frequency = $('#frequency').val();
+        const monthlyType = $('#monthlyType').val();
+        const xWeeks = $('#xWeeks').val();
         const name = $('#adventure').val();
         const server = $('#guild').val();
         const where = $('#where').val();
         const description = $('#description').val();
 
+        const d1raw = new Date(`${date.replace(/-/g, "/").replace(/UTC\//, "UTC-")} ${time} UTC${gmtOffset < 0 ? '-' : '+'}${Math.abs(gmtOffset)}`);
+        const d1 = d1raw.toISOString().replace(/[^0-9T]/gi,"").slice(0,13);
+        const d2raw = new Date(`${date.replace(/-/g, "/").replace(/UTC\//, "UTC-")} ${time} UTC${gmtOffset < 0 ? '-' : '+'}${Math.abs(gmtOffset)}`);
+        d2raw.setHours(parseFloat(runtime));
+        const d2 = d2raw.toISOString().replace(/[^0-9T]/gi,"").slice(0,13);
+
+        const googleCalExtras = [];
+        const days = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
+        const weekdays = $("#weekdays-selector label:not(.disabled):not(:disabled)").map(function(i) {
+            return $(this).hasClass('active');
+        }).get().map((w, i) => w && days[i]).filter(w => w);
+
+        if (weekdays.length == 0) {
+            const wd = moment(date).weekday();
+            weekdays.push(days[wd]);
+            $('#weekday'+wd).attr("checked", "checked");
+            $($("#weekdays-selector label:not(.disabled):not(:disabled)")[wd]).addClass('active');
+        }
+
+        if (frequency == 1) {
+            googleCalExtras.push(`&recur=RRULE:FREQ=DAILY`);
+        }
+        if (frequency == 2) {
+            googleCalExtras.push(`&recur=RRULE:FREQ=WEEKLY;BYDAY=${weekdays.join(",")}`);
+        }
+        if (frequency == 3) {
+            googleCalExtras.push(`&recur=RRULE:FREQ=WEEKLY;INTERVAL=${xWeeks || 2};BYDAY=${weekdays.join(",")}`);
+        }
+        if (frequency == 4) {
+            if (monthlyType == "date") {
+                googleCalExtras.push(`&recur=RRULE:FREQ=MONTHLY`);
+            } else if (monthlyType == "weekday") {
+                googleCalExtras.push(`&recur=RRULE:FREQ=MONTHLY;BYDAY=${moment(date).monthWeekByDay() + 1}${days[d1raw.getDay()]}`);
+            }
+        }
+
+        if (name) googleCalExtras.push(`&text=${escape(name)}`);
+        if (where) googleCalExtras.push(`&location=${escape(`${server} - ${where}`)}`);
+        if (description) googleCalExtras.push(`&details=${escape(description)}`);
+
         return {
-            convert: `https://timee.io/${d}`,
-            gcal: `http://www.google.com/calendar/render?action=TEMPLATE&text=${escape(name)}&dates=${d}00Z/${d}00Z&location=${escape(server)}%20-%20${escape(where)}&trp=false&sprop=&details=${escape(description)}`
+            convert: `https://timee.io/${d1}`,
+            gcal: `http://www.google.com/calendar/render?action=TEMPLATE&dates=${d1}/${d2}&trp=true${googleCalExtras.join("")}`
         };
     };
 
@@ -572,29 +618,19 @@
         $('#timezone').val(parseInt(moment().format('ZZ')) / 100);
     <% } %>
 
-    $('#date').change(function() {
-        var link = getTZUrls($('#date').val(), $('#time').val(), $('#timezone').val());
+    $(`#date, #time, #timezone, #frequency, #monthlyType`).change(function() {
+        var link = getTZUrls();
         $('#convertLink').html(`<a href="${link.convert}" target="_blank" rel="nofollow">${link.convert}</a>`);
         // $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank" rel="nofollow">${link.countdown}</a>`);
         $('#gcalLink').html(`<a href="${link.gcal}" target="_blank" rel="nofollow"><%= lang.game.ADD_TO_CALENDAR %></a>`);
         updateNextDate($('#date').val(), $('#frequency').val());
     }).change();
 
-    // $('#date').attr('min', moment().format('YYYY-MM-DD'));
-
-    $('#time').change(function() {
-        var link = getTZUrls($('#date').val(), $('#time').val(), $('#timezone').val());
-        $('#convertLink').html(`<a href="${link.convert}" target="_blank" rel="nofollow">${link.convert}</a>`);
-        // $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank" rel="nofollow">${link.countdown}</a>`);
-        $('#gcalLink').html(`<a href="${link.gcal}" target="_blank" rel="nofollow"><%= lang.game.ADD_TO_CALENDAR %></a>`);
-    }).change();
-
-    $('#timezone').change(function() {
-        var link = getTZUrls($('#date').val(), $('#time').val(), $('#timezone').val());
-        $('#convertLink').html(`<a href="${link.convert}" target="_blank" rel="nofollow">${link.convert}</a>`);
-        // $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank" rel="nofollow">${link.countdown}</a>`);
-        $('#gcalLink').html(`<a href="${link.gcal}" target="_blank" rel="nofollow"><%= lang.game.ADD_TO_CALENDAR %></a>`);
-    }).change();
+    $(`#weekdays-selector label:not(.disabled):not(:disabled)`).click(function() { 
+        setTimeout(function() {
+            $('#date').change();
+        }, 100); 
+    });
 
     <% if (is.editgame) { %>
     const gameId = '<%= _id %>';

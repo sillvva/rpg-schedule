@@ -84,7 +84,7 @@
                                 <% } %>
                             </div>
                             <div>
-                                <a href="http://www.google.com/calendar/render?action=TEMPLATE&text=<%= escape(game.adventure) %>&dates=<%= game.moment.isoutc %>/<%= game.moment.isoutc %>&location=<%= escape(`${guild.name} - ${game.where}`) %>&trp=false&sprop=&details=<%= escape(game.description) %>" target="_blank" rel="nofollow" onclick="event.stopPropagation();">Add to Google Calendar</a>
+                                <a href="<%= game.moment.googleCal %>" target="_blank" rel="nofollow" onclick="event.stopPropagation();">Add to Google Calendar</a>
                             </div>
                         <% } %>
                         <div class="game-reserved"><strong><%= lang.game.RESERVED %>:</strong> <%= Math.min(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0)%> / <%= game.players %></div>
@@ -112,7 +112,7 @@
                                 <% } %>
                             </div>
                             <div>
-                                <a href="http://www.google.com/calendar/render?action=TEMPLATE&text=<%= escape(game.adventure) %>&dates=<%= game.moment.isoutc %>/<%= game.moment.isoutc %>&location=<%= escape(`${guild.name} - ${game.where}`) %>&trp=false&sprop=&details=<%= escape(game.description) %>" target="_blank" rel="nofollow" onclick="event.stopPropagation();"><%= lang.game.ADD_TO_CALENDAR %></a>
+                                <a href="<%= game.moment.googleCal %>" target="_blank" rel="nofollow" onclick="event.stopPropagation();"><%= lang.game.ADD_TO_CALENDAR %></a>
                             </div>
                         <% } %>
                         <div class="where parse-url">

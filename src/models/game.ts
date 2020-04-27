@@ -278,11 +278,7 @@ export class Game implements GameModel {
           }
         });
 
-      const eventTimes = aux.parseEventTimes(game.date, game.time, game.timezone, {
-        name: game.adventure,
-        location: `${guild.name} - ${game.where}`,
-        description: game.description,
-      });
+      const eventTimes = aux.parseEventTimes(game);
       const rawDate = eventTimes.rawDate;
       const timezone = "UTC" + (game.timezone >= 0 ? "+" : "") + game.timezone;
       const where = parseDiscord(game.where, guild);
@@ -751,7 +747,7 @@ export class Game implements GameModel {
         message = message.replace(":SERVER", this.discordGuild.name);
         embed.setDescription(message);
         embed.addField(lang.game.WHERE, parseDiscord(this.where, this.discordGuild));
-        const eventTimes = aux.parseEventTimes(this.date, this.time, this.timezone);
+        const eventTimes = aux.parseEventTimes(this.data);
         if (!this.hideDate) embed.setTimestamp(new Date(eventTimes.rawDate));
         if (member) member.send(embed);
       }

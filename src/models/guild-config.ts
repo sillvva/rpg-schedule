@@ -1,7 +1,9 @@
 import db from "../db";
 import { ObjectID, ObjectId, FilterQuery } from "mongodb";
 import { Game } from "./game";
-import aux from "../appaux"
+import aux from "../appaux";
+
+console.log(db);
 
 const connection = db.connection;
 const collection = "guildConfig";

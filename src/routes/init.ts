@@ -274,12 +274,9 @@ export default (options: any) => {
                 if (!game.discordGuild) return;
 
                 const date = Game.ISOGameDate(game);
+                const parsed = aux.parseEventTimes(game);
                 game.moment = {
-                  raw: `${game.date} ${game.time} UTC${game.timezone < 0 ? "-" : "+"}${Math.abs(game.timezone)}`,
-                  isoutc: `${new Date(`${game.date} ${game.time} UTC${game.timezone < 0 ? "-" : "+"}${Math.abs(game.timezone)}`)
-                    .toISOString()
-                    .replace(/[^0-9T]/gi, "")
-                    .slice(0, 13)}00Z`,
+                  ...parsed,
                   iso: date,
                   date: moment(date).utcOffset(parseInt(game.timezone)).format(config.formats.dateLong),
                   calendar: moment(date).utcOffset(parseInt(game.timezone)).calendar(),
