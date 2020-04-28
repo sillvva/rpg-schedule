@@ -553,7 +553,7 @@ export class Game implements GameModel {
 
   public canReschedule() {
     const validDays = this.getWeekdays();
-    const hours = isNaN(parseFloat(this.runtime.trim())) ? 0 : Math.abs(parseFloat(this.runtime.trim()));
+    const hours = isNaN(parseFloat(this.runtime.replace(/[^\d\.-]/g, "").trim())) ? 0 : Math.abs(parseFloat(this.runtime.replace(/[^\d\.-]/g, "").trim()));
     const gameEnded = this.timestamp + hours * 3600 * 1000 < new Date().getTime();
     const nextDate = Game.getNextDate(moment(this.date), validDays, Number(this.frequency), this.monthlyType, this.xWeeks);
     const nextISO = `${nextDate.replace(/-/g, "")}T${this.time.replace(/:/g, "")}00${this.timezone >= 0 ? "+" : "-"}${aux.parseTimeZoneISO(this.timezone)}`;

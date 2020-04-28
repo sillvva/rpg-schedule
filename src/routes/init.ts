@@ -327,7 +327,7 @@ export default (options: any) => {
         } catch (err) {
           if (req.account.viewing.dashboard) {
             res.locals.account = req.account;
-            res.render("error", { message: "init.ts:253:<br />" + err });
+            res.render("error", { message: "init.ts:330:<br />" + err });
           } else {
             res.locals.account = req.account;
             next();
