@@ -126,7 +126,7 @@ const parseEventTimes = (event: GameModel) => {
     .replace(/[^0-9T]/gi, "")
     .slice(0, 13)}00Z`;
   const endTime = new Date(raw);
-  endTime.setHours(endTime.getHours() + parseFloat(event.runtime || "0"));
+  endTime.setHours(endTime.getHours() + parseFloat(event.runtime.replace(/[^\d\.-]/g, "").trim() || "0"));
   const isoutcEnd = `${endTime
     .toISOString()
     .replace(/[^0-9T]/gi, "")
