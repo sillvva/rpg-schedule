@@ -119,7 +119,11 @@ interface Event {
   description?: string;
 }
 
-const parseEventTimes = (event: GameModel) => {
+interface EventTimeOptions {
+  isField?: boolean;
+}
+
+const parseEventTimes = (event: GameModel, options: EventTimeOptions = {}) => {
   const raw = `${event.date} ${event.time} UTC${event.timezone < 0 ? "-" : "+"}${Math.abs(event.timezone)}`;
   const isoutcStart = `${new Date(raw)
     .toISOString()
@@ -168,7 +172,7 @@ const parseEventTimes = (event: GameModel) => {
 
   if (event.adventure) googleCalExtras.push(`&text=${escape(event.adventure)}`);
   if (event.where) googleCalExtras.push(`&location=${escape(`${event.where}`)}`);
-  if (event.description) googleCalExtras.push(`&details=${escape(event.description)}`);
+  if (event.description && !options.isField) googleCalExtras.push(`&details=${escape(event.description)}`);
 
   return {
     raw: raw,
