@@ -278,7 +278,9 @@ export class Game implements GameModel {
           }
         });
 
-      const eventTimes = aux.parseEventTimes(game);
+      const eventTimes = aux.parseEventTimes(game, {
+        isField: true
+      });
       const rawDate = eventTimes.rawDate;
       const timezone = "UTC" + (game.timezone >= 0 ? "+" : "") + game.timezone;
       const where = parseDiscord(game.where, guild);
