@@ -505,7 +505,7 @@
         const d1raw = new Date(`${date.replace(/-/g, "/").replace(/UTC\//, "UTC-")} ${time} UTC${gmtOffset < 0 ? '-' : '+'}${Math.abs(gmtOffset)}`);
         const d1 = d1raw.toISOString().replace(/[^0-9T]/gi,"").slice(0,13);
         const d2raw = new Date(`${date.replace(/-/g, "/").replace(/UTC\//, "UTC-")} ${time} UTC${gmtOffset < 0 ? '-' : '+'}${Math.abs(gmtOffset)}`);
-        d2raw.setHours(parseFloat(runtime));
+        d2raw.setHours(parseFloat(runtime.replace(/[^\d-\.]/g, "").trim() || "0"));
         const d2 = d2raw.toISOString().replace(/[^0-9T]/gi,"").slice(0,13);
 
         const googleCalExtras = [];
