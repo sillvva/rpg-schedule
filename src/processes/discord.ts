@@ -6,7 +6,7 @@ import toPairs from "lodash/toPairs";
 
 import { io } from "../processes/socket";
 import { GuildConfig } from "../models/guild-config";
-import { Game } from "../models/game";
+import { Game, GameMethod } from "../models/game";
 import config from "../models/config";
 import aux from "../appaux";
 
@@ -472,6 +472,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
         return;
       }
       const game = await Game.fetchBy("messageId", message.id);
+      if (game.method !== GameMethod.AUTOMATED) return;
       if (game && user.id !== message.author.id) {
         if (Array.isArray(game.reserved)) {
           game.reserved = game.reserved.map((r) => r.tag).join("\n");
