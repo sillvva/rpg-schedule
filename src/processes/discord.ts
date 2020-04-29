@@ -4,7 +4,7 @@ import { Express } from "express";
 
 import { io } from "../processes/socket";
 import { GuildConfig } from "../models/guild-config";
-import { Game, RSVP } from "../models/game";
+import { Game, RSVP, GameMethod } from "../models/game";
 import config from "../models/config";
 import aux from "../appaux";
 
@@ -611,6 +611,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
         return;
       }
       const game = await Game.fetchBy("messageId", message.id);
+      if (game.method !== GameMethod.AUTOMATED) return;
       if (game && user.id !== message.author.id) {
         await game.updateReservedList();
         const guildConfig = await GuildConfig.fetch(game.s);
