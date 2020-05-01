@@ -196,7 +196,7 @@ export default (options: APIRouteOptions) => {
               status: "error",
               message: err.message || err,
               reauthenticate: true,
-              code: 19,
+              code: 6,
             });
           });
       } else {
@@ -207,7 +207,7 @@ export default (options: APIRouteOptions) => {
         status: "error",
         message: "Invalid Session",
         reauthenticate: true,
-        code: 18,
+        code: 7,
       });
     }
   });
@@ -232,14 +232,14 @@ export default (options: APIRouteOptions) => {
             status: "error",
             token: req.session.api.access.access_token,
             message: `UserAuthError`,
-            code: 9,
+            code: 8,
           });
         });
     } catch (err) {
       res.json({
         status: "error",
         token: req.session.api.access.access_token,
-        code: 10,
+        code: 9,
         message: `UserAuthError`,
       });
     }
@@ -279,14 +279,14 @@ export default (options: APIRouteOptions) => {
             status: "error",
             token: req.session.api.access.access_token,
             message: `UserAuthError`,
-            code: 9,
+            code: 10,
           });
         });
     } catch (err) {
       res.json({
         status: "error",
         token: req.session.api.access.access_token,
-        code: 10,
+        code: 11,
         message: `UserAuthError`,
       });
     }
@@ -317,7 +317,7 @@ export default (options: APIRouteOptions) => {
             token: req.session.api.access.access_token,
             message: `GuildsAPI: FetchAccountError: ${err}`,
             reauthenticate: (typeof (err.message || err) === "string" ? err.message || err : "").indexOf("OAuth:") >= 0,
-            code: 11,
+            code: 12,
           });
         });
     } catch (err) {
@@ -325,7 +325,7 @@ export default (options: APIRouteOptions) => {
         status: "error",
         token: req.session.api.access.access_token,
         message: `GuildsAPI: ${err}`,
-        code: 12,
+        code: 13,
       });
     }
   });
@@ -365,7 +365,7 @@ export default (options: APIRouteOptions) => {
             status: "error",
             token: req.session.api.access.access_token,
             message: err.message || err,
-            code: 13,
+            code: 14,
           });
         });
     } catch (err) {
@@ -373,7 +373,7 @@ export default (options: APIRouteOptions) => {
         status: "error",
         token: req.session.api.access.access_token,
         message: `SaveGuildConfigError: ${err.message || err}`,
-        code: 14,
+        code: 15,
       });
     }
   });
@@ -495,213 +495,227 @@ export default (options: APIRouteOptions) => {
         token: req.session.api && req.session.api.access.access_token,
         message: err.message || err,
         redirect: "/",
-        code: 15,
+        code: 16,
       });
     }
   });
 
-  router.post("/api/game", async (req, res, next) => {
-    const token = req.session.api && req.session.api.access && req.session.api.access.access_token;
-
+  router.post("/auth-api/game", async (req, res, next) => {
     try {
-      const userId = (req.headers.authorization || "0").replace("Bearer ", "").trim();
-
-      let game: Game;
-      let server: string = req.query.s;
-      if (req.query.g && !(req.body && req.body.copy)) {
-        game = await Game.fetch(req.query.g);
-        if (game) {
-          server = game.s;
-        } else {
-          throw new Error("Game not found");
-        }
-      }
-
-      if (req.method === "POST") {
-        // req.body.reserved = req.body.reserved.replace(/@/g, "");
-
-        if (req.body.copy) {
-          delete req.query.g;
-          req.query.s = req.body.s;
-          server = req.body.s;
-        }
-        if (req.query.s) {
-          game = new Game(req.body);
-        }
-      }
-
-      if (server) {
-        let guild: Guild = client.guilds.cache.get(server);
-        if (!guild) guild = client.guilds.resolve(server);
-
-        if (guild) {
-          let password: string;
-
-          const guildConfig = await GuildConfig.fetch(guild.id);
-          const guildMembers = await guild.members.fetch();
-          const member = guildMembers.array().find((m) => m.id == userId);
-          if (!member && token && req.query.s) throw new Error("You are not a member of this server");
-          const isAdmin =
-            member &&
-            (member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) ||
-              member.roles.cache.find((r) => r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim()));
-          if (guildConfig && member && member.user.tag !== config.author) {
-            password = guildConfig.password;
-            // A role is required to post on the server
-            if (guildConfig.role && !isAdmin) {
-              // Ensure user is logged in
-              try {
-                await fetchAccount(token, { client: client, ip: req.app.locals.ip });
-              } catch (err) {
-                return res.json({
-                  status: "error",
-                  token: token,
-                  message: `You must be logged in to post a game to ${guild.name}.`,
-                  code: 16,
-                });
-              }
-              if (member) {
-                // User does not have the require role
-                if (!member.roles.cache.find((r) => r.name.toLowerCase().trim() === guildConfig.role.toLowerCase().trim())) {
-                  throw new Error("You are either not logged in or are missing the role required for posting on this server.");
-                }
+      fetchAccount(req.session.api.access, {
+        client: client,
+        ip: req.app.locals.ip,
+      })
+        .then(async (result: any) => {
+          try {
+            let game: Game;
+            let server: string = req.query.s;
+            if (req.query.g && !(req.body && req.body.copy)) {
+              game = await Game.fetch(req.query.g);
+              if (game) {
+                server = game.s;
+              } else {
+                throw new Error("Game not found");
               }
             }
-          }
+      
+            if (req.method === "POST") {
+              // req.body.reserved = req.body.reserved.replace(/@/g, "");
+      
+              if (req.body.copy) {
+                delete req.query.g;
+                req.query.s = req.body.s;
+                server = req.body.s;
+              }
+              if (req.query.s) {
+                game = new Game(req.body);
+              }
+            }
 
-          if (game) await game.updateReservedList();
-
-          let gcChannels: string[] = guildConfig.channels;
-          const firstChannel = guild.channels.cache.find((gc) => gc.permissionsFor(guild.roles.everyone).has(Permissions.FLAGS.VIEW_CHANNEL));
-          if (firstChannel && gcChannels.length == 0) gcChannels.push(firstChannel.id);
-          const channels = gcChannels.filter((c) => guild.channels.cache.find((gc) => gc.id == c)).map((c) => guild.channels.cache.get(c));
-
-          if (channels.length === 0) {
-            throw new Error("Discord channel not found. Make sure your server has a text channel.");
-          }
-
-          let data: any = {
-            title: req.query.g ? req.app.locals.lang.buttons.EDIT_GAME : req.app.locals.lang.buttons.NEW_GAME,
-            guild: guild.name,
-            channels: channels,
-            s: server,
-            c: channels[0].id,
-            dm: "",
-            adventure: "",
-            runtime: "",
-            where: "",
-            reserved: "",
-            description: "",
-            minPlayers: 1,
-            players: 7,
-            method: GameMethod.AUTOMATED,
-            customSignup: "",
-            when: GameWhen.DATETIME,
-            date: req.query.date || "",
-            time: req.query.time || "",
-            timezone: "",
-            reminder: "0",
-            hideDate: false,
-            gameImage: "",
-            frequency: "",
-            monthlyType: MonthlyType.WEEKDAY,
-            weekdays: [false, false, false, false, false, false, false],
-            xWeeks: 2,
-            clearReservedOnRepeat: false,
-            env: process.env,
-            is: {
-              newgame: !req.query.g ? true : false,
-              editgame: req.query.g ? true : false,
-              locked: password ? true : false,
-            },
-            password: password ? password : false,
-            enums: {
-              GameMethod: GameMethod,
-              GameWhen: GameWhen,
-              RescheduleMode: RescheduleMode,
-              MonthlyType: MonthlyType,
-            },
-            guildConfig: guildConfig,
-            errors: {
-              other: null,
-              minPlayers: game && (isNaN(parseInt(game.minPlayers || "1")) || parseInt(game.minPlayers || "1") > parseInt(game.players || "0")),
-              maxPlayers: game && (isNaN(parseInt(game.players || "0")) || parseInt(game.minPlayers || "1") > parseInt(game.players || "0")),
-              dm:
-                game &&
-                !guildMembers.array().find((mem) => {
-                  return mem.user.tag === (<RSVP>game.dm).tag.trim().replace("@", "") || mem.user.id === (<RSVP>game.dm).id;
-                }),
-              reserved: game
-                ? (<RSVP[]>game.reserved).filter((res) => {
-                    if (res.tag.trim().length === 0) return false;
-                    return !guildMembers.array().find((mem) => mem.user.tag === res.tag.trim() || mem.user.id === res.id);
-                  })
-                : [],
-            },
-          };
-
-          if (req.query.g) {
-            data = { ...data, ...game };
-          }
-
-          if (req.method === "POST") {
-            req.body.reserved = Game.updateReservedList(req.body.reserved, guildMembers.array());
-            data = Object.assign(data, req.body);
-          }
-
-          if (req.method === "POST") {
-            Object.entries(req.body).forEach(([key, value]) => {
-              if (key === "_id") return;
-              if (typeof game[key] !== "undefined") game[key] = value;
-            });
-
-            game.hideDate = req.body["hideDate"] ? true : false;
-            game.clearReservedOnRepeat = req.body["clearReservedOnRepeat"] ? true : false;
-
-            game
-              .save()
-              .then((response) => {
-                res.json({
-                  status: response.modified ? "success" : "error",
-                  token: token,
-                  game: data,
-                  _id: response.modified ? response._id : null,
-                });
-              })
-              .catch((err) => {
-                if (err.message.startsWith("DM")) {
-                  data.errors.dm = err.message;
-                } else {
-                  data.errors.other = err.message;
+            if (server) {
+              let guild: Guild = client.guilds.cache.get(server);
+              if (!guild) guild = client.guilds.resolve(server);
+      
+              if (guild) {
+                let password: string;
+      
+                const guildConfig = await GuildConfig.fetch(guild.id);
+                const guildMembers = await guild.members.fetch();
+                const member = guildMembers.array().find((m) => m.id == result.account.user.id);
+                if (!member && req.session.api.access.access_token && req.query.s) throw new Error("You are not a member of this server");
+                const isAdmin =
+                  member &&
+                  (member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) ||
+                    member.roles.cache.find((r) => r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim()));
+                if (guildConfig && member && member.user.tag !== config.author) {
+                  password = guildConfig.password;
+                  // A role is required to post on the server
+                  if (guildConfig.role && !isAdmin) {
+                    if (member) {
+                      // User does not have the require role
+                      if (!member.roles.cache.find((r) => r.name.toLowerCase().trim() === guildConfig.role.toLowerCase().trim())) {
+                        throw new Error("You are either not logged in or are missing the role required for posting on this server.");
+                      }
+                    }
+                  }
                 }
-                res.json({
-                  status: "error",
-                  token: token,
-                  game: data,
-                  message: err.message,
-                  code: 17,
-                });
-              });
-          } else {
+
+                if (!isAdmin && (<RSVP>game.dm).id !== result.account.user.id) {
+                  throw new Error("You are not the GM of this game.");
+                }
+      
+                if (game && game._id) await game.updateReservedList();
+      
+                let gcChannels: string[] = guildConfig.channels;
+                const firstChannel = guild.channels.cache.find((gc) => gc.permissionsFor(guild.roles.everyone).has(Permissions.FLAGS.VIEW_CHANNEL));
+                if (firstChannel && gcChannels.length == 0) gcChannels.push(firstChannel.id);
+                const channels = gcChannels.filter((c) => guild.channels.cache.find((gc) => gc.id == c)).map((c) => guild.channels.cache.get(c));
+      
+                if (channels.length === 0) {
+                  throw new Error("Discord channel not found. Make sure your server has a text channel.");
+                }
+
+                let data: any = {
+                  title: req.query.g ? req.app.locals.lang.buttons.EDIT_GAME : req.app.locals.lang.buttons.NEW_GAME,
+                  guild: guild.name,
+                  channels: channels,
+                  s: server,
+                  c: channels[0].id,
+                  dm: "",
+                  adventure: "",
+                  runtime: "",
+                  where: "",
+                  reserved: "",
+                  description: "",
+                  minPlayers: 1,
+                  players: 7,
+                  method: GameMethod.AUTOMATED,
+                  customSignup: "",
+                  when: GameWhen.DATETIME,
+                  date: req.query.date || "",
+                  time: req.query.time || "",
+                  timezone: "",
+                  reminder: "0",
+                  hideDate: false,
+                  gameImage: "",
+                  frequency: "",
+                  monthlyType: MonthlyType.WEEKDAY,
+                  weekdays: [false, false, false, false, false, false, false],
+                  xWeeks: 2,
+                  clearReservedOnRepeat: false,
+                  env: process.env,
+                  is: {
+                    newgame: !req.query.g ? true : false,
+                    editgame: req.query.g ? true : false,
+                    locked: password ? true : false,
+                  },
+                  password: password ? password : false,
+                  enums: {
+                    GameMethod: GameMethod,
+                    GameWhen: GameWhen,
+                    RescheduleMode: RescheduleMode,
+                    MonthlyType: MonthlyType,
+                  },
+                  guildConfig: guildConfig,
+                  errors: {
+                    other: null,
+                    minPlayers: game && (isNaN(parseInt(game.minPlayers || "1")) || parseInt(game.minPlayers || "1") > parseInt(game.players || "0")),
+                    maxPlayers: game && (isNaN(parseInt(game.players || "0")) || parseInt(game.minPlayers || "1") > parseInt(game.players || "0")),
+                    dm:
+                      game &&
+                      !guildMembers.array().find((mem) => {
+                        return mem.user.tag === (<RSVP>game.dm).tag.trim().replace("@", "") || mem.user.id === (<RSVP>game.dm).id;
+                      }),
+                    reserved: game
+                      ? (<RSVP[]>game.reserved).filter((res) => {
+                          if (res.tag.trim().length === 0) return false;
+                          return !guildMembers.array().find((mem) => mem.user.tag === res.tag.trim() || mem.user.id === res.id);
+                        })
+                      : [],
+                  },
+                };
+                
+                if (req.query.g) {
+                  data = { ...data, ...game };
+                }
+      
+                if (req.method === "POST") {
+                  req.body.reserved = Game.updateReservedList(req.body.reserved, guildMembers.array());
+                  data = Object.assign(data, req.body);
+                }
+      
+                if (req.method === "POST") {
+                  Object.entries(req.body).forEach(([key, value]) => {
+                    if (key === "_id") return;
+                    if (typeof game[key] !== "undefined") game[key] = value;
+                  });
+      
+                  game.hideDate = req.body["hideDate"] ? true : false;
+                  game.clearReservedOnRepeat = req.body["clearReservedOnRepeat"] ? true : false;
+      
+                  game
+                    .save()
+                    .then((response) => {
+                      res.json({
+                        status: response.modified ? "success" : "error",
+                        token: req.session.api.access.access_token,
+                        game: data,
+                        _id: response.modified ? response._id : null,
+                      });
+                    })
+                    .catch((err) => {
+                      if (err.message.startsWith("DM")) {
+                        data.errors.dm = err.message;
+                      } else {
+                        data.errors.other = err.message;
+                      }
+                      res.json({
+                        status: "error",
+                        token: req.session.api.access.access_token,
+                        game: data,
+                        message: err.message,
+                        code: 17,
+                      });
+                    });
+                } else {
+                  res.json({
+                    status: "success",
+                    token: req.session.api.access.access_token,
+                    game: data,
+                    _id: data._id,
+                    code: 18
+                  });
+                }
+              } else {
+                throw new Error("Discord server not found");
+              }
+            } else {
+              throw new Error("Discord server not specified");
+            }
+          } catch (err) {
             res.json({
-              status: "success",
-              token: token,
-              game: data,
-              _id: data._id,
+              status: "error",
+              token: req.session.api.access.access_token,
+              redirect: "/error",
+              message: err.message || err,
+              code: 19
             });
           }
-        } else {
-          throw new Error("Discord server not found");
-        }
-      } else {
-        throw new Error("Discord server not specified");
-      }
+        })
+        .catch((err) => {
+          res.json({
+            status: "error",
+            token: req.session.api.access.access_token,
+            message: err.message || err,
+            code: 20,
+          });
+        });
     } catch (err) {
       res.json({
         status: "error",
-        token: token,
-        redirect: "/error",
-        message: err.message || err,
+        token: req.session.api.access.access_token,
+        message: `SaveGuildConfigError: ${err.message || err}`,
+        code: 21,
       });
     }
   });
@@ -775,7 +789,7 @@ export default (options: APIRouteOptions) => {
                 token: token,
                 message: `UserAuthError (1)`,
                 redirect: "/",
-                code: 19,
+                code: 22,
               });
             });
         } else {
@@ -790,7 +804,7 @@ export default (options: APIRouteOptions) => {
         redirect: "/error",
         token: token,
         message: err.message || err,
-        code: 20,
+        code: 23,
       });
     }
   });
@@ -829,7 +843,7 @@ export default (options: APIRouteOptions) => {
         status: "error",
         token: token,
         message: err.message || err,
-        code: 21,
+        code: 24,
       });
     }
   });
@@ -866,7 +880,7 @@ export default (options: APIRouteOptions) => {
                 status: "error",
                 token: token,
                 message: "You are either not part of that guild or do not have administrative privileges",
-                code: 22,
+                code: 25,
               });
             }
           } else {
@@ -878,7 +892,7 @@ export default (options: APIRouteOptions) => {
             status: "error",
             token: token,
             message: `UserAuthError`,
-            code: 20,
+            code: 26,
           });
         });
     } catch (err) {
@@ -886,7 +900,7 @@ export default (options: APIRouteOptions) => {
         status: "error",
         token: token,
         message: err.message || err,
-        code: 21,
+        code: 27,
       });
     }
   });
@@ -1055,6 +1069,12 @@ const fetchAccount = (token: any, options: AccountOptions) => {
               if (options.page === GamesPages.MyGames) {
                 gameOptions.$or = [
                   {
+                    "author.tag": tag,
+                  },
+                  {
+                    "author.id": id,
+                  },
+                  {
                     "dm.tag": tag,
                   },
                   {
@@ -1190,7 +1210,7 @@ const refreshToken = (access: any) => {
         if (error || response.statusCode !== 200) {
           reject({
             status: "error",
-            code: 6,
+            code: 28,
             message: `Discord OAuth: ${response.statusCode}<br />${error}`,
             reauthenticate: true,
           });
@@ -1235,7 +1255,7 @@ const refreshToken = (access: any) => {
         token: access.access_token,
         message: "Missing or invalid session token",
         reauthenticate: true,
-        code: 7,
+        code: 29,
       });
     }
   });

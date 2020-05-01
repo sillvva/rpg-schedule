@@ -70,6 +70,7 @@ export interface GameModel {
   minPlayers: string;
   players: string;
   dm: RSVP | string;
+  author: RSVP;
   where: string;
   description: string;
   reserved: RSVP[] | string;
@@ -113,6 +114,7 @@ export class Game implements GameModel {
   minPlayers: string;
   players: string;
   dm: RSVP | string;
+  author: RSVP;
   where: string;
   description: string;
   reserved: RSVP[] | string;
@@ -186,6 +188,7 @@ export class Game implements GameModel {
       minPlayers: this.minPlayers,
       players: this.players,
       dm: this.dm,
+      author: this.author,
       where: this.where,
       description: this.description,
       reserved: this.reserved,
