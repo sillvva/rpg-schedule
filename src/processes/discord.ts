@@ -1016,8 +1016,7 @@ const postReminders = async (app: Express) => {
         try {
           const dmEmbed = new MessageEmbed();
           dmEmbed.setColor(guildConfig.embedColor);
-          dmEmbed.setTitle(`${lang.game.REMINDER_FOR} **${game.adventure.replace(/\*/gi, "")}**\n`);
-          dmEmbed.setURL(`https://discordapp.com/channels/${game.discordGuild.id}/${game.discordChannel.id}/${game.messageId}`);
+          dmEmbed.setDescription(`${lang.game.REMINDER_FOR} **[${game.adventure.replace(/\*/gi, "")}](https://discordapp.com/channels/${game.discordGuild.id}/${game.discordChannel.id}/${game.messageId})**\n`);
           dmEmbed.addField(lang.game.WHEN, siLabel, true);
           if (game.discordGuild) dmEmbed.addField(lang.game.SERVER, game.discordGuild.name, true);
           dmEmbed.addField(lang.game.GM, dmMember ? (dmMember.nickname ? dmMember.nickname : dmMember.user && dmMember.user.username) : game.dm, true);

@@ -10,6 +10,7 @@ import { io } from "../processes/socket";
 import { GuildConfig } from "./guild-config";
 import config from "./config";
 import cloneDeep from "lodash/cloneDeep";
+import game from "../routes/game";
 
 const connection = db.connection;
 const ObjectId = mongodb.ObjectId;
@@ -855,7 +856,7 @@ export class Game implements GameModel {
     } catch (err) {
       console.log(err.message);
     }
-    if (updated) this.save();
+    if (updated && this._id) this.save();
   }
 
   static updateReservedList(list: string, guildMembers: GuildMember[]) {

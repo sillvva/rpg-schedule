@@ -564,7 +564,7 @@ export default (options: APIRouteOptions) => {
                   throw new Error("You are not the GM of this game.");
                 }
       
-                if (game && game._id) await game.updateReservedList();
+                await game.updateReservedList();
       
                 let gcChannels: string[] = guildConfig.channels;
                 const firstChannel = guild.channels.cache.find((gc) => gc.permissionsFor(guild.roles.everyone).has(Permissions.FLAGS.VIEW_CHANNEL));
