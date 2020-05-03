@@ -159,7 +159,7 @@
       "EMOJI": "Imposta l'emoji utilizzata per la registrazione automatica",
       "PREFIX": "Carattere di fuga per il comando del bot. Attuale `:CHAR`",
       "EMOJI_ERROR": "L'emoji deve essere un carattere emoji unicode. Hai inserito `:CHAR`. Vedi https://www.unicode.org/emoji/charts/full-emoji-list.html per una liosta completa di emoji. Usa la versione browser.",
-      "PRIVATE_REMINDERS": "Seleziona se i promemoria del gioco vengono inviati via messaggi privati. Attuale `:PR`",
+      "PRIVATE_REMINDERS": "Seleziona se i promemoria del gioco vengono inviati via messaggi privati.",
       "ROLE": "Assegna un ruolo come prerequisito per la pubblicazione di giochi",
       "MANAGER_ROLE": "Assegna un ruolo per consentire la gestione di tutti i giochi del server",
       "PASSWORD_SET": "Configura una password per la pubblicazione di giochi",

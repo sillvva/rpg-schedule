@@ -163,7 +163,7 @@
         "EMOJI": "Wähle das Emoji für das automatische Anmelden.",
         "PREFIX": "Prefix für Bot Befehle. Aktuell `:CHAR`",
         "EMOJI_ERROR": "Emoji muss ein Unicode Emoji Zeichen sein. Du hast eingegeben `:CHAR`. Hier eine vollständige Liste von Emojis (verwende die Browser-Version): https://www.unicode.org/emoji/charts/full-emoji-list.html",
-        "PRIVATE_REMINDERS": "Stellen Sie ein, ob die Spielerinnerungen an private Nachrichten gesendet werden. Aktuell `:PR`",
+        "PRIVATE_REMINDERS": "Stellen Sie ein, ob die Spielerinnerungen an private Nachrichten gesendet werden.",
         "ROLE": "Weise eine Rolle zu, die als Voraussetzung gilt, um Spiele zu veröffentlichen.",
         "MANAGER_ROLE": "Weise eine Rolle zu, um die Verwaltung aller Spiele auf dem Server zu ermöglichen.",
         "PASSWORD_SET": "Konfiguriere ein Passwort für das Veröffentlichen von Spielen.",

@@ -163,7 +163,7 @@
       "EMOJI": "Set the emoji used for automated sign up",
       "PREFIX": "Prefix character for the bot command. Currently `:CHAR`",
       "EMOJI_ERROR": "Emoji must be a unicode emoji character. You entered `:CHAR`. See https://www.unicode.org/emoji/charts/full-emoji-list.html for a full list of emoji. Use the browser version.",
-      "PRIVATE_REMINDERS": "Toggle whether the game reminders are sent to private messages. Currently `:PR`",
+      "PRIVATE_REMINDERS": "Toggle whether the game reminders are sent to private messages.",
       "ROLE": "Assign a role as a prerequisite for posting games",
       "MANAGER_ROLE": "Assign a role to allow managing all server games",
       "PASSWORD_SET": "Configure a password for posting games",

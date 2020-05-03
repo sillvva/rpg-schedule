@@ -77,6 +77,16 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
             return;
           }
 
+          let isAdmin = false;
+          if (member)
+            isAdmin = !!(
+              member.hasPermission(discord.Permissions.FLAGS.MANAGE_GUILD) ||
+              member.roles.cache.find((r) => r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim())
+            );
+          let permission = false;
+          if (member)
+            permission = guildConfig.role && !isAdmin ? !!member.roles.cache.find((r) => r.name.toLowerCase().trim() === (guildConfig.role || "").toLowerCase().trim()) : true;
+
           const canConfigure = member ? member.hasPermission(discord.Permissions.FLAGS.MANAGE_GUILD) : false;
 
           try {
@@ -98,7 +108,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                         `\`${botcmd} lang ${guildConfig.lang}\` - ${lang.config.desc.LANG} ${languages.map((l) => `\`${l.code}\` (${l.name})`).join(", ")}\n`
                       : ``) +
                     `\n${lang.config.USAGE}\n` +
-                    `\`${botcmd} link\` - ${lang.config.desc.LINK}`
+                    (permission ? `\`${botcmd} link\` - ${lang.config.desc.LINK}` : ``)
                 );
               (<TextChannel>message.channel).send(embed);
               let embed2 = new discord.MessageEmbed()
@@ -114,7 +124,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                         }\n` +
                         `\`${botcmd} emoji-sign-up ${guildConfig.emojiAdd}\` - ${lang.config.desc.EMOJI}\n` +
                         `\`${botcmd} emoji-drop-out ${guildConfig.emojiRemove}\` - ${lang.config.desc.EMOJI}\n` +
-                        `\`${botcmd} toggle-drop-out\` - ${lang.config.desc.TOGGLE_DROP_OUT}\n` +
+                        `\`${botcmd} drop-outs ${guildConfig.dropOut || guildConfig.dropOut == null ? "on" : "off"}\` - \`on/off\` - ${lang.config.desc.TOGGLE_DROP_OUT}\n` +
                         `\`${botcmd} prefix-char ${prefix}\` - ${lang.config.desc.PREFIX.replace(/\:CHAR/gi, prefix)}\n`
                     : ``
                 );
@@ -129,57 +139,55 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                         `\`${botcmd} remove-channel #channel-name\` - ${lang.config.desc.REMOVE_CHANNEL}\n` +
                         `\`${botcmd} pruning ${guildConfig.pruning ? "on" : "off"}\` - \`on/off\` - ${lang.config.desc.PRUNING}\n` +
                         `\`${botcmd} prune\` - ${lang.config.desc.PRUNE}\n` +
-                        `\`${botcmd} private-reminders\` - ${lang.config.desc.PRIVATE_REMINDERS.replace(/\:PR/gi, guildConfig.privateReminders ? "on" : "off")}\n` +
-                        `\`${botcmd} rechedule-mode ${guildConfig.rescheduleMode}\` - ${lang.config.desc.RESCHEDULE_MODE}\n`
+                        `\`${botcmd} private-reminders ${guildConfig.privateReminders ? "on" : "off"}\` - \`on/off\` - ${lang.config.desc.PRIVATE_REMINDERS}\n` +
+                        `\`${botcmd} reschedule-mode ${guildConfig.rescheduleMode}\` - ${lang.config.desc.RESCHEDULE_MODE}\n`
                     : ``
                 );
               if (canConfigure) (<TextChannel>message.channel).send(embed3);
-            } else if (cmd === "link") {
+            } else if (cmd === "link" && permission) {
               (<TextChannel>message.channel).send(process.env.HOST + config.urls.game.create.path + "?s=" + guildId);
-            } else if (cmd === "prune") {
+            } else if (cmd === "prune" && canConfigure) {
               await pruneOldGames(message.guild);
               (<TextChannel>message.channel).send(lang.config.PRUNE);
-            } else if (cmd === "configuration") {
-              if (canConfigure) {
-                const channel =
-                  guildConfig.channels.length > 0
-                    ? guildConfig.channels.map((c) => {
-                        return guild.channels.cache.get(c);
-                      })
-                    : [guild.channels.cache.array().find((c) => c instanceof TextChannel)];
+            } else if (cmd === "configuration" && canConfigure) {
+              const channel =
+                guildConfig.channels.length > 0
+                  ? guildConfig.channels.map((c) => {
+                      return guild.channels.cache.get(c);
+                    })
+                  : [guild.channels.cache.array().find((c) => c instanceof TextChannel)];
 
-                let embed = new discord.MessageEmbed()
-                  .setTitle(`RPG Schedule ${lang.config.CONFIGURATION}`)
-                  .setColor(guildConfig.embedColor)
-                  .setDescription(
-                    `${lang.config.PREFIX}: ${prefix.length ? prefix : "!"}${config.command}\n` +
-                      `${lang.config.GUILD}: \`${guild.name}\`\n` +
-                      `${lang.config.CHANNELS}: ${
-                        channel.filter((c) => c).length > 0
-                          ? `\`${channel
-                              .filter((c) => c)
-                              .map((c) => c.name)
-                              .join(" | ")}\``
-                          : "First text channel"
-                      }\n` +
-                      `${lang.config.PRUNING}: \`${guildConfig.pruning ? "on" : "off"}\`\n` +
-                      `${lang.config.EMBEDS}: \`${!(guildConfig.embeds === false) ? "on" : "off"}\`\n` +
-                      `${lang.config.EMBED_COLOR}: \`${guildConfig.embedColor}\`\n` +
-                      `${lang.config.EMBED_USER_TAGS}: \`${guildConfig.embedMentions}\`\n` +
-                      `${lang.config.EMOJI_JOIN}: \`${guildConfig.emojiAdd}\`\n` +
-                      `${lang.config.EMOJI_LEAVE}: \`${guildConfig.emojiRemove}\`\n` +
-                      `${lang.config.PRIVATE_REMINDERS}: \`${guildConfig.privateReminders ? "on" : "off"}\`\n` +
-                      `${lang.config.RESCHEDULE_MODE}: \`${guildConfig.rescheduleMode}\`\n` +
-                      `${lang.config.PASSWORD}: ${guildConfig.password ? `\`${guildConfig.password}\`` : "Disabled"}\n` +
-                      `${lang.config.ROLE}: ${guildConfig.role ? `\`${guildConfig.role}\`` : "All Roles"}\n` +
-                      `${lang.config.MANAGER_ROLE}: ${guildConfig.managerRole ? `\`${guildConfig.managerRole}\` and Server Admins` : "Server Admins"}\n` +
-                      `${lang.config.DROP_OUTS}: ${guildConfig.dropOut ? `Enabled` : "Disabled"}\n` +
-                      `${lang.config.LANGUAGE}: ${guildConfig.lang}\n`
-                  );
-                if (member) member.send(embed);
-              }
-            } else if (cmd === "add-channel") {
-              if (canConfigure && params[0]) {
+              let embed = new discord.MessageEmbed()
+                .setTitle(`RPG Schedule ${lang.config.CONFIGURATION}`)
+                .setColor(guildConfig.embedColor)
+                .setDescription(
+                  `${lang.config.PREFIX}: ${prefix.length ? prefix : "!"}${config.command}\n` +
+                    `${lang.config.GUILD}: \`${guild.name}\`\n` +
+                    `${lang.config.CHANNELS}: ${
+                      channel.filter((c) => c).length > 0
+                        ? `\`${channel
+                            .filter((c) => c)
+                            .map((c) => c.name)
+                            .join(" | ")}\``
+                        : "First text channel"
+                    }\n` +
+                    `${lang.config.PRUNING}: \`${guildConfig.pruning ? "on" : "off"}\`\n` +
+                    `${lang.config.EMBEDS}: \`${!(guildConfig.embeds === false) ? "on" : "off"}\`\n` +
+                    `${lang.config.EMBED_COLOR}: \`${guildConfig.embedColor}\`\n` +
+                    `${lang.config.EMBED_USER_TAGS}: \`${guildConfig.embedMentions}\`\n` +
+                    `${lang.config.EMOJI_JOIN}: \`${guildConfig.emojiAdd}\`\n` +
+                    `${lang.config.EMOJI_LEAVE}: \`${guildConfig.emojiRemove}\`\n` +
+                    `${lang.config.PRIVATE_REMINDERS}: \`${guildConfig.privateReminders ? "on" : "off"}\`\n` +
+                    `${lang.config.RESCHEDULE_MODE}: \`${guildConfig.rescheduleMode}\`\n` +
+                    `${lang.config.PASSWORD}: ${guildConfig.password ? `\`${guildConfig.password}\`` : "Disabled"}\n` +
+                    `${lang.config.ROLE}: ${guildConfig.role ? `\`${guildConfig.role}\`` : "All Roles"}\n` +
+                    `${lang.config.MANAGER_ROLE}: ${guildConfig.managerRole ? `\`${guildConfig.managerRole}\` and Server Admins` : "Server Admins"}\n` +
+                    `${lang.config.DROP_OUTS}: ${guildConfig.dropOut ? `Enabled` : "Disabled"}\n` +
+                    `${lang.config.LANGUAGE}: ${guildConfig.lang}\n`
+                );
+              if (member) member.send(embed);
+            } else if (cmd === "add-channel" && canConfigure) {
+              if (params[0]) {
                 const channel: string = params[0].replace(/\<\#|\>/g, "");
                 const channels = guildConfig.channels;
                 channels.push(channel);
@@ -194,8 +202,8 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                     aux.log(err);
                   });
               }
-            } else if (cmd === "remove-channel") {
-              if (canConfigure && params[0]) {
+            } else if (cmd === "remove-channel" && canConfigure) {
+              if (params[0]) {
                 const channel: string = params[0].replace(/\<\#|\>/g, "");
                 const channels = guildConfig.channels;
                 if (channels.indexOf(channel) >= 0) {
@@ -212,8 +220,8 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                     aux.log(err);
                   });
               }
-            } else if (cmd === "pruning") {
-              if (canConfigure && params[0]) {
+            } else if (cmd === "pruning" && canConfigure) {
+              if (params[0]) {
                 guildConfig
                   .save({
                     pruning: params[0] === "on",
@@ -225,8 +233,8 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                     aux.log(err);
                   });
               }
-            } else if (cmd === "embeds") {
-              if (canConfigure && params[0]) {
+            } else if (cmd === "embeds" && canConfigure) {
+              if (params[0]) {
                 guildConfig
                   .save({
                     embeds: !(params[0] === "off"),
@@ -238,8 +246,8 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                     aux.log(err);
                   });
               }
-            } else if (cmd === "embed-user-tags") {
-              if (canConfigure && params[0]) {
+            } else if (cmd === "embed-user-tags" && canConfigure) {
+              if (params[0]) {
                 guildConfig
                   .save({
                     embedMentions: !(params[0] === "off"),
@@ -251,283 +259,265 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                     aux.log(err);
                   });
               }
-            } else if (cmd === "embed-color") {
-              if (canConfigure) {
-                let color = params.join("");
-                var colors = {
-                  aliceblue: "#f0f8ff",
-                  antiquewhite: "#faebd7",
-                  aqua: "#00ffff",
-                  aquamarine: "#7fffd4",
-                  azure: "#f0ffff",
-                  beige: "#f5f5dc",
-                  bisque: "#ffe4c4",
-                  black: "#000000",
-                  blanchedalmond: "#ffebcd",
-                  blue: "#0000ff",
-                  blueviolet: "#8a2be2",
-                  brown: "#a52a2a",
-                  burlywood: "#deb887",
-                  cadetblue: "#5f9ea0",
-                  chartreuse: "#7fff00",
-                  chocolate: "#d2691e",
-                  coral: "#ff7f50",
-                  cornflowerblue: "#6495ed",
-                  cornsilk: "#fff8dc",
-                  crimson: "#dc143c",
-                  cyan: "#00ffff",
-                  darkblue: "#00008b",
-                  darkcyan: "#008b8b",
-                  darkgoldenrod: "#b8860b",
-                  darkgray: "#a9a9a9",
-                  darkgreen: "#006400",
-                  darkkhaki: "#bdb76b",
-                  darkmagenta: "#8b008b",
-                  darkolivegreen: "#556b2f",
-                  darkorange: "#ff8c00",
-                  darkorchid: "#9932cc",
-                  darkred: "#8b0000",
-                  darksalmon: "#e9967a",
-                  darkseagreen: "#8fbc8f",
-                  darkslateblue: "#483d8b",
-                  darkslategray: "#2f4f4f",
-                  darkturquoise: "#00ced1",
-                  darkviolet: "#9400d3",
-                  deeppink: "#ff1493",
-                  deepskyblue: "#00bfff",
-                  dimgray: "#696969",
-                  dodgerblue: "#1e90ff",
-                  firebrick: "#b22222",
-                  floralwhite: "#fffaf0",
-                  forestgreen: "#228b22",
-                  fuchsia: "#ff00ff",
-                  gainsboro: "#dcdcdc",
-                  ghostwhite: "#f8f8ff",
-                  gold: "#ffd700",
-                  goldenrod: "#daa520",
-                  gray: "#808080",
-                  green: "#008000",
-                  greenyellow: "#adff2f",
-                  honeydew: "#f0fff0",
-                  hotpink: "#ff69b4",
-                  indianred: "#cd5c5c",
-                  indigo: "#4b0082",
-                  ivory: "#fffff0",
-                  khaki: "#f0e68c",
-                  lightyellow: "#ffffe0",
-                  lime: "#00ff00",
-                  limegreen: "#32cd32",
-                  linen: "#faf0e6",
-                  lavender: "#e6e6fa",
-                  lavenderblush: "#fff0f5",
-                  lawngreen: "#7cfc00",
-                  lemonchiffon: "#fffacd",
-                  lightblue: "#add8e6",
-                  lightcoral: "#f08080",
-                  lightcyan: "#e0ffff",
-                  lightgoldenrodyellow: "#fafad2",
-                  lightgrey: "#d3d3d3",
-                  lightgreen: "#90ee90",
-                  lightpink: "#ffb6c1",
-                  lightsalmon: "#ffa07a",
-                  lightseagreen: "#20b2aa",
-                  lightskyblue: "#87cefa",
-                  lightslategray: "#778899",
-                  lightsteelblue: "#b0c4de",
-                  magenta: "#ff00ff",
-                  maroon: "#800000",
-                  mediumaquamarine: "#66cdaa",
-                  mediumblue: "#0000cd",
-                  mediumorchid: "#ba55d3",
-                  mediumpurple: "#9370d8",
-                  mediumseagreen: "#3cb371",
-                  mediumslateblue: "#7b68ee",
-                  mediumspringgreen: "#00fa9a",
-                  mediumturquoise: "#48d1cc",
-                  mediumvioletred: "#c71585",
-                  midnightblue: "#191970",
-                  mintcream: "#f5fffa",
-                  mistyrose: "#ffe4e1",
-                  moccasin: "#ffe4b5",
-                  navajowhite: "#ffdead",
-                  navy: "#000080",
-                  oldlace: "#fdf5e6",
-                  olive: "#808000",
-                  olivedrab: "#6b8e23",
-                  orange: "#ffa500",
-                  orangered: "#ff4500",
-                  orchid: "#da70d6",
-                  palegoldenrod: "#eee8aa",
-                  palegreen: "#98fb98",
-                  paleturquoise: "#afeeee",
-                  palevioletred: "#d87093",
-                  papayawhip: "#ffefd5",
-                  peachpuff: "#ffdab9",
-                  peru: "#cd853f",
-                  pink: "#ffc0cb",
-                  plum: "#dda0dd",
-                  powderblue: "#b0e0e6",
-                  purple: "#800080",
-                  rebeccapurple: "#663399",
-                  red: "#ff0000",
-                  rosybrown: "#bc8f8f",
-                  royalblue: "#4169e1",
-                  tan: "#d2b48c",
-                  teal: "#008080",
-                  thistle: "#d8bfd8",
-                  tomato: "#ff6347",
-                  turquoise: "#40e0d0",
-                  saddlebrown: "#8b4513",
-                  salmon: "#fa8072",
-                  sandybrown: "#f4a460",
-                  seagreen: "#2e8b57",
-                  seashell: "#fff5ee",
-                  sienna: "#a0522d",
-                  silver: "#c0c0c0",
-                  skyblue: "#87ceeb",
-                  slateblue: "#6a5acd",
-                  slategray: "#708090",
-                  snow: "#fffafa",
-                  springgreen: "#00ff7f",
-                  steelblue: "#4682b4",
-                  violet: "#ee82ee",
-                  wheat: "#f5deb3",
-                  white: "#ffffff",
-                  whitesmoke: "#f5f5f5",
-                  yellow: "#ffff00",
-                  yellowgreen: "#9acd32",
-                };
-                if (colors[color]) {
-                  color = colors[color];
-                } else if (!color.match(/[0-9a-f]{6}/i)) {
-                  (<TextChannel>message.channel).send(lang.config.desc.EMBED_COLOR_ERROR);
-                  return;
-                }
-                guildConfig
-                  .save({
-                    embedColor: "#" + color.match(/[0-9a-f]{6}/i)[0],
-                  })
-                  .then((result) => {
-                    let embed = new discord.MessageEmbed()
-                      .setColor("#" + color.match(/[0-9a-f]{6}/i)[0])
-                      .setDescription(`${lang.config.EMBED_COLOR_SET} \`#"+color.match(/[0-9a-f]{6}/i)[0]+"\`.`);
-                    (<TextChannel>message.channel).send(embed);
-                  })
-                  .catch((err) => {
-                    aux.log(err);
-                  });
+            } else if (cmd === "embed-color" && canConfigure) {
+              let color = params.join("");
+              var colors = {
+                aliceblue: "#f0f8ff",
+                antiquewhite: "#faebd7",
+                aqua: "#00ffff",
+                aquamarine: "#7fffd4",
+                azure: "#f0ffff",
+                beige: "#f5f5dc",
+                bisque: "#ffe4c4",
+                black: "#000000",
+                blanchedalmond: "#ffebcd",
+                blue: "#0000ff",
+                blueviolet: "#8a2be2",
+                brown: "#a52a2a",
+                burlywood: "#deb887",
+                cadetblue: "#5f9ea0",
+                chartreuse: "#7fff00",
+                chocolate: "#d2691e",
+                coral: "#ff7f50",
+                cornflowerblue: "#6495ed",
+                cornsilk: "#fff8dc",
+                crimson: "#dc143c",
+                cyan: "#00ffff",
+                darkblue: "#00008b",
+                darkcyan: "#008b8b",
+                darkgoldenrod: "#b8860b",
+                darkgray: "#a9a9a9",
+                darkgreen: "#006400",
+                darkkhaki: "#bdb76b",
+                darkmagenta: "#8b008b",
+                darkolivegreen: "#556b2f",
+                darkorange: "#ff8c00",
+                darkorchid: "#9932cc",
+                darkred: "#8b0000",
+                darksalmon: "#e9967a",
+                darkseagreen: "#8fbc8f",
+                darkslateblue: "#483d8b",
+                darkslategray: "#2f4f4f",
+                darkturquoise: "#00ced1",
+                darkviolet: "#9400d3",
+                deeppink: "#ff1493",
+                deepskyblue: "#00bfff",
+                dimgray: "#696969",
+                dodgerblue: "#1e90ff",
+                firebrick: "#b22222",
+                floralwhite: "#fffaf0",
+                forestgreen: "#228b22",
+                fuchsia: "#ff00ff",
+                gainsboro: "#dcdcdc",
+                ghostwhite: "#f8f8ff",
+                gold: "#ffd700",
+                goldenrod: "#daa520",
+                gray: "#808080",
+                green: "#008000",
+                greenyellow: "#adff2f",
+                honeydew: "#f0fff0",
+                hotpink: "#ff69b4",
+                indianred: "#cd5c5c",
+                indigo: "#4b0082",
+                ivory: "#fffff0",
+                khaki: "#f0e68c",
+                lightyellow: "#ffffe0",
+                lime: "#00ff00",
+                limegreen: "#32cd32",
+                linen: "#faf0e6",
+                lavender: "#e6e6fa",
+                lavenderblush: "#fff0f5",
+                lawngreen: "#7cfc00",
+                lemonchiffon: "#fffacd",
+                lightblue: "#add8e6",
+                lightcoral: "#f08080",
+                lightcyan: "#e0ffff",
+                lightgoldenrodyellow: "#fafad2",
+                lightgrey: "#d3d3d3",
+                lightgreen: "#90ee90",
+                lightpink: "#ffb6c1",
+                lightsalmon: "#ffa07a",
+                lightseagreen: "#20b2aa",
+                lightskyblue: "#87cefa",
+                lightslategray: "#778899",
+                lightsteelblue: "#b0c4de",
+                magenta: "#ff00ff",
+                maroon: "#800000",
+                mediumaquamarine: "#66cdaa",
+                mediumblue: "#0000cd",
+                mediumorchid: "#ba55d3",
+                mediumpurple: "#9370d8",
+                mediumseagreen: "#3cb371",
+                mediumslateblue: "#7b68ee",
+                mediumspringgreen: "#00fa9a",
+                mediumturquoise: "#48d1cc",
+                mediumvioletred: "#c71585",
+                midnightblue: "#191970",
+                mintcream: "#f5fffa",
+                mistyrose: "#ffe4e1",
+                moccasin: "#ffe4b5",
+                navajowhite: "#ffdead",
+                navy: "#000080",
+                oldlace: "#fdf5e6",
+                olive: "#808000",
+                olivedrab: "#6b8e23",
+                orange: "#ffa500",
+                orangered: "#ff4500",
+                orchid: "#da70d6",
+                palegoldenrod: "#eee8aa",
+                palegreen: "#98fb98",
+                paleturquoise: "#afeeee",
+                palevioletred: "#d87093",
+                papayawhip: "#ffefd5",
+                peachpuff: "#ffdab9",
+                peru: "#cd853f",
+                pink: "#ffc0cb",
+                plum: "#dda0dd",
+                powderblue: "#b0e0e6",
+                purple: "#800080",
+                rebeccapurple: "#663399",
+                red: "#ff0000",
+                rosybrown: "#bc8f8f",
+                royalblue: "#4169e1",
+                tan: "#d2b48c",
+                teal: "#008080",
+                thistle: "#d8bfd8",
+                tomato: "#ff6347",
+                turquoise: "#40e0d0",
+                saddlebrown: "#8b4513",
+                salmon: "#fa8072",
+                sandybrown: "#f4a460",
+                seagreen: "#2e8b57",
+                seashell: "#fff5ee",
+                sienna: "#a0522d",
+                silver: "#c0c0c0",
+                skyblue: "#87ceeb",
+                slateblue: "#6a5acd",
+                slategray: "#708090",
+                snow: "#fffafa",
+                springgreen: "#00ff7f",
+                steelblue: "#4682b4",
+                violet: "#ee82ee",
+                wheat: "#f5deb3",
+                white: "#ffffff",
+                whitesmoke: "#f5f5f5",
+                yellow: "#ffff00",
+                yellowgreen: "#9acd32",
+              };
+              if (colors[color]) {
+                color = colors[color];
+              } else if (!color.match(/[0-9a-f]{6}/i)) {
+                (<TextChannel>message.channel).send(lang.config.desc.EMBED_COLOR_ERROR);
+                return;
               }
-            } else if (cmd === "emoji-sign-up") {
-              if (canConfigure) {
-                const emoji = params.join(" ");
-                if (!aux.isEmoji(emoji) || (emoji.length > 2 && emoji.match(/\:[^\:]+\:/))) {
-                  (<TextChannel>message.channel).send(lang.config.desc.EMOJI_ERROR.replace(/\:char/gi, emoji.replace(/\<|\>/g, "")));
-                  return;
-                }
-                guildConfig
-                  .save({
-                    emojiAdd: emoji,
-                  })
-                  .then((result) => {
-                    (<TextChannel>message.channel).send(lang.config.EMOJI_JOIN_SET);
-                    guildConfig.emojiAdd = emoji;
-                    guildConfig.updateReactions();
-                  })
-                  .catch((err) => {
-                    aux.log(err);
-                  });
+              guildConfig
+                .save({
+                  embedColor: "#" + color.match(/[0-9a-f]{6}/i)[0],
+                })
+                .then((result) => {
+                  let embed = new discord.MessageEmbed()
+                    .setColor("#" + color.match(/[0-9a-f]{6}/i)[0])
+                    .setDescription(`${lang.config.EMBED_COLOR_SET} \`#"+color.match(/[0-9a-f]{6}/i)[0]+"\`.`);
+                  (<TextChannel>message.channel).send(embed);
+                })
+                .catch((err) => {
+                  aux.log(err);
+                });
+            } else if (cmd === "emoji-sign-up" && canConfigure) {
+              const emoji = params.join(" ");
+              if (!aux.isEmoji(emoji) || (emoji.length > 2 && emoji.match(/\:[^\:]+\:/))) {
+                (<TextChannel>message.channel).send(lang.config.desc.EMOJI_ERROR.replace(/\:char/gi, emoji.replace(/\<|\>/g, "")));
+                return;
               }
-            } else if (cmd === "emoji-drop-out") {
-              if (canConfigure) {
-                const emoji = params.join(" ");
-                if (!aux.isEmoji(emoji) || (emoji.length > 2 && emoji.match(/\:[^\:]+\:/))) {
-                  (<TextChannel>message.channel).send(lang.config.desc.EMOJI_ERROR.replace(/\:char/gi, emoji.replace(/\<|\>/g, "")));
-                  return;
-                }
-                await guildConfig
-                  .save({
-                    emojiRemove: emoji,
-                  })
-                  .then((result) => {
-                    (<TextChannel>message.channel).send(lang.config.EMOJI_LEAVE_SET);
-                    guildConfig.emojiRemove = emoji;
-                    guildConfig.updateReactions();
-                  })
-                  .catch((err) => {
-                    aux.log(err);
-                  });
+              guildConfig
+                .save({
+                  emojiAdd: emoji,
+                })
+                .then((result) => {
+                  (<TextChannel>message.channel).send(lang.config.EMOJI_JOIN_SET);
+                  guildConfig.emojiAdd = emoji;
+                  guildConfig.updateReactions();
+                })
+                .catch((err) => {
+                  aux.log(err);
+                });
+            } else if (cmd === "emoji-drop-out" && canConfigure) {
+              const emoji = params.join(" ");
+              if (!aux.isEmoji(emoji) || (emoji.length > 2 && emoji.match(/\:[^\:]+\:/))) {
+                (<TextChannel>message.channel).send(lang.config.desc.EMOJI_ERROR.replace(/\:char/gi, emoji.replace(/\<|\>/g, "")));
+                return;
               }
-            } else if (cmd === "prefix-char") {
-              if (canConfigure) {
-                let prefix = params.join("").trim().slice(0, 3);
-                guildConfig
-                  .save({
-                    escape: prefix.length ? prefix : "!",
-                  })
-                  .then((result) => {
-                    (<TextChannel>message.channel).send(lang.config.PREFIX_CHAR.replace(/\:CMD/gi, `${prefix.length ? prefix : "!"}${config.command}`));
-                  })
-                  .catch((err) => {
-                    aux.log(err);
-                  });
-              }
-            } else if (cmd === "private-reminders") {
-              if (canConfigure) {
-                guildConfig
-                  .save({
-                    privateReminders: !guildConfig.privateReminders,
-                  })
-                  .then((result) => {
-                    (<TextChannel>message.channel).send(!guildConfig.privateReminders ? lang.config.PRIVATE_REMINDERS_ON : lang.config.PRIVATE_REMINDERS_OFF);
-                  })
-                  .catch((err) => {
-                    aux.log(err);
-                  });
-              }
-            } else if (cmd === "reschedule-mode") {
-              if (canConfigure) {
-                let mode = params.join("").trim();
-                const options = ["update", "repost"];
-                guildConfig
-                  .save({
-                    rescheduleMode: options.includes(mode) ? mode : "repost",
-                  })
-                  .then((result) => {
-                    (<TextChannel>message.channel).send(lang.config.RESCHEDULE_MODE_UPDATED);
-                  })
-                  .catch((err) => {
-                    aux.log(err);
-                  });
-              }
-              // } else if (cmd === "reschedule") {
-              // rescheduleOldGames(guildId);
-            } else if (cmd === "password") {
-              if (canConfigure) {
-                guildConfig
-                  .save({
-                    password: params.join(" "),
-                  })
-                  .then((result) => {
-                    (<TextChannel>message.channel).send(lang.config.PASSWORD_SET);
-                  })
-                  .catch((err) => {
-                    aux.log(err);
-                  });
-              }
-            } else if (cmd === "toggle-drop-out") {
-              if (canConfigure) {
-                guildConfig
-                  .save({
-                    dropOut: guildConfig.dropOut === false,
-                  })
-                  .then((result) => {
-                    (<TextChannel>message.channel).send(guildConfig.dropOut === false ? lang.config.DROP_OUTS_ENABLED : lang.config.DROP_OUTS_DISABLED);
-                  })
-                  .catch((err) => {
-                    aux.log(err);
-                  });
-              }
-            } else if (cmd === "role") {
+              await guildConfig
+                .save({
+                  emojiRemove: emoji,
+                })
+                .then((result) => {
+                  (<TextChannel>message.channel).send(lang.config.EMOJI_LEAVE_SET);
+                  guildConfig.emojiRemove = emoji;
+                  guildConfig.updateReactions();
+                })
+                .catch((err) => {
+                  aux.log(err);
+                });
+            } else if (cmd === "prefix-char" && canConfigure) {
+              let prefix = params.join("").trim().slice(0, 3);
+              guildConfig
+                .save({
+                  escape: prefix.length ? prefix : "!",
+                })
+                .then((result) => {
+                  (<TextChannel>message.channel).send(lang.config.PREFIX_CHAR.replace(/\:CMD/gi, `${prefix.length ? prefix : "!"}${config.command}`));
+                })
+                .catch((err) => {
+                  aux.log(err);
+                });
+            } else if (cmd === "private-reminders" && canConfigure) {
+              guildConfig
+                .save({
+                  privateReminders: !guildConfig.privateReminders,
+                })
+                .then((result) => {
+                  (<TextChannel>message.channel).send(!guildConfig.privateReminders ? lang.config.PRIVATE_REMINDERS_ON : lang.config.PRIVATE_REMINDERS_OFF);
+                })
+                .catch((err) => {
+                  aux.log(err);
+                });
+            } else if (cmd === "reschedule-mode" && canConfigure) {
+              let mode = params.join("").trim();
+              const options = ["update", "repost"];
+              guildConfig
+                .save({
+                  rescheduleMode: options.includes(mode) ? mode : "repost",
+                })
+                .then((result) => {
+                  (<TextChannel>message.channel).send(lang.config.RESCHEDULE_MODE_UPDATED);
+                })
+                .catch((err) => {
+                  aux.log(err);
+                });
+            } else if (cmd === "password" && canConfigure) {
+              guildConfig
+                .save({
+                  password: params.join(" "),
+                })
+                .then((result) => {
+                  (<TextChannel>message.channel).send(lang.config.PASSWORD_SET);
+                })
+                .catch((err) => {
+                  aux.log(err);
+                });
+            } else if (cmd === "toggle-drop-out" && canConfigure) {
+              guildConfig
+                .save({
+                  dropOut: guildConfig.dropOut === false,
+                })
+                .then((result) => {
+                  (<TextChannel>message.channel).send(guildConfig.dropOut === false ? lang.config.DROP_OUTS_ENABLED : lang.config.DROP_OUTS_DISABLED);
+                })
+                .catch((err) => {
+                  aux.log(err);
+                });
+            } else if (cmd === "role" && canConfigure) {
               const mentioned = (params[0] || "").match(/(\d+)/);
               let roleName = params.join(" ");
               if (roleName.trim() === "All Roles") {
@@ -538,19 +528,17 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                 const role = guild.roles.cache.get(roleId);
                 if (role) roleName = role.name;
               }
-              if (canConfigure) {
-                guildConfig
-                  .save({
-                    role: roleName == "" ? null : roleName,
-                  })
-                  .then((result) => {
-                    (<TextChannel>message.channel).send(roleName.length > 0 ? lang.config.ROLE_SET.replace(/\:role/gi, roleName) : lang.config.ROLE_CLEARED);
-                  })
-                  .catch((err) => {
-                    aux.log(err);
-                  });
-              }
-            } else if (cmd === "manager-role") {
+              guildConfig
+                .save({
+                  role: roleName == "" ? null : roleName,
+                })
+                .then((result) => {
+                  (<TextChannel>message.channel).send(roleName.length > 0 ? lang.config.ROLE_SET.replace(/\:role/gi, roleName) : lang.config.ROLE_CLEARED);
+                })
+                .catch((err) => {
+                  aux.log(err);
+                });
+            } else if (cmd === "manager-role" && canConfigure) {
               const mentioned = (params[0] || "").match(/(\d+)/);
               let roleName = params.join(" ");
               if (mentioned) {
@@ -558,37 +546,38 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                 const role = guild.roles.cache.get(roleId);
                 if (role) roleName = role.name;
               }
-              if (canConfigure) {
-                guildConfig
-                  .save({
-                    managerRole: roleName == "" ? null : roleName,
-                  })
-                  .then((result) => {
-                    (<TextChannel>message.channel).send(roleName.length > 0 ? lang.config.ROLE_SET.replace(/\:role/gi, roleName) : lang.config.ROLE_CLEARED);
-                  })
-                  .catch((err) => {
-                    aux.log(err);
-                  });
-              }
-            } else if (cmd === "lang") {
+              guildConfig
+                .save({
+                  managerRole: roleName == "" ? null : roleName,
+                })
+                .then((result) => {
+                  (<TextChannel>message.channel).send(roleName.length > 0 ? lang.config.ROLE_SET.replace(/\:role/gi, roleName) : lang.config.ROLE_CLEARED);
+                })
+                .catch((err) => {
+                  aux.log(err);
+                });
+            } else if (cmd === "lang" && canConfigure) {
               const newLang = languages.find((l) => l.code === params[0].trim());
               if (!newLang) {
                 return (<TextChannel>message.channel).send(lang.config.NO_LANG);
               }
-              if (canConfigure) {
-                guildConfig
-                  .save({
-                    lang: newLang.code,
-                  })
-                  .then((result) => {
-                    (<TextChannel>message.channel).send(newLang.config.LANG_SET.replace(/\:lang/gi, newLang.name));
-                  })
-                  .catch((err) => {
-                    aux.log(err);
-                  });
-              }
+              guildConfig
+                .save({
+                  lang: newLang.code,
+                })
+                .then((result) => {
+                  (<TextChannel>message.channel).send(newLang.config.LANG_SET.replace(/\:lang/gi, newLang.name));
+                })
+                .catch((err) => {
+                  aux.log(err);
+                });
             } else {
-              (<TextChannel>message.channel).send("Command not recognized");
+              const response = await (<TextChannel>message.channel).send("Command not recognized");
+              if (response) {
+                setTimeout(() => {
+                  response.delete();
+                }, 3000);
+              }
             }
           } catch (err) {
             aux.log("BotCommandError:", err);
@@ -932,7 +921,7 @@ const postReminders = async (app: Express) => {
 
   const games = await Game.fetchAllBy(query);
   const filteredGames = games.filter((game) => {
-    if (!(client.guilds.cache.array().find((g) => g.id === game.s))) return false;
+    if (!client.guilds.cache.array().find((g) => g.id === game.s)) return false;
     if (game.timestamp - parseInt(game.reminder) * 60 * 1000 > new Date().getTime()) return false;
     if (!game.discordGuild) return false;
     if (!game.discordChannel) return false;
@@ -1016,7 +1005,11 @@ const postReminders = async (app: Express) => {
         try {
           const dmEmbed = new MessageEmbed();
           dmEmbed.setColor(guildConfig.embedColor);
-          dmEmbed.setDescription(`${lang.game.REMINDER_FOR} **[${game.adventure.replace(/\*/gi, "")}](https://discordapp.com/channels/${game.discordGuild.id}/${game.discordChannel.id}/${game.messageId})**\n`);
+          dmEmbed.setDescription(
+            `${lang.game.REMINDER_FOR} **[${game.adventure.replace(/\*/gi, "")}](https://discordapp.com/channels/${game.discordGuild.id}/${game.discordChannel.id}/${
+              game.messageId
+            })**\n`
+          );
           dmEmbed.addField(lang.game.WHEN, siLabel, true);
           if (game.discordGuild) dmEmbed.addField(lang.game.SERVER, game.discordGuild.name, true);
           dmEmbed.addField(lang.game.GM, dmMember ? (dmMember.nickname ? dmMember.nickname : dmMember.user && dmMember.user.username) : game.dm, true);

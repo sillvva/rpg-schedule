@@ -163,7 +163,7 @@
       "EMOJI": "Définir les emoji utilisés pour l'inscription automatisée",
       "PREFIX": "Caractère de préfixe pour la commande de bot. C'est actuellement `:CHAR`",
       "EMOJI_ERROR": "L'emoji doit être un caractère unicode connu comme emoji. Tu as entré `:CHAR`. Allez voir https://www.unicode.org/emoji/charts/full-emoji-list.html pour une liste complete des Emojis. Utilisez la version du navigateur.",
-      "PRIVATE_REMINDERS": "Indiquez si les rappels de jeu sont envoyés aux messages privés. Actuellement `:PR`",
+      "PRIVATE_REMINDERS": "Indiquez si les rappels de jeu sont envoyés aux messages privés.",
       "ROLE": "Attribuer un rôle comme condition préalable à la publication de partie",
       "MANAGER_ROLE": "Attribuer un rôle pour permettre la gestion de tous les jeux sur serveur",
       "PASSWORD_SET": "Configurer un mot de passe pour les parties à créer",
