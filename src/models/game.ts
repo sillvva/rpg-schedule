@@ -279,7 +279,7 @@ export class Game implements GameModel {
         });
 
       const eventTimes = aux.parseEventTimes(game, {
-        isField: true
+        isField: true,
       });
       const rawDate = eventTimes.rawDate;
       const timezone = "UTC" + (game.timezone >= 0 ? "+" : "") + game.timezone;
@@ -369,7 +369,7 @@ export class Game implements GameModel {
         let message: Message;
         try {
           message = await channel.messages.fetch(game.messageId);
-          if (message) {
+          if (message && typeof message.edit === "function") {
             message = await message.edit(msg, embed);
           } else {
             if (guildConfig.embeds === false) {
@@ -396,7 +396,7 @@ export class Game implements GameModel {
 
           io().emit("game", { action: "updated", gameId: game._id, game: updatedGame });
         } catch (err) {
-          aux.log("UpdateGameError:", err);
+          aux.log("UpdateGameError:", game._id, err);
           if (updated) updated.modifiedCount = 0;
         }
         const saved: GameSaveData = {
