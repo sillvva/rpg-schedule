@@ -339,13 +339,13 @@ export default (options: APIRouteOptions) => {
       })
         .then(async (result: any) => {
           if (!req.body.id) throw new Error("Server configuration not found");
-          const guildConfig = await GuildConfig.fetch(req.body._id);
+          const guildConfig = await GuildConfig.fetch(req.body.guild);
           const guild = result.account.guilds.find((g) => g.id == req.body.id);
           if (!guild) throw new Error("Guild not found");
           if (!guild.isAdmin) throw new Error("You don't have permission to do that");
           for (const property in guildConfig) {
             if (property === "_id") continue;
-            if (req.body[property]) guildConfig[property] = req.body[property];
+            if (typeof req.body[property] != "undefined") guildConfig[property] = req.body[property];
           }
           const saveResult = await guildConfig.save();
 
@@ -354,7 +354,7 @@ export default (options: APIRouteOptions) => {
           const lang = merge(cloneDeep(langs.find((lang: any) => lang.code === "en")), cloneDeep(langs.find((lang: any) => lang.code === selectedLang)));
 
           res.json({
-            status: saveResult.upsertedCount > 0 ? "success" : "error",
+            status: saveResult.upsertedCount > 0 || saveResult.matchedCount > 0 ? "success" : "error",
             token: req.session.api.access.access_token,
             guildConfig: guildConfig.data,
             lang: lang,

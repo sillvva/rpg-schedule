@@ -69,7 +69,9 @@ export class GuildConfig implements GuildConfigDataModel {
     if (!data.guild && !this.guild) throw new Error("Guild ID not specified");
     const config: GuildConfigDataModel = this.data;
     const col = connection().collection(collection);
-    return await col.updateOne({ _id: this._id }, { $set: { ...config, ...data } }, { upsert: true });
+    const updates = { ...config, ...data };
+    delete updates._id;
+    return await col.updateOne({ _id: new ObjectId(this._id) }, { $set: updates }, { upsert: true });
   }
 
   get data(): GuildConfigDataModel {
