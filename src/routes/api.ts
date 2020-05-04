@@ -524,6 +524,7 @@ export default (options: APIRouteOptions) => {
       
               if (req.body.copy) {
                 delete req.query.g;
+                delete req.body._id;
                 req.query.s = req.body.s;
                 server = req.body.s;
               }
