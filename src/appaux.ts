@@ -152,17 +152,17 @@ const parseEventTimes = (event: GameModel, options: EventTimeOptions = {}) => {
   const days = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
   const weekdays = event.weekdays.map((w, i) => w && days[i]).filter((w) => w);
   if (weekdays.length === 0) weekdays.push(days[moment(event.date).weekday()]);
-
-  if (event.frequency === 1) {
+  
+  if (event.frequency == 1) {
     googleCalExtras.push(`&recur=RRULE:FREQ=DAILY`);
   }
-  if (event.frequency === 2) {
+  if (event.frequency == 2) {
     googleCalExtras.push(`&recur=RRULE:FREQ=WEEKLY;BYDAY=${weekdays.join(",")}`);
   }
-  if (event.frequency === 3) {
+  if (event.frequency == 3) {
     googleCalExtras.push(`&recur=RRULE:FREQ=WEEKLY;INTERVAL=${event.xWeeks};BYDAY=${weekdays.join(",")}`);
   }
-  if (event.frequency === 4) {
+  if (event.frequency == 4) {
     if (event.monthlyType === "date") {
       googleCalExtras.push(`&recur=RRULE:FREQ=MONTHLY`);
     } else if (event.monthlyType === "weekday") {
