@@ -1,5 +1,5 @@
 import mongodb, { ObjectID } from "mongodb";
-import discord, { Message, Guild, TextChannel, MessageEmbed, GuildMember } from "discord.js";
+import discord, { Message, Guild, TextChannel, MessageEmbed, GuildMember, Collection } from "discord.js";
 import moment from "moment";
 import "moment-recur-ts";
 
@@ -380,13 +380,17 @@ export class Game implements GameModel {
         const prev = (await Game.fetch(game._id)).data;
         const gameData = cloneDeep(game);
         delete gameData._id;
+
         const updated = await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: gameData });
-        let message: Message;
+        let message: Message | Collection<string, Message>;
         try {
           message = await channel.messages.fetch(game.messageId);
           if (message) {
-            if (message.author.id === process.env.CLIENT_ID) {
-              message = await message.edit(msg, embed);
+            if (message instanceof Collection) {
+              message = (<Collection<string, Message>>message).get(game.messageId);
+            }
+            if ((<Message>message).author.id === process.env.CLIENT_ID) {
+              message = await (<Message>message).edit(msg, embed);
             }
           } else {
             if (guildConfig.embeds === false) {
@@ -421,7 +425,7 @@ export class Game implements GameModel {
         }
         const saved: GameSaveData = {
           _id: game._id,
-          message: message,
+          message: <Message>message,
           modified: updated && updated.modifiedCount > 0,
         };
         return saved;
