@@ -10,7 +10,6 @@ import { io } from "../processes/socket";
 import { GuildConfig } from "./guild-config";
 import config from "./config";
 import cloneDeep from "lodash/cloneDeep";
-import game from "../routes/game";
 
 const connection = db.connection;
 const ObjectId = mongodb.ObjectId;
@@ -480,7 +479,7 @@ export class Game implements GameModel {
               dmEmbed.addField(lang.game.SERVER, guild.name, true);
               dmEmbed.addField(
                 lang.game.GAME_NAME,
-                `[${game.adventure}](https://discordapp.com/channels/${this.discordGuild.id}/${this.discordChannel.id}/${this.messageId})`,
+                `[${game.adventure}](https://discordapp.com/channels/${this.discordGuild.id}/${this.discordChannel.id}/${message.id})`,
                 true
               );
               const pm = await dmmember.send(dmEmbed);
@@ -615,6 +614,9 @@ export class Game implements GameModel {
         let data = cloneDeep(this.data);
         const id = data._id;
         delete data._id;
+        delete data.pm;
+        delete data.messageId;
+        delete data.reminderMessageId;
         const game = new Game(data);
         const newGame = await game.save();
         const del = await this.delete();

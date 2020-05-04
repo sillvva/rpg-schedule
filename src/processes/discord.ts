@@ -146,9 +146,6 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
               if (canConfigure) (<TextChannel>message.channel).send(embed3);
             } else if (cmd === "link" && permission) {
               (<TextChannel>message.channel).send(process.env.HOST + config.urls.game.create.path + "?s=" + guildId);
-            } else if (cmd === "prune" && canConfigure) {
-              await pruneOldGames(message.guild);
-              (<TextChannel>message.channel).send(lang.config.PRUNE);
             } else if (cmd === "configuration" && canConfigure) {
               const channel =
                 guildConfig.channels.length > 0
@@ -233,6 +230,9 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                     aux.log(err);
                   });
               }
+            } else if (cmd === "prune" && canConfigure) {
+              await pruneOldGames(message.guild);
+              (<TextChannel>message.channel).send(lang.config.PRUNE);
             } else if (cmd === "embeds" && canConfigure) {
               if (params[0]) {
                 guildConfig
@@ -495,6 +495,8 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                 .catch((err) => {
                   aux.log(err);
                 });
+            } else if (cmd === "reschedule" && canConfigure) {
+              await rescheduleOldGames(message.guild.id);
             } else if (cmd === "password" && canConfigure) {
               guildConfig
                 .save({
@@ -766,7 +768,7 @@ let rescheduled: Game[] = [];
 const rescheduleOldGames = async (guildId?: string) => {
   let result: DeleteWriteOpResultObject;
   try {
-    aux.log(`Rescheduling old games for all servers`);
+    aux.log(`Rescheduling old games for ${guildId ? `guild ${guildId}` : `all servers`}`);
     const query: FilterQuery<any> = {
       when: "datetime",
       timestamp: {
