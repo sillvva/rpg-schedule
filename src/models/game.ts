@@ -684,7 +684,6 @@ export class Game implements GameModel {
       try {
         if (game.pm) {
           const guildMembers = await channel.guild.members.fetch();
-          console.log(guildMembers.array().length);
           const dm = guildMembers.find((m) => m.user.tag === ((<RSVP>game.dm).tag || game.dm));
           if (dm && dm.user.dmChannel) {
             const pm = await dm.user.dmChannel.messages.fetch(game.pm);
