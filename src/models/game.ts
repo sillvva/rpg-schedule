@@ -103,6 +103,25 @@ interface GameSaveData {
   modified: boolean;
 }
 
+export enum GameReminder {
+  NO_REMINDER = '0',
+  MINUTES_15 = '15',
+  MINUTES_30 = '30',
+  MINUTES_60 = '60',
+  HOURS_6 = '360',
+  HOURS_12 = '720',
+  HOURS_24 = '1440'
+}
+
+export const gameReminderOptions = [
+  GameReminder.MINUTES_15,
+  GameReminder.MINUTES_30,
+  GameReminder.MINUTES_60,
+  GameReminder.HOURS_6,
+  GameReminder.HOURS_12,
+  GameReminder.HOURS_24
+];
+
 export class Game implements GameModel {
   _id: string | number | ObjectID;
   s: string;

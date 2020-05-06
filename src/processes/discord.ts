@@ -4,7 +4,7 @@ import { Express } from "express";
 
 import { io } from "../processes/socket";
 import { GuildConfig } from "../models/guild-config";
-import { Game, RSVP, GameMethod } from "../models/game";
+import { Game, RSVP, GameMethod, gameReminderOptions } from "../models/game";
 import config from "../models/config";
 import aux from "../appaux";
 
@@ -888,7 +888,7 @@ const pruneOldGames = async (guild?: discord.Guild) => {
 
 const postReminders = async (app: Express) => {
   const cTime = new Date().getTime();
-  const reminderOptions = ["15", "30", "60", "360", "720", "1440"];
+  const reminderOptions = gameReminderOptions;
   const remExprs = reminderOptions.map((r) => {
     const rt = parseInt(r);
     return {

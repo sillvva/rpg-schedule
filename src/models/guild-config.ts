@@ -1,10 +1,16 @@
 import db from "../db";
 import { ObjectID, ObjectId, FilterQuery } from "mongodb";
-import { Game } from "./game";
+import { Game, GameReminder } from "./game";
 import aux from "../appaux"
 
 const connection = db.connection;
 const collection = "guildConfig";
+
+export interface GameDefaults {
+  minPlayers?: number;
+  maxPlayers: number;
+  reminder: GameReminder;
+}
 
 export interface GuildConfigModel {
   guild?: string;
@@ -24,6 +30,7 @@ export interface GuildConfigModel {
   rescheduleMode?: string;
   managerRole?: string;
   escape?: string;
+  gameDefaults?: GameDefaults;
 }
 
 interface GuildConfigDataModel extends GuildConfigModel {
@@ -49,6 +56,11 @@ export class GuildConfig implements GuildConfigDataModel {
   rescheduleMode: string = 'repost';
   managerRole: string = null;
   escape?: '!';
+  gameDefaults: GameDefaults = {
+    minPlayers: 1,
+    maxPlayers: 7,
+    reminder: GameReminder.NO_REMINDER
+  };
 
   constructor(guildConfig: GuildConfigDataModel = {}) {
     if (!guildConfig._id) this._id = new ObjectId();
@@ -93,7 +105,8 @@ export class GuildConfig implements GuildConfigDataModel {
       privateReminders: this.privateReminders,
       rescheduleMode: this.rescheduleMode,
       managerRole: this.managerRole,
-      escape: this.escape
+      escape: this.escape,
+      gameDefaults: this.gameDefaults
     };
   }
 
