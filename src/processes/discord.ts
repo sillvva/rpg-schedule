@@ -87,7 +87,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
           if (member)
             permission = guildConfig.role && !isAdmin ? !!member.roles.cache.find((r) => r.name.toLowerCase().trim() === (guildConfig.role || "").toLowerCase().trim()) : true;
 
-          const canConfigure = member ? member.hasPermission(discord.Permissions.FLAGS.MANAGE_GUILD) : false;
+          const canConfigure = isAdmin;
 
           try {
             if (cmd === "help" || message.content.trim().split(" ").length === 1) {
