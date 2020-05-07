@@ -856,20 +856,22 @@ const pruneOldGames = async (guild?: discord.Guild) => {
 
     if (guild) {
       query.s = guild.id;
+    } else {
+      query.s = {
+        $in: client.guilds.cache.array().map((g) => g.id),
+      };
     }
 
     let games = await Game.fetchAllBy(query);
-    games = games.filter((game) => client.guilds.cache.array().find((g) => g.id === game.s));
-    const guildIds = games.map((g) => g.s);
     const guildConfigs = await GuildConfig.fetchAllBy({
       pruning: true,
       guild: guild
         ? guild.id
         : {
-            $in: guildIds.filter((s, i) => guildIds.indexOf(s) === i),
+            $in: games.map((g) => g.s).filter((s, i, arr) => arr.indexOf(s) === i),
           },
     });
-    const gameChannelMessages: { guild: string, channel: string, message: string }[] = [];
+    const gameChannelMessages: { guild: string; channel: string; message: string }[] = [];
     for (let i = 0; i < games.length; i++) {
       let game = games[i];
       if (!game.discordGuild) continue;
@@ -887,7 +889,7 @@ const pruneOldGames = async (guild?: discord.Guild) => {
             gameChannelMessages.push({ guild: game.s, channel: game.c, message: game.messageId });
           }
           if (game.pm) {
-            const m = game.discordGuild.members.cache.find(m => m.user.tag === ((<RSVP>game.dm).tag || game.dm));
+            const m = game.discordGuild.members.cache.find((m) => m.user.tag === ((<RSVP>game.dm).tag || game.dm));
             if (m) {
               const msg = m.user.dmChannel.messages.resolve(game.pm);
               if (msg) await msg.delete();
@@ -915,9 +917,9 @@ const pruneOldGames = async (guild?: discord.Guild) => {
         const clientMessages = messages
           .array()
           .filter((m) => m.embeds.filter((e) => new Date().getTime() - e.timestamp >= pruneInterval).length > 0 && m.author.id === client.user.id && m.deletable && !m.deleted);
-        for(let i = 0; i < gameChannelMessages.length; i++) {
+        for (let i = 0; i < gameChannelMessages.length; i++) {
           const msg = gameChannelMessages[i];
-          if (guild.id === msg.guild && c.id === msg.channel && !clientMessages.find(cm => cm.id === msg.message)) {
+          if (guild.id === msg.guild && c.id === msg.channel && !clientMessages.find((cm) => cm.id === msg.message)) {
             const chm = await c.messages.resolve(msg.message);
             if (chm) clientMessages.push(chm);
           }
