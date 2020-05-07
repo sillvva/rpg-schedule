@@ -609,6 +609,7 @@ export class Game implements GameModel {
       gameEnded &&
       !this.rescheduled &&
       !nextGamePassed &&
+      this.when == GameWhen.DATETIME &&
       (this.frequency == Frequency.DAILY ||
         this.frequency == Frequency.MONTHLY ||
         ((this.frequency == Frequency.WEEKLY || this.frequency == Frequency.BIWEEKLY) && validDays.length > 0))
