@@ -311,8 +311,8 @@ export class Game implements GameModel {
       });
       const rawDate = eventTimes.rawDate;
       const timezone = "UTC" + (game.timezone >= 0 ? "+" : "") + game.timezone;
-      const where = parseDiscord(game.where, guild);
-      let description = parseDiscord(game.description, guild);
+      const where = parseDiscord(game.where, guild).trim();
+      let description = parseDiscord(game.description, guild).trim();
 
       let signups = "";
       let automatedInstructions = `\n(${guildConfig.emojiAdd} ${lang.buttons.SIGN_UP}${guildConfig.dropOut ? ` | ${guildConfig.emojiRemove} ${lang.buttons.DROP_OUT}` : ""})`;
@@ -345,7 +345,7 @@ export class Game implements GameModel {
         `\n**${lang.game.RUN_TIME}:** ${game.runtime} ${lang.game.labels.HOURS}` +
         `\n**${lang.game.WHEN}:** ${game.hideDate ? lang.game.labels.TBD : when}` +
         `\n**${lang.game.WHERE}:** ${where}` +
-        `\n${description.length > 0 ? `**${lang.game.DESCRIPTION}:**\n${description}\n` : description}` +
+        `${description.length > 0 ? `\n**${lang.game.DESCRIPTION}:**\n${description}\n` : description}` +
         `\n${signups}`;
 
       if (game.gameImage.trim().length > 2048) {
