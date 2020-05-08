@@ -722,6 +722,14 @@ const pruneOldGames = async (guild?: discord.Guild) => {
       timestamp: {
         $lt: new Date().getTime() - 48 * 3600 * 1000,
       },
+      $or: [
+        {
+          hideDate: false
+        },
+        {
+          hideDate: null
+        }
+      ]
     };
 
     let games = await Game.fetchAllBy(query);
