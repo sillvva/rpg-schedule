@@ -852,6 +852,7 @@ const pruneOldGames = async (guild?: discord.Guild) => {
       timestamp: {
         $lt: new Date().getTime() - pruneInterval,
       },
+      hideDate: false,
     };
 
     if (guild) {
