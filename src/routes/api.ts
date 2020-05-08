@@ -983,6 +983,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
               ...{
                 tag: tag,
                 avatarURL: `https://cdn.discordapp.com/avatars/${id}/${avatar}.png?size=128`,
+                settings: await User.fetch(id)
               },
             },
             guilds: [],
@@ -1001,7 +1002,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
                 channels: guild.channels.cache.filter((c) => c instanceof TextChannel),
                 announcementChannels: [],
                 config: new GuildConfig({ guild: guild.id }),
-                games: [],
+                games: []
               };
               guild.members.cache.forEach((member) => {
                 if (member.id === id) {

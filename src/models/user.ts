@@ -6,6 +6,7 @@ const collection = "users";
 
 export interface UserModel {
   lang?: string;
+  notification?: string;
 }
 
 interface UserDataModel extends UserModel {
@@ -17,6 +18,7 @@ export class User implements UserDataModel {
   _id: string | number | ObjectID;
   id: string;
   lang: string = "en";
+  notification: string = "";
 
   constructor(session: UserDataModel) {
     Object.entries(session).forEach(([key, value]) => {
@@ -29,6 +31,7 @@ export class User implements UserDataModel {
       _id: this._id,
       id: this.id,
       lang: this.lang,
+      notification: this.notification
     };
   }
 
