@@ -104,23 +104,16 @@ interface GameSaveData {
 }
 
 export enum GameReminder {
-  NO_REMINDER = '0',
-  MINUTES_15 = '15',
-  MINUTES_30 = '30',
-  MINUTES_60 = '60',
-  HOURS_6 = '360',
-  HOURS_12 = '720',
-  HOURS_24 = '1440'
+  NO_REMINDER = "0",
+  MINUTES_15 = "15",
+  MINUTES_30 = "30",
+  MINUTES_60 = "60",
+  HOURS_6 = "360",
+  HOURS_12 = "720",
+  HOURS_24 = "1440",
 }
 
-export const gameReminderOptions = [
-  GameReminder.MINUTES_15,
-  GameReminder.MINUTES_30,
-  GameReminder.MINUTES_60,
-  GameReminder.HOURS_6,
-  GameReminder.HOURS_12,
-  GameReminder.HOURS_24
-];
+export const gameReminderOptions = [GameReminder.MINUTES_15, GameReminder.MINUTES_30, GameReminder.MINUTES_60, GameReminder.HOURS_6, GameReminder.HOURS_12, GameReminder.HOURS_24];
 
 export class Game implements GameModel {
   _id: string | number | ObjectID;
@@ -307,7 +300,7 @@ export class Game implements GameModel {
       });
 
       const eventTimes = aux.parseEventTimes(game, {
-        isField: true
+        isField: true,
       });
       const rawDate = eventTimes.rawDate;
       const timezone = "UTC" + (game.timezone >= 0 ? "+" : "") + game.timezone;
@@ -496,11 +489,7 @@ export class Game implements GameModel {
               dmEmbed.setTitle(lang.buttons.EDIT_GAME);
               dmEmbed.setURL(host + config.urls.game.create.path + "?g=" + inserted.insertedId);
               dmEmbed.addField(lang.game.SERVER, guild.name, true);
-              dmEmbed.addField(
-                lang.game.GAME_NAME,
-                `[${game.adventure}](https://discordapp.com/channels/${this.discordGuild.id}/${this.discordChannel.id}/${message.id})`,
-                true
-              );
+              dmEmbed.addField(lang.game.GAME_NAME, `[${game.adventure}](https://discordapp.com/channels/${this.discordGuild.id}/${this.discordChannel.id}/${message.id})`, true);
               const pm = await dmmember.send(dmEmbed);
               await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { pm: pm.id } });
             } catch (err) {
@@ -811,38 +800,49 @@ export class Game implements GameModel {
     let dateGenerator;
     let nextDate = baseDate;
 
-    switch (frequency) {
-      case Frequency.DAILY:
-        nextDate = moment(baseDate).add(1, "days");
-        break;
-      case Frequency.WEEKLY: // weekly
-        if (validDays === undefined || validDays.length === 0) break;
-        dateGenerator = moment(baseDate).recur().every(validDays).daysOfWeek();
-        nextDate = dateGenerator.next(1)[0];
-        break;
-      case Frequency.BIWEEKLY: // biweekly
-        if (validDays === undefined || validDays.length === 0) break;
-        // this is a compound interval...
-        dateGenerator = moment(baseDate).recur().every(validDays).daysOfWeek();
-        nextDate = dateGenerator.next(1)[0];
-        while (nextDate.week() - moment(baseDate).week() < xWeeks) {
-          // if the next date is in the same week, diff = 0. if it is just next week, diff = 1, so keep going forward.
-          dateGenerator = moment(nextDate).recur().every(validDays).daysOfWeek();
+    try {
+      switch (frequency) {
+        case Frequency.DAILY:
+          nextDate = moment(baseDate).add(1, "days");
+          break;
+        case Frequency.WEEKLY: // weekly
+          if (validDays === undefined || validDays.length === 0) break;
+          dateGenerator = moment(baseDate).recur().every(validDays).daysOfWeek();
           nextDate = dateGenerator.next(1)[0];
-        }
-        break;
-      case Frequency.MONTHLY:
-        if (monthlyType == MonthlyType.WEEKDAY) {
-          const weekOfMonth = moment(baseDate).monthWeekByDay();
-          const validDay = moment(baseDate).day();
-          dateGenerator = moment(baseDate).recur().every(validDay).daysOfWeek().every(weekOfMonth).weeksOfMonthByDay();
+          break;
+        case Frequency.BIWEEKLY: // biweekly
+          if (validDays === undefined || validDays.length === 0) break;
+          // this is a compound interval...
+          dateGenerator = moment(baseDate).recur().every(validDays).daysOfWeek();
           nextDate = dateGenerator.next(1)[0];
-        } else {
-          nextDate = moment(baseDate).add(1, "month");
-        }
-        break;
-      default:
-        throw new Error(`invalid frequency ${frequency} specified`);
+          while (nextDate.week() - moment(baseDate).week() < xWeeks) {
+            // if the next date is in the same week, diff = 0. if it is just next week, diff = 1, so keep going forward.
+            dateGenerator = moment(nextDate).recur().every(validDays).daysOfWeek();
+            nextDate = dateGenerator.next(1)[0];
+          }
+          break;
+        case Frequency.MONTHLY:
+          if (monthlyType == MonthlyType.WEEKDAY) {
+            const weekOfMonth = moment(baseDate).monthWeekByDay();
+            const validDay = moment(baseDate).day();
+            dateGenerator = moment(baseDate).recur().every(validDay).daysOfWeek().every(weekOfMonth).weeksOfMonthByDay();
+            nextDate = dateGenerator.next(1)[0];
+  
+            if (weekOfMonth == 4 && moment(nextDate).month() != moment(baseDate).month() + 1) {
+              dateGenerator = moment(baseDate).recur().every(validDay).daysOfWeek().every(3).weeksOfMonthByDay();
+              nextDate = dateGenerator.next(1)[0];
+            }
+          } else {
+            nextDate = moment(baseDate).add(1, "month");
+          }
+          break;
+        default:
+          throw new Error(`invalid frequency ${frequency} specified`);
+      }
+    }
+    catch(err) {
+      console.log(err.message || err);
+      return null;
     }
 
     return moment(nextDate).format("YYYY-MM-DD");
