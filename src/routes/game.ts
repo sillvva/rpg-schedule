@@ -96,7 +96,7 @@ export default (options: GameRouteOptions) => {
           }
 
           const textChannels = <TextChannel[]>guild.channels.cache.array().filter((c) => c instanceof TextChannel);
-          const channels = guildConfig.channels.filter((c) => guild.channels.cache.array().find((gc) => gc.id == c)).map((c) => guild.channels.cache.get(c));
+          const channels = guildConfig.channels.filter((c) => guild.channels.cache.array().find((gc) => gc.id == c.channelId)).map((c) => guild.channels.cache.get(c.channelId));
           if (channels.length === 0 && textChannels.length > 0) channels.push(textChannels[0]);
 
           if (channels.length === 0) {

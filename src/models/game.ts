@@ -1,5 +1,5 @@
 import mongodb, { ObjectID } from "mongodb";
-import discord, { Message, Guild, TextChannel, MessageEmbed, GuildMember, Collection } from "discord.js";
+import discord, { Message, Guild, TextChannel, MessageEmbed, GuildMember, Collection, User } from "discord.js";
 import moment from "moment";
 import "moment-recur-ts";
 
@@ -69,11 +69,11 @@ export interface GameModel {
   runtime: string;
   minPlayers: string;
   players: string;
-  dm: RSVP | string;
+  dm: RSVP;
   author: RSVP;
   where: string;
   description: string;
-  reserved: RSVP[] | string;
+  reserved: RSVP[];
   method: GameMethod;
   customSignup: string;
   when: GameWhen;
@@ -125,11 +125,11 @@ export class Game implements GameModel {
   runtime: string;
   minPlayers: string;
   players: string;
-  dm: RSVP | string;
+  dm: RSVP;
   author: RSVP;
   where: string;
   description: string;
-  reserved: RSVP[] | string;
+  reserved: RSVP[];
   method: GameMethod;
   customSignup: string;
   when: GameWhen;
@@ -153,28 +153,40 @@ export class Game implements GameModel {
   sequence: number = 1;
 
   constructor(game: GameModel) {
-    Object.entries(game || {}).forEach(([key, value]) => {
-      this[key] = value;
-    });
+    let guildMembers: GuildMember[] = [];
+    const gameEntries = Object.entries(game || {});
+    for(let i = 0; i < gameEntries.length; i++) {
+      let [key, value] = gameEntries[i];
 
-    // Strip HTML Tags from Data
-    for (let i in this.data) {
-      if (typeof this[i] === "string") {
-        this[i] = this[i].replace(/<\/?(\w+)((\s+\w+(\s*=\s*(?:".*?"|'.*?'|[\^'">\s]+))?)+\s*|\s*)\/?>/gm, "");
+      // Strip HTML Tags from Data
+      if (typeof value === "string") {
+        value = value.replace(/<\/?(\w+)((\s+\w+(\s*=\s*(?:".*?"|'.*?'|[\^'">\s]+))?)+\s*|\s*)\/?>/gm, "");
       }
-    }
 
-    this._guild = discordClient().guilds.cache.get(this.s);
-    if (!this._guild) this._guild = discordClient().guilds.resolve(this.s);
-    if (this._guild) {
-      this._guild.channels.cache.forEach((c) => {
-        if (!this._channel && c instanceof TextChannel) {
-          this._channel = c;
-        }
-        if (c.id === this.c && c instanceof TextChannel) {
-          this._channel = c;
-        }
-      });
+      if (key === "s") {
+        this[key] = value;
+        this._guild = discordClient().guilds.cache.get(value);
+        if (!this._guild) this._guild = discordClient().guilds.resolve(value);
+        if (!guildMembers.length) guildMembers = this._guild.members.cache.array();
+      }
+      else if (key === "c") {
+        this[key] = value;
+        this._guild.channels.cache.forEach((c) => {
+          if (!this._channel && c instanceof TextChannel) {
+            this._channel = c;
+          }
+          if (c.id === value && c instanceof TextChannel) {
+            this._channel = c;
+          }
+        });
+      }
+      else if (key === "dm") {
+        this[key] = Game.updateDM(value, guildMembers);
+      }
+      else if (key === "reserved") {
+        this[key] = Game.updateReservedList(value, guildMembers);
+      }
+      else this[key] = value;
     }
   }
 
@@ -237,13 +249,12 @@ export class Game implements GameModel {
     const guild = channel.guild;
     const guildConfig = await GuildConfig.fetch(guild.id);
 
-    await this.updateReservedList();
     const game: GameModel = this.data;
 
     try {
       if (guild && !channel) {
         const textChannels = <TextChannel[]>guild.channels.cache.array().filter((c) => c instanceof TextChannel);
-        const channels = guildConfig.channels.filter((c) => guild.channels.cache.array().find((gc) => gc.id == c)).map((c) => guild.channels.cache.get(c));
+        const channels = guildConfig.channels.filter((c) => guild.channels.cache.array().find((gc) => gc.id == c.channelId)).map((c) => guild.channels.cache.get(c.channelId));
         if (channels.length === 0 && textChannels.length > 0) channels.push(textChannels[0]);
         channel = <TextChannel>channels[0];
       }
@@ -253,16 +264,17 @@ export class Game implements GameModel {
 
       moment.locale(lang.code);
 
-      let dm = (<RSVP>game.dm).tag
+      let dm = game.dm.tag
         .trim()
         .replace("@", "")
         .replace(/\#\d{4}/, "");
-      const dmParts = (<RSVP>game.dm).tag.split("#");
+      const dmParts = game.dm.tag.split("#");
       let dmmember = guildMembers.find((mem) => {
         return (
-          (game.dm && mem.user.tag === (<RSVP>game.dm).tag.trim().replace("@", "")) ||
+          (game.dm && mem.user.tag === game.dm.tag.trim().replace("@", "")) ||
           (dmParts[0] && dmParts[1] && mem.user.username === dmParts[0].trim() && mem.user.discriminator === dmParts[1].trim()) ||
-          (dmParts[0] && mem.user.username === dmParts[0].trim())
+          (dmParts[0] && mem.user.username === dmParts[0].trim()) ||
+          mem.user.id === game.dm.id
         );
       });
       if (dmmember) {
@@ -277,11 +289,11 @@ export class Game implements GameModel {
         };
       }
 
-      game.reserved = (<RSVP[]>game.reserved).filter((r) => r.tag);
+      game.reserved = game.reserved.filter((r) => r.tag);
 
       let reserved: string[] = [];
       let waitlist: string[] = [];
-      (<RSVP[]>game.reserved).forEach((rsvp: RSVP, i) => {
+      game.reserved.forEach((rsvp, i) => {
         if (rsvp.tag.trim().length === 0 && !rsvp.id) return;
         let member = guildMembers.find((mem) => mem.user.tag.trim() === rsvp.tag.trim() || mem.user.id === rsvp.id);
 
@@ -345,11 +357,13 @@ export class Game implements GameModel {
         game.gameImage = "";
       }
 
+      const gcChannel = guildConfig.channel.find(c => c.channelId === game.c);
+
       let embed: MessageEmbed;
       if (guildConfig.embeds === false) {
         if (game && game.gameImage && game.gameImage.trim().length > 0) {
           embed = new discord.MessageEmbed();
-          embed.setColor(guildConfig.embedColor);
+          embed.setColor(gcChannel && gcChannel.embedColor ? gcChannel.embedColor : guildConfig.embedColor);
           embed.setImage(game.gameImage.trim().substr(0, 2048));
         }
       } else {
@@ -357,7 +371,7 @@ export class Game implements GameModel {
 
         msg = "";
         embed = new discord.MessageEmbed();
-        embed.setColor(guildConfig.embedColor);
+        embed.setColor(gcChannel && gcChannel.embedColor ? gcChannel.embedColor : guildConfig.embedColor);
         embed.setTitle(game.adventure);
         embed.setAuthor(dm, dmmember && dmmember.user.avatarURL() && urlRegex.test(dmmember.user.avatarURL()) ? dmmember.user.avatarURL().substr(0, 2048) : null);
         if (dmmember && dmmember.user.avatarURL() && urlRegex.test(dmmember.user.avatarURL())) embed.setThumbnail(dmmember.user.avatarURL().substr(0, 2048));
@@ -420,11 +434,7 @@ export class Game implements GameModel {
           game._id = game._id.toString();
 
           this.dmNextWaitlist(
-            Array.isArray(prev.reserved)
-              ? prev.reserved
-              : prev.reserved.split(/\r?\n/g).map((t) => {
-                  tag: t;
-                }),
+            prev.reserved,
             game.reserved
           );
 
@@ -485,7 +495,7 @@ export class Game implements GameModel {
           if (dmmember) {
             try {
               const dmEmbed = new MessageEmbed();
-              dmEmbed.setColor(guildConfig.embedColor);
+              dmEmbed.setColor(gcChannel && gcChannel.embedColor ? gcChannel.embedColor : guildConfig.embedColor);
               dmEmbed.setTitle(lang.buttons.EDIT_GAME);
               dmEmbed.setURL(host + config.urls.game.create.path + "?g=" + inserted.insertedId);
               dmEmbed.addField(lang.game.SERVER, guild.name, true);
@@ -533,7 +543,7 @@ export class Game implements GameModel {
     const game = await connection()
       .collection(collection)
       .findOne({ _id: new ObjectId(gameId) });
-    return game ? new Game(game) : null;
+    return game && discordClient().guilds.cache.find(g => g.id === game.s) ? new Game(game) : null;
   }
 
   static async fetchBy(key: string, value: any): Promise<Game> {
@@ -543,7 +553,7 @@ export class Game implements GameModel {
     }
     const query: mongodb.FilterQuery<any> = aux.fromEntries([[key, value]]);
     const game: GameModel = await connection().collection(collection).findOne(query);
-    return game ? new Game(game) : null;
+    return game && discordClient().guilds.cache.find(g => g.id === game.s) ? new Game(game) : null;
   }
 
   static async fetchAllBy(query: mongodb.FilterQuery<any>): Promise<Game[]> {
@@ -552,7 +562,9 @@ export class Game implements GameModel {
       return [];
     }
     const games: GameModel[] = await connection().collection(collection).find(query).toArray();
-    return games.map((game) => {
+    return games.filter(game => {
+      return discordClient().guilds.cache.find(g => g.id === game.s);
+    }).map((game) => {
       return new Game(game);
     });
   }
@@ -563,7 +575,9 @@ export class Game implements GameModel {
       return [];
     }
     const games: GameModel[] = await connection().collection(collection).find(query).limit(limit).toArray();
-    return games.map((game) => {
+    return games.filter(game => {
+      return discordClient().guilds.cache.find(g => g.id === game.s);
+    }).map((game) => {
       return new Game(game);
     });
   }
@@ -613,7 +627,7 @@ export class Game implements GameModel {
       this.date = nextDate;
 
       if (this.clearReservedOnRepeat) {
-        this.reserved = "";
+        this.reserved = [];
       }
 
       const guildConfig = await GuildConfig.fetch(this.s);
@@ -699,7 +713,7 @@ export class Game implements GameModel {
       try {
         if (game.pm) {
           const guildMembers = await channel.guild.members.fetch();
-          const dm = guildMembers.find((m) => m.user.tag === ((<RSVP>game.dm).tag || game.dm));
+          const dm = guildMembers.find((m) => m.user.tag === game.dm.tag || m.user.id === game.dm.id);
           if (dm && dm.user.dmChannel) {
             const pm = await dm.user.dmChannel.messages.fetch(game.pm);
             if (pm) {
@@ -724,15 +738,16 @@ export class Game implements GameModel {
       const guild = this.discordGuild;
       const guildMembers = await guild.members.fetch();
       const guildConfig = await GuildConfig.fetch(guild.id);
-      const dmmember = guildMembers.array().find((m) => m.user.tag === (<RSVP>this.dm).tag.trim() || m.user.id === (<RSVP>this.dm).id);
+      const dmmember = guildMembers.array().find((m) => m.user.tag === this.dm.tag.trim() || m.user.id === this.dm.id);
       const member = guildMembers.array().find((m) => m.user.tag === tag.trim());
+      const gcChannel = guildConfig.channel.find(c => c.channelId === this.c);
 
       if (member) {
         const lang = gmLanguages.find((l) => l.code === guildConfig.lang) || gmLanguages.find((l) => l.code === "en");
 
         let waitlisted = "";
-        if ((<RSVP[]>this.reserved).findIndex((r) => r.id === member.user.id || r.tag === member.user.tag) + 1 > parseInt(this.players)) {
-          const slotNum = (<RSVP[]>this.reserved).findIndex((r) => r.id === member.user.id || r.tag === member.user.tag) + 1 - parseInt(this.players);
+        if (this.reserved.findIndex((r) => r.id === member.user.id || r.tag === member.user.tag) + 1 > parseInt(this.players)) {
+          const slotNum = this.reserved.findIndex((r) => r.id === member.user.id || r.tag === member.user.tag) + 1 - parseInt(this.players);
           waitlisted = `\n\n${lang.messages.DM_WAITLIST.replace(":NUM", slotNum)}`;
         }
 
@@ -740,7 +755,7 @@ export class Game implements GameModel {
         dmEmbed.setDescription(
           `**[${this.adventure}](https://discordapp.com/channels/${this.discordGuild.id}/${this.discordChannel.id}/${this.messageId})**\n${this.customSignup}${waitlisted}`
         );
-        dmEmbed.setColor(guildConfig.embedColor);
+        dmEmbed.setColor(gcChannel && gcChannel.embedColor ? gcChannel.embedColor : guildConfig.embedColor);
 
         member.send(`${lang.messages.DM_INSTRUCTIONS.replace(":DM", (dmmember || this.dm).toString()).replace(" :EVENT", ``)}:`, {
           embed: dmEmbed,
@@ -758,19 +773,14 @@ export class Game implements GameModel {
     const guildMembers = (await this.discordGuild.members.fetch()).array();
     const guildConfig = await GuildConfig.fetch(this.discordGuild.id);
     const lang = gmLanguages.find((l) => l.code === guildConfig.lang) || gmLanguages.find((l) => l.code === "en");
-    const reserved = Array.isArray(this.reserved) ? this.reserved : this.reserved.replace(/@/g, "").split(/\r?\n/);
-    reserved.forEach((res: any, index) => {
-      if (Array.isArray(this.reserved)) {
-        var member = guildMembers.find((mem) => mem.user.tag.trim() === res.tag.trim() || mem.user.id === res.id);
-      } else {
-        if (res.trim().length === 0) return;
-        var member = guildMembers.find((mem) => mem.user.tag.trim() === res.trim());
-      }
+    const gcChannel = guildConfig.channel.find(c => c.channelId === this.c);
+    this.reserved.forEach((res, index) => {
+      var member = guildMembers.find((mem) => mem.user.tag.trim() === res.tag.trim() || mem.user.id === res.id);
 
       if (index + 1 === parseInt(this.players)) {
         const embed = new MessageEmbed();
 
-        embed.setColor(guildConfig.embedColor);
+        embed.setColor(gcChannel && gcChannel.embedColor ? gcChannel.embedColor : guildConfig.embedColor);
 
         let message = lang.messages.YOURE_IN;
         message = message.replace(
@@ -854,10 +864,7 @@ export class Game implements GameModel {
     try {
       if (this.dm && typeof this.dm === "string") {
         if (!guildMembers) guildMembers = await this.discordGuild.members.fetch();
-        const rsvp: RSVP = { tag: (<string>this.dm).trim() };
-        const member = guildMembers.array().find((m) => m.user.tag === (<string>this.dm).trim());
-        if (member) rsvp.id = member.user.id;
-        this.dm = rsvp;
+        this.dm = Game.updateDM(this.dm, guildMembers.array());
         updated = true;
       }
     } catch (err) {
@@ -866,17 +873,7 @@ export class Game implements GameModel {
     try {
       if (typeof this.reserved === "string") {
         if (!guildMembers) guildMembers = await this.discordGuild.members.fetch();
-        const rsvps: RSVP[] = [];
-        const reserved = this.reserved.split(/\r?\n/);
-        reserved.forEach((r) => {
-          const rsvp: RSVP = { tag: r.trim() };
-          const member = guildMembers.array().find((m) => m.user.tag === r.trim());
-          if (member) {
-            rsvp.id = member.user.id;
-          }
-          rsvps.push(rsvp);
-        });
-        this.reserved = rsvps.filter((r) => r.tag);
+        this.reserved = Game.updateReservedList(this.reserved, guildMembers.array());
         updated = true;
       }
     } catch (err) {
@@ -885,9 +882,9 @@ export class Game implements GameModel {
     if (updated && this._id) this.save();
   }
 
-  static updateReservedList(list: string, guildMembers: GuildMember[]) {
+  static updateReservedList(list: RSVP[] | string, guildMembers: GuildMember[]) {
     if (Array.isArray(list)) return list;
-    const rsvps: RSVP[] = [];
+    let rsvps: RSVP[] = [];
     const reserved = list.split(/\r?\n/);
     reserved.forEach((r) => {
       const rsvp: RSVP = { tag: r.trim() };
@@ -896,7 +893,37 @@ export class Game implements GameModel {
         rsvp.id = member.user.id;
       }
     });
+    rsvps = rsvps.filter((r) => r.tag);
     return rsvps;
+  }
+
+  static updateDM(dm: RSVP | string, guildMembers: GuildMember[]) {
+    if (typeof dm === "string") {
+      const rsvp: RSVP = { tag: dm.trim() };
+      const member = guildMembers.find((m) => m.user.tag === dm.trim());
+      if (member) {
+        rsvp.id = member.user.id;
+      }
+      return rsvp;
+    }
+    else {
+      return dm;
+    }
+  }
+
+  async signUp(user: User) {
+    if (!this.reserved.find((r) => r.id === user.id || r.tag == user.tag)) {
+      this.reserved.push({ id: user.id, tag: user.tag });
+      this.save();
+      this.dmCustomInstructions(user.tag);
+    }
+  }
+
+  async dropOut(user: User, guildConfig: GuildConfig) {
+    if (this.reserved.find((r) => r.tag === user.tag || r.id === user.id) && guildConfig.dropOut) {
+      this.reserved = this.reserved.filter((r) => r.tag && r.tag !== user.tag && !(r.id && r.id === user.id));
+      this.save();
+    }
   }
 }
 

@@ -1,4 +1,4 @@
-import { Client, GuildMember, Permissions, TextChannel, Guild, GuildChannel, Collection, RoleManager } from "discord.js";
+import discord, { Client, GuildMember, Permissions, TextChannel, Guild, GuildChannel, Collection, RoleManager, Role } from "discord.js";
 import express from "express";
 import moment from "moment";
 import request from "request";
@@ -8,7 +8,7 @@ import cloneDeep from "lodash/cloneDeep";
 import { io } from "../processes/socket";
 import { Game, GameMethod, RescheduleMode, GameWhen, MonthlyType, RSVP } from "../models/game";
 import { SiteSettings } from "../models/site-settings";
-import { GuildConfig } from "../models/guild-config";
+import { GuildConfig, ChannelConfig } from "../models/guild-config";
 import { Session } from "../models/session";
 import { User } from "../models/user";
 import config from "../models/config";
@@ -386,7 +386,6 @@ export default (options: APIRouteOptions) => {
         game = await Game.fetch(req.query.g);
         if (game) {
           server = game.s;
-          await game.updateReservedList();
         } else {
           throw new Error("Game not found");
         }
@@ -402,10 +401,14 @@ export default (options: APIRouteOptions) => {
           const guildConfig = await GuildConfig.fetch(guild.id);
           const guildMembers = await guild.members.fetch();
 
-          let gcChannels: string[] = guildConfig.channels;
+          let gcChannels: ChannelConfig[] = guildConfig.channels;
           const firstChannel = guild.channels.cache.find((gc) => gc.permissionsFor(guild.roles.everyone).has(Permissions.FLAGS.VIEW_CHANNEL));
-          if (firstChannel && gcChannels.length == 0) gcChannels.push(firstChannel.id);
-          const channels = gcChannels.filter((c) => guild.channels.cache.find((gc) => gc.id == c)).map((c) => guild.channels.cache.get(c));
+          if (firstChannel && gcChannels.length == 0) gcChannels.push({ channelId: firstChannel.id });
+          const channels = gcChannels
+            .map((c) => {
+              const channel = guild.channels.cache.get(c.channelId);
+              return { id: channel.id, name: channel.name };
+            });
 
           if (channels.length === 0) {
             throw new Error("Discord channel not found. Make sure your server has a text channel.");
@@ -423,15 +426,12 @@ export default (options: APIRouteOptions) => {
             where: "",
             reserved: "",
             description: "",
-            minPlayers: guildConfig.gameDefaults.minPlayers,
-            players: guildConfig.gameDefaults.maxPlayers,
             method: GameMethod.AUTOMATED,
             customSignup: "",
             when: GameWhen.DATETIME,
             date: req.query.date || "",
             time: req.query.time || "",
             timezone: "",
-            reminder: guildConfig.gameDefaults.reminder,
             hideDate: false,
             gameImage: "",
             frequency: "0",
@@ -463,10 +463,10 @@ export default (options: APIRouteOptions) => {
               dm:
                 game &&
                 !guildMembers.array().find((mem) => {
-                  return mem.user.tag === (<RSVP>game.dm).tag.trim().replace("@", "") || mem.user.id === (<RSVP>game.dm).id;
+                  return mem.user.tag === game.dm.tag.trim().replace("@", "") || mem.user.id === game.dm.id;
                 }),
               reserved: game
-                ? (<RSVP[]>game.reserved).filter((res) => {
+                ? game.reserved.filter((res) => {
                     if (res.tag.trim().length === 0) return false;
                     return !guildMembers.array().find((mem) => mem.user.tag === res.tag.trim() || mem.user.id === res.id);
                   })
@@ -518,10 +518,10 @@ export default (options: APIRouteOptions) => {
                 throw new Error("Game not found");
               }
             }
-      
+
             if (req.method === "POST") {
               // req.body.reserved = req.body.reserved.replace(/@/g, "");
-      
+
               if (req.body.copy) {
                 delete req.query.g;
                 delete req.body._id;
@@ -536,10 +536,10 @@ export default (options: APIRouteOptions) => {
             if (server) {
               let guild: Guild = client.guilds.cache.get(server);
               if (!guild) guild = client.guilds.resolve(server);
-      
+
               if (guild) {
                 let password: string;
-      
+
                 const guildConfig = await GuildConfig.fetch(guild.id);
                 const guildMembers = await guild.members.fetch();
                 const member = guildMembers.array().find((m) => m.id == result.account.user.id);
@@ -551,27 +551,32 @@ export default (options: APIRouteOptions) => {
                 if (guildConfig && member && member.user.tag !== config.author) {
                   password = guildConfig.password;
                   // A role is required to post on the server
-                  if (guildConfig.role && !isAdmin) {
+                  if (guildConfig.channels.find((c) => c.channelId === game.c && c.role) && !isAdmin) {
                     if (member) {
                       // User does not have the require role
-                      if (!member.roles.cache.find((r) => r.name.toLowerCase().trim() === guildConfig.role.toLowerCase().trim())) {
+                      const channelConfig = guildConfig.channels.find((c) => c.channelId === game.c && c.role);
+                      if (!member.roles.cache.find((r) => r.name.toLowerCase().trim() === channelConfig.role.toLowerCase().trim())) {
                         throw new Error("You are either not logged in or are missing the role required for posting on this server.");
                       }
                     }
                   }
                 }
 
-                if (!isAdmin && (<RSVP>game.dm).id !== result.account.user.id) {
+                if (!isAdmin && game.dm.id !== result.account.user.id) {
                   throw new Error("You are not the GM of this game.");
                 }
-      
-                await game.updateReservedList();
-      
-                let gcChannels: string[] = guildConfig.channels;
+
+                let gcChannels: ChannelConfig[] = guildConfig.channels;
                 const firstChannel = guild.channels.cache.find((gc) => gc.permissionsFor(guild.roles.everyone).has(Permissions.FLAGS.VIEW_CHANNEL));
-                if (firstChannel && gcChannels.length == 0) gcChannels.push(firstChannel.id);
-                const channels = gcChannels.filter((c) => guild.channels.cache.find((gc) => gc.id == c)).map((c) => guild.channels.cache.get(c));
-      
+                if (firstChannel && gcChannels.length == 0) gcChannels.push({ channelId: firstChannel.id });
+                const channels = gcChannels
+                  .filter((c) =>
+                    guild.channels.cache.find(
+                      (gc) => gc.id == c.channelId && (c.role ? !!member.roles.cache.find((r) => r.name.toLowerCase().trim() === c.role.toLowerCase().trim()) : true)
+                    )
+                  )
+                  .map((c) => guild.channels.cache.get(c.channelId));
+
                 if (channels.length === 0) {
                   throw new Error("Discord channel not found. Make sure your server has a text channel.");
                 }
@@ -588,15 +593,12 @@ export default (options: APIRouteOptions) => {
                   where: "",
                   reserved: "",
                   description: "",
-                  minPlayers: guildConfig.gameDefaults.minPlayers,
-                  players: guildConfig.gameDefaults.maxPlayers,
                   method: GameMethod.AUTOMATED,
                   customSignup: "",
                   when: GameWhen.DATETIME,
                   date: req.query.date || "",
                   time: req.query.time || "",
                   timezone: "",
-                  reminder: guildConfig.gameDefaults.reminder,
                   hideDate: false,
                   gameImage: "",
                   frequency: "",
@@ -625,36 +627,37 @@ export default (options: APIRouteOptions) => {
                     dm:
                       game &&
                       !guildMembers.array().find((mem) => {
-                        return mem.user.tag === (<RSVP>game.dm).tag.trim().replace("@", "") || mem.user.id === (<RSVP>game.dm).id;
+                        return mem.user.tag === game.dm.tag.trim().replace("@", "") || mem.user.id === game.dm.id;
                       }),
                     reserved: game
-                      ? (<RSVP[]>game.reserved).filter((res) => {
+                      ? game.reserved.filter((res) => {
                           if (res.tag.trim().length === 0) return false;
                           return !guildMembers.array().find((mem) => mem.user.tag === res.tag.trim() || mem.user.id === res.id);
                         })
                       : [],
                   },
                 };
-                
+
                 if (req.query.g) {
                   data = { ...data, ...game };
                 }
-      
+
                 if (req.method === "POST") {
-                  req.body.reserved = Game.updateReservedList(req.body.reserved, guildMembers.array());
                   data = Object.assign(data, req.body);
                 }
-      
+
                 if (req.method === "POST") {
                   Object.entries(req.body).forEach(([key, value]) => {
                     if (key === "_id") return;
                     if (typeof game[key] !== "undefined") game[key] = value;
                   });
-      
+
                   game.hideDate = req.body["hideDate"] ? true : false;
                   game.clearReservedOnRepeat = req.body["clearReservedOnRepeat"] ? true : false;
-      
-                  game
+
+                  const updatedGame = new Game(game.data);
+
+                  updatedGame
                     .save()
                     .then((response) => {
                       res.json({
@@ -684,7 +687,7 @@ export default (options: APIRouteOptions) => {
                     token: req.session.api.access.access_token,
                     game: data,
                     _id: data._id,
-                    code: 18
+                    code: 18,
                   });
                 }
               } else {
@@ -699,7 +702,7 @@ export default (options: APIRouteOptions) => {
               token: req.session.api.access.access_token,
               redirect: "/error",
               message: err.message || err,
-              code: 19
+              code: 19,
             });
           }
         })
@@ -748,34 +751,18 @@ export default (options: APIRouteOptions) => {
     try {
       if (req.body.g) {
         const game = await Game.fetch(req.body.g);
-        if (game) await game.updateReservedList();
         if (game) {
           fetchAccount(req.session.api.access, {
             client: client,
             ip: req.app.locals.ip,
           })
             .then(async (result: any) => {
-              // const reserved = game.reserved.split(/\r?\n/);
-              // if (reserved[0] == "") reserved.splice(0, 1);
-              // if (reserved.find((t) => t === result.account.user.tag)) {
-              //   reserved.splice(reserved.indexOf(result.account.user.tag), 1);
-              // } else {
-              //   reserved.push(result.account.user.tag);
-              //   await game.dmCustomInstructions(result.account.user.tag);
-              // }
-
-              // game.reserved = reserved.join("\n");
-
-              if (Array.isArray(game.reserved)) {
-                const index = game.reserved.findIndex((r) => r.id === result.account.user.id || r.tag === result.account.user.tag);
-                if (index >= 0) {
-                  game.reserved.splice(index, 1);
-                } else {
-                  game.reserved.push({ id: result.account.user.id, tag: result.account.user.tag });
-                }
+              if (game.reserved.find((r) => r.id === result.account.user.id || r.tag === result.account.user.tag)) {
+                await game.signUp(<discord.User>result.account.user);
+              } else {
+                const guildConfig = await GuildConfig.fetch(game.s);
+                await game.dropOut(<discord.User>result.account.user, guildConfig);
               }
-
-              await game.save();
 
               res.json({
                 status: "success",
@@ -951,7 +938,8 @@ interface AccountGuild {
   permission: boolean;
   isAdmin: boolean;
   member: GuildMember;
-  roles: RoleManager;
+  roles: Role[];
+  channelCategories: Collection<string, GuildChannel>,
   channels: Collection<string, GuildChannel>;
   announcementChannels: GuildChannel[];
   config: GuildConfig;
@@ -983,7 +971,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
               ...{
                 tag: tag,
                 avatarURL: `https://cdn.discordapp.com/avatars/${id}/${avatar}.png?size=128`,
-                settings: await User.fetch(id)
+                settings: await User.fetch(id),
               },
             },
             guilds: [],
@@ -998,12 +986,14 @@ const fetchAccount = (token: any, options: AccountOptions) => {
                 permission: false,
                 isAdmin: false,
                 member: null,
-                roles: guild.roles,
+                roles: guild.roles.cache.array(),
+                channelCategories: guild.channels.cache.filter((c) => c.type === "category"),
                 channels: guild.channels.cache.filter((c) => c instanceof TextChannel),
                 announcementChannels: [],
                 config: new GuildConfig({ guild: guild.id }),
-                games: []
+                games: [],
               };
+              // console.log(guild.channels.cache.filter(c => c instanceof TextChannel))
               guild.members.cache.forEach((member) => {
                 if (member.id === id) {
                   guildInfo.member = member;
@@ -1019,27 +1009,28 @@ const fetchAccount = (token: any, options: AccountOptions) => {
 
             account.guilds = account.guilds.filter((guild) => (!guild.config.hidden && !options.search) || config.author == tag);
 
-            const guildConfigs = await GuildConfig.fetchAllBy({
+            const gcQuery = {
               guild: {
                 $in: account.guilds.reduce((i, g) => {
                   i.push(g.id);
                   return i;
                 }, []),
               },
-            });
-
+            };
+            const guildConfigs = await GuildConfig.fetchAllBy(gcQuery);
+            
             account.guilds = account.guilds.map((guild: AccountGuild) => {
               const guildConfig = guildConfigs.find((gc) => gc.guild === guild.id) || new GuildConfig({ guild: guild.id });
               const member: GuildMember = guild.member;
-
-              let gcChannels: string[] = guildConfig.channels;
-              const firstChannel = guild.channels.find((gc) => gc.permissionsFor(guild.roles.everyone).has(Permissions.FLAGS.VIEW_CHANNEL));
-              if (firstChannel && guild.channels.array().length > 0 && (gcChannels.length == 0 || !guild.channels.find((gc) => !!gcChannels.find((c) => gc.id === c)))) {
-                gcChannels.push(firstChannel.id);
+              
+              let gcChannels: ChannelConfig[] = guildConfig.channels;
+              const firstChannel = guild.channels.find((gc) => gc.permissionsFor(member.guild.roles.everyone).has(Permissions.FLAGS.VIEW_CHANNEL));
+              if (firstChannel && guild.channels.array().length > 0 && (gcChannels.length == 0 || !guild.channels.find((gc) => !!gcChannels.find((c) => gc.id === c.channelId)))) {
+                gcChannels.push({ channelId: firstChannel.id });
               }
               const channels = gcChannels
-                .filter((c) => guild.channels.find((gc: GuildChannel) => gc.id == c && gc.permissionsFor(id).has(Permissions.FLAGS.VIEW_CHANNEL)))
-                .map((c) => guild.channels.find((gc: GuildChannel) => gc.id === c));
+                .filter((c) => guild.channels.find((gc: GuildChannel) => gc.id == c.channelId && gc.permissionsFor(id).has(Permissions.FLAGS.VIEW_CHANNEL)))
+                .map((c) => guild.channels.find((gc: GuildChannel) => gc.id === c.channelId));
               guild.announcementChannels = channels;
 
               if (member)
@@ -1049,7 +1040,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
                 );
               if (member)
                 guild.permission =
-                  guildConfig.role && !guild.isAdmin ? !!member.roles.cache.find((r) => r.name.toLowerCase().trim() === (guildConfig.role || "").toLowerCase().trim()) : true;
+                  guildConfig.role && !guild.isAdmin ? !!member.roles.cache.find((r) => !!guildConfig.channels.find(gcc => !gcc.role || gcc.role === r.name.toLowerCase().trim())) : true;
               guild.config = guildConfig;
               return guild;
             });
@@ -1136,9 +1127,9 @@ const fetchAccount = (token: any, options: AccountOptions) => {
                     from: moment(date).utcOffset(parseInt(game.timezone)).fromNow(),
                   };
 
-                  game.reserved = game.reserved.filter(r => r.tag);
+                  game.reserved = game.reserved.filter((r) => r.tag);
 
-                  game.slot = (Array.isArray(game.reserved) ? game.reserved : game.reserved.split(/\r?\n/g)).findIndex((t) => t.tag.replace("@", "") === tag || t.id === id) + 1;
+                  game.slot = game.reserved.findIndex((t) => t.tag.replace("@", "") === tag || t.id === id) + 1;
                   game.signedup = game.slot > 0 && game.slot <= parseInt(game.players);
                   game.waitlisted = game.slot > parseInt(game.players);
 
