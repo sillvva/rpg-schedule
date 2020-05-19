@@ -920,6 +920,7 @@ enum GamesPages {
   MyGames = "my-games",
   Calendar = "calendar",
   Server = "server",
+  PastEvents = "past-events"
 }
 
 interface AccountOptions {
@@ -1107,6 +1108,12 @@ const fetchAccount = (token: any, options: AccountOptions) => {
               if (options.page === GamesPages.Calendar) {
                 gameOptions.timestamp = {
                   $gt: new Date().getTime(),
+                };
+              }
+
+              if (options.page === GamesPages.PastEvents) {
+                gameOptions.timestamp = {
+                  $lt: new Date().getTime()
                 };
               }
 

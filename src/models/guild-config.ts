@@ -23,6 +23,8 @@ export interface GuildConfigModel {
   guild?: string;
   channel?: ChannelConfig[];
   pruning?: boolean;
+  pruneIntEvents?: number;
+  pruneIntDiscord?: number;
   embeds?: boolean;
   embedColor?: string;
   embedMentions?: boolean;
@@ -48,6 +50,8 @@ export class GuildConfig implements GuildConfigDataModel {
   guild: string = null;
   channel: ChannelConfig[] = [];
   pruning: boolean = false;
+  pruneIntEvents: number = 2;
+  pruneIntDiscord: number = 2;
   embeds: boolean = true;
   embedColor: string = "#2196f3";
   embedMentions: boolean = false;
@@ -143,6 +147,8 @@ export class GuildConfig implements GuildConfigDataModel {
       guild: this.guild,
       channel: this.channel,
       pruning: this.pruning,
+      pruneIntEvents: this.pruneIntEvents,
+      pruneIntDiscord: this.pruneIntDiscord,
       embeds: this.embeds,
       embedColor: this.embedColor,
       embedMentions: this.embedMentions,

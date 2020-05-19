@@ -1,14 +1,12 @@
 import discord, { TextChannel, Client, Message, UserResolvable, User, GuildChannel, MessageEmbed } from "discord.js";
-import { DeleteWriteOpResultObject, FilterQuery } from "mongodb";
+import { DeleteWriteOpResultObject, FilterQuery, ObjectId, UpdateWriteOpResult } from "mongodb";
 import { Express } from "express";
 
 import { io } from "../processes/socket";
 import { GuildConfig, GuildConfigModel } from "../models/guild-config";
-import { Game, RSVP, GameMethod, gameReminderOptions } from "../models/game";
+import { Game, GameMethod, gameReminderOptions } from "../models/game";
 import config from "../models/config";
 import aux from "../appaux";
-
-const pruneInterval = 48 * 3600 * 1000;
 
 let client: Client;
 let isReady = false;
@@ -205,8 +203,11 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
               if (params[0]) {
                 const channel: string = params[0].replace(/\<\#|\>/g, "");
                 const channels = guildConfig.channels;
-                if (channels.find(c => c.channelId === channel)) {
-                  channels.splice(channels.findIndex(c => c.channelId === channel), 1);
+                if (channels.find((c) => c.channelId === channel)) {
+                  channels.splice(
+                    channels.findIndex((c) => c.channelId === channel),
+                    1
+                  );
                 }
                 guildConfig
                   .save({
@@ -413,13 +414,12 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
                 return;
               }
               const save: GuildConfigModel = {};
-              if (guildConfig.channel.find(c => c.channelId === message.channel.id)) {
-                save.channel = guildConfig.channel.map(c => {
+              if (guildConfig.channel.find((c) => c.channelId === message.channel.id)) {
+                save.channel = guildConfig.channel.map((c) => {
                   if (c.channelId === message.channel.id) c.embedColor = "#" + color.match(/[0-9a-f]{3}|[0-9a-f]{6}/i)[0];
                   return c;
                 });
-              }
-              else {
+              } else {
                 save.embedColor = "#" + color.match(/[0-9a-f]{3}|[0-9a-f]{6}/i)[0];
               }
               guildConfig
@@ -537,17 +537,16 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
               }
               if (mentioned) {
                 const roleId = mentioned[0];
-                const role = guild.roles.cache.array().find(r => r.id === roleId);
+                const role = guild.roles.cache.array().find((r) => r.id === roleId);
                 if (role) roleName = role.name;
               }
               const save: GuildConfigModel = {};
-              if (guildConfig.channel.find(c => c.channelId === message.channel.id)) {
-                save.channel = guildConfig.channel.map(c => {
+              if (guildConfig.channel.find((c) => c.channelId === message.channel.id)) {
+                save.channel = guildConfig.channel.map((c) => {
                   if (c.channelId === message.channel.id) c.role = roleName == "" ? null : roleName;
                   return c;
                 });
-              }
-              else {
+              } else {
                 save.role = roleName == "" ? null : roleName;
               }
               guildConfig
@@ -563,7 +562,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
               let roleName = params.join(" ");
               if (mentioned) {
                 const roleId = mentioned[0];
-                const role = guild.roles.cache.array().find(r => r.id === roleId);
+                const role = guild.roles.cache.array().find((r) => r.id === roleId);
                 if (role) roleName = role.name;
               }
               guildConfig
@@ -660,14 +659,20 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
    * Delete the game from the database when the announcement message is deleted
    */
   client.on("messageDelete", async (message) => {
-    if (new Date().getTime() - message.createdTimestamp >= pruneInterval && message.author.id === client.user.id) return;
-    const game = await Game.fetchBy("messageId", message.id);
-    if (game && message.channel instanceof TextChannel) {
-      if (process.env.LOCALENV && message.channel.guild.id != "532564186023329792") return;
-      game.delete().then((result) => {
-        aux.log("Game deleted");
-      });
-    }
+    if (message.author.id !== client.user.id) return;
+    const games = await Game.fetchAllBy({
+      messageId: message.id,
+      pruned: {
+        $in: [false, null],
+      },
+    });
+    games.forEach((game) => {
+      if (game && message.channel instanceof TextChannel) {
+        game.delete().then((result) => {
+          aux.log("Game deleted");
+        });
+      }
+    });
   });
 
   /**
@@ -678,8 +683,11 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
     const channelId = channel.id;
     const guildId = channel.guild.id;
     const guildConfig = await GuildConfig.fetch(guildId);
-    if (guildConfig.channels.find(c => c.channelId === channelId)) {
-      guildConfig.channel.splice(guildConfig.channel.findIndex(c => c.channelId === channelId), 1);
+    if (guildConfig.channels.find((c) => c.channelId === channelId)) {
+      guildConfig.channel.splice(
+        guildConfig.channel.findIndex((c) => c.channelId === channelId),
+        1
+      );
       await guildConfig.save();
 
       const games = await Game.fetchAllBy({
@@ -804,9 +812,10 @@ const rescheduleOldGames = async (guildId?: string) => {
     };
 
     if (guildId) query.s = guildId;
-    else query.s = {
-      $in: client.guilds.cache.array().map(g => g.id)
-    };
+    else
+      query.s = {
+        $in: client.guilds.cache.array().map((g) => g.id),
+      };
 
     let games = await Game.fetchAllBy(query);
     if (games.length > 0) aux.log(`Found ${games.length} games scheduled before now`);
@@ -856,16 +865,11 @@ const pruneOldGames = async (guild?: discord.Guild) => {
     aux.log(`Pruning old games for ${guild ? `${guild.name} server` : "all servers"}`);
     const query: FilterQuery<any> = {
       timestamp: {
-        $lt: new Date().getTime() - pruneInterval,
+        $lt: new Date().getTime() - 48 * 3600 * 1000,
       },
-      $or: [
-        {
-          hideDate: false
-        },
-        {
-          hideDate: null
-        }
-      ]
+      hideDate: {
+        $in: [false, null],
+      },
     };
 
     if (guild) {
@@ -886,17 +890,26 @@ const pruneOldGames = async (guild?: discord.Guild) => {
           },
     });
     const gameChannelMessages: { guild: string; channel: string; message: string }[] = [];
+    const prunedIds = [];
+    const deletedIds = [];
     for (let i = 0; i < games.length; i++) {
       let game = games[i];
       if (!game.discordGuild) continue;
       if (guild && game.discordGuild.id !== guild.id) continue;
-
-      io().emit("game", { action: "deleted", gameId: game._id });
-
+      
       try {
         const guildConfig = guildConfigs.find((gc) => gc.guild === game.s);
-        if ((guildConfig || new GuildConfig()).pruning && game.discordChannel) {
+
+        if ((guildConfig || new GuildConfig()).pruning && !game.pruned && game.discordChannel && new Date().getTime() - game.timestamp >= guildConfig.pruneIntDiscord * 24 * 3600 * 1000) {
           if (game.messageId) {
+            if (guildConfig.pruneIntDiscord < guildConfig.pruneIntEvents && new Date().getTime() - game.timestamp < guildConfig.pruneIntEvents * 24 * 3600 * 1000) {
+              prunedIds.push(game._id);
+              io().emit("game", { action: "pruned", gameId: game._id });
+            }
+            else {
+              deletedIds.push(game._id);
+              io().emit("game", { action: "deleted", gameId: game._id });
+            }
             gameChannelMessages.push({ guild: game.s, channel: game.c, message: game.messageId });
           }
           if (game.reminderMessageId) {
@@ -904,18 +917,48 @@ const pruneOldGames = async (guild?: discord.Guild) => {
           }
           if (game.pm) {
             const m = game.discordGuild.members.cache.find((m) => m.user.tag === game.dm.tag || m.user.id === game.dm.id);
-            if (m) {
+            if (m && m.user.dmChannel) {
               const msg = m.user.dmChannel.messages.resolve(game.pm);
               if (msg) await msg.delete();
             }
           }
+        }
+        else if (new Date().getTime() - game.timestamp >= guildConfig.pruneIntEvents * 24 * 3600 * 1000) {
+          deletedIds.push(game._id);
+          io().emit("game", { action: "deleted", gameId: game._id });
         }
       } catch (err) {
         aux.log("MessagePruningError:", err);
       }
     }
 
-    result = await Game.deleteAllBy(query);
+    const updateResult = await Game.updateAllBy(
+      {
+        ...query,
+        pruned: {
+          $in: [false, null],
+        },
+        _id: {
+          $in: prunedIds.map((pid) => new ObjectId(pid)),
+        },
+      },
+      {
+        $set: {
+          pruned: true,
+          messageId: null,
+          reminderMessageId: null,
+          pm: null
+        },
+      }
+    );
+    if ((<UpdateWriteOpResult>updateResult).modifiedCount > 0) aux.log(`${(<UpdateWriteOpResult>updateResult).modifiedCount} old game(s) pruned from Discord only`);
+
+    result = await Game.deleteAllBy({
+      ...query,
+      _id: {
+        $in: deletedIds.map((pid) => new ObjectId(pid)),
+      }
+    });
     if (result.deletedCount > 0) aux.log(`${result.deletedCount} old game(s) successfully pruned`);
 
     let count = 0;
@@ -923,14 +966,20 @@ const pruneOldGames = async (guild?: discord.Guild) => {
     for (let gci = 0; gci < guildConfigs.length; gci++) {
       const gc = guildConfigs[gci];
       const guild = client.guilds.cache.find((g) => g.id === gc.guild);
-      const channels = <TextChannel[]>guild.channels.cache.array().filter((c) => gc.channels.find(gcc => gcc.channelId === c.id) && c instanceof TextChannel);
+      const channels = <TextChannel[]>guild.channels.cache.array().filter((c) => gc.channels.find((gcc) => gcc.channelId === c.id) && c instanceof TextChannel);
       for (let ci = 0; ci < channels.length; ci++) {
         const c = channels[ci];
         const messages = await c.messages.fetch({ limit: 100 });
         if (messages.size === 0) continue;
         const clientMessages = messages
           .array()
-          .filter((m) => m.embeds.filter((e) => new Date().getTime() - e.timestamp >= pruneInterval).length > 0 && m.author.id === client.user.id && m.deletable && !m.deleted);
+          .filter(
+            (m) =>
+              m.embeds.filter((e) => new Date().getTime() - e.timestamp >= gc.pruneIntDiscord * 24 * 3600 * 1000).length > 0 &&
+              m.author.id === client.user.id &&
+              m.deletable &&
+              !m.deleted
+          );
         for (let i = 0; i < gameChannelMessages.length; i++) {
           const msg = gameChannelMessages[i];
           if (guild.id === msg.guild && c.id === msg.channel && !clientMessages.find((cm) => cm.id === msg.message)) {
@@ -978,14 +1027,9 @@ const postReminders = async (app: Express) => {
         $or: remExprs,
       },
       {
-        $or: [
-          {
-            reminded: null,
-          },
-          {
-            reminded: false,
-          },
-        ],
+        reminded: {
+          $in: [false, null]
+        },
       },
     ],
   };
@@ -1009,7 +1053,7 @@ const postReminders = async (app: Express) => {
         const guildMembers = await game.discordGuild.members.fetch();
 
         var where = game.where;
-        game.reserved.forEach(rsvp => {
+        game.reserved.forEach((rsvp) => {
           if (rsvp.tag.length === 0) return;
           let member = guildMembers.array().find((mem) => mem.user.tag === rsvp.tag.replace("@", "") || rsvp.id === member.user.id);
 
@@ -1063,7 +1107,7 @@ const postReminders = async (app: Express) => {
       const siUnit = parseInt(reminder) > 60 ? "HOURS" : "MINUTES";
       const siLabel = lang.game[`STARTING_IN_${siUnit}`].replace(`:${siUnit}`, parseInt(reminder) / (parseInt(reminder) > 60 ? 60 : 1));
 
-      const gcChannel = guildConfig.channel.find(c => c.channelId === game.c);
+      const gcChannel = guildConfig.channel.find((c) => c.channelId === game.c);
 
       if (guildConfig.privateReminders) {
         try {

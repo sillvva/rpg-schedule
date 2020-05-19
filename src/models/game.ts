@@ -1,4 +1,4 @@
-import mongodb, { ObjectID } from "mongodb";
+import mongodb, { ObjectID, connect } from "mongodb";
 import discord, { Message, Guild, TextChannel, MessageEmbed, GuildMember, Collection, User } from "discord.js";
 import moment from "moment";
 import "moment-recur-ts";
@@ -95,6 +95,7 @@ export interface GameModel {
   clearReservedOnRepeat: boolean;
   rescheduled: boolean;
   sequence: number;
+  pruned?: boolean;
 }
 
 interface GameSaveData {
@@ -151,6 +152,7 @@ export class Game implements GameModel {
   clearReservedOnRepeat: boolean = false;
   rescheduled: boolean = false;
   sequence: number = 1;
+  pruned: boolean = false;
 
   constructor(game: GameModel) {
     let guildMembers: GuildMember[] = [];
@@ -237,6 +239,7 @@ export class Game implements GameModel {
       clearReservedOnRepeat: this.clearReservedOnRepeat,
       rescheduled: this.rescheduled,
       sequence: this.sequence,
+      pruned: this.pruned
     };
   }
 
@@ -588,6 +591,16 @@ export class Game implements GameModel {
       return null;
     }
     return await connection().collection(collection).deleteMany(query);
+  }
+
+  static async updateAllBy(query: mongodb.FilterQuery<any>, update: any) {
+    if (!connection()) {
+      aux.log("No database connection");
+      return [];
+    }
+    return await connection().collection(collection).updateMany(query, update, {
+      upsert: false
+    });
   }
 
   public getWeekdays() {
