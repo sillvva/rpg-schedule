@@ -96,6 +96,8 @@ export interface GameModel {
   rescheduled: boolean;
   sequence: number;
   pruned?: boolean;
+  createdTimestamp: number;
+  updatedTimestamp: number;
 }
 
 interface GameSaveData {
@@ -153,6 +155,8 @@ export class Game implements GameModel {
   rescheduled: boolean = false;
   sequence: number = 1;
   pruned: boolean = false;
+  createdTimestamp: number;
+  updatedTimestamp: number;
 
   constructor(game: GameModel) {
     let guildMembers: GuildMember[] = [];
@@ -190,6 +194,19 @@ export class Game implements GameModel {
       }
       else this[key] = value;
     }
+
+    const d = new Date();
+    d.setDate(d.getDate() - 2);
+    if (!this.createdTimestamp) {
+      this.createdTimestamp = d.getTime();
+      if (this.messageId && this._channel) {
+        const msg = this._channel.messages.resolve(this.messageId);
+        if (msg) {
+          this.createdTimestamp = msg.createdTimestamp;
+        }
+      }
+    }
+    if (!this.updatedTimestamp) this.updatedTimestamp = this.createdTimestamp;
   }
 
   private _guild: Guild;
@@ -239,7 +256,9 @@ export class Game implements GameModel {
       clearReservedOnRepeat: this.clearReservedOnRepeat,
       rescheduled: this.rescheduled,
       sequence: this.sequence,
-      pruned: this.pruned
+      pruned: this.pruned,
+      createdTimestamp: this.createdTimestamp,
+      updatedTimestamp: this.updatedTimestamp
     };
   }
 
@@ -409,6 +428,7 @@ export class Game implements GameModel {
         const gameData = cloneDeep(game);
         delete gameData._id;
 
+        gameData.updatedTimestamp = new Date().getTime();
         const updated = await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: gameData });
         let message: Message | Collection<string, Message>;
         try {
@@ -454,6 +474,8 @@ export class Game implements GameModel {
         };
         return saved;
       } else {
+        game.createdTimestamp = new Date().getTime();
+        game.updatedTimestamp = new Date().getTime();
         const inserted = await dbCollection.insertOne(game);
         let message: Message;
         let gcUpdated = false;
