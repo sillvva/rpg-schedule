@@ -757,7 +757,7 @@ export default (options: APIRouteOptions) => {
             ip: req.app.locals.ip,
           })
             .then(async (result: any) => {
-              if (game.reserved.find((r) => r.id === result.account.user.id || r.tag === result.account.user.tag)) {
+              if (!game.reserved.find((r) => r.id === result.account.user.id || r.tag === result.account.user.tag)) {
                 await game.signUp(<discord.User>result.account.user);
               } else {
                 const guildConfig = await GuildConfig.fetch(game.s);
