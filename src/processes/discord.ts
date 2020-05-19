@@ -722,7 +722,23 @@ const pruneOldGames = async (guild?: discord.Guild) => {
       timestamp: {
         $lt: new Date().getTime() - 48 * 3600 * 1000,
       },
+      $or: [
+        {
+          hideDate: false
+        },
+        {
+          hideDate: null
+        }
+      ]
     };
+
+    if (guild) {
+      query.s = guild.id;
+    } else {
+      query.s = {
+        $in: client.guilds.cache.array().map((g) => g.id),
+      };
+    }
 
     let games = await Game.fetchAllBy(query);
     games = games.filter((game) => client.guilds.cache.array().find((g) => g.id === game.s));
