@@ -7,7 +7,7 @@ import db from "../db";
 import aux from "../appaux";
 import { discordClient } from "../processes/discord";
 import { io } from "../processes/socket";
-import { GuildConfig } from "./guild-config";
+import { GuildConfig, GameTemplate } from "./guild-config";
 import config from "./config";
 import cloneDeep from "lodash/cloneDeep";
 
@@ -65,6 +65,7 @@ export interface GameModel {
   c: string;
   guild: string;
   channel: string;
+  template: string | number | ObjectID;
   adventure: string;
   runtime: string;
   minPlayers: string;
@@ -124,6 +125,7 @@ export class Game implements GameModel {
   c: string;
   guild: string;
   channel: string;
+  template: string | number | ObjectID;
   adventure: string;
   runtime: string;
   minPlayers: string;
@@ -226,6 +228,7 @@ export class Game implements GameModel {
       c: this.c,
       guild: this.guild,
       channel: this.channel,
+      template: this.template,
       adventure: this.adventure,
       runtime: this.runtime,
       minPlayers: this.minPlayers,
@@ -283,6 +286,9 @@ export class Game implements GameModel {
 
       const lang = gmLanguages.find((l) => l.code === guildConfig.lang) || gmLanguages.find((l) => l.code === "en");
       const guildMembers = (await guild.members.fetch()).array();
+
+      if (!game.template) game.template = (guildConfig.gameTemplates.find(gt => gt.isDefault) || guildConfig.gameTemplates[0]).id;
+      const gameTemplate = guildConfig.gameTemplates.find(gt => gt.id === game.template);
 
       moment.locale(lang.code);
 
@@ -379,13 +385,11 @@ export class Game implements GameModel {
         game.gameImage = "";
       }
 
-      const gcChannel = guildConfig.channel.find(c => c.channelId === game.c);
-
       let embed: MessageEmbed;
       if (guildConfig.embeds === false) {
         if (game && game.gameImage && game.gameImage.trim().length > 0) {
           embed = new discord.MessageEmbed();
-          embed.setColor(gcChannel && gcChannel.embedColor ? gcChannel.embedColor : guildConfig.embedColor);
+          embed.setColor(gameTemplate && gameTemplate.embedColor ? gameTemplate.embedColor : guildConfig.embedColor);
           embed.setImage(game.gameImage.trim().substr(0, 2048));
         }
       } else {
@@ -393,7 +397,7 @@ export class Game implements GameModel {
 
         msg = "";
         embed = new discord.MessageEmbed();
-        embed.setColor(gcChannel && gcChannel.embedColor ? gcChannel.embedColor : guildConfig.embedColor);
+        embed.setColor(gameTemplate && gameTemplate.embedColor ? gameTemplate.embedColor : guildConfig.embedColor);
         embed.setTitle(game.adventure);
         embed.setAuthor(dm, dmmember && dmmember.user.avatarURL() && urlRegex.test(dmmember.user.avatarURL()) ? dmmember.user.avatarURL().substr(0, 2048) : null);
         if (dmmember && dmmember.user.avatarURL() && urlRegex.test(dmmember.user.avatarURL())) embed.setThumbnail(dmmember.user.avatarURL().substr(0, 2048));
@@ -520,7 +524,7 @@ export class Game implements GameModel {
           if (dmmember) {
             try {
               const dmEmbed = new MessageEmbed();
-              dmEmbed.setColor(gcChannel && gcChannel.embedColor ? gcChannel.embedColor : guildConfig.embedColor);
+              dmEmbed.setColor(gameTemplate && gameTemplate.embedColor ? gameTemplate.embedColor : guildConfig.embedColor);
               dmEmbed.setTitle(lang.buttons.EDIT_GAME);
               dmEmbed.setURL(host + config.urls.game.create.path + "?g=" + inserted.insertedId);
               dmEmbed.addField(lang.game.SERVER, guild.name, true);
@@ -775,7 +779,8 @@ export class Game implements GameModel {
       const guildConfig = await GuildConfig.fetch(guild.id);
       const dmmember = guildMembers.array().find((m) => m.user.tag === this.dm.tag.trim() || m.user.id === this.dm.id);
       const member = guildMembers.array().find((m) => m.user.tag === tag.trim());
-      const gcChannel = guildConfig.channel.find(c => c.channelId === this.c);
+      if (!this.template) this.template = (guildConfig.gameTemplates.find(gt => gt.isDefault) || guildConfig.gameTemplates[0]).id;
+      const gameTemplate = guildConfig.gameTemplates.find(gt => gt.id === this.template);
 
       if (member) {
         const lang = gmLanguages.find((l) => l.code === guildConfig.lang) || gmLanguages.find((l) => l.code === "en");
@@ -790,7 +795,7 @@ export class Game implements GameModel {
         dmEmbed.setDescription(
           `**[${this.adventure}](https://discordapp.com/channels/${this.discordGuild.id}/${this.discordChannel.id}/${this.messageId})**\n${this.customSignup}${waitlisted}`
         );
-        dmEmbed.setColor(gcChannel && gcChannel.embedColor ? gcChannel.embedColor : guildConfig.embedColor);
+        dmEmbed.setColor(gameTemplate && gameTemplate.embedColor ? gameTemplate.embedColor : guildConfig.embedColor);
 
         member.send(`${lang.messages.DM_INSTRUCTIONS.replace(":DM", (dmmember || this.dm).toString()).replace(" :EVENT", ``)}:`, {
           embed: dmEmbed,
@@ -808,14 +813,16 @@ export class Game implements GameModel {
     const guildMembers = (await this.discordGuild.members.fetch()).array();
     const guildConfig = await GuildConfig.fetch(this.discordGuild.id);
     const lang = gmLanguages.find((l) => l.code === guildConfig.lang) || gmLanguages.find((l) => l.code === "en");
-    const gcChannel = guildConfig.channel.find(c => c.channelId === this.c);
+    if (!this.template) this.template = (guildConfig.gameTemplates.find(gt => gt.isDefault) || guildConfig.gameTemplates[0]).id;
+    const gameTemplate = guildConfig.gameTemplates.find(gt => gt.id === this.template);
+
     this.reserved.forEach((res, index) => {
       var member = guildMembers.find((mem) => mem.user.tag.trim() === res.tag.trim() || mem.user.id === res.id);
 
       if (index + 1 === parseInt(this.players)) {
         const embed = new MessageEmbed();
 
-        embed.setColor(gcChannel && gcChannel.embedColor ? gcChannel.embedColor : guildConfig.embedColor);
+        embed.setColor(gameTemplate && gameTemplate.embedColor ? gameTemplate.embedColor : guildConfig.embedColor);
 
         let message = lang.messages.YOURE_IN;
         message = message.replace(

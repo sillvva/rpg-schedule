@@ -113,6 +113,14 @@ const parseTimeZoneISO = (timezone: number) => {
   return zeroPad(hours, 2) + zeroPad(minutes, 2);
 };
 
+const colorFixer = (color: string, defaultColor: string = "#2196f3") => {
+  if (/^#?([0-9abcdef]{4})$/i.test((color || "").trim())) color = color.slice(0, 4);
+  if (/^#?([0-9abcdef]{8})$/i.test((color || "").trim())) color = color.slice(0, 7);
+  if (!/^#?([0-9abcdef]{3}|[0-9abcdef]{6})$/i.test(color || "")) return defaultColor;
+  if (!color.startsWith("#")) color = "#" + color;
+  return color;
+};
+
 interface Event {
   name: string;
   location?: string;
@@ -152,7 +160,7 @@ const parseEventTimes = (event: GameModel, options: EventTimeOptions = {}) => {
   const days = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
   const weekdays = event.weekdays.map((w, i) => w && days[i]).filter((w) => w);
   if (weekdays.length === 0) weekdays.push(days[moment(event.date).weekday()]);
-  
+
   if (event.frequency == 1) {
     googleCalExtras.push(`&recur=RRULE:FREQ=DAILY`);
   }
@@ -214,5 +222,6 @@ export default {
   timer: timer,
   isEmoji: isEmoji,
   log: log,
-  patreonPledges: patreonPledges
+  patreonPledges: patreonPledges,
+  colorFixer: colorFixer,
 };

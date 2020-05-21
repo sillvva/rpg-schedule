@@ -1,4 +1,4 @@
-import discord, { Client, GuildMember, Permissions, TextChannel, Guild, GuildChannel, Collection, RoleManager, Role } from "discord.js";
+import discord, { Client, GuildMember, Permissions, TextChannel, Guild, GuildChannel, Collection, Role } from "discord.js";
 import express from "express";
 import moment from "moment";
 import request from "request";
@@ -6,14 +6,13 @@ import merge from "lodash/merge";
 import cloneDeep from "lodash/cloneDeep";
 
 import { io } from "../processes/socket";
-import { Game, GameMethod, RescheduleMode, GameWhen, MonthlyType, RSVP } from "../models/game";
+import { Game, GameMethod, RescheduleMode, GameWhen, MonthlyType } from "../models/game";
 import { SiteSettings } from "../models/site-settings";
 import { GuildConfig, ChannelConfig } from "../models/guild-config";
 import { Session } from "../models/session";
 import { User } from "../models/user";
 import config from "../models/config";
 import aux from "../appaux";
-import game from "./game";
 
 interface APIRouteOptions {
   client: Client;
@@ -403,12 +402,11 @@ export default (options: APIRouteOptions) => {
 
           let gcChannels: ChannelConfig[] = guildConfig.channels;
           const firstChannel = guild.channels.cache.find((gc) => gc.permissionsFor(guild.roles.everyone).has(Permissions.FLAGS.VIEW_CHANNEL));
-          if (firstChannel && gcChannels.length == 0) gcChannels.push({ channelId: firstChannel.id });
-          const channels = gcChannels
-            .map((c) => {
-              const channel = guild.channels.cache.get(c.channelId);
-              return { id: channel.id, name: channel.name };
-            });
+          if (firstChannel && gcChannels.length == 0) gcChannels.push({ channelId: firstChannel.id, gameTemplates: [guildConfig.defaultGameTemplate.id] });
+          const channels = gcChannels.map((c) => {
+            const channel = guild.channels.cache.get(c.channelId);
+            return { id: channel.id, name: channel.name };
+          });
 
           if (channels.length === 0) {
             throw new Error("Discord channel not found. Make sure your server has a text channel.");
@@ -548,14 +546,21 @@ export default (options: APIRouteOptions) => {
                   member &&
                   (member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) ||
                     member.roles.cache.find((r) => r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim()));
+                const gcChannel = guildConfig.channel.find((gcc) => gcc.channelId === game.c) || { channelId: game.c, gameTemplates: [guildConfig.defaultGameTemplate.id] };
+                if (!game.template)
+                  game.template = (
+                    guildConfig.gameTemplates.find((gt) => gt.id === gcChannel.gameTemplates[0]) ||
+                    guildConfig.gameTemplates.find((gt) => gt.isDefault) ||
+                    guildConfig.gameTemplates[0]
+                  ).id;
+                const gameTemplate = guildConfig.gameTemplates.find((gt) => gt.id === game.template);
                 if (guildConfig && member && member.user.tag !== config.author) {
                   password = guildConfig.password;
                   // A role is required to post on the server
-                  if (guildConfig.channels.find((c) => c.channelId === game.c && c.role) && !isAdmin) {
+                  if (gameTemplate.role && !isAdmin) {
                     if (member) {
                       // User does not have the require role
-                      const channelConfig = guildConfig.channels.find((c) => c.channelId === game.c && c.role);
-                      if (!member.roles.cache.find((r) => r.name.toLowerCase().trim() === channelConfig.role.toLowerCase().trim())) {
+                      if (!member.roles.cache.find((r) => r.name.toLowerCase().trim() === gameTemplate.role.toLowerCase().trim())) {
                         throw new Error("You are either not logged in or are missing the role required for posting on this server.");
                       }
                     }
@@ -568,14 +573,8 @@ export default (options: APIRouteOptions) => {
 
                 let gcChannels: ChannelConfig[] = guildConfig.channels;
                 const firstChannel = guild.channels.cache.find((gc) => gc.permissionsFor(guild.roles.everyone).has(Permissions.FLAGS.VIEW_CHANNEL));
-                if (firstChannel && gcChannels.length == 0) gcChannels.push({ channelId: firstChannel.id });
-                const channels = gcChannels
-                  .filter((c) =>
-                    guild.channels.cache.find(
-                      (gc) => gc.id == c.channelId && (c.role ? !!member.roles.cache.find((r) => r.name.toLowerCase().trim() === c.role.toLowerCase().trim()) : true)
-                    )
-                  )
-                  .map((c) => guild.channels.cache.get(c.channelId));
+                if (firstChannel && gcChannels.length == 0) gcChannels.push({ channelId: firstChannel.id, gameTemplates: [guildConfig.defaultGameTemplate.id] });
+                const channels = gcChannels.filter((c) => guildConfig.memberHasPermission(member, c.channelId) || isAdmin).map((c) => guild.channels.cache.get(c.channelId));
 
                 if (channels.length === 0) {
                   throw new Error("Discord channel not found. Make sure your server has a text channel.");
@@ -920,7 +919,7 @@ enum GamesPages {
   MyGames = "my-games",
   Calendar = "calendar",
   Server = "server",
-  PastEvents = "past-events"
+  PastEvents = "past-events",
 }
 
 interface AccountOptions {
@@ -940,7 +939,8 @@ interface AccountGuild {
   isAdmin: boolean;
   member: GuildMember;
   roles: Role[];
-  channelCategories: Collection<string, GuildChannel>,
+  userRoles: string[];
+  channelCategories: Collection<string, GuildChannel>;
   channels: Collection<string, GuildChannel>;
   announcementChannels: GuildChannel[];
   config: GuildConfig;
@@ -988,6 +988,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
                 isAdmin: false,
                 member: null,
                 roles: guild.roles.cache.array(),
+                userRoles: [],
                 channelCategories: guild.channels.cache.filter((c) => c.type === "category"),
                 channels: guild.channels.cache.filter((c) => c instanceof TextChannel),
                 announcementChannels: [],
@@ -1019,29 +1020,31 @@ const fetchAccount = (token: any, options: AccountOptions) => {
               },
             };
             const guildConfigs = await GuildConfig.fetchAllBy(gcQuery);
-            
+
             account.guilds = account.guilds.map((guild: AccountGuild) => {
               const guildConfig = guildConfigs.find((gc) => gc.guild === guild.id) || new GuildConfig({ guild: guild.id });
               const member: GuildMember = guild.member;
-              
+
               let gcChannels: ChannelConfig[] = guildConfig.channels;
               const firstChannel = guild.channels.find((gc) => gc.permissionsFor(member.guild.roles.everyone).has(Permissions.FLAGS.VIEW_CHANNEL));
               if (firstChannel && guild.channels.array().length > 0 && (gcChannels.length == 0 || !guild.channels.find((gc) => !!gcChannels.find((c) => gc.id === c.channelId)))) {
-                gcChannels.push({ channelId: firstChannel.id });
+                gcChannels.push({ channelId: firstChannel.id, gameTemplates: [guildConfig.defaultGameTemplate.id] });
               }
               const channels = gcChannels
                 .filter((c) => guild.channels.find((gc: GuildChannel) => gc.id == c.channelId && gc.permissionsFor(id).has(Permissions.FLAGS.VIEW_CHANNEL)))
+                .filter((c) => !!guildConfig.memberHasPermission(member, c.channelId))
                 .map((c) => guild.channels.find((gc: GuildChannel) => gc.id === c.channelId));
               guild.announcementChannels = channels;
+
+              if (member) 
+                guild.userRoles = guild.roles.filter(r => member.roles.cache.array().find(mr => mr.id === r.id)).map(r => r.name);
 
               if (member)
                 guild.isAdmin = !!(
                   member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) ||
                   member.roles.cache.find((r) => r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim())
                 );
-              if (member)
-                guild.permission =
-                  guildConfig.role && !guild.isAdmin ? !!member.roles.cache.find((r) => !!guildConfig.channels.find(gcc => !gcc.role || gcc.role === r.name.toLowerCase().trim())) : true;
+              if (member) guild.permission = guildConfig.memberHasPermission(member) || guild.isAdmin;
               guild.config = guildConfig;
               return guild;
             });
@@ -1113,7 +1116,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
 
               if (options.page === GamesPages.PastEvents) {
                 gameOptions.timestamp = {
-                  $lt: new Date().getTime()
+                  $lt: new Date().getTime(),
                 };
               }
 

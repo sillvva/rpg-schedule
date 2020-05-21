@@ -1,22 +1,42 @@
 import db from "../db";
 import { ObjectID, ObjectId, FilterQuery } from "mongodb";
 import { Game, GameReminder } from "./game";
-import aux from "../appaux"
+import aux from "../appaux";
+import { GuildMember } from "discord.js";
+
+const supportedLanguages = require("../../lang/langs.json");
+const langs = supportedLanguages.langs
+  .map((lang: String) => {
+    return {
+      code: lang,
+      ...require(`../../lang/${lang}.json`),
+    };
+  })
+  .sort((a: any, b: any) => (a.name > b.name ? 1 : -1));
 
 const connection = db.connection;
 const collection = "guildConfig";
 
+export type MongoDBId = string | number | ObjectID;
+
 export interface GameDefaults {
-  minPlayers?: number;
+  minPlayers: number;
   maxPlayers: number;
   reminder: GameReminder;
 }
 
+export interface GameTemplate {
+  id?: MongoDBId;
+  name: string;
+  isDefault: boolean;
+  role?: string;
+  embedColor?: string;
+  gameDefaults?: GameDefaults;
+}
+
 export interface ChannelConfig {
   channelId: string;
-  embedColor?: string;
-  role?: string;
-  gameDefaults?: GameDefaults;
+  gameTemplates: MongoDBId[];
 }
 
 export interface GuildConfigModel {
@@ -39,14 +59,16 @@ export interface GuildConfigModel {
   rescheduleMode?: string;
   managerRole?: string;
   escape?: string;
+  gameTemplates?: GameTemplate[];
 }
 
 interface GuildConfigDataModel extends GuildConfigModel {
-  _id?: string | number | ObjectID;
+  _id?: MongoDBId;
+  saveDefaultTemplate?: boolean;
 }
 
 export class GuildConfig implements GuildConfigDataModel {
-  _id: string | number | ObjectID;
+  _id: MongoDBId;
   guild: string = null;
   channel: ChannelConfig[] = [];
   pruning: boolean = false;
@@ -63,9 +85,11 @@ export class GuildConfig implements GuildConfigDataModel {
   dropOut: boolean = true;
   lang: string = "en";
   privateReminders: boolean = false;
-  rescheduleMode: string = 'repost';
+  rescheduleMode: string = "repost";
   managerRole: string = null;
-  escape?: '!';
+  escape?: "!";
+  gameTemplates?: GameTemplate[] = [];
+  saveDefaultTemplate = false;
 
   constructor(guildConfig: GuildConfigDataModel = {}) {
     if (!guildConfig._id) this._id = new ObjectId();
@@ -80,36 +104,68 @@ export class GuildConfig implements GuildConfigDataModel {
       }
 
       if (key === "channel") {
-        const defaults = {
-          minPlayers: 1,
-          maxPlayers: 7,
-          reminder: GameReminder.NO_REMINDER
-        };
         if (typeof value === "string") {
           this[key] = [
-            { 
+            {
               channelId: value,
-              gameDefaults: defaults
-            }
+              gameTemplates: [],
+            },
           ];
+        } else if (Array.isArray(value)) {
+          this[key] = value
+            .map((c) => {
+              if (typeof c === "string") {
+                return {
+                  channelId: c,
+                  gameTemplates: [],
+                };
+              } else
+                return {
+                  gameTemplates: [],
+                  ...c,
+                };
+            })
+            .filter((c, i) => i === value.findIndex((ci) => ci.channelId === c.channelId));
         }
-        else if (Array.isArray(value)) {
-          this[key] = value.map(c => {
-            if (typeof c === "string") {
-              return { 
-                channelId: c,
-                gameDefaults: defaults
-              };
-            }
-            else return {
-              gameDefaults: defaults,
-              ...c
-            };
-          });
-        }
-      }
-      else this[key] = value;
+      } else if (key === "gameTemplates") {
+        this[key] = (value || []).map((gt) => {
+          gt.embedColor = aux.colorFixer(gt.embedColor);
+          return gt;
+        });
+      } else if (key === "embedColor") {
+        this[key] = aux.colorFixer(value);
+      } else this[key] = value;
     }
+
+    if (this.gameTemplates.length === 0) {
+      this.saveDefaultTemplate = true;
+      const defaultGameTemplate = this.defaultGameTemplate;
+      this.gameTemplates.push(defaultGameTemplate);
+      this.channel = this.channel.map((channel) => {
+        channel.gameTemplates = [defaultGameTemplate.id];
+        return channel;
+      });
+    }
+  }
+
+  get defaultGameTemplate(): GameTemplate {
+    const defaultGT = this.gameTemplates.find((gt) => gt.isDefault);
+    if (defaultGT) return defaultGT;
+
+    const lang = langs.find((l) => l.code === this.lang) || langs.find((l) => l.code === "en");
+
+    return {
+      id: new ObjectId().toHexString(),
+      name: lang ? lang.config.DEFAULT : "Default",
+      isDefault: true,
+      embedColor: aux.colorFixer(this.embedColor),
+      role: this.role,
+      gameDefaults: {
+        minPlayers: 1,
+        maxPlayers: 7,
+        reminder: GameReminder.NO_REMINDER,
+      },
+    };
   }
 
   async save(data: GuildConfigModel = {}) {
@@ -117,26 +173,26 @@ export class GuildConfig implements GuildConfigDataModel {
     if (!data.guild && !this.guild) throw new Error("Guild ID not specified");
     const config: GuildConfigDataModel = this.data;
     const updates = { ...config, ...data };
-    
-    const getData = await connection().collection(collection).findOne({ guild: config.guild });
-    const currentConfig = new GuildConfig(getData || { guild: config.guild });
-    updates.channel = updates.channel.map(c => {
-      const ccChannel = currentConfig.channel.find(cc => cc.channelId === c.channelId);
-      if (/^#([0-9abcdef]{4}$)/i.test((c.embedColor || "").trim())) c.embedColor = c.embedColor.slice(0, 4);
-      if (/^#([0-9abcdef]{8}$)/i.test((c.embedColor || "").trim())) c.embedColor = c.embedColor.slice(0, 7);
-      if (ccChannel && !ccChannel.embedColor && !/^#([0-9abcdef]{3}|[0-9abcdef]{6})$/i.test((c.embedColor || "").trim())) {
-        c.embedColor = ccChannel.embedColor || null;
-      }
-      else if (!/^#([0-9abcdef]{3}|[0-9abcdef]{6})$/i.test((c.embedColor || "").trim())) c.embedColor = null;
-      if (ccChannel && !ccChannel.role && (c.role || "").trim().length === 0) {
-        c.role = ccChannel.role || null;
-      }
-      else if ((c.role || "").trim().length === 0) c.role = null;
-      return c;
+
+    const defaultGameTemplate = this.defaultGameTemplate;
+    if (updates.gameTemplates.length === 0) updates.gameTemplates.push(defaultGameTemplate);
+    updates.gameTemplates = updates.gameTemplates.map((gt) => {
+      if (!gt.id) gt = { id: new ObjectId().toHexString(), ...gt };
+      gt.embedColor = aux.colorFixer(gt.embedColor);
+      return gt;
     });
+    updates.channel = updates.channel.map((channel) => {
+      channel.gameTemplates = channel.gameTemplates.filter((cgt) => updates.gameTemplates.find((gt) => gt.id === cgt));
+      channel.gameTemplates = channel.gameTemplates.map((cgt) => new ObjectId(cgt).toHexString());
+      if (channel.gameTemplates.length === 0) {
+        channel.gameTemplates = [defaultGameTemplate.id];
+      }
+      return channel;
+    });
+    updates.role = updates.gameTemplates.find((gt) => gt.isDefault).role;
+    updates.embedColor = updates.gameTemplates.find((gt) => gt.isDefault).embedColor;
 
     const col = connection().collection(collection);
-    
     delete updates._id;
     return await col.updateOne({ _id: new ObjectId(this._id) }, { $set: updates }, { upsert: true });
   }
@@ -162,7 +218,8 @@ export class GuildConfig implements GuildConfigDataModel {
       privateReminders: this.privateReminders,
       rescheduleMode: this.rescheduleMode,
       managerRole: this.managerRole,
-      escape: this.escape
+      escape: this.escape,
+      gameTemplates: this.gameTemplates,
     };
   }
 
@@ -172,31 +229,48 @@ export class GuildConfig implements GuildConfigDataModel {
 
   static async fetch(guildId: string): Promise<GuildConfig> {
     if (!connection()) throw new Error("No database connection");
-    const data = await connection()
-      .collection(collection)
-      .findOne({ guild: guildId });
-    return new GuildConfig(data || { guild: guildId });
+    const data = await connection().collection(collection).findOne({ guild: guildId });
+    const gc = new GuildConfig(data || { guild: guildId });
+    if (data && gc.saveDefaultTemplate) await gc.save();
+    return gc;
   }
 
   static async fetchAll(): Promise<GuildConfig[]> {
     if (!connection()) throw new Error("No database connection");
-    const guildConfigs = await connection()
-      .collection(collection)
-      .find()
-      .toArray();
-    return guildConfigs.map(gc => {
+    const guildConfigs = await connection().collection(collection).find().toArray();
+    return guildConfigs.map((gc) => {
       return new GuildConfig(gc);
     });
   }
 
   static async fetchAllBy(query: FilterQuery<any>): Promise<GuildConfig[]> {
-    if (!connection()) { aux.log("No database connection"); return []; }
-    const guildConfigs: GuildConfigModel[] = await connection()
-      .collection(collection)
-      .find(query)
-      .toArray();
-    return guildConfigs.map(gc => {
-      return new GuildConfig(gc);
+    if (!connection()) {
+      aux.log("No database connection");
+      return [];
+    }
+    const guildConfigs: GuildConfigModel[] = await connection().collection(collection).find(query).toArray();
+    let gcs = [];
+    for (let i = 0; i < guildConfigs.length; i++) {
+      const gc = new GuildConfig(guildConfigs[i]);
+      if (gc.saveDefaultTemplate) await gc.save();
+      gcs.push(gc);
+    }
+    return gcs;
+  }
+
+  memberHasPermission(member: GuildMember, channelId?: string) {
+    if (channelId) {
+      const channelConfig = this.channel.find((c) => c.channelId === channelId);
+      if (!channelConfig) return false;
+      return !!channelConfig.gameTemplates.find((cgt) =>
+        this.gameTemplates.find((gt) => {
+          if (cgt !== gt.id) return false;
+          return !gt.role || !!member.roles.cache.find((r) => gt.role.trim() === r.name.toLowerCase().trim());
+        })
+      );
+    }
+    return !!this.gameTemplates.find((gt) => {
+      return !gt.role || !!member.roles.cache.find((r) => gt.role.trim() === r.name.toLowerCase().trim());
     });
   }
 
@@ -204,11 +278,11 @@ export class GuildConfig implements GuildConfigDataModel {
     const games = await Game.fetchAllBy({
       s: this.guild,
       timestamp: {
-        $gt: new Date().getTime()
-      }
+        $gt: new Date().getTime(),
+      },
     });
 
-    for(let i = 0; i < games.length; i++) {
+    for (let i = 0; i < games.length; i++) {
       const game = games[i];
       const message = await game.discordChannel.messages.fetch(game.messageId);
       if (message) {
@@ -217,9 +291,8 @@ export class GuildConfig implements GuildConfigDataModel {
           message.react(this.emojiAdd);
           message.react(this.emojiRemove);
           game.save();
-        }
-        catch(err) {
-          aux.log('UpdateReactionsError:', 'Could not update emojis for game', game.adventure, `(${game.s})`, err);
+        } catch (err) {
+          aux.log("UpdateReactionsError:", "Could not update emojis for game", game.adventure, `(${game.s})`, err);
         }
       }
     }
