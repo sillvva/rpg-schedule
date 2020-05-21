@@ -961,7 +961,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
 
     request(requestData, async (error, response, body) => {
       try {
-        if (!error && response.statusCode === 200) {
+        if (!error && response && response.statusCode === 200) {
           const response = JSON.parse(body);
           const { username, discriminator, id, avatar } = response;
           const tag = `${username}#${discriminator}`;
