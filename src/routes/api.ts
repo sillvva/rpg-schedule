@@ -1030,21 +1030,22 @@ const fetchAccount = (token: any, options: AccountOptions) => {
               if (firstChannel && guild.channels.array().length > 0 && (gcChannels.length == 0 || !guild.channels.find((gc) => !!gcChannels.find((c) => gc.id === c.channelId)))) {
                 gcChannels.push({ channelId: firstChannel.id, gameTemplates: [guildConfig.defaultGameTemplate.id] });
               }
-              const channels = gcChannels
-                .filter((c) => guild.channels.find((gc: GuildChannel) => gc.id == c.channelId && gc.permissionsFor(id).has(Permissions.FLAGS.VIEW_CHANNEL)))
-                .filter((c) => !!guildConfig.memberHasPermission(member, c.channelId))
-                .map((c) => guild.channels.find((gc: GuildChannel) => gc.id === c.channelId));
-              guild.announcementChannels = channels;
 
-              if (member) 
-                guild.userRoles = guild.roles.filter(r => member.roles.cache.array().find(mr => mr.id === r.id)).map(r => r.name);
-
-              if (member)
+              if (member) {
+                guild.userRoles = guild.roles.filter((r) => member.roles.cache.array().find((mr) => mr.id === r.id)).map((r) => r.name);
                 guild.isAdmin = !!(
                   member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) ||
                   member.roles.cache.find((r) => r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim())
                 );
-              if (member) guild.permission = guildConfig.memberHasPermission(member) || guild.isAdmin;
+                guild.permission = guildConfig.memberHasPermission(member) || guild.isAdmin;
+              }
+
+              const channels = gcChannels
+                .filter((c) => guild.channels.find((gc: GuildChannel) => gc.id == c.channelId && gc.permissionsFor(id).has(Permissions.FLAGS.VIEW_CHANNEL)))
+                .filter((c) => member && (member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) || !!guildConfig.memberHasPermission(member, c.channelId)))
+                .map((c) => guild.channels.find((gc: GuildChannel) => gc.id === c.channelId));
+
+              guild.announcementChannels = channels;
               guild.config = guildConfig;
               return guild;
             });
