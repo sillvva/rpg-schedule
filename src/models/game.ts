@@ -1,5 +1,5 @@
-import mongodb, { ObjectID, connect } from "mongodb";
-import discord, { Message, Guild, TextChannel, MessageEmbed, GuildMember, Collection, User } from "discord.js";
+import mongodb, { ObjectID } from "mongodb";
+import discord, { Message, Guild, TextChannel, MessageEmbed, GuildMember, Collection, User, Permissions } from "discord.js";
 import moment from "moment";
 import "moment-recur-ts";
 
@@ -7,7 +7,7 @@ import db from "../db";
 import aux from "../appaux";
 import { discordClient } from "../processes/discord";
 import { io } from "../processes/socket";
-import { GuildConfig, GameTemplate } from "./guild-config";
+import { GuildConfig } from "./guild-config";
 import config from "./config";
 import cloneDeep from "lodash/cloneDeep";
 
@@ -163,7 +163,7 @@ export class Game implements GameModel {
   constructor(game: GameModel) {
     let guildMembers: GuildMember[] = [];
     const gameEntries = Object.entries(game || {});
-    for(let i = 0; i < gameEntries.length; i++) {
+    for (let i = 0; i < gameEntries.length; i++) {
       let [key, value] = gameEntries[i];
 
       // Strip HTML Tags from Data
@@ -176,8 +176,7 @@ export class Game implements GameModel {
         this._guild = discordClient().guilds.cache.get(value);
         if (!this._guild) this._guild = discordClient().guilds.resolve(value);
         if (!guildMembers.length) guildMembers = this._guild.members.cache.array();
-      }
-      else if (key === "c") {
+      } else if (key === "c") {
         this[key] = value;
         this._guild.channels.cache.forEach((c) => {
           if (!this._channel && c instanceof TextChannel) {
@@ -187,14 +186,11 @@ export class Game implements GameModel {
             this._channel = c;
           }
         });
-      }
-      else if (key === "dm") {
+      } else if (key === "dm") {
         this[key] = Game.updateDM(value, guildMembers);
-      }
-      else if (key === "reserved") {
+      } else if (key === "reserved") {
         this[key] = Game.updateReservedList(value, guildMembers);
-      }
-      else this[key] = value;
+      } else this[key] = value;
     }
 
     const d = new Date();
@@ -261,7 +257,7 @@ export class Game implements GameModel {
       sequence: this.sequence,
       pruned: this.pruned,
       createdTimestamp: this.createdTimestamp,
-      updatedTimestamp: this.updatedTimestamp
+      updatedTimestamp: this.updatedTimestamp,
     };
   }
 
@@ -287,8 +283,8 @@ export class Game implements GameModel {
       const lang = gmLanguages.find((l) => l.code === guildConfig.lang) || gmLanguages.find((l) => l.code === "en");
       const guildMembers = (await guild.members.fetch()).array();
 
-      if (!game.template) game.template = (guildConfig.gameTemplates.find(gt => gt.isDefault) || guildConfig.gameTemplates[0]).id;
-      const gameTemplate = guildConfig.gameTemplates.find(gt => gt.id === game.template);
+      if (!game.template) game.template = (guildConfig.gameTemplates.find((gt) => gt.isDefault) || guildConfig.gameTemplates[0]).id;
+      const gameTemplate = guildConfig.gameTemplates.find((gt) => gt.id === game.template);
 
       moment.locale(lang.code);
 
@@ -321,6 +317,7 @@ export class Game implements GameModel {
 
       let reserved: string[] = [];
       let waitlist: string[] = [];
+      let rMentions: string[] = [];
       game.reserved.forEach((rsvp, i) => {
         if (rsvp.tag.trim().length === 0 && !rsvp.id) return;
         let member = guildMembers.find((mem) => mem.user.tag.trim() === rsvp.tag.trim() || mem.user.id === rsvp.id);
@@ -334,6 +331,7 @@ export class Game implements GameModel {
 
         if (reserved.length < parseInt(game.players)) {
           reserved.push(reserved.length + 1 + ". " + name);
+          if (member) rMentions.push(member.toString());
         } else {
           waitlist.push(reserved.length + waitlist.length + 1 + ". " + name);
         }
@@ -437,6 +435,8 @@ export class Game implements GameModel {
         let message: Message | Collection<string, Message>;
         try {
           message = await channel.messages.fetch(game.messageId);
+          if (guildConfig.embeds) msg = [parseDiscord(game.description, guild, true), dmmember && dmmember.toString(), rMentions.join(" ")].filter((m) => m).join(" ");
+          else embed = null;
           if (message) {
             if (message instanceof Collection) {
               message = (<Collection<string, Message>>message).get(game.messageId);
@@ -445,11 +445,7 @@ export class Game implements GameModel {
               message = await (<Message>message).edit(msg, embed);
             }
           } else {
-            if (guildConfig.embeds === false) {
-              message = <Message>await channel.send(msg, embed);
-            } else {
-              message = <Message>await channel.send(embed);
-            }
+            message = <Message>await channel.send(msg, embed);
 
             if (message) {
               await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: { messageId: message.id } });
@@ -460,10 +456,7 @@ export class Game implements GameModel {
           prev._id = prev._id.toString();
           game._id = game._id.toString();
 
-          this.dmNextWaitlist(
-            prev.reserved,
-            game.reserved
-          );
+          this.dmNextWaitlist(prev.reserved, game.reserved);
 
           const updatedGame = aux.objectChanges(prev, game);
           io().emit("game", { action: "updated", gameId: game._id, game: updatedGame, guildId: game.s });
@@ -485,11 +478,10 @@ export class Game implements GameModel {
         let gcUpdated = false;
 
         try {
-          if (guildConfig.embeds === false) {
-            message = <Message>await channel.send(msg, embed);
-          } else {
-            message = <Message>await channel.send(embed);
-          }
+          if (guildConfig.embeds) msg = [parseDiscord(game.description, guild, true), dmmember && dmmember.toString(), rMentions.join(" ")].filter((m) => m).join(" ");
+          else embed = null;
+          
+          message = <Message>await channel.send(msg, embed);
 
           try {
             if (game.method === GameMethod.AUTOMATED) await message.react(guildConfig.emojiAdd);
@@ -572,7 +564,7 @@ export class Game implements GameModel {
     const game = await connection()
       .collection(collection)
       .findOne({ _id: new ObjectId(gameId) });
-    return game && discordClient().guilds.cache.find(g => g.id === game.s) ? new Game(game) : null;
+    return game && discordClient().guilds.cache.find((g) => g.id === game.s) ? new Game(game) : null;
   }
 
   static async fetchBy(key: string, value: any): Promise<Game> {
@@ -582,7 +574,7 @@ export class Game implements GameModel {
     }
     const query: mongodb.FilterQuery<any> = aux.fromEntries([[key, value]]);
     const game: GameModel = await connection().collection(collection).findOne(query);
-    return game && discordClient().guilds.cache.find(g => g.id === game.s) ? new Game(game) : null;
+    return game && discordClient().guilds.cache.find((g) => g.id === game.s) ? new Game(game) : null;
   }
 
   static async fetchAllBy(query: mongodb.FilterQuery<any>): Promise<Game[]> {
@@ -591,11 +583,13 @@ export class Game implements GameModel {
       return [];
     }
     const games: GameModel[] = await connection().collection(collection).find(query).toArray();
-    return games.filter(game => {
-      return discordClient().guilds.cache.find(g => g.id === game.s);
-    }).map((game) => {
-      return new Game(game);
-    });
+    return games
+      .filter((game) => {
+        return discordClient().guilds.cache.find((g) => g.id === game.s);
+      })
+      .map((game) => {
+        return new Game(game);
+      });
   }
 
   static async fetchAllByLimit(query: mongodb.FilterQuery<any>, limit: number): Promise<Game[]> {
@@ -604,11 +598,13 @@ export class Game implements GameModel {
       return [];
     }
     const games: GameModel[] = await connection().collection(collection).find(query).limit(limit).toArray();
-    return games.filter(game => {
-      return discordClient().guilds.cache.find(g => g.id === game.s);
-    }).map((game) => {
-      return new Game(game);
-    });
+    return games
+      .filter((game) => {
+        return discordClient().guilds.cache.find((g) => g.id === game.s);
+      })
+      .map((game) => {
+        return new Game(game);
+      });
   }
 
   static async deleteAllBy(query: mongodb.FilterQuery<any>) {
@@ -625,7 +621,7 @@ export class Game implements GameModel {
       return [];
     }
     return await connection().collection(collection).updateMany(query, update, {
-      upsert: false
+      upsert: false,
     });
   }
 
@@ -779,8 +775,8 @@ export class Game implements GameModel {
       const guildConfig = await GuildConfig.fetch(guild.id);
       const dmmember = guildMembers.array().find((m) => m.user.tag === this.dm.tag.trim() || m.user.id === this.dm.id);
       const member = guildMembers.array().find((m) => m.user.tag === tag.trim());
-      if (!this.template) this.template = (guildConfig.gameTemplates.find(gt => gt.isDefault) || guildConfig.gameTemplates[0]).id;
-      const gameTemplate = guildConfig.gameTemplates.find(gt => gt.id === this.template);
+      if (!this.template) this.template = (guildConfig.gameTemplates.find((gt) => gt.isDefault) || guildConfig.gameTemplates[0]).id;
+      const gameTemplate = guildConfig.gameTemplates.find((gt) => gt.id === this.template);
 
       if (member) {
         const lang = gmLanguages.find((l) => l.code === guildConfig.lang) || gmLanguages.find((l) => l.code === "en");
@@ -813,8 +809,8 @@ export class Game implements GameModel {
     const guildMembers = (await this.discordGuild.members.fetch()).array();
     const guildConfig = await GuildConfig.fetch(this.discordGuild.id);
     const lang = gmLanguages.find((l) => l.code === guildConfig.lang) || gmLanguages.find((l) => l.code === "en");
-    if (!this.template) this.template = (guildConfig.gameTemplates.find(gt => gt.isDefault) || guildConfig.gameTemplates[0]).id;
-    const gameTemplate = guildConfig.gameTemplates.find(gt => gt.id === this.template);
+    if (!this.template) this.template = (guildConfig.gameTemplates.find((gt) => gt.isDefault) || guildConfig.gameTemplates[0]).id;
+    const gameTemplate = guildConfig.gameTemplates.find((gt) => gt.id === this.template);
 
     this.reserved.forEach((res, index) => {
       var member = guildMembers.find((mem) => mem.user.tag.trim() === res.tag.trim() || mem.user.id === res.id);
@@ -879,7 +875,7 @@ export class Game implements GameModel {
             const validDay = moment(baseDate).day();
             dateGenerator = moment(baseDate).recur().every(validDay).daysOfWeek().every(weekOfMonth).weeksOfMonthByDay();
             nextDate = dateGenerator.next(1)[0];
-  
+
             if (weekOfMonth == 4 && moment(nextDate).month() != moment(baseDate).month() + 1) {
               dateGenerator = moment(baseDate).recur().every(validDay).daysOfWeek().every(3).weeksOfMonthByDay();
               nextDate = dateGenerator.next(1)[0];
@@ -891,8 +887,7 @@ export class Game implements GameModel {
         default:
           throw new Error(`invalid frequency ${frequency} specified`);
       }
-    }
-    catch(err) {
+    } catch (err) {
       console.log(err.message || err);
       return null;
     }
@@ -947,8 +942,7 @@ export class Game implements GameModel {
         rsvp.id = member.user.id;
       }
       return rsvp;
-    }
-    else {
+    } else {
       return dm;
     }
   }
@@ -969,20 +963,25 @@ export class Game implements GameModel {
   }
 }
 
-const parseDiscord = (text: string, guild: Guild) => {
+const parseDiscord = (text: string, guild: Guild, getMentions: boolean = false) => {
+  const mentions: string[] = [];
   try {
     guild.members.cache.array().forEach((mem) => {
+      if (new RegExp(`\@${aux.backslash(mem.user.tag)}`, "gi").test(text)) mentions.push(mem.toString());
       text = text.replace(new RegExp(`\@${aux.backslash(mem.user.tag)}`, "gi"), mem.toString());
     });
     guild.channels.cache.array().forEach((c) => {
       text = text.replace(new RegExp(`\#${aux.backslash(c.name)}`, "gi"), c.toString());
     });
     guild.roles.cache.array().forEach((role) => {
-      if (!role.mentionable) return;
+      const canMention = guild.members.resolve(discordClient().user.id).hasPermission(Permissions.FLAGS.MENTION_EVERYONE);
+      if ((!role.mentionable && !canMention) || ["@everyone", "@here"].includes(role.name)) return;
+      if (new RegExp(`\@${aux.backslash(role.name)}`, "gi").test(text)) mentions.push(role.toString());
       text = text.replace(new RegExp(`\@${aux.backslash(role.name)}`, "gi"), role.toString());
     });
   } catch (err) {
     aux.log(err);
   }
+  if (getMentions) return mentions.join(" ");
   return text;
 };
