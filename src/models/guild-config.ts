@@ -113,7 +113,7 @@ export class GuildConfig implements GuildConfigDataModel {
           ];
         } else if (Array.isArray(value)) {
           this[key] = value
-            .map((c) => {
+            .map(c => {
               if (typeof c === "string") {
                 return {
                   channelId: c,
@@ -125,10 +125,10 @@ export class GuildConfig implements GuildConfigDataModel {
                   ...c,
                 };
             })
-            .filter((c, i) => i === value.findIndex((ci) => ci.channelId === c.channelId));
+            .filter((c, i) => i === value.findIndex(ci => ci.channelId === c.channelId));
         }
       } else if (key === "gameTemplates") {
-        this[key] = (value || []).map((gt) => {
+        this[key] = (value || []).map(gt => {
           gt.embedColor = aux.colorFixer(gt.embedColor);
           return gt;
         });
@@ -141,7 +141,7 @@ export class GuildConfig implements GuildConfigDataModel {
       this.saveDefaultTemplate = true;
       const defaultGameTemplate = this.defaultGameTemplate;
       this.gameTemplates.push(defaultGameTemplate);
-      this.channel = this.channel.map((channel) => {
+      this.channel = this.channel.map(channel => {
         channel.gameTemplates = [defaultGameTemplate.id];
         return channel;
       });
@@ -149,10 +149,10 @@ export class GuildConfig implements GuildConfigDataModel {
   }
 
   get defaultGameTemplate(): GameTemplate {
-    const defaultGT = this.gameTemplates.find((gt) => gt.isDefault);
+    const defaultGT = this.gameTemplates.find(gt => gt.isDefault);
     if (defaultGT) return defaultGT;
 
-    const lang = langs.find((l) => l.code === this.lang) || langs.find((l) => l.code === "en");
+    const lang = langs.find(l => l.code === this.lang) || langs.find(l => l.code === "en");
 
     return {
       id: new ObjectId().toHexString(),
@@ -176,21 +176,21 @@ export class GuildConfig implements GuildConfigDataModel {
 
     const defaultGameTemplate = this.defaultGameTemplate;
     if (updates.gameTemplates.length === 0) updates.gameTemplates.push(defaultGameTemplate);
-    updates.gameTemplates = updates.gameTemplates.map((gt) => {
+    updates.gameTemplates = updates.gameTemplates.map(gt => {
       if (!gt.id) gt = { id: new ObjectId().toHexString(), ...gt };
       gt.embedColor = aux.colorFixer(gt.embedColor);
       return gt;
     });
-    updates.channel = updates.channel.map((channel) => {
-      channel.gameTemplates = channel.gameTemplates.filter((cgt) => updates.gameTemplates.find((gt) => gt.id === cgt));
-      channel.gameTemplates = channel.gameTemplates.map((cgt) => new ObjectId(cgt).toHexString());
+    updates.channel = updates.channel.map(channel => {
+      channel.gameTemplates = channel.gameTemplates.filter(cgt => updates.gameTemplates.find(gt => gt.id === cgt));
+      channel.gameTemplates = channel.gameTemplates.map(cgt => new ObjectId(cgt).toHexString());
       if (channel.gameTemplates.length === 0) {
         channel.gameTemplates = [defaultGameTemplate.id];
       }
       return channel;
     });
-    updates.role = updates.gameTemplates.find((gt) => gt.isDefault).role;
-    updates.embedColor = updates.gameTemplates.find((gt) => gt.isDefault).embedColor;
+    updates.role = updates.gameTemplates.find(gt => gt.isDefault).role;
+    updates.embedColor = updates.gameTemplates.find(gt => gt.isDefault).embedColor;
 
     const col = connection().collection(collection);
     delete updates._id;
@@ -238,7 +238,7 @@ export class GuildConfig implements GuildConfigDataModel {
   static async fetchAll(): Promise<GuildConfig[]> {
     if (!connection()) throw new Error("No database connection");
     const guildConfigs = await connection().collection(collection).find().toArray();
-    return guildConfigs.map((gc) => {
+    return guildConfigs.map(gc => {
       return new GuildConfig(gc);
     });
   }
@@ -259,18 +259,11 @@ export class GuildConfig implements GuildConfigDataModel {
   }
 
   memberHasPermission(member: GuildMember, channelId?: string) {
-    if (channelId) {
-      const channelConfig = this.channel.find((c) => c.channelId === channelId);
-      if (!channelConfig) return false;
-      return !!channelConfig.gameTemplates.find((cgt) =>
-        this.gameTemplates.find((gt) => {
-          if (cgt !== gt.id) return false;
-          return !gt.role || !!member.roles.cache.find((r) => gt.role.trim() === r.name.toLowerCase().trim());
-        })
+    return !!this.gameTemplates.find(gt => {
+      return (
+        this.channel.find(c => c.gameTemplates.find(cgt => cgt === gt.id) && (!channelId || c.channelId === channelId)) &&
+        (!gt.role || !!member.roles.cache.find(r => gt.role.trim() === r.name.toLowerCase().trim()))
       );
-    }
-    return !!this.gameTemplates.find((gt) => {
-      return !gt.role || !!member.roles.cache.find((r) => gt.role.trim() === r.name.toLowerCase().trim());
     });
   }
 
