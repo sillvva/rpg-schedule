@@ -700,7 +700,7 @@ const discordProcesses = (options: DiscordProcessesOptions, readyCallback: () =>
     const user = client.users.cache.get(data.user_id);
     const channel = <TextChannel>client.channels.cache.get(data.channel_id) || (await user.createDM());
 
-    if (channel.messages.cache.has(data.message_id)) return;
+    if (!channel || channel.messages.cache.has(data.message_id)) return;
 
     const message = await channel.messages.fetch(data.message_id);
     const emojiKey = data.emoji.id ? `${data.emoji.name}:${data.emoji.id}` : data.emoji.name;
