@@ -13,6 +13,7 @@ import { Session } from "../models/session";
 import { User } from "../models/user";
 import config from "../models/config";
 import aux from "../appaux";
+import { urlencoded } from "body-parser";
 
 interface APIRouteOptions {
   client: Client;
@@ -395,7 +396,7 @@ export default (options: APIRouteOptions) => {
         if (!guild) guild = client.guilds.resolve(server);
 
         if (guild) {
-          let password: string;
+          let password;
 
           const guildConfig = await GuildConfig.fetch(guild.id);
           const guildMembers = await guild.members.fetch();
@@ -918,7 +919,7 @@ enum GamesPages {
   Upcoming = "upcoming",
   MyGames = "my-games",
   Calendar = "calendar",
-  Server = "server",
+  Server = "manage-server",
   PastEvents = "past-events",
 }
 

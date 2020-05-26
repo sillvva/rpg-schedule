@@ -531,7 +531,7 @@ export class Game implements GameModel {
           aux.log(`GameMessageNotPostedError:\n`, game.s, `${msg}\n`, embed);
         }
 
-        io().emit("game", { action: "new", gameId: inserted.insertedId.toString(), guildId: game.s });
+        io().emit("game", { action: "new", gameId: inserted.insertedId.toString(), guildId: game.s, authorId: game.author.id });
 
         const saved: GameSaveData = {
           _id: inserted.insertedId.toString(),
