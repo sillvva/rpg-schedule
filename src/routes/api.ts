@@ -1,11 +1,11 @@
-import discord, { Client, GuildMember, Permissions, TextChannel, Guild, GuildChannel, Collection, Role, ShardingManager } from "discord.js";
+import discord, { Permissions, Role, ShardingManager } from "discord.js";
 import express from "express";
 import moment from "moment";
 import request from "request";
 import merge from "lodash/merge";
 import cloneDeep from "lodash/cloneDeep";
 
-import ShardManager, { ShardGuild, ShardMember, ShardChannel } from "../processes/discord";
+import ShardManager, { ShardGuild, ShardMember, ShardChannel } from "../processes/shard-manager";
 import { io } from "../processes/socket";
 import { Game, GameMethod, RescheduleMode, GameWhen, MonthlyType } from "../models/game";
 import { SiteSettings } from "../models/site-settings";

@@ -9,7 +9,7 @@ import cookieParser from "cookie-parser";
 import db from "./db";
 import aux from "./appaux";
 import config from "./models/config";
-import discord from "./processes/discord";
+import discord from "./processes/shard-manager";
 import { socket } from "./processes/socket";
 
 import apiRoutes from "./routes/api";
@@ -89,7 +89,7 @@ if (process.env.MAINTENANCE == "true") {
         // Start the http server
         const server = http.createServer(app).listen(process.env.PORT || 5000);
         const io = socket(server);
-        
+
         aux.log("App started!");
       } else {
         aux.log("Database not connected!");

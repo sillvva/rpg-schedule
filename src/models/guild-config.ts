@@ -3,7 +3,7 @@ import { ObjectID, ObjectId, FilterQuery } from "mongodb";
 import { Game, GameReminder } from "./game";
 import aux from "../appaux";
 import { GuildMember, Client, TextChannel } from "discord.js";
-import { ShardMember } from "../processes/discord";
+import { ShardMember } from "../processes/shard-manager";
 
 const supportedLanguages = require("../../lang/langs.json");
 const langs = supportedLanguages.langs

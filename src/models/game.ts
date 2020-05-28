@@ -5,7 +5,7 @@ import "moment-recur-ts";
 
 import db from "../db";
 import aux from "../appaux";
-import ShardManager, { ShardGuild, ShardMember, ShardChannel } from "../processes/discord";
+import ShardManager, { ShardGuild, ShardMember, ShardChannel } from "../processes/shard-manager";
 import { io } from "../processes/socket";
 import { GuildConfig } from "./guild-config";
 import config from "./config";
