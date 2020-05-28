@@ -74,11 +74,23 @@ export default (options: APIRouteOptions) => {
 
       request(requestData, async (error, response, body) => {
         if (error || response.statusCode !== 200) {
+          const error = JSON.parse(response.body);
           return res.json({
             status: "error",
             code: 2,
-            message: `Discord OAuth: ${response.statusCode}<br />${error}`,
+            message: `Discord OAuth: ${response.statusCode}<br />${error && error.error_description}`,
             redirect: "/",
+            error: error,
+            request: {
+              form: {
+                client_id: '...' + process.env.CLIENT_ID.slice(-4),
+                client_secret: '...' + process.env.CLIENT_SECRET.slice(-4),
+                grant_type: "authorization_code",
+                code: req.query.code,
+                redirect_uri: `${process.env.HOST}/login`,
+                scope: "identify guilds",
+              },
+            }
           });
         }
 
@@ -124,12 +136,23 @@ export default (options: APIRouteOptions) => {
             await session.save();
             // aux.log("success", token.access_token);
 
-            res.json({
-              status: "success",
-              token: token.access_token,
-              account: result.account,
-              redirect: config.urls.game.games.path,
-            });
+            const updatedSession = await Session.fetch(token.access_token);
+
+            if (updatedSession) {
+              res.json({
+                status: "success",
+                token: token.access_token,
+                account: result.account,
+                redirect: config.urls.game.games.path,
+              });
+            }
+            else {
+              res.json({
+                status: "error",
+                code: 3,
+                message: "Session was not stored"
+              });
+            }
           })
           .catch((err) => {
             res.json({
