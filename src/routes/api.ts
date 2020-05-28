@@ -1,10 +1,11 @@
-import discord, { Client, GuildMember, Permissions, TextChannel, Guild, GuildChannel, Collection, Role } from "discord.js";
+import discord, { Client, GuildMember, Permissions, TextChannel, Guild, GuildChannel, Collection, Role, ShardingManager } from "discord.js";
 import express from "express";
 import moment from "moment";
 import request from "request";
 import merge from "lodash/merge";
 import cloneDeep from "lodash/cloneDeep";
 
+import ShardManager, { ShardGuild, ShardMember, ShardChannel } from "../processes/discord";
 import { io } from "../processes/socket";
 import { Game, GameMethod, RescheduleMode, GameWhen, MonthlyType } from "../models/game";
 import { SiteSettings } from "../models/site-settings";
@@ -13,10 +14,9 @@ import { Session } from "../models/session";
 import { User } from "../models/user";
 import config from "../models/config";
 import aux from "../appaux";
-import { urlencoded } from "body-parser";
 
 interface APIRouteOptions {
-  client: Client;
+  client: ShardingManager;
 }
 
 export default (options: APIRouteOptions) => {
@@ -391,21 +391,29 @@ export default (options: APIRouteOptions) => {
         }
       }
 
+      const sGuilds = await ShardManager.shardGuilds();
+
       if (server) {
-        let guild: Guild = client.guilds.cache.get(server);
-        if (!guild) guild = client.guilds.resolve(server);
+        let guild: ShardGuild = sGuilds.find((g) => g.id === server);
 
         if (guild) {
           let password;
 
+          const guildChannels = guild.channels;
+          const guildRoles = guild.roles;
+          const guildMembers = guild.members;
+
           const guildConfig = await GuildConfig.fetch(guild.id);
-          const guildMembers = await guild.members.fetch();
 
           let gcChannels: ChannelConfig[] = guildConfig.channels;
-          const firstChannel = guild.channels.cache.find((gc) => gc.permissionsFor(guild.roles.everyone).has(Permissions.FLAGS.VIEW_CHANNEL));
+          let firstChannel: ShardChannel;
+          for (let i = 0; i < guildChannels.length; i++) {
+            const pf = await guildChannels[i].permissionsFor(guildRoles.find((r) => r.name === "@everyone").id, Permissions.FLAGS.VIEW_CHANNEL);
+            if (pf) firstChannel = guildChannels[i];
+          }
           if (firstChannel && gcChannels.length == 0) gcChannels.push({ channelId: firstChannel.id, gameTemplates: [guildConfig.defaultGameTemplate.id] });
           const channels = gcChannels.map((c) => {
-            const channel = guild.channels.cache.get(c.channelId);
+            const channel = guildChannels.find((ch) => ch.id === c.channelId);
             return { id: channel.id, name: channel.name };
           });
 
@@ -461,13 +469,13 @@ export default (options: APIRouteOptions) => {
               maxPlayers: game && (isNaN(parseInt(game.players || "0")) || parseInt(game.minPlayers || "1") > parseInt(game.players || "0")),
               dm:
                 game &&
-                !guildMembers.array().find((mem) => {
+                !guildMembers.find((mem) => {
                   return mem.user.tag === game.dm.tag.trim().replace("@", "") || mem.user.id === game.dm.id;
                 }),
               reserved: game
                 ? game.reserved.filter((res) => {
                     if (res.tag.trim().length === 0) return false;
-                    return !guildMembers.array().find((mem) => mem.user.tag === res.tag.trim() || mem.user.id === res.id);
+                    return !guildMembers.find((mem) => mem.user.tag === res.tag.trim() || mem.user.id === res.id);
                   })
                 : [],
             },
@@ -518,6 +526,8 @@ export default (options: APIRouteOptions) => {
               }
             }
 
+            const sGuilds = await ShardManager.shardGuilds();
+
             if (req.method === "POST") {
               // req.body.reserved = req.body.reserved.replace(/@/g, "");
 
@@ -528,26 +538,28 @@ export default (options: APIRouteOptions) => {
                 server = req.body.s;
               }
               if (req.query.s) {
-                game = new Game(req.body);
+                game = new Game(req.body, sGuilds);
               }
             }
 
             if (server) {
-              let guild: Guild = client.guilds.cache.get(server);
-              if (!guild) guild = client.guilds.resolve(server);
+              let guild = sGuilds.find((g) => g.id === server);
 
               if (guild) {
                 let password: string;
 
                 const guildConfig = await GuildConfig.fetch(guild.id);
-                const guildMembers = await guild.members.fetch();
-                const member = guildMembers.array().find((m) => m.id == result.account.user.id);
+                const guildMembers = guild.members;
+                const member = guildMembers.find((m) => m.id == result.account.user.id);
                 if (!member && req.session.api.access.access_token && req.query.s) throw new Error("You are not a member of this server");
                 const isAdmin =
                   member &&
                   (member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) ||
-                    member.roles.cache.find((r) => r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim()));
-                const gcChannel = guildConfig.channel.find((gcc) => gcc.channelId === game.c) || { channelId: game.c, gameTemplates: [guildConfig.defaultGameTemplate.id] };
+                    member.roles.find((r) => r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim()));
+                const gcChannel = guildConfig.channel.find((gcc) => gcc.channelId === game.c) || {
+                  channelId: game.c,
+                  gameTemplates: [guildConfig.defaultGameTemplate.id],
+                };
                 if (!game.template)
                   game.template = (
                     guildConfig.gameTemplates.find((gt) => gt.id === gcChannel.gameTemplates[0]) ||
@@ -561,7 +573,7 @@ export default (options: APIRouteOptions) => {
                   if (gameTemplate.role && !isAdmin) {
                     if (member) {
                       // User does not have the require role
-                      if (!member.roles.cache.find((r) => r.name.toLowerCase().trim() === gameTemplate.role.toLowerCase().trim())) {
+                      if (!member.roles.find((r) => r.name.toLowerCase().trim() === gameTemplate.role.toLowerCase().trim())) {
                         throw new Error("You are either not logged in or are missing the role required for posting on this server.");
                       }
                     }
@@ -573,9 +585,15 @@ export default (options: APIRouteOptions) => {
                 }
 
                 let gcChannels: ChannelConfig[] = guildConfig.channels;
-                const firstChannel = guild.channels.cache.find((gc) => gc.permissionsFor(guild.roles.everyone).has(Permissions.FLAGS.VIEW_CHANNEL));
+                let firstChannel: ShardChannel;
+                for (let i = 0; i < guild.channels.length; i++) {
+                  const pf = await guild.channels[i].permissionsFor(guild.roles.find((r) => r.name === "@everyone").id, Permissions.FLAGS.VIEW_CHANNEL);
+                  if (pf) firstChannel = guild.channels[i];
+                }
                 if (firstChannel && gcChannels.length == 0) gcChannels.push({ channelId: firstChannel.id, gameTemplates: [guildConfig.defaultGameTemplate.id] });
-                const channels = gcChannels.filter((c) => guildConfig.memberHasPermission(member, c.channelId) || isAdmin).map((c) => guild.channels.cache.get(c.channelId));
+                const channels = gcChannels
+                  .filter((c) => guildConfig.shardMemberHasPermission(member, c.channelId) || isAdmin)
+                  .map((c) => guild.channels.find((ch) => ch.id === c.channelId));
 
                 if (channels.length === 0) {
                   throw new Error("Discord channel not found. Make sure your server has a text channel.");
@@ -626,13 +644,13 @@ export default (options: APIRouteOptions) => {
                     maxPlayers: game && (isNaN(parseInt(game.players || "0")) || parseInt(game.minPlayers || "1") > parseInt(game.players || "0")),
                     dm:
                       game &&
-                      !guildMembers.array().find((mem) => {
+                      !guildMembers.find((mem) => {
                         return mem.user.tag === game.dm.tag.trim().replace("@", "") || mem.user.id === game.dm.id;
                       }),
                     reserved: game
                       ? game.reserved.filter((res) => {
                           if (res.tag.trim().length === 0) return false;
-                          return !guildMembers.array().find((mem) => mem.user.tag === res.tag.trim() || mem.user.id === res.id);
+                          return !guildMembers.find((mem) => mem.user.tag === res.tag.trim() || mem.user.id === res.id);
                         })
                       : [],
                   },
@@ -655,7 +673,7 @@ export default (options: APIRouteOptions) => {
                   game.hideDate = req.body["hideDate"] ? true : false;
                   game.clearReservedOnRepeat = req.body["clearReservedOnRepeat"] ? true : false;
 
-                  const updatedGame = new Game(game.data);
+                  const updatedGame = new Game(game.data, sGuilds);
 
                   updatedGame
                     .save()
@@ -924,7 +942,7 @@ enum GamesPages {
 }
 
 interface AccountOptions {
-  client: Client;
+  client: ShardingManager;
   ip: string;
   guilds?: boolean;
   games?: boolean;
@@ -938,12 +956,12 @@ interface AccountGuild {
   icon: string;
   permission: boolean;
   isAdmin: boolean;
-  member: GuildMember;
+  member: ShardMember;
   roles: Role[];
   userRoles: string[];
-  channelCategories: Collection<string, GuildChannel>;
-  channels: Collection<string, GuildChannel>;
-  announcementChannels: GuildChannel[];
+  channelCategories: ShardChannel[];
+  channels: ShardChannel[];
+  announcementChannels: ShardChannel[];
   config: GuildConfig;
   games: Game[];
 }
@@ -979,8 +997,10 @@ const fetchAccount = (token: any, options: AccountOptions) => {
             guilds: [],
           };
 
+          const sGuilds = await ShardManager.shardGuilds();
+
           if (options.guilds) {
-            client.guilds.cache.forEach((guild) => {
+            sGuilds.forEach((guild) => {
               const guildInfo: AccountGuild = {
                 id: guild.id,
                 name: guild.name,
@@ -988,16 +1008,16 @@ const fetchAccount = (token: any, options: AccountOptions) => {
                 permission: false,
                 isAdmin: false,
                 member: null,
-                roles: guild.roles.cache.array(),
+                roles: guild.roles,
                 userRoles: [],
-                channelCategories: guild.channels.cache.filter((c) => c.type === "category"),
-                channels: guild.channels.cache.filter((c) => c instanceof TextChannel),
+                channelCategories: guild.channels.filter((c) => c.type === "category"),
+                channels: guild.channels.filter((c) => c.type === "text"),
                 announcementChannels: [],
                 config: new GuildConfig({ guild: guild.id }),
                 games: [],
               };
-              // console.log(guild.channels.cache.filter(c => c instanceof TextChannel))
-              guild.members.cache.forEach((member) => {
+              // console.log(guild.channels.filter(c => c instanceof TextChannel))
+              guild.members.forEach((member) => {
                 if (member.id === id) {
                   guildInfo.member = member;
                   if (!options.search) account.guilds.push(guildInfo);
@@ -1022,34 +1042,46 @@ const fetchAccount = (token: any, options: AccountOptions) => {
             };
             const guildConfigs = await GuildConfig.fetchAllBy(gcQuery);
 
-            account.guilds = account.guilds.map((guild: AccountGuild) => {
+            for (let gi = 0; gi < account.guilds.length; gi++) {
+              const guild: AccountGuild = account.guilds[gi];
               const guildConfig = guildConfigs.find((gc) => gc.guild === guild.id) || new GuildConfig({ guild: guild.id });
-              const member: GuildMember = guild.member;
+              const member = guild.member;
 
               let gcChannels: ChannelConfig[] = guildConfig.channels;
-              const firstChannel = guild.channels.find((gc) => gc.permissionsFor(member.guild.roles.everyone).has(Permissions.FLAGS.VIEW_CHANNEL));
-              if (firstChannel && guild.channels.array().length > 0 && (gcChannels.length == 0 || !guild.channels.find((gc) => !!gcChannels.find((c) => gc.id === c.channelId)))) {
+              let firstChannel: ShardChannel;
+              for (let i = 0; i < guild.channels.length; i++) {
+                const pf = await guild.channels[i].permissionsFor(guild.roles.find((r) => r.name === "@everyone").id, Permissions.FLAGS.VIEW_CHANNEL);
+                if (pf) firstChannel = guild.channels[i];
+              }
+              if (firstChannel && guild.channels.length > 0 && (gcChannels.length == 0 || !guild.channels.find((gc) => !!gcChannels.find((c) => gc.id === c.channelId)))) {
                 gcChannels.push({ channelId: firstChannel.id, gameTemplates: [guildConfig.defaultGameTemplate.id] });
               }
 
               if (member) {
-                guild.userRoles = guild.roles.filter((r) => member.roles.cache.array().find((mr) => mr.id === r.id)).map((r) => r.name);
+                guild.userRoles = guild.roles.filter((r) => member.roles.find((mr) => mr.id === r.id)).map((r) => r.name);
                 guild.isAdmin = !!(
                   member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) ||
-                  member.roles.cache.find((r) => r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim())
+                  member.roles.find((r) => r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim())
                 );
-                guild.permission = guildConfig.memberHasPermission(member) || guild.isAdmin;
+                guild.permission = guildConfig.shardMemberHasPermission(member) || guild.isAdmin;
               }
 
-              const channels = gcChannels
-                .filter((c) => guild.channels.find((gc: GuildChannel) => gc.id == c.channelId && gc.permissionsFor(id).has(Permissions.FLAGS.VIEW_CHANNEL)))
-                .filter((c) => member && (member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) || !!guildConfig.memberHasPermission(member, c.channelId)))
-                .map((c) => guild.channels.find((gc: GuildChannel) => gc.id === c.channelId));
+              let channels: ShardChannel[] = [];
+              for (let gci = 0; gci < gcChannels.length; gci++) {
+                const gcc = guild.channels.filter((gc: ShardChannel) => gc.id == gcChannels[gci].channelId);
+                const gccf: ShardChannel[] = [];
+                for (let gcci = 0; gcci < gcc.length; gcci++) {
+                  const pm = await gcc[gcci].permissionsFor(id, Permissions.FLAGS.VIEW_CHANNEL);
+                  if (pm) gccf.push(gcc[gcci]);
+                }
+                gccf.forEach(gc => channels.push(gc));
+              }
+              channels = channels.filter((c) => member && (member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) || !!guildConfig.shardMemberHasPermission(member, c.id)));
 
               guild.announcementChannels = channels;
               guild.config = guildConfig;
-              return guild;
-            });
+              account.guilds[gi] = guild;
+            }
 
             if (options.page === GamesPages.Server && !options.search) {
               account.guilds = account.guilds.filter((g) => account.guilds.find((s) => s.id === g.id && (s.isAdmin || config.author == tag)));
@@ -1122,9 +1154,19 @@ const fetchAccount = (token: any, options: AccountOptions) => {
                 };
               }
 
-              const games: any[] = await Game.fetchAllBy(gameOptions);
+              const fGames: Game[] = await Game.fetchAllBy(gameOptions);
+              const games: any[] = [];
+              for(let i = 0; i < fGames.length; i++) {
+                const game = fGames[i];
+                const dc = game.discordChannel;
+                if (dc) {
+                  const perm = await dc.permissionsFor(id, Permissions.FLAGS.VIEW_CHANNEL);
+                  if (perm) {
+                    games.push(game);
+                  }
+                }
+              }
               games
-                .filter((game) => game.discordChannel.permissionsFor(id).has(Permissions.FLAGS.VIEW_CHANNEL))
                 .forEach(async (game) => {
                   if (!game.discordGuild) return;
                   await game.updateReservedList();

@@ -1,11 +1,11 @@
 import mongodb, { ObjectID } from "mongodb";
-import discord, { Message, Guild, TextChannel, MessageEmbed, GuildMember, Collection, User, Permissions } from "discord.js";
+import discord, { Message, MessageEmbed, User, Client } from "discord.js";
 import moment from "moment";
 import "moment-recur-ts";
 
 import db from "../db";
 import aux from "../appaux";
-import { discordClient } from "../processes/discord";
+import ShardManager, { ShardGuild, ShardMember, ShardChannel } from "../processes/discord";
 import { io } from "../processes/socket";
 import { GuildConfig } from "./guild-config";
 import config from "./config";
@@ -160,8 +160,12 @@ export class Game implements GameModel {
   createdTimestamp: number;
   updatedTimestamp: number;
 
-  constructor(game: GameModel) {
-    let guildMembers: GuildMember[] = [];
+  client: Client;
+
+  constructor(game: GameModel, guilds: ShardGuild[], client?: Client) {
+    if (client) this.client = client;
+
+    let guildMembers: ShardMember[] = [];
     const gameEntries = Object.entries(game || {});
     for (let i = 0; i < gameEntries.length; i++) {
       let [key, value] = gameEntries[i];
@@ -173,22 +177,21 @@ export class Game implements GameModel {
 
       if (key === "s") {
         this[key] = value;
-        this._guild = discordClient().guilds.cache.get(value);
-        if (!this._guild) this._guild = discordClient().guilds.resolve(value);
-        if (!guildMembers.length) guildMembers = this._guild.members.cache.array();
-      } else if (key === "c") {
+        this._guild = guilds.find((g) => g.id === value);
+        if (this._guild && !guildMembers.length) guildMembers = this._guild.members;
+      } else if (key === "c" && this._guild) {
         this[key] = value;
-        this._guild.channels.cache.forEach((c) => {
-          if (!this._channel && c instanceof TextChannel) {
+        this._guild.channels.forEach((c) => {
+          if (!this._channel && c.type === "text") {
             this._channel = c;
           }
-          if (c.id === value && c instanceof TextChannel) {
+          if (c.id === value && c.type === "text") {
             this._channel = c;
           }
         });
-      } else if (key === "dm") {
+      } else if (key === "dm" && guildMembers) {
         this[key] = Game.updateDM(value, guildMembers);
-      } else if (key === "reserved") {
+      } else if (key === "reserved" && guildMembers) {
         this[key] = Game.updateReservedList(value, guildMembers);
       } else this[key] = value;
     }
@@ -196,23 +199,17 @@ export class Game implements GameModel {
     const d = new Date();
     d.setDate(d.getDate() - 2);
     if (!this.createdTimestamp) {
-      this.createdTimestamp = d.getTime();
-      if (this.messageId && this._channel) {
-        const msg = this._channel.messages.resolve(this.messageId);
-        if (msg) {
-          this.createdTimestamp = msg.createdTimestamp;
-        }
-      }
+      this.createdTimestamp = d.getTime() - 24 * 3600 * 1000;
     }
     if (!this.updatedTimestamp) this.updatedTimestamp = this.createdTimestamp;
   }
 
-  private _guild: Guild;
+  private _guild: ShardGuild;
   get discordGuild() {
     return this._guild;
   }
 
-  private _channel: TextChannel;
+  private _channel: ShardChannel;
   get discordChannel() {
     return this._channel;
   }
@@ -267,21 +264,21 @@ export class Game implements GameModel {
       return null;
     }
     let channel = this._channel;
-    const guild = channel.guild;
+    const guild = this._guild;
     const guildConfig = await GuildConfig.fetch(guild.id);
 
     const game: GameModel = this.data;
 
     try {
       if (guild && !channel) {
-        const textChannels = <TextChannel[]>guild.channels.cache.array().filter((c) => c instanceof TextChannel);
-        const channels = guildConfig.channels.filter((c) => guild.channels.cache.array().find((gc) => gc.id == c.channelId)).map((c) => guild.channels.cache.get(c.channelId));
+        const textChannels = guild.channels.filter((c) => c.type === "text");
+        const channels = guildConfig.channels.filter((c) => guild.channels.find((gc) => gc.id == c.channelId)).map((c) => guild.channels.find((ch) => ch.id === c.channelId));
         if (channels.length === 0 && textChannels.length > 0) channels.push(textChannels[0]);
-        channel = <TextChannel>channels[0];
+        channel = channels[0];
       }
 
       const lang = gmLanguages.find((l) => l.code === guildConfig.lang) || gmLanguages.find((l) => l.code === "en");
-      const guildMembers = (await guild.members.fetch()).array();
+      const guildMembers = guild.members;
 
       if (!game.template) game.template = (guildConfig.gameTemplates.find((gt) => gt.isDefault) || guildConfig.gameTemplates[0]).id;
       const gameTemplate = guildConfig.gameTemplates.find((gt) => gt.id === game.template);
@@ -331,7 +328,7 @@ export class Game implements GameModel {
 
         if (reserved.length < parseInt(game.players)) {
           reserved.push(reserved.length + 1 + ". " + name);
-          if (member) rMentions.push(member.toString());
+          if (member) rMentions.push(member.user.toString());
         } else {
           waitlist.push(reserved.length + waitlist.length + 1 + ". " + name);
         }
@@ -342,8 +339,8 @@ export class Game implements GameModel {
       });
       const rawDate = eventTimes.rawDate;
       const timezone = "UTC" + (game.timezone >= 0 ? "+" : "") + game.timezone;
-      const where = parseDiscord(game.where, guild).trim();
-      let description = parseDiscord(game.description, guild).trim();
+      const where = (await parseDiscord(game.where, guild)).trim();
+      let description = (await parseDiscord(game.description, guild)).trim();
 
       let signups = "";
       let automatedInstructions = `\n(${guildConfig.emojiAdd} ${lang.buttons.SIGN_UP}${guildConfig.dropOut ? ` | ${guildConfig.emojiRemove} ${lang.buttons.DROP_OUT}` : ""})`;
@@ -397,8 +394,8 @@ export class Game implements GameModel {
         embed = new discord.MessageEmbed();
         embed.setColor(gameTemplate && gameTemplate.embedColor ? gameTemplate.embedColor : guildConfig.embedColor);
         embed.setTitle(game.adventure);
-        embed.setAuthor(dm, dmmember && dmmember.user.avatarURL() && urlRegex.test(dmmember.user.avatarURL()) ? dmmember.user.avatarURL().substr(0, 2048) : null);
-        if (dmmember && dmmember.user.avatarURL() && urlRegex.test(dmmember.user.avatarURL())) embed.setThumbnail(dmmember.user.avatarURL().substr(0, 2048));
+        embed.setAuthor(dm, dmmember && dmmember.user.avatarUrl && urlRegex.test(dmmember.user.avatarUrl) ? dmmember.user.avatarUrl.substr(0, 2048) : null);
+        if (dmmember && dmmember.user.avatarUrl && urlRegex.test(dmmember.user.avatarUrl)) embed.setThumbnail(dmmember.user.avatarUrl.substr(0, 2048));
         if (description.length > 0) embed.setDescription(description);
         if (game.hideDate) embed.addField(lang.game.WHEN, lang.game.labels.TBD, true);
         else embed.addField(lang.game.WHEN, when, true);
@@ -432,24 +429,43 @@ export class Game implements GameModel {
 
         gameData.updatedTimestamp = new Date().getTime();
         const updated = await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: gameData });
-        let message: Message | Collection<string, Message>;
+        let message: Message;
         try {
-          message = await channel.messages.fetch(game.messageId);
-          if (guildConfig.embeds) msg = [parseDiscord(game.description, guild, true), dmmember && dmmember.toString(), rMentions.join(" ")].filter((m) => m).join(" ");
+          try {
+            message = await channel.messages.fetch(game.messageId);
+          } catch (err) {}
+          if (guildConfig.embeds) msg = [await parseDiscord(game.description, guild, true), dmmember && dmmember.user.toString(), rMentions.join(" ")].filter((m) => m).join(" ");
           else embed = null;
           if (message) {
-            if (message instanceof Collection) {
-              message = (<Collection<string, Message>>message).get(game.messageId);
-            }
-            if ((<Message>message).author.id === process.env.CLIENT_ID) {
-              message = await (<Message>message).edit(msg, embed);
+            if ((message.author ? message.author.id : (<any>message).authorID) === process.env.CLIENT_ID) {
+              if (this.client) message = await ShardManager.clientMessageEdit(this.client, guild.id, channel.id, message.id, msg, embed);
+              else message = await ShardManager.shardMessageEdit(guild.id, channel.id, message.id, msg, embed);
             }
           } else {
-            message = <Message>await channel.send(msg, embed);
+            message = <Message>(await channel.send(msg, embed))[0];
 
             if (message) {
               await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: { messageId: message.id } });
               game.messageId = message.id;
+            }
+          }
+
+          if (message) {
+            try {
+              if (game.method === GameMethod.AUTOMATED) await ShardManager.shardMessageReact(guild.id, channel.id, message.id, guildConfig.emojiAdd);
+            } catch (err) {
+              if (!aux.isEmoji(guildConfig.emojiAdd)) {
+                guildConfig.emojiAdd = "➕";
+                if (game.method === GameMethod.AUTOMATED) await ShardManager.shardMessageReact(guild.id, channel.id, message.id, guildConfig.emojiAdd);
+              }
+            }
+            try {
+              if (game.method === GameMethod.AUTOMATED && guildConfig.dropOut) ShardManager.shardMessageReact(guild.id, channel.id, message.id, guildConfig.emojiRemove);
+            } catch (err) {
+              if (!aux.isEmoji(guildConfig.emojiRemove)) {
+                guildConfig.emojiRemove = "➖";
+                if (game.method === GameMethod.AUTOMATED && guildConfig.dropOut) ShardManager.shardMessageReact(guild.id, channel.id, message.id, guildConfig.emojiRemove);
+              }
             }
           }
 
@@ -459,7 +475,13 @@ export class Game implements GameModel {
           this.dmNextWaitlist(prev.reserved, game.reserved);
 
           const updatedGame = aux.objectChanges(prev, game);
-          io().emit("game", { action: "updated", gameId: game._id, game: updatedGame, guildId: game.s });
+          if (this.client)
+            this.client.shard.send({
+              type: "socket",
+              name: "game",
+              data: { action: "updated", gameId: game._id, game: updatedGame, guildId: game.s },
+            });
+          else io().emit("game", { action: "updated", gameId: game._id, game: updatedGame, guildId: game.s });
         } catch (err) {
           aux.log("UpdateGameError:", err);
           if (updated) updated.modifiedCount = 0;
@@ -478,27 +500,27 @@ export class Game implements GameModel {
         let gcUpdated = false;
 
         try {
-          if (guildConfig.embeds) msg = [parseDiscord(game.description, guild, true), dmmember && dmmember.toString(), rMentions.join(" ")].filter((m) => m).join(" ");
+          if (guildConfig.embeds) msg = [await parseDiscord(game.description, guild, true), dmmember && dmmember.user.toString(), rMentions.join(" ")].filter((m) => m).join(" ");
           else embed = null;
-          
+
           message = <Message>await channel.send(msg, embed);
 
           try {
-            if (game.method === GameMethod.AUTOMATED) await message.react(guildConfig.emojiAdd);
+            if (game.method === GameMethod.AUTOMATED) await ShardManager.shardMessageReact(guild.id, channel.id, message.id, guildConfig.emojiAdd);
           } catch (err) {
             if (!aux.isEmoji(guildConfig.emojiAdd)) {
               gcUpdated = true;
               guildConfig.emojiAdd = "➕";
-              if (game.method === GameMethod.AUTOMATED) await message.react(guildConfig.emojiAdd);
+              if (game.method === GameMethod.AUTOMATED) await ShardManager.shardMessageReact(guild.id, channel.id, message.id, guildConfig.emojiAdd);
             }
           }
           try {
-            if (game.method === GameMethod.AUTOMATED && guildConfig.dropOut) await message.react(guildConfig.emojiRemove);
+            if (game.method === GameMethod.AUTOMATED && guildConfig.dropOut) await ShardManager.shardMessageReact(guild.id, channel.id, message.id, guildConfig.emojiRemove);
           } catch (err) {
             if (!aux.isEmoji(guildConfig.emojiRemove)) {
               gcUpdated = true;
               guildConfig.emojiRemove = "➖";
-              if (game.method === GameMethod.AUTOMATED && guildConfig.dropOut) await message.react(guildConfig.emojiRemove);
+              if (game.method === GameMethod.AUTOMATED && guildConfig.dropOut) await ShardManager.shardMessageReact(guild.id, channel.id, message.id, guildConfig.emojiRemove);
             }
           }
         } catch (err) {
@@ -507,7 +529,7 @@ export class Game implements GameModel {
 
         if (gcUpdated) {
           guildConfig.save(guildConfig.data);
-          guildConfig.updateReactions();
+          guildConfig.updateReactions(this.client);
         }
 
         let updated;
@@ -531,7 +553,13 @@ export class Game implements GameModel {
           aux.log(`GameMessageNotPostedError:\n`, game.s, `${msg}\n`, embed);
         }
 
-        io().emit("game", { action: "new", gameId: inserted.insertedId.toString(), guildId: game.s, authorId: game.author.id });
+        if (this.client)
+          this.client.shard.send({
+            type: "socket",
+            name: "game",
+            data: { action: "new", gameId: inserted.insertedId.toString(), guildId: game.s, authorId: game.author.id },
+          });
+        else io().emit("game", { action: "new", gameId: inserted.insertedId.toString(), guildId: game.s, authorId: game.author.id });
 
         const saved: GameSaveData = {
           _id: inserted.insertedId.toString(),
@@ -556,7 +584,7 @@ export class Game implements GameModel {
     }
   }
 
-  static async fetch(gameId: string | number | ObjectID): Promise<Game> {
+  static async fetch(gameId: string | number | ObjectID, client?: Client): Promise<Game> {
     if (!connection()) {
       aux.log("No database connection");
       return null;
@@ -564,46 +592,52 @@ export class Game implements GameModel {
     const game = await connection()
       .collection(collection)
       .findOne({ _id: new ObjectId(gameId) });
-    return game && discordClient().guilds.cache.find((g) => g.id === game.s) ? new Game(game) : null;
+    const guilds = client ? await ShardManager.clientGuilds(client) : await ShardManager.shardGuilds();
+    return game ? new Game(game, guilds, client) : null;
   }
 
-  static async fetchBy(key: string, value: any): Promise<Game> {
+  static async fetchBy(key: string, value: any, client?: Client): Promise<Game> {
     if (!connection()) {
       aux.log("No database connection");
       return null;
     }
     const query: mongodb.FilterQuery<any> = aux.fromEntries([[key, value]]);
     const game: GameModel = await connection().collection(collection).findOne(query);
-    return game && discordClient().guilds.cache.find((g) => g.id === game.s) ? new Game(game) : null;
+    const guilds = client ? await ShardManager.clientGuilds(client) : await ShardManager.shardGuilds();
+    return game ? new Game(game, guilds, client) : null;
   }
 
-  static async fetchAllBy(query: mongodb.FilterQuery<any>): Promise<Game[]> {
+  static async fetchAllBy(query: mongodb.FilterQuery<any>, client?: Client): Promise<Game[]> {
     if (!connection()) {
       aux.log("No database connection");
       return [];
     }
     const games: GameModel[] = await connection().collection(collection).find(query).toArray();
-    return games
-      .filter((game) => {
-        return discordClient().guilds.cache.find((g) => g.id === game.s);
-      })
-      .map((game) => {
-        return new Game(game);
-      });
+    const guilds = client ? await ShardManager.clientGuilds(client) : await ShardManager.shardGuilds();
+    return (
+      games
+        // .filter(game => {
+        //   return guilds.find(g => g.id === game.s);
+        // })
+        .map((game) => {
+          return new Game(game, guilds, client);
+        })
+    );
   }
 
-  static async fetchAllByLimit(query: mongodb.FilterQuery<any>, limit: number): Promise<Game[]> {
+  static async fetchAllByLimit(query: mongodb.FilterQuery<any>, limit: number, client?: Client): Promise<Game[]> {
     if (!connection()) {
       aux.log("No database connection");
       return [];
     }
     const games: GameModel[] = await connection().collection(collection).find(query).limit(limit).toArray();
+    const guilds = client ? await ShardManager.clientGuilds(client) : await ShardManager.shardGuilds();
     return games
       .filter((game) => {
-        return discordClient().guilds.cache.find((g) => g.id === game.s);
+        return guilds.find((g) => g.id === game.s);
       })
       .map((game) => {
-        return new Game(game);
+        return new Game(game, guilds, client);
       });
   }
 
@@ -665,6 +699,8 @@ export class Game implements GameModel {
         this.reserved = [];
       }
 
+      const guilds = await ShardManager.shardGuilds();
+
       const guildConfig = await GuildConfig.fetch(this.s);
       if (guildConfig.rescheduleMode === RescheduleMode.UPDATE) {
         await this.save();
@@ -675,7 +711,7 @@ export class Game implements GameModel {
         delete data.pm;
         delete data.messageId;
         delete data.reminderMessageId;
-        const game = new Game(data);
+        const game = new Game(data, guilds);
         const newGame = await game.save();
         const del = await this.delete();
         if (del.deletedCount == 0) {
@@ -685,7 +721,13 @@ export class Game implements GameModel {
             await this.save();
           }
         }
-        io().emit("game", { action: "rescheduled", gameId: this._id, newGameId: newGame._id });
+        if (this.client)
+          this.client.shard.send({
+            type: "socket",
+            name: "game",
+            data: { action: "rescheduled", gameId: this._id, newGameId: newGame._id },
+          });
+        else io().emit("game", { action: "rescheduled", gameId: this._id, newGameId: newGame._id });
       }
       return true;
     } catch (err) {
@@ -705,6 +747,9 @@ export class Game implements GameModel {
       aux.log("No database connection");
       return { deletedCount: 0 };
     }
+
+    // const guilds = options.client ? await ShardManager.clientGuilds(options.client) : await ShardManager.shardGuilds();
+    // const guild = 
 
     try {
       var result = await Game.softDelete(this._id);
@@ -745,36 +790,38 @@ export class Game implements GameModel {
         aux.log("Reminder: ", e.message);
       }
 
-      try {
-        if (game.pm) {
-          const guildMembers = await channel.guild.members.fetch();
-          const dm = guildMembers.find((m) => m.user.tag === game.dm.tag || m.user.id === game.dm.id);
-          if (dm && dm.user.dmChannel) {
-            const pm = await dm.user.dmChannel.messages.fetch(game.pm);
-            if (pm) {
-              pm.delete().catch((err) => {
-                aux.log("Attempted to delete game edit link pm.");
-                // aux.log(err);
-              });
-            }
-          }
-        }
-      } catch (e) {
-        aux.log("DM: ", e.message);
-      }
+      // try {
+      //   if (game.pm) {
+      //     const guild = this._guild;
+      //     const dm = guild.members.find(m => m.user.tag === game.dm.tag || m.user.id === game.dm.id);
+      //     if (dm && dm.user.dmChannel) {
+      //       await dm.user.dmChannel.delete(game.pm);
+      //     }
+      //   }
+      // } catch (e) {
+      //   aux.log("DM: ", e.message);
+      // }
     }
 
-    if (sendWS) io().emit("game", { action: "deleted", gameId: game._id, guildId: game.s });
+    if (sendWS) {
+      if (this.client)
+        this.client.shard.send({
+          type: "socket",
+          name: "game",
+          data: { action: "deleted", gameId: game._id, guildId: game.s },
+        });
+      else io().emit("game", { action: "deleted", gameId: game._id, guildId: game.s });
+    }
     return result;
   }
 
   async dmCustomInstructions(tag: string) {
     if (this.method === "automated" && this.customSignup.trim().length > 0 && this.discordGuild) {
       const guild = this.discordGuild;
-      const guildMembers = await guild.members.fetch();
+      const guildMembers = await guild.members;
       const guildConfig = await GuildConfig.fetch(guild.id);
-      const dmmember = guildMembers.array().find((m) => m.user.tag === this.dm.tag.trim() || m.user.id === this.dm.id);
-      const member = guildMembers.array().find((m) => m.user.tag === tag.trim());
+      const dmmember = guildMembers.find((m) => m.user.tag === this.dm.tag.trim() || m.user.id === this.dm.id);
+      const member = guildMembers.find((m) => m.user.tag === tag.trim());
       if (!this.template) this.template = (guildConfig.gameTemplates.find((gt) => gt.isDefault) || guildConfig.gameTemplates[0]).id;
       const gameTemplate = guildConfig.gameTemplates.find((gt) => gt.id === this.template);
 
@@ -793,7 +840,7 @@ export class Game implements GameModel {
         );
         dmEmbed.setColor(gameTemplate && gameTemplate.embedColor ? gameTemplate.embedColor : guildConfig.embedColor);
 
-        member.send(`${lang.messages.DM_INSTRUCTIONS.replace(":DM", (dmmember || this.dm).toString()).replace(" :EVENT", ``)}:`, {
+        member.send(`${lang.messages.DM_INSTRUCTIONS.replace(":DM", dmmember ? dmmember.user.toString() : this.dm.tag).replace(" :EVENT", ``)}:`, {
           embed: dmEmbed,
         });
       }
@@ -806,7 +853,7 @@ export class Game implements GameModel {
     const pMaxPlayer = (pReserved[parseInt(this.players) - 1] || { tag: "" }).tag;
     const gMaxPlayer = (gReserved[parseInt(this.players) - 1] || { tag: "" }).tag;
     if (pMaxPlayer.trim() == gMaxPlayer.trim()) return;
-    const guildMembers = (await this.discordGuild.members.fetch()).array();
+    const guildMembers = this.discordGuild.members;
     const guildConfig = await GuildConfig.fetch(this.discordGuild.id);
     const lang = gmLanguages.find((l) => l.code === guildConfig.lang) || gmLanguages.find((l) => l.code === "en");
     if (!this.template) this.template = (guildConfig.gameTemplates.find((gt) => gt.isDefault) || guildConfig.gameTemplates[0]).id;
@@ -896,12 +943,12 @@ export class Game implements GameModel {
   }
 
   async updateReservedList() {
-    let guildMembers: discord.Collection<string, GuildMember>;
+    let guildMembers: ShardMember[];
     let updated = false;
     try {
       if (this.dm && typeof this.dm === "string") {
-        if (!guildMembers) guildMembers = await this.discordGuild.members.fetch();
-        this.dm = Game.updateDM(this.dm, guildMembers.array());
+        if (!guildMembers) guildMembers = this.discordGuild.members;
+        this.dm = Game.updateDM(this.dm, guildMembers);
         updated = true;
       }
     } catch (err) {
@@ -909,8 +956,8 @@ export class Game implements GameModel {
     }
     try {
       if (typeof this.reserved === "string") {
-        if (!guildMembers) guildMembers = await this.discordGuild.members.fetch();
-        this.reserved = Game.updateReservedList(this.reserved, guildMembers.array());
+        if (!guildMembers) guildMembers = await this.discordGuild.members;
+        this.reserved = Game.updateReservedList(this.reserved, guildMembers);
         updated = true;
       }
     } catch (err) {
@@ -919,7 +966,7 @@ export class Game implements GameModel {
     if (updated && this._id) this.save();
   }
 
-  static updateReservedList(list: RSVP[] | string, guildMembers: GuildMember[]) {
+  static updateReservedList(list: RSVP[] | string, guildMembers: ShardMember[]) {
     if (Array.isArray(list)) return list;
     let rsvps: RSVP[] = [];
     const reserved = list.split(/\r?\n/);
@@ -934,7 +981,7 @@ export class Game implements GameModel {
     return rsvps;
   }
 
-  static updateDM(dm: RSVP | string, guildMembers: GuildMember[]) {
+  static updateDM(dm: RSVP | string, guildMembers: ShardMember[]) {
     if (typeof dm === "string") {
       const rsvp: RSVP = { tag: dm.trim() };
       const member = guildMembers.find((m) => m.user.tag === dm.trim());
@@ -963,21 +1010,22 @@ export class Game implements GameModel {
   }
 }
 
-const parseDiscord = (text: string, guild: Guild, getMentions: boolean = false) => {
+const parseDiscord = async (text: string, guild: ShardGuild, getMentions: boolean = false) => {
   const mentions: string[] = [];
   try {
-    guild.members.cache.array().forEach((mem) => {
-      if (new RegExp(`\@${aux.backslash(mem.user.tag)}`, "gi").test(text)) mentions.push(mem.toString());
-      text = text.replace(new RegExp(`\@${aux.backslash(mem.user.tag)}`, "gi"), mem.toString());
+    guild.members.forEach((mem) => {
+      if (new RegExp(`\@${aux.backslash(mem.user.tag)}`, "gi").test(text)) mentions.push(mem.user.toString());
+      text = text.replace(new RegExp(`\@${aux.backslash(mem.user.tag)}`, "gi"), mem.user.toString());
     });
-    guild.channels.cache.array().forEach((c) => {
-      text = text.replace(new RegExp(`\#${aux.backslash(c.name)}`, "gi"), c.toString());
+    guild.channels.forEach((c) => {
+      text = text.replace(new RegExp(`\#${aux.backslash(c.name)}`, "gi"), `<#${c.id}>`);
     });
-    guild.roles.cache.array().forEach((role) => {
-      const canMention = guild.members.resolve(discordClient().user.id).hasPermission(Permissions.FLAGS.MENTION_EVERYONE);
+    guild.roles.forEach((role) => {
+      // const canMention = guild.members.hasPermission(Permissions.FLAGS.toString()_EVERYONE);
+      const canMention = true;
       if ((!role.mentionable && !canMention) || ["@everyone", "@here"].includes(role.name)) return;
-      if (new RegExp(`\@${aux.backslash(role.name)}`, "gi").test(text)) mentions.push(role.toString());
-      text = text.replace(new RegExp(`\@${aux.backslash(role.name)}`, "gi"), role.toString());
+      if (new RegExp(`\@${aux.backslash(role.name)}`, "gi").test(text)) mentions.push(`<@&${role.id}>`);
+      text = text.replace(new RegExp(`\@${aux.backslash(role.name)}`, "gi"), `<@&${role.id}>`);
     });
   } catch (err) {
     aux.log(err);

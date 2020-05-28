@@ -2,7 +2,8 @@ import db from "../db";
 import { ObjectID, ObjectId, FilterQuery } from "mongodb";
 import { Game, GameReminder } from "./game";
 import aux from "../appaux";
-import { GuildMember } from "discord.js";
+import { GuildMember, Client, TextChannel } from "discord.js";
+import { ShardMember } from "../processes/discord";
 
 const supportedLanguages = require("../../lang/langs.json");
 const langs = supportedLanguages.langs
@@ -113,7 +114,7 @@ export class GuildConfig implements GuildConfigDataModel {
           ];
         } else if (Array.isArray(value)) {
           this[key] = value
-            .map(c => {
+            .map((c) => {
               if (typeof c === "string") {
                 return {
                   channelId: c,
@@ -125,10 +126,10 @@ export class GuildConfig implements GuildConfigDataModel {
                   ...c,
                 };
             })
-            .filter((c, i) => i === value.findIndex(ci => ci.channelId === c.channelId));
+            .filter((c, i) => i === value.findIndex((ci) => ci.channelId === c.channelId));
         }
       } else if (key === "gameTemplates") {
-        this[key] = (value || []).map(gt => {
+        this[key] = (value || []).map((gt) => {
           gt.embedColor = aux.colorFixer(gt.embedColor);
           return gt;
         });
@@ -141,7 +142,7 @@ export class GuildConfig implements GuildConfigDataModel {
       this.saveDefaultTemplate = true;
       const defaultGameTemplate = this.defaultGameTemplate;
       this.gameTemplates.push(defaultGameTemplate);
-      this.channel = this.channel.map(channel => {
+      this.channel = this.channel.map((channel) => {
         channel.gameTemplates = [defaultGameTemplate.id];
         return channel;
       });
@@ -149,10 +150,10 @@ export class GuildConfig implements GuildConfigDataModel {
   }
 
   get defaultGameTemplate(): GameTemplate {
-    const defaultGT = this.gameTemplates.find(gt => gt.isDefault);
+    const defaultGT = this.gameTemplates.find((gt) => gt.isDefault);
     if (defaultGT) return defaultGT;
 
-    const lang = langs.find(l => l.code === this.lang) || langs.find(l => l.code === "en");
+    const lang = langs.find((l) => l.code === this.lang) || langs.find((l) => l.code === "en");
 
     return {
       id: new ObjectId().toHexString(),
@@ -176,21 +177,21 @@ export class GuildConfig implements GuildConfigDataModel {
 
     const defaultGameTemplate = this.defaultGameTemplate;
     if (updates.gameTemplates.length === 0) updates.gameTemplates.push(defaultGameTemplate);
-    updates.gameTemplates = updates.gameTemplates.map(gt => {
+    updates.gameTemplates = updates.gameTemplates.map((gt) => {
       if (!gt.id) gt = { id: new ObjectId().toHexString(), ...gt };
       gt.embedColor = aux.colorFixer(gt.embedColor);
       return gt;
     });
-    updates.channel = updates.channel.map(channel => {
-      channel.gameTemplates = channel.gameTemplates.filter(cgt => updates.gameTemplates.find(gt => gt.id === cgt));
-      channel.gameTemplates = channel.gameTemplates.map(cgt => new ObjectId(cgt).toHexString());
+    updates.channel = updates.channel.map((channel) => {
+      channel.gameTemplates = channel.gameTemplates.filter((cgt) => updates.gameTemplates.find((gt) => gt.id === cgt));
+      channel.gameTemplates = channel.gameTemplates.map((cgt) => new ObjectId(cgt).toHexString());
       if (channel.gameTemplates.length === 0) {
         channel.gameTemplates = [defaultGameTemplate.id];
       }
       return channel;
     });
-    updates.role = updates.gameTemplates.find(gt => gt.isDefault).role;
-    updates.embedColor = updates.gameTemplates.find(gt => gt.isDefault).embedColor;
+    updates.role = updates.gameTemplates.find((gt) => gt.isDefault).role;
+    updates.embedColor = updates.gameTemplates.find((gt) => gt.isDefault).embedColor;
 
     const col = connection().collection(collection);
     delete updates._id;
@@ -238,7 +239,7 @@ export class GuildConfig implements GuildConfigDataModel {
   static async fetchAll(): Promise<GuildConfig[]> {
     if (!connection()) throw new Error("No database connection");
     const guildConfigs = await connection().collection(collection).find().toArray();
-    return guildConfigs.map(gc => {
+    return guildConfigs.map((gc) => {
       return new GuildConfig(gc);
     });
   }
@@ -258,34 +259,54 @@ export class GuildConfig implements GuildConfigDataModel {
     return gcs;
   }
 
-  memberHasPermission(member: GuildMember, channelId?: string) {
-    return !!this.gameTemplates.find(gt => {
+  shardMemberHasPermission(member: ShardMember, channelId?: string) {
+    return !!this.gameTemplates.find((gt) => {
       return (
-        this.channel.find(c => c.gameTemplates.find(cgt => cgt === gt.id) && (!channelId || c.channelId === channelId)) &&
-        (!gt.role || !!member.roles.cache.find(r => gt.role.trim() === r.name.toLowerCase().trim()))
+        this.channel.find((c) => c.gameTemplates.find((cgt) => cgt === gt.id) && (!channelId || c.channelId === channelId)) &&
+        (!gt.role || !!member.roles.find((r) => gt.role.trim() === r.name.toLowerCase().trim()))
       );
     });
   }
 
-  async updateReactions() {
-    const games = await Game.fetchAllBy({
-      s: this.guild,
-      timestamp: {
-        $gt: new Date().getTime(),
-      },
+  memberHasPermission(member: GuildMember, channelId?: string) {
+    return !!this.gameTemplates.find((gt) => {
+      return (
+        this.channel.find((c) => c.gameTemplates.find((cgt) => cgt === gt.id) && (!channelId || c.channelId === channelId)) &&
+        (!gt.role || !!member.roles.cache.array().find((r) => gt.role.trim() === r.name.toLowerCase().trim()))
+      );
     });
+  }
+
+  async updateReactions(client: Client) {
+    if (!client) return;
+
+    const games = await Game.fetchAllBy(
+      {
+        s: this.guild,
+        timestamp: {
+          $gt: new Date().getTime(),
+        },
+      },
+      client
+    );
 
     for (let i = 0; i < games.length; i++) {
       const game = games[i];
-      const message = await game.discordChannel.messages.fetch(game.messageId);
-      if (message) {
-        try {
-          await message.reactions.removeAll();
-          message.react(this.emojiAdd);
-          message.react(this.emojiRemove);
-          game.save();
-        } catch (err) {
-          aux.log("UpdateReactionsError:", "Could not update emojis for game", game.adventure, `(${game.s})`, err);
+      const guild = client.guilds.cache.find((g) => g.id === game.discordGuild.id);
+      if (guild) {
+        const channel = <TextChannel>guild.channels.cache.find((c) => c instanceof TextChannel && c.id === game.discordChannel.id);
+        if (channel) {
+          const message = await channel.messages.fetch(game.messageId);
+          if (message) {
+            try {
+              await message.reactions.removeAll();
+              message.react(this.emojiAdd);
+              message.react(this.emojiRemove);
+              game.save();
+            } catch (err) {
+              aux.log("UpdateReactionsError:", "Could not update emojis for game", game.adventure, `(${game.s})`, err);
+            }
+          }
         }
       }
     }
