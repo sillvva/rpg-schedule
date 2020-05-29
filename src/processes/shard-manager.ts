@@ -84,99 +84,102 @@ const clientGuilds = async (client: Client, guildIds: string[] = []) => {
     const sGuildChannels = [guilds.filter(g => guildIds.length > 0 ? guildIds.includes(g.id) : true).map((g) => g.channels.cache.array())];
     const sGuildRoles = [guilds.filter(g => guildIds.length > 0 ? guildIds.includes(g.id) : true).map((g) => g.roles.cache.array())];
     const sGuildMemberRoles = [guilds.filter(g => guildIds.length > 0 ? guildIds.includes(g.id) : true).map((g) => g.members.cache.array().map((m) => m.roles.cache.array()))];
+    console.log(guildIds, shards[0].length);
     return shards.reduce<ShardGuild[]>((iter, shard, shardIndex) => {
-      return [
-        ...iter,
-        ...shard.map((guild, guildIndex) => {
-          const sGuild: ShardGuild = {
-            id: guild.id,
-            name: guild.name,
-            icon: guild.icon,
-            shardID: guild.shardID,
-            members: sGuildMembers[shardIndex][guildIndex].map((member, memberIndex) => {
-              const user = sGuildUsers[shardIndex][guildIndex][memberIndex];
-              return {
+      const append = shard.map((guild, guildIndex) => {
+        const sGuild: ShardGuild = {
+          id: guild.id,
+          name: guild.name,
+          icon: guild.icon,
+          shardID: guild.shardID,
+          members: sGuildMembers[shardIndex][guildIndex].map((member, memberIndex) => {
+            const user = sGuildUsers[shardIndex][guildIndex][memberIndex];
+            return {
+              id: user.id,
+              nickname: member.nickname,
+              user: {
                 id: user.id,
-                nickname: member.nickname,
-                user: {
-                  id: user.id,
-                  username: user.username,
-                  tag: user.tag,
-                  discriminator: user.discriminator,
-                  avatar: user.avatar,
-                  avatarUrl: `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`,
-                  toString: () => `<@${user.id}>`
-                },
-                roles: sGuildMemberRoles[shardIndex][guildIndex][memberIndex],
-                isOwner: user.id === guild.ownerID,
-                hasPermission: function (permission: number) {
-                  if (this.isOwner) return true;
-                  return !!this.roles.some((r) => (r.permissions & permission) > 0);
-                },
-                send: async function (content?: any, options?: any) {
-                  const sends = await (async () => {
-                    const sGuild = client.guilds.cache.get(guild.id);
-                    if (sGuild) {
-                      const guildMembers = await guild.members.fetch();
-                      const member = guildMembers.get(user.id);
-                      if (member) {
-                        const message = await member.send(content, options);
-                        return [message];
-                      }
+                username: user.username,
+                tag: user.tag,
+                discriminator: user.discriminator,
+                avatar: user.avatar,
+                avatarUrl: `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`,
+                toString: () => `<@${user.id}>`
+              },
+              roles: sGuildMemberRoles[shardIndex][guildIndex][memberIndex],
+              isOwner: user.id === guild.ownerID,
+              hasPermission: function (permission: number) {
+                if (this.isOwner) return true;
+                return !!this.roles.some((r) => (r.permissions & permission) > 0);
+              },
+              send: async function (content?: any, options?: any) {
+                const sends = await (async () => {
+                  const sGuild = client.guilds.cache.get(guild.id);
+                  if (sGuild) {
+                    const guildMembers = await guild.members.fetch();
+                    const member = guildMembers.get(user.id);
+                    if (member) {
+                      const message = await member.send(content, options);
+                      return [message];
                     }
-                    return [null];
-                  })();
-                  return sends.find((s) => s);
-                },
-              };
-            }),
-            channels: sGuildChannels[shardIndex][guildIndex].map((channel, channelIndex) => {
-              const sChannel: ShardChannel = {
-                id: channel.id,
-                name: channel.name,
-                type: channel.type,
-                messages: {
-                  fetch: async function (messageId: string) {
-                    const sGuild = client.guilds.cache.get(guild.id);
-                    if (sGuild) {
-                      const sChannel = sGuild.channels.cache.get(channel.id);
-                      if (sChannel) {
-                        return await (<TextChannel>sChannel).messages.fetch(messageId);
-                      }
-                    }
-                    return null;
-                  },
-                },
-                send: async function (content?: any, options?: any) {
-                  const sends = await (async () => {
-                    const sGuild = client.guilds.cache.get(guild.id);
-                    if (sGuild) {
-                      const sChannel = sGuild.channels.cache.get(channel.id);
-                      if (sChannel) {
-                        return [await (<TextChannel>sChannel).send(content, options)];
-                      }
-                    }
-                    return [null];
-                  })();
-                  return sends.find((s) => s);
-                },
-                permissionsFor: async function (id, permission) {
+                  }
+                  return [null];
+                })();
+                return sends.find((s) => s);
+              },
+            };
+          }),
+          channels: sGuildChannels[shardIndex][guildIndex].map((channel, channelIndex) => {
+            const sChannel: ShardChannel = {
+              id: channel.id,
+              name: channel.name,
+              type: channel.type,
+              messages: {
+                fetch: async function (messageId: string) {
                   const sGuild = client.guilds.cache.get(guild.id);
                   if (sGuild) {
                     const sChannel = sGuild.channels.cache.get(channel.id);
                     if (sChannel) {
-                      return sChannel.permissionsFor(id).has(permission);
+                      return await (<TextChannel>sChannel).messages.fetch(messageId);
                     }
                   }
-                  return false;
+                  return null;
                 },
-              };
-              return sChannel;
-            }),
-            roles: sGuildRoles[shardIndex][guildIndex],
-          };
-          return sGuild;
-        }),
+              },
+              send: async function (content?: any, options?: any) {
+                const sends = await (async () => {
+                  const sGuild = client.guilds.cache.get(guild.id);
+                  if (sGuild) {
+                    const sChannel = sGuild.channels.cache.get(channel.id);
+                    if (sChannel) {
+                      return [await (<TextChannel>sChannel).send(content, options)];
+                    }
+                  }
+                  return [null];
+                })();
+                return sends.find((s) => s);
+              },
+              permissionsFor: async function (id, permission) {
+                const sGuild = client.guilds.cache.get(guild.id);
+                if (sGuild) {
+                  const sChannel = sGuild.channels.cache.get(channel.id);
+                  if (sChannel) {
+                    return sChannel.permissionsFor(id).has(permission);
+                  }
+                }
+                return false;
+              },
+            };
+            return sChannel;
+          }),
+          roles: sGuildRoles[shardIndex][guildIndex],
+        };
+        return sGuild;
+      });
+      console.log(append);
+      return [
+        ...iter,
+        ...append,
       ];
     }, []);
   } catch (err) {
