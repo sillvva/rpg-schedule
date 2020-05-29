@@ -75,16 +75,15 @@ export interface ShardGuild {
   shardID: number;
 }
 
-const clientGuilds = async (client: Client, guildId?: string) => {
+const clientGuilds = async (client: Client, guildIds: string[] = []) => {
   try {
     const guilds = client.guilds.cache.array();
-    const shards = [guilds.filter(g => guildId ? g.id == guildId : true)];
-    console.log(guildId, shards[0].length);
-    const sGuildMembers = [guilds.filter(g => guildId ? g.id == guildId : true).map((g) => g.members.cache.array())];
-    const sGuildUsers = [guilds.filter(g => guildId ? g.id == guildId : true).map((g) => g.members.cache.array().map((m) => m.user))];
-    const sGuildChannels = [guilds.filter(g => guildId ? g.id == guildId : true).map((g) => g.channels.cache.array())];
-    const sGuildRoles = [guilds.filter(g => guildId ? g.id == guildId : true).map((g) => g.roles.cache.array())];
-    const sGuildMemberRoles = [guilds.filter(g => guildId ? g.id == guildId : true).map((g) => g.members.cache.array().map((m) => m.roles.cache.array()))];
+    const shards = [guilds.filter(g => guildIds.length > 0 ? guildIds.includes(g.id) : true)];
+    const sGuildMembers = [guilds.filter(g => guildIds.length > 0 ? guildIds.includes(g.id) : true).map((g) => g.members.cache.array())];
+    const sGuildUsers = [guilds.filter(g => guildIds.length > 0 ? guildIds.includes(g.id) : true).map((g) => g.members.cache.array().map((m) => m.user))];
+    const sGuildChannels = [guilds.filter(g => guildIds.length > 0 ? guildIds.includes(g.id) : true).map((g) => g.channels.cache.array())];
+    const sGuildRoles = [guilds.filter(g => guildIds.length > 0 ? guildIds.includes(g.id) : true).map((g) => g.roles.cache.array())];
+    const sGuildMemberRoles = [guilds.filter(g => guildIds.length > 0 ? guildIds.includes(g.id) : true).map((g) => g.members.cache.array().map((m) => m.roles.cache.array()))];
     return shards.reduce<ShardGuild[]>((iter, shard, shardIndex) => {
       return [
         ...iter,
@@ -186,14 +185,14 @@ const clientGuilds = async (client: Client, guildId?: string) => {
   }
 };
 
-const shardGuilds = async (guildId?: string) => {
+const shardGuilds = async (guildIds: string[] = []) => {
   try {
-    const shards = await discordClient().broadcastEval(`this.guilds.cache${guildId ? `.filter(g => g.id == "${guildId}")` : ``}`);
-    const sGuildMembers = await discordClient().broadcastEval(`this.guilds.cache${guildId ? `.filter(g => g.id == "${guildId}")` : ``}.map(g => g.members.cache)`);
-    const sGuildUsers = await discordClient().broadcastEval(`this.guilds.cache${guildId ? `.filter(g => g.id == "${guildId}")` : ``}.map(g => g.members.cache.map(m => m.user))`);
-    const sGuildChannels = await discordClient().broadcastEval(`this.guilds.cache${guildId ? `.filter(g => g.id == "${guildId}")` : ``}.map(g => g.channels.cache)`);
-    const sGuildRoles = await discordClient().broadcastEval(`this.guilds.cache${guildId ? `.filter(g => g.id == "${guildId}")` : ``}.map(g => g.roles.cache)`);
-    const sGuildMemberRoles = await discordClient().broadcastEval(`this.guilds.cache${guildId ? `.filter(g => g.id == "${guildId}")` : ``}.map(g => g.members.cache.map(m => m.roles.cache))`);
+    const shards = await discordClient().broadcastEval(`this.guilds.cache${guildIds.length > 0 ? `.filter(g => ${JSON.stringify(guildIds)}.includes(g.id))` : ``}`);
+    const sGuildMembers = await discordClient().broadcastEval(`this.guilds.cache${guildIds.length > 0 ? `.filter(g => ${JSON.stringify(guildIds)}.includes(g.id))` : ``}.map(g => g.members.cache)`);
+    const sGuildUsers = await discordClient().broadcastEval(`this.guilds.cache${guildIds.length > 0 ? `.filter(g => ${JSON.stringify(guildIds)}.includes(g.id))` : ``}.map(g => g.members.cache.map(m => m.user))`);
+    const sGuildChannels = await discordClient().broadcastEval(`this.guilds.cache${guildIds.length > 0 ? `.filter(g => ${JSON.stringify(guildIds)}.includes(g.id))` : ``}.map(g => g.channels.cache)`);
+    const sGuildRoles = await discordClient().broadcastEval(`this.guilds.cache${guildIds.length > 0 ? `.filter(g => ${JSON.stringify(guildIds)}.includes(g.id))` : ``}.map(g => g.roles.cache)`);
+    const sGuildMemberRoles = await discordClient().broadcastEval(`this.guilds.cache${guildIds.length > 0 ? `.filter(g => ${JSON.stringify(guildIds)}.includes(g.id))` : ``}.map(g => g.members.cache.map(m => m.roles.cache))`);
     return shards.reduce<ShardGuild[]>((iter, shard, shardIndex) => {
       return [
         ...iter,

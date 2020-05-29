@@ -592,7 +592,7 @@ export class Game implements GameModel {
     const game = await connection()
       .collection(collection)
       .findOne({ _id: new ObjectId(gameId) });
-    const guilds = game.s ? (client ? await ShardManager.clientGuilds(client, game.s) : await ShardManager.shardGuilds(game.s)) : [];
+    const guilds = game.s ? (client ? await ShardManager.clientGuilds(client, [game.s]) : await ShardManager.shardGuilds([game.s])) : [];
     return game ? new Game(game, guilds, client) : null;
   }
 
@@ -615,7 +615,7 @@ export class Game implements GameModel {
     const games: GameModel[] = await connection().collection(collection).find(query).toArray();
     const out: Game[] = [];
     for (let i = 0; i < games.length; i++) {
-      const guilds = client ? await ShardManager.clientGuilds(client, games[i].s) : await ShardManager.shardGuilds(games[i].s);
+      const guilds = client ? await ShardManager.clientGuilds(client, [games[i].s]) : await ShardManager.shardGuilds([games[i].s]);
       out.push(new Game(games[i], guilds, client));
     }
     return out;
@@ -702,15 +702,16 @@ export class Game implements GameModel {
         let data = cloneDeep(this.data);
         let guilds;
         if (this.client) {
-          guilds = await ShardManager.shardGuilds(data.s);
+          guilds = await ShardManager.shardGuilds([data.s]);
         } else {
-          guilds = await ShardManager.clientGuilds(this.client, data.s);
+          guilds = await ShardManager.clientGuilds(this.client, [data.s]);
         }
         const id = data._id;
         delete data._id;
         delete data.pm;
         delete data.messageId;
         delete data.reminderMessageId;
+        console.log(guilds)
         const game = new Game(data, guilds);
         const newGame = await game.save();
         const del = await this.delete();
