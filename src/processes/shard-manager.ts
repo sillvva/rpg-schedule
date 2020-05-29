@@ -29,7 +29,7 @@ const managerConnect = (options: DiscordProcessesOptions, readyCallback: () => {
       }
     });
 
-    readyCallback();
+    if (shard.id == 0) readyCallback();
   });
 
   return manager;
@@ -187,6 +187,7 @@ const clientGuilds = async (client: Client) => {
 const shardGuilds = async (guildId?: string) => {
   try {
     const shards = await discordClient().broadcastEval("this.guilds.cache");
+    console.log(shards);
     const sGuildMembers = await discordClient().broadcastEval("this.guilds.cache.map(g => g.members.cache)");
     const sGuildUsers = await discordClient().broadcastEval("this.guilds.cache.map(g => g.members.cache.map(m => m.user))");
     const sGuildChannels = await discordClient().broadcastEval("this.guilds.cache.map(g => g.channels.cache)");

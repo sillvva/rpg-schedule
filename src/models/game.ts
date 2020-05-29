@@ -704,9 +704,7 @@ export class Game implements GameModel {
         await this.save();
       } else if (guildConfig.rescheduleMode === RescheduleMode.REPOST) {
         let data = cloneDeep(this.data);
-        console.log(1);
         const guilds = await ShardManager.shardGuilds(data.s);
-        console.log(2);
         const id = data._id;
         delete data._id;
         delete data.pm;
