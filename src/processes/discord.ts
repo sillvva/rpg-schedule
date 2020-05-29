@@ -37,35 +37,30 @@ client.on("ready", async () => {
   aux.log(`Logged in as ${client.user.username}!`);
   if (!isReady) {
     isReady = true;
-    let connected = await db.database.connect();
-    if (connected) {
-      aux.log("Database connected!");
+    // discord.fixReschedules();
+    if (!process.env.LOCALENV) {
+      refreshMessages();
 
-      // discord.fixReschedules();
-      if (!process.env.LOCALENV) {
-        // refreshMessages();
-
-        // Once per hour, prune games from the database that are more than 48 hours old
+      // Once per hour, prune games from the database that are more than 48 hours old
+      // pruneOldGames();
+      setInterval(() => {
         pruneOldGames();
+      }, 60 * 60 * 1000); // 1 hour
+
+      // Once per hour, reschedule recurring games from the database that have already occurred
+      if (process.env.RESCHEDULING) {
+        // rescheduleOldGames();
         setInterval(() => {
-          pruneOldGames();
+          rescheduleOldGames();
         }, 60 * 60 * 1000); // 1 hour
+      }
 
-        // Once per hour, reschedule recurring games from the database that have already occurred
-        if (process.env.RESCHEDULING) {
-          // rescheduleOldGames();
-          setInterval(() => {
-            rescheduleOldGames();
-          }, 60 * 60 * 1000); // 1 hour
-        }
-
-        // Post Game Reminders
-        if (process.env.REMINDERS) {
-          // postReminders();
-          setInterval(() => {
-            postReminders();
-          }, 1 * 60 * 1000); // 1 minute
-        }
+      // Post Game Reminders
+      if (process.env.REMINDERS) {
+        // postReminders();
+        setInterval(() => {
+          postReminders();
+        }, 5 * 60 * 1000); // 1 minute
       }
     }
   }
@@ -786,8 +781,14 @@ client.on("invalidated", () => {
   // }, 60 * 1000);
 });
 
-// Login the Discord bot
-client.login(process.env.TOKEN);
+(async () => {
+  let connected = await db.database.connect();
+  if (connected) {
+    aux.log("Database connected!");
+    // Login the Discord bot
+    client.login(process.env.TOKEN);
+  }
+})();
 
 const refreshMessages = async () => {
   let games = await Game.fetchAllBy(
@@ -838,8 +839,7 @@ const rescheduleOldGames = async (guildId?: string) => {
     let guildIds = [];
     if (guildId) {
       guildIds.push(guildId);
-    }
-    else {
+    } else {
       guildIds = client.guilds.cache.array().map((g) => g.id);
     }
 
@@ -917,8 +917,7 @@ const pruneOldGames = async (guild?: Guild) => {
     let guildIds = [];
     if (guild) {
       guildIds.push(guild.id);
-    }
-    else {
+    } else {
       guildIds = client.guilds.cache.array().map((g) => g.id);
     }
 
@@ -931,7 +930,7 @@ const pruneOldGames = async (guild?: Guild) => {
       };
 
       page++;
-  
+
       let games = await Game.fetchAllBy(query, client);
       const guildConfigs = await GuildConfig.fetchAllBy({
         pruning: true,
@@ -948,17 +947,12 @@ const pruneOldGames = async (guild?: Guild) => {
         let game = games[i];
         if (!game.discordGuild) continue;
         if (guild && game.discordGuild.id !== guild.id) continue;
-  
+
         try {
           const guildConfig = guildConfigs.find((gc) => gc.guild === game.s) || new GuildConfig();
           if (!guildConfig) continue;
-  
-          if (
-            guildConfig.pruning &&
-            !game.pruned &&
-            game.discordChannel &&
-            new Date().getTime() - game.timestamp >= guildConfig.pruneIntDiscord * 24 * 3600 * 1000
-          ) {
+
+          if (guildConfig.pruning && !game.pruned && game.discordChannel && new Date().getTime() - game.timestamp >= guildConfig.pruneIntDiscord * 24 * 3600 * 1000) {
             if (game.messageId) {
               if (guildConfig.pruneIntDiscord < guildConfig.pruneIntEvents && new Date().getTime() - game.timestamp < guildConfig.pruneIntEvents * 24 * 3600 * 1000) {
                 prunedIds.push(game._id);
@@ -987,7 +981,7 @@ const pruneOldGames = async (guild?: Guild) => {
           aux.log("MessagePruningError:", err);
         }
       }
-  
+
       const updateResult = await Game.updateAllBy(
         {
           ...query,
@@ -1008,7 +1002,7 @@ const pruneOldGames = async (guild?: Guild) => {
         }
       );
       if ((<UpdateWriteOpResult>updateResult).modifiedCount > 0) aux.log(`${(<UpdateWriteOpResult>updateResult).modifiedCount} old game(s) pruned from Discord only`);
-  
+
       result = await Game.deleteAllBy({
         ...query,
         _id: {
@@ -1016,9 +1010,9 @@ const pruneOldGames = async (guild?: Guild) => {
         },
       });
       if (result.deletedCount > 0) aux.log(`${result.deletedCount} old game(s) successfully pruned`);
-  
+
       let count = 0;
-  
+
       for (let gci = 0; gci < guildConfigs.length; gci++) {
         const gc = guildConfigs[gci];
         const guild = client.guilds.cache.find((g) => g.id === gc.guild);
@@ -1052,7 +1046,7 @@ const pruneOldGames = async (guild?: Guild) => {
           }
         }
       }
-  
+
       if (count > 0) aux.log(`${count} old message(s) successfully pruned`);
       page++;
     }
@@ -1114,7 +1108,7 @@ const postReminders = async () => {
     };
 
     page++;
-    
+
     const games = await Game.fetchAllBy(query, client);
     const filteredGames = games.filter((game) => {
       if (!client.guilds.cache.array().find((g) => g.id === game.s)) return false;
@@ -1248,5 +1242,5 @@ const postReminders = async () => {
         aux.log("GameReminderError:", err);
       }
     });
-  };
+  }
 };
