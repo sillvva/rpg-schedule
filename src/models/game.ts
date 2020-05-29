@@ -196,7 +196,7 @@ export class Game implements GameModel {
       } else this[key] = value;
     }
 
-    if (!game.author) game.author = game.dm;
+    if (!this.author) this.author = this.dm;
 
     const d = new Date();
     d.setDate(d.getDate() - 2);
@@ -269,7 +269,7 @@ export class Game implements GameModel {
     const guild = this._guild;
     const guildConfig = await GuildConfig.fetch(guild.id);
 
-    const game: GameModel = this.data;
+    const game: GameModel = cloneDeep(this.data);
 
     try {
       if (guild && !channel) {
