@@ -731,7 +731,7 @@ export class Game implements GameModel {
       }
       return true;
     } catch (err) {
-      aux.log(err.message || err);
+      aux.log("GameRescheduleError:", err.message || err);
       return false;
     }
   }

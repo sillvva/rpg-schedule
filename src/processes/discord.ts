@@ -925,10 +925,11 @@ const pruneOldGames = async (guild?: Guild) => {
       if (guild && game.discordGuild.id !== guild.id) continue;
 
       try {
-        const guildConfig = guildConfigs.find((gc) => gc.guild === game.s);
+        const guildConfig = guildConfigs.find((gc) => gc.guild === game.s) || new GuildConfig();
+        if (!guildConfig) continue;
 
         if (
-          (guildConfig || new GuildConfig()).pruning &&
+          guildConfig.pruning &&
           !game.pruned &&
           game.discordChannel &&
           new Date().getTime() - game.timestamp >= guildConfig.pruneIntDiscord * 24 * 3600 * 1000
