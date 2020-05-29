@@ -80,31 +80,32 @@ if (process.env.MAINTENANCE == "true") {
   // Return the client to pass to the app routing logic.
   const client = discord.processes(
     {
-      app: app
+      app: app,
     },
     async () => {
       // Create the database connection
-      if (!connected) connected = await db.database.connect();
-      else connected = false;
-      if (connected) {
-        aux.log("Database connected!");
+      if (!connected) {
+        connected = await db.database.connect();
+        if (connected) {
+          aux.log("Database connected!");
 
-        // Start the http server
-        const server = http.createServer(app).listen(process.env.PORT || 5000);
+          // Start the http server
+          const server = http.createServer(app).listen(process.env.PORT || 5000);
 
-        server.on("uncaughtException", () => {
-          server.close();
-        });
+          server.on("uncaughtException", () => {
+            server.close();
+          });
 
-        server.on("SIGTERM", () => {
-          server.close();
-        });
+          server.on("SIGTERM", () => {
+            server.close();
+          });
 
-        const io = socket(server);
+          const io = socket(server);
 
-        aux.log("App started!");
-      } else {
-        aux.log("Database not connected!");
+          aux.log("App started!");
+        } else {
+          aux.log("Database not connected!");
+        }
       }
     }
   );
