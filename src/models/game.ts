@@ -433,11 +433,14 @@ export class Game implements GameModel {
         const updated = await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: gameData });
         let message: Message;
         try {
+          console.log(1);
           try {
             message = await channel.messages.fetch(game.messageId);
           } catch (err) {}
+
           if (guildConfig.embeds) msg = [await parseDiscord(game.description, guild, true), dmmember && dmmember.user.toString(), rMentions.join(" ")].filter((m) => m).join(" ");
           else embed = null;
+          console.log(2);
           if (message) {
             if ((message.author ? message.author.id : (<any>message).authorID) === process.env.CLIENT_ID) {
               if (this.client) message = await ShardManager.clientMessageEdit(this.client, guild.id, channel.id, message.id, msg, embed);
@@ -451,6 +454,8 @@ export class Game implements GameModel {
               game.messageId = message.id;
             }
           }
+
+          console.log(guild && guild.id, channel && channel.id, message && message.id, guildConfig.emojiAdd);
 
           if (message) {
             try {
@@ -477,6 +482,7 @@ export class Game implements GameModel {
           this.dmNextWaitlist(prev.reserved, game.reserved);
 
           const updatedGame = aux.objectChanges(prev, game);
+          console.log(JSON.stringify(game));
           if (this.client)
             this.client.shard.send({
               type: "socket",
@@ -497,9 +503,10 @@ export class Game implements GameModel {
       } else {
         game.createdTimestamp = new Date().getTime();
         game.updatedTimestamp = new Date().getTime();
-        const inserted = await dbCollection.insertOne(game);
+        // const inserted = await dbCollection.insertOne(game);
         let message: Message;
         let gcUpdated = false;
+        console.log(guild && guild.id, channel && channel.id, message && message.id, guildConfig.emojiAdd, guildConfig.emojiRemove);
 
         try {
           if (guildConfig.embeds) msg = [await parseDiscord(game.description, guild, true), dmmember && dmmember.user.toString(), rMentions.join(" ")].filter((m) => m).join(" ");
@@ -529,6 +536,8 @@ export class Game implements GameModel {
           aux.log("InsertGameError:", game.s, err);
         }
 
+        console.log(4);
+
         if (gcUpdated) {
           guildConfig.save(guildConfig.data);
           guildConfig.updateReactions(this.client);
@@ -555,6 +564,7 @@ export class Game implements GameModel {
           aux.log(`GameMessageNotPostedError:\n`, game.s, `${msg}\n`, embed);
         }
 
+        console.log(JSON.stringify(game))
         if (this.client)
           this.client.shard.send({
             type: "socket",
