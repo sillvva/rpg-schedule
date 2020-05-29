@@ -224,7 +224,7 @@ const shardGuilds = async (guildIds: string[] = []) => {
               icon: guild.icon,
               shardID: guild.shardID,
               members: /*sGuildMembers[shardIndex][guildIndex]*/guild.m.map((member, memberIndex) => {
-                const user = sGuildUsers[shardIndex][guildIndex][memberIndex];
+                const user = guild.u[memberIndex];
                 return {
                   id: user.id,
                   nickname: member.nickname,
