@@ -88,6 +88,15 @@ if (process.env.MAINTENANCE == "true") {
 
         // Start the http server
         const server = http.createServer(app).listen(process.env.PORT || 5000);
+
+        server.on("uncaughtException", () => {
+          server.close();
+        });
+
+        server.on("SIGTERM", () => {
+          server.close();
+        });
+
         const io = socket(server);
 
         aux.log("App started!");
