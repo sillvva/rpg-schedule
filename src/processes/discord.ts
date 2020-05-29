@@ -1091,7 +1091,7 @@ const postReminders = async () => {
 
   let page = 0;
   const perpage = 100;
-  let pages = guildIds.length / perpage;
+  let pages = Math.ceil(guildIds.length / perpage);
   while (pages > 0 && page < pages) {
     query.s = {
       $in: guildIds.slice(page * perpage, page * perpage + perpage),
@@ -1109,7 +1109,7 @@ const postReminders = async () => {
       return true;
     });
     if (filteredGames.length > 0) aux.log(`Posting reminders for ${filteredGames.length} games (${page}/${pages})`);
-    return;
+    continue;
     filteredGames.forEach(async (game) => {
       try {
         const reserved: string[] = [];
