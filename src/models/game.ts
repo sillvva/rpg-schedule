@@ -595,7 +595,6 @@ export class Game implements GameModel {
     const game = await connection()
       .collection(collection)
       .findOne({ _id: new ObjectId(gameId) });
-    console.log(game.s);
     const guilds = game.s ? (client ? await ShardManager.clientGuilds(client, [game.s]) : await ShardManager.shardGuilds([game.s])) : [];
     return null;
     return game ? new Game(game, guilds, client) : null;

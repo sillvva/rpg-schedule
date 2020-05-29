@@ -187,13 +187,15 @@ const clientGuilds = async (client: Client, guildIds: string[] = []) => {
 const shardGuilds = async (guildIds: string[] = []) => {
   try {
     const shards = await discordClient().broadcastEval(`
-      this.guilds.cache.map(guild => {
-        guild.m = guild.members.cache.map(m => m);
-        guild.c = guild.channels.cache.map(c => c);
-        guild.r = guild.roles.cache.map(r => r);
+      this.guilds.cache.array().map(guild => {
+        guild.m = guild.members.cache.array();
+        guild.c = guild.channels.cache.array();
+        guild.r = guild.roles.cache.array();
         return guild;
       });
     `);
+    
+    console.log(shards.length > 0 ? JSON.stringify(shards[0][0]) : null);
     // const sGuildMembers = await discordClient().broadcastEval(
     //   `this.guilds.cache${guildIds.length > 0 ? `.filter(g => ${JSON.stringify(guildIds)}.includes(g.id))` : ``}.map(g => g.members.cache)`
     // );
@@ -347,8 +349,6 @@ const shardGuilds = async (guildIds: string[] = []) => {
           .filter((g) => g),
       ];
     }, []);
-    console.log(result.length > 0 ? JSON.stringify(result[0]) : null);
-    return [];
     return result;
   } catch (err) {
     console.log("ShardGuildsError:", err.message);
