@@ -402,6 +402,7 @@ export default (options: APIRouteOptions) => {
   });
 
   router.get("/api/game", async (req, res, next) => {
+    console.log(1);
     try {
       let game: Game;
       let server: string = req.query.s;

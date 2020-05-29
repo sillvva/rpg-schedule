@@ -64,7 +64,7 @@ client.on("ready", async () => {
         //   postReminders();
         //   setInterval(() => {
         //     postReminders();
-        //   }, 1 * 60 * 1000); // 1 minute
+        //   }, 5 * 60 * 1000); // 1 minute
         // }
       }
     }
@@ -855,7 +855,6 @@ const rescheduleOldGames = async (guildId?: string) => {
 
       page++;
 
-      console.log(page, query.s.$in.length);
       let games = await Game.fetchAllBy(query, client);
       totalGames += games.length;
       if (totalGames > 0 && page === pages) aux.log(`Found ${totalGames} games scheduled before now`);

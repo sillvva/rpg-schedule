@@ -596,7 +596,9 @@ export class Game implements GameModel {
     const game = await connection()
       .collection(collection)
       .findOne({ _id: new ObjectId(gameId) });
+    console.log(game.s);
     const guilds = game.s ? (client ? await ShardManager.clientGuilds(client, [game.s]) : await ShardManager.shardGuilds([game.s])) : [];
+    return null;
     return game ? new Game(game, guilds, client) : null;
   }
 
@@ -607,7 +609,7 @@ export class Game implements GameModel {
     }
     const query: mongodb.FilterQuery<any> = aux.fromEntries([[key, value]]);
     const game: GameModel = await connection().collection(collection).findOne(query);
-    const guilds = client ? await ShardManager.clientGuilds(client) : await ShardManager.shardGuilds();
+    const guilds = client ? await ShardManager.clientGuilds(client, [game.s]) : await ShardManager.shardGuilds([game.s]);
     return game ? new Game(game, guilds, client) : null;
   }
 
@@ -631,14 +633,12 @@ export class Game implements GameModel {
       return [];
     }
     const games: GameModel[] = await connection().collection(collection).find(query).limit(limit).toArray();
-    const guilds = client ? await ShardManager.clientGuilds(client) : await ShardManager.shardGuilds();
-    return games
-      .filter((game) => {
-        return guilds.find((g) => g.id === game.s);
-      })
-      .map((game) => {
-        return new Game(game, guilds, client);
-      });
+    const out: Game[] = [];
+    for (let i = 0; i < games.length; i++) {
+      const guilds = client ? await ShardManager.clientGuilds(client, [games[i].s]) : await ShardManager.shardGuilds([games[i].s]);
+      out.push(new Game(games[i], guilds, client));
+    }
+    return out;
   }
 
   static async deleteAllBy(query: mongodb.FilterQuery<any>) {
