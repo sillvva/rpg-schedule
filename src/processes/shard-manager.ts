@@ -187,8 +187,7 @@ const clientGuilds = async (client: Client, guildIds: string[] = []) => {
 const shardGuilds = async (guildIds: string[] = []) => {
   try {
     const shards = await discordClient().broadcastEval(`
-      this.guilds.cache.array().map(guild => {
-        // const agu = guild.members.cache.array().map(m => m.user);
+      this.guilds.cache.array()${guildIds && guildIds.length > 0 ? `.filter(g => ${JSON.stringify(guildIds)}.includes(g.id))` : ``}.map(guild => {
         return {
           id: guild.id,
           name: guild.name,
@@ -246,7 +245,7 @@ const shardGuilds = async (guildIds: string[] = []) => {
                     avatarUrl: `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`,
                     toString: () => `<@${user.id}>`,
                   },
-                  roles: sGuildMemberRoles[shardIndex][guildIndex][memberIndex],
+                  roles: guild.memberRoles[memberIndex],
                   isOwner: user.id === guild.ownerID,
                   hasPermission: function (permission: number) {
                     if (this.isOwner) return true;
