@@ -891,7 +891,7 @@ const rescheduleOldGames = async (guildId?: string) => {
       }
     }
 
-    if (games.length > 0) aux.log(`Rescheduled ${count} games`);
+    if (totalGames > 0) aux.log(`Rescheduled ${count} games`);
   } catch (err) {
     aux.log("GameReschedulingError:", err);
   }
