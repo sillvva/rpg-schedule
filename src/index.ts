@@ -74,6 +74,7 @@ if (process.env.MAINTENANCE == "true") {
   );
 
   let connected: boolean;
+  let connecting = false;
 
   // Initialize the Discord event handlers and then call a
   // callback function when the bot has logged in.
@@ -84,13 +85,18 @@ if (process.env.MAINTENANCE == "true") {
     },
     async () => {
       // Create the database connection
-      if (!connected) {
+      if (!connected && !connecting) {
+        connecting = true;
         connected = await db.database.connect();
         if (connected) {
           aux.log("Database connected!");
 
           // Start the http server
           const server = http.createServer(app).listen(process.env.PORT || 5000);
+
+          server.on("connection", () => {
+            connecting = false;
+          });
 
           server.on("uncaughtException", () => {
             server.close();
