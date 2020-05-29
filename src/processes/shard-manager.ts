@@ -202,29 +202,13 @@ const shardGuilds = async (guildIds: string[] = []) => {
         };
       });
     `;
-    console.log(query);
+    // console.log(query);
     const shards = await discordClient().broadcastEval(query);
-    console.log(shards.length > 0 && shards.map(s => s.length));
+    // console.log(shards.length > 0 && shards.map(s => s.length));
     const sIndex = shards.findIndex(s => s.length > 0);
     const sI = sIndex >= 0 ? sIndex : 0;
-    console.log(shards.length > 0 ? JSON.stringify(shards[sI][0] && shards[sI][0].members && shards[sI][0].members.length > 0 && shards[sI][0].members[0]) : null);
-    console.log(shards.length > 0 ? JSON.stringify(shards[sI][0] && shards[sI][0].users && shards[sI][0].users.length > 0 && shards[sI][0].users[0]) : null);
-    // const sGuildMembers = await discordClient().broadcastEval(
-    //   `this.guilds.cache${guildIds.length > 0 ? `.filter(g => ${JSON.stringify(guildIds)}.includes(g.id))` : ``}.map(g => g.members.cache)`
-    // );
-    // const sGuildUsers = await discordClient().broadcastEval(
-    //   `this.guilds.cache${guildIds.length > 0 ? `.filter(g => ${JSON.stringify(guildIds)}.includes(g.id))` : ``}.map(g => g.members.cache.map(m => m.user))`
-    // );
-    // const sGuildChannels = await discordClient().broadcastEval(
-    //   `this.guilds.cache${guildIds.length > 0 ? `.filter(g => ${JSON.stringify(guildIds)}.includes(g.id))` : ``}.map(g => g.channels.cache)`
-    // );
-    // const sGuildRoles = await discordClient().broadcastEval(
-    //   `this.guilds.cache${guildIds.length > 0 ? `.filter(g => ${JSON.stringify(guildIds)}.includes(g.id))` : ``}.map(g => g.roles.cache)`
-    // );
-    // const sGuildMemberRoles = await discordClient().broadcastEval(
-    //   `this.guilds.cache${guildIds.length > 0 ? `.filter(g => ${JSON.stringify(guildIds)}.includes(g.id))` : ``}.map(g => g.members.cache.map(m => m.roles.cache))`
-    // );
-    return [];
+    // console.log(shards.length > 0 ? JSON.stringify(shards[sI][0] && shards[sI][0].members && shards[sI][0].members.length > 0 && shards[sI][0].members[0]) : null);
+    // console.log(shards.length > 0 ? JSON.stringify(shards[sI][0] && shards[sI][0].users && shards[sI][0].users.length > 0 && shards[sI][0].users[0]) : null);
     const result = shards.reduce<ShardGuild[]>((iter, shard, shardIndex) => {
       return [
         ...iter,
@@ -236,6 +220,7 @@ const shardGuilds = async (guildIds: string[] = []) => {
               icon: guild.icon,
               shardID: guild.shardID,
               members: /*sGuildMembers[shardIndex][guildIndex]*/guild.members.map((member, memberIndex) => {
+                console.log(memberIndex, guild.users[memberIndex])
                 const user = guild.users[memberIndex];
                 return {
                   id: user.id,
