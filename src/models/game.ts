@@ -270,6 +270,7 @@ export class Game implements GameModel {
     const guildConfig = await GuildConfig.fetch(guild.id);
 
     const game: GameModel = cloneDeep(this.data);
+    const prev = cloneDeep(game);
 
     try {
       if (guild && !channel) {
@@ -424,8 +425,6 @@ export class Game implements GameModel {
       const dbCollection = connection().collection(collection);
       if (game._id) {
         game.sequence++;
-
-        const prev = (await Game.fetch(game._id)).data;
         const gameData = cloneDeep(game);
         delete gameData._id;
 
