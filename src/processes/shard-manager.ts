@@ -184,7 +184,7 @@ const clientGuilds = async (client: Client) => {
   }
 };
 
-const shardGuilds = async () => {
+const shardGuilds = async (guildId?: string) => {
   try {
     const shards = await discordClient().broadcastEval("this.guilds.cache");
     const sGuildMembers = await discordClient().broadcastEval("this.guilds.cache.map(g => g.members.cache)");
@@ -196,6 +196,7 @@ const shardGuilds = async () => {
       return [
         ...iter,
         ...shard.map((guild, guildIndex) => {
+          if (guildId && guildId != guild.id) return null;
           const sGuild: ShardGuild = {
             id: guild.id,
             name: guild.name,
@@ -325,7 +326,7 @@ const shardGuilds = async () => {
             roles: sGuildRoles[shardIndex][guildIndex],
           };
           return sGuild;
-        }),
+        }).filter(g => g),
       ];
     }, []);
   } catch (err) {
