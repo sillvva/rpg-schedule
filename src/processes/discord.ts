@@ -899,136 +899,148 @@ const pruneOldGames = async (guild?: Guild) => {
       },
     };
 
+    let guildIds = [];
     if (guild) {
-      query.s = guild.id;
-    } else {
+      guildIds.push(guild.id);
+    }
+    else {
+      guildIds = client.guilds.cache.array().map((g) => g.id);
+    }
+
+    let page = 0;
+    const perpage = 200;
+    let pages = guildIds.length / perpage;
+    while (pages > 0 && page < perpage) {
       query.s = {
-        $in: client.guilds.cache.array().map((g) => g.id),
+        $in: guildIds.slice(page * perpage, page * perpage + perpage),
       };
-    }
 
-    let games = await Game.fetchAllBy(query, client);
-    const guildConfigs = await GuildConfig.fetchAllBy({
-      pruning: true,
-      guild: guild
-        ? guild.id
-        : {
-            $in: games.map((g) => g.s).filter((s, i, arr) => arr.indexOf(s) === i),
-          },
-    });
-    const gameChannelMessages: { guild: string; channel: string; message: string }[] = [];
-    const prunedIds = [];
-    const deletedIds = [];
-    for (let i = 0; i < games.length; i++) {
-      let game = games[i];
-      if (!game.discordGuild) continue;
-      if (guild && game.discordGuild.id !== guild.id) continue;
-
-      try {
-        const guildConfig = guildConfigs.find((gc) => gc.guild === game.s) || new GuildConfig();
-        if (!guildConfig) continue;
-
-        if (
-          guildConfig.pruning &&
-          !game.pruned &&
-          game.discordChannel &&
-          new Date().getTime() - game.timestamp >= guildConfig.pruneIntDiscord * 24 * 3600 * 1000
-        ) {
-          if (game.messageId) {
-            if (guildConfig.pruneIntDiscord < guildConfig.pruneIntEvents && new Date().getTime() - game.timestamp < guildConfig.pruneIntEvents * 24 * 3600 * 1000) {
-              prunedIds.push(game._id);
-              io().emit("game", { action: "pruned", gameId: game._id });
-            } else {
-              deletedIds.push(game._id);
-              io().emit("game", { action: "deleted", gameId: game._id });
-            }
-            gameChannelMessages.push({ guild: game.s, channel: game.c, message: game.messageId });
-          }
-          if (game.reminderMessageId) {
-            gameChannelMessages.push({ guild: game.s, channel: game.c, message: game.messageId });
-          }
-          // if (game.pm) {
-          //   const m = game.discordGuild.members.find(m => m.user.tag === game.dm.tag || m.user.id === game.dm.id);
-          //   if (m && m.user.dmChannel) {
-          //     const msg = m.user.dmChannel.messages.resolve(game.pm);
-          //     if (msg) await msg.delete();
-          //   }
-          // }
-        } else if (new Date().getTime() - game.timestamp >= guildConfig.pruneIntEvents * 24 * 3600 * 1000) {
-          deletedIds.push(game._id);
-          io().emit("game", { action: "deleted", gameId: game._id });
-        }
-      } catch (err) {
-        aux.log("MessagePruningError:", err);
-      }
-    }
-
-    const updateResult = await Game.updateAllBy(
-      {
-        ...query,
-        pruned: {
-          $in: [false, null],
-        },
-        _id: {
-          $in: prunedIds.map((pid) => new ObjectId(pid)),
-        },
-      },
-      {
-        $set: {
-          pruned: true,
-          messageId: null,
-          reminderMessageId: null,
-          pm: null,
-        },
-      }
-    );
-    if ((<UpdateWriteOpResult>updateResult).modifiedCount > 0) aux.log(`${(<UpdateWriteOpResult>updateResult).modifiedCount} old game(s) pruned from Discord only`);
-
-    result = await Game.deleteAllBy({
-      ...query,
-      _id: {
-        $in: deletedIds.map((pid) => new ObjectId(pid)),
-      },
-    });
-    if (result.deletedCount > 0) aux.log(`${result.deletedCount} old game(s) successfully pruned`);
-
-    let count = 0;
-
-    for (let gci = 0; gci < guildConfigs.length; gci++) {
-      const gc = guildConfigs[gci];
-      const guild = client.guilds.cache.find((g) => g.id === gc.guild);
-      const channels = <TextChannel[]>guild.channels.cache.array().filter((c) => gc.channels.find((gcc) => gcc.channelId === c.id) && c instanceof TextChannel);
-      for (let ci = 0; ci < channels.length; ci++) {
-        const c = channels[ci];
-        const messages = await c.messages.fetch({ limit: 100 });
-        if (messages.size === 0) continue;
-        const clientMessages = messages
-          .array()
-          .filter(
-            (m) =>
-              m.embeds.filter((e) => new Date().getTime() - e.timestamp >= gc.pruneIntDiscord * 24 * 3600 * 1000).length > 0 &&
-              m.author.id === client.user.id &&
-              m.deletable &&
-              !m.deleted
-          );
-        for (let i = 0; i < gameChannelMessages.length; i++) {
-          const msg = gameChannelMessages[i];
-          if (guild.id === msg.guild && c.id === msg.channel && !clientMessages.find((cm) => cm.id === msg.message)) {
-            const chm = await c.messages.resolve(msg.message);
-            if (chm) clientMessages.push(chm);
-          }
-        }
-        if (clientMessages.length === 0) continue;
+      page++;
+  
+      let games = await Game.fetchAllBy(query, client);
+      const guildConfigs = await GuildConfig.fetchAllBy({
+        pruning: true,
+        guild: guild
+          ? guild.id
+          : {
+              $in: games.map((g) => g.s).filter((s, i, arr) => arr.indexOf(s) === i),
+            },
+      });
+      const gameChannelMessages: { guild: string; channel: string; message: string }[] = [];
+      const prunedIds = [];
+      const deletedIds = [];
+      for (let i = 0; i < games.length; i++) {
+        let game = games[i];
+        if (!game.discordGuild) continue;
+        if (guild && game.discordGuild.id !== guild.id) continue;
+  
         try {
-          const deleted = await c.bulkDelete(clientMessages);
-          count += deleted.size;
+          const guildConfig = guildConfigs.find((gc) => gc.guild === game.s) || new GuildConfig();
+          if (!guildConfig) continue;
+  
+          if (
+            guildConfig.pruning &&
+            !game.pruned &&
+            game.discordChannel &&
+            new Date().getTime() - game.timestamp >= guildConfig.pruneIntDiscord * 24 * 3600 * 1000
+          ) {
+            if (game.messageId) {
+              if (guildConfig.pruneIntDiscord < guildConfig.pruneIntEvents && new Date().getTime() - game.timestamp < guildConfig.pruneIntEvents * 24 * 3600 * 1000) {
+                prunedIds.push(game._id);
+                io().emit("game", { action: "pruned", gameId: game._id });
+              } else {
+                deletedIds.push(game._id);
+                io().emit("game", { action: "deleted", gameId: game._id });
+              }
+              gameChannelMessages.push({ guild: game.s, channel: game.c, message: game.messageId });
+            }
+            if (game.reminderMessageId) {
+              gameChannelMessages.push({ guild: game.s, channel: game.c, message: game.messageId });
+            }
+            // if (game.pm) {
+            //   const m = game.discordGuild.members.find(m => m.user.tag === game.dm.tag || m.user.id === game.dm.id);
+            //   if (m && m.user.dmChannel) {
+            //     const msg = m.user.dmChannel.messages.resolve(game.pm);
+            //     if (msg) await msg.delete();
+            //   }
+            // }
+          } else if (new Date().getTime() - game.timestamp >= guildConfig.pruneIntEvents * 24 * 3600 * 1000) {
+            deletedIds.push(game._id);
+            io().emit("game", { action: "deleted", gameId: game._id });
+          }
         } catch (err) {
-          console.log("AutomatedPruningError:", err);
+          aux.log("MessagePruningError:", err);
         }
       }
+  
+      const updateResult = await Game.updateAllBy(
+        {
+          ...query,
+          pruned: {
+            $in: [false, null],
+          },
+          _id: {
+            $in: prunedIds.map((pid) => new ObjectId(pid)),
+          },
+        },
+        {
+          $set: {
+            pruned: true,
+            messageId: null,
+            reminderMessageId: null,
+            pm: null,
+          },
+        }
+      );
+      if ((<UpdateWriteOpResult>updateResult).modifiedCount > 0) aux.log(`${(<UpdateWriteOpResult>updateResult).modifiedCount} old game(s) pruned from Discord only`);
+  
+      result = await Game.deleteAllBy({
+        ...query,
+        _id: {
+          $in: deletedIds.map((pid) => new ObjectId(pid)),
+        },
+      });
+      if (result.deletedCount > 0) aux.log(`${result.deletedCount} old game(s) successfully pruned`);
+  
+      let count = 0;
+  
+      for (let gci = 0; gci < guildConfigs.length; gci++) {
+        const gc = guildConfigs[gci];
+        const guild = client.guilds.cache.find((g) => g.id === gc.guild);
+        const channels = <TextChannel[]>guild.channels.cache.array().filter((c) => gc.channels.find((gcc) => gcc.channelId === c.id) && c instanceof TextChannel);
+        for (let ci = 0; ci < channels.length; ci++) {
+          const c = channels[ci];
+          const messages = await c.messages.fetch({ limit: 100 });
+          if (messages.size === 0) continue;
+          const clientMessages = messages
+            .array()
+            .filter(
+              (m) =>
+                m.embeds.filter((e) => new Date().getTime() - e.timestamp >= gc.pruneIntDiscord * 24 * 3600 * 1000).length > 0 &&
+                m.author.id === client.user.id &&
+                m.deletable &&
+                !m.deleted
+            );
+          for (let i = 0; i < gameChannelMessages.length; i++) {
+            const msg = gameChannelMessages[i];
+            if (guild.id === msg.guild && c.id === msg.channel && !clientMessages.find((cm) => cm.id === msg.message)) {
+              const chm = await c.messages.resolve(msg.message);
+              if (chm) clientMessages.push(chm);
+            }
+          }
+          if (clientMessages.length === 0) continue;
+          try {
+            const deleted = await c.bulkDelete(clientMessages);
+            count += deleted.size;
+          } catch (err) {
+            console.log("AutomatedPruningError:", err);
+          }
+        }
+      }
+  
+      if (count > 0) aux.log(`${count} old message(s) successfully pruned`);
+      page++;
     }
-
-    if (count > 0) aux.log(`${count} old message(s) successfully pruned`);
   } catch (err) {
     aux.log("GamePruningError:", err);
   }
