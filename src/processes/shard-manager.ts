@@ -78,7 +78,7 @@ export interface ShardGuild {
 const clientGuilds = async (client: Client, guildId?: string) => {
   try {
     const shards = [client.guilds.cache.array().filter(g => guildId ? g.id == guildId : true)];
-    console.log(shards.length);
+    console.log(client.guilds.cache.array().length, shards[0].length);
     const sGuildMembers = [client.guilds.cache.array().filter(g => guildId ? g.id == guildId : true).map((g) => g.members.cache.array())];
     const sGuildUsers = [client.guilds.cache.array().filter(g => guildId ? g.id == guildId : true).map((g) => g.members.cache.array().map((m) => m.user))];
     const sGuildChannels = [client.guilds.cache.array().filter(g => guildId ? g.id == guildId : true).map((g) => g.channels.cache.array())];
