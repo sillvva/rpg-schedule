@@ -213,14 +213,14 @@ const shardGuilds = async (guildIds: string[] = []) => {
       return [
         ...iter,
         ...shard
-          .map((guild, guildIndex) => {
+          .map(guild => {
             const sGuild: ShardGuild = {
               id: guild.id,
               name: guild.name,
               icon: guild.icon,
               shardID: guild.shardID,
-              members: /*sGuildMembers[shardIndex][guildIndex]*/guild.members.map((member, memberIndex) => {
-                console.log(memberIndex, guild.users[memberIndex])
+              members: guild.members.map((member, memberIndex) => {
+                console.log(guild.id, memberIndex, guild.users[memberIndex].id)
                 const user = guild.users[memberIndex];
                 return {
                   id: user.id,
@@ -260,7 +260,7 @@ const shardGuilds = async (guildIds: string[] = []) => {
                   },
                 };
               }),
-              channels: /*sGuildChannels[shardIndex][guildIndex]*/guild.channels.map((channel, channelIndex) => {
+              channels: guild.channels.map(channel => {
                 const sChannel: ShardChannel = {
                   id: channel.id,
                   name: channel.name,
@@ -341,7 +341,7 @@ const shardGuilds = async (guildIds: string[] = []) => {
                 };
                 return sChannel;
               }),
-              roles: /*sGuildRoles[shardIndex][guildIndex]*/guild.roles,
+              roles: guild.roles,
             };
             return sGuild;
           })
