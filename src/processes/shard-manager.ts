@@ -220,7 +220,7 @@ const shardGuilds = async (guildIds: string[] = []) => {
               icon: guild.icon,
               shardID: guild.shardID,
               members: guild.members.map((member, memberIndex) => {
-                console.log(guild.id, memberIndex, guild.users[memberIndex].id)
+                // console.log(guild.id, memberIndex, guild.users[memberIndex].id)
                 const user = guild.users[memberIndex];
                 return {
                   id: user.id,
