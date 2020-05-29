@@ -1100,6 +1100,7 @@ const postReminders = async () => {
     return true;
   });
   if (filteredGames.length > 0) aux.log(`Posting reminders for ${filteredGames.length} games`);
+  return;
   filteredGames.forEach(async (game) => {
     try {
       const reserved: string[] = [];
