@@ -16,7 +16,7 @@ const manager = new ShardingManager("./app/processes/discord.js", {
 // The shardCreate event is emitted when a shard is created.
 // You can use it for something like logging shard launches.
 const managerConnect = (options: DiscordProcessesOptions, readyCallback: () => {}) => {
-  manager.spawn();
+  manager.spawn("auto", 0, 15000);
 
   manager.on("shardCreate", (shard) => {
     console.log(`Shard ${shard.id} launched`);
