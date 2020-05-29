@@ -188,6 +188,8 @@ const shardGuilds = async (guildIds: string[] = []) => {
   try {
     const shards = await discordClient().broadcastEval(`
       this.guilds.cache.array().map(guild => {
+        guild.u = guild.members.cache.array().map(m => m.user);
+        console.log(guild.u[0])
         guild.m = guild.members.cache.array();
         guild.c = guild.channels.cache.array();
         guild.r = guild.roles.cache.array();
@@ -195,13 +197,13 @@ const shardGuilds = async (guildIds: string[] = []) => {
       });
     `);
     
-    console.log(shards.length > 0 ? JSON.stringify(shards[0][0]) : null);
+    console.log(shards.length > 0 ? JSON.stringify(shards[0][0] && shards[0][0].m && shards[0][0].m.length > 0 && shards[0][0].m[0]) : null);
     // const sGuildMembers = await discordClient().broadcastEval(
     //   `this.guilds.cache${guildIds.length > 0 ? `.filter(g => ${JSON.stringify(guildIds)}.includes(g.id))` : ``}.map(g => g.members.cache)`
     // );
-    const sGuildUsers = await discordClient().broadcastEval(
-      `this.guilds.cache${guildIds.length > 0 ? `.filter(g => ${JSON.stringify(guildIds)}.includes(g.id))` : ``}.map(g => g.members.cache.map(m => m.user))`
-    );
+    // const sGuildUsers = await discordClient().broadcastEval(
+    //   `this.guilds.cache${guildIds.length > 0 ? `.filter(g => ${JSON.stringify(guildIds)}.includes(g.id))` : ``}.map(g => g.members.cache.map(m => m.user))`
+    // );
     // const sGuildChannels = await discordClient().broadcastEval(
     //   `this.guilds.cache${guildIds.length > 0 ? `.filter(g => ${JSON.stringify(guildIds)}.includes(g.id))` : ``}.map(g => g.channels.cache)`
     // );
