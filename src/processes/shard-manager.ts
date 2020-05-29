@@ -77,13 +77,13 @@ export interface ShardGuild {
 
 const clientGuilds = async (client: Client, guildIds: string[] = []) => {
   try {
-    const guilds = client.guilds.cache.array();
-    const shards = [guilds.filter((g) => (guildIds.length > 0 ? guildIds.includes(g.id) : true))];
-    const sGuildMembers = [guilds.filter((g) => (guildIds.length > 0 ? guildIds.includes(g.id) : true)).map((g) => g.members.cache.array())];
-    const sGuildUsers = [guilds.filter((g) => (guildIds.length > 0 ? guildIds.includes(g.id) : true)).map((g) => g.members.cache.array().map((m) => m.user))];
-    const sGuildChannels = [guilds.filter((g) => (guildIds.length > 0 ? guildIds.includes(g.id) : true)).map((g) => g.channels.cache.array())];
-    const sGuildRoles = [guilds.filter((g) => (guildIds.length > 0 ? guildIds.includes(g.id) : true)).map((g) => g.roles.cache.array())];
-    const sGuildMemberRoles = [guilds.filter((g) => (guildIds.length > 0 ? guildIds.includes(g.id) : true)).map((g) => g.members.cache.array().map((m) => m.roles.cache.array()))];
+    const guilds = client.guilds.cache.array().filter((g) => (guildIds.length > 0 ? guildIds.includes(g.id) : true));
+    const shards = [guilds];
+    const sGuildMembers = [guilds.map((g) => g.members.cache.array())];
+    const sGuildUsers = [guilds.map((g) => g.members.cache.array().map((m) => m.user))];
+    const sGuildChannels = [guilds.map((g) => g.channels.cache.array())];
+    const sGuildRoles = [guilds.map((g) => g.roles.cache.array())];
+    const sGuildMemberRoles = [guilds.map((g) => g.members.cache.array().map((m) => m.roles.cache.array()))];
     const result = shards.reduce<ShardGuild[]>((iter, shard, shardIndex) => {
       const append = shard.map((guild, guildIndex) => {
         const sGuild: ShardGuild = {

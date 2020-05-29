@@ -504,6 +504,7 @@ export class Game implements GameModel {
         game.createdTimestamp = new Date().getTime();
         game.updatedTimestamp = new Date().getTime();
         // const inserted = await dbCollection.insertOne(game);
+        let inserted: any = {};
         let message: Message;
         let gcUpdated = false;
         console.log(guild && guild.id, channel && channel.id, message && message.id, guildConfig.emojiAdd, guildConfig.emojiRemove);
