@@ -189,7 +189,7 @@ const shardGuilds = async (guildIds: string[] = []) => {
     const shards = await discordClient().broadcastEval(`
       this.guilds.cache.map(guild => {
         guild.members = guild.members.cache.map(member => {
-          member.roles = member.roles.cache;
+          // member.rolesCache = member.roles.cache;
           return member;
         })
         guild.channels = guild.channels.cache;
