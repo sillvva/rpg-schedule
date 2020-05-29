@@ -414,10 +414,13 @@ export default (options: APIRouteOptions) => {
         }
       }
 
-      const sGuilds = await ShardManager.shardGuilds();
-
       if (server) {
-        let guild: ShardGuild = sGuilds.find((g) => g.id === server);
+        let guild: ShardGuild;
+        if (req.query.g) guild = game.discordGuild;
+        else {
+          const sGuilds = await ShardManager.shardGuilds();
+          guild = sGuilds.find((g) => g.id === server);
+        }
 
         if (guild) {
           let password;
