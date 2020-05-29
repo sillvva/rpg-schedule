@@ -711,7 +711,7 @@ export class Game implements GameModel {
         delete data.pm;
         delete data.messageId;
         delete data.reminderMessageId;
-        console.log(!!this.client, guilds)
+        console.log(!!this.client, guilds.length)
         const game = new Game(data, guilds, this.client);
         const newGame = await game.save();
         const del = await this.delete();
