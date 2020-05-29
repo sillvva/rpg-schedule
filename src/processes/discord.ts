@@ -910,7 +910,7 @@ const pruneOldGames = async (guild?: Guild) => {
     let page = 0;
     const perpage = 200;
     let pages = guildIds.length / perpage;
-    while (pages > 0 && page < perpage) {
+    while (pages > 0 && page < pages) {
       query.s = {
         $in: guildIds.slice(page * perpage, page * perpage + perpage),
       };
