@@ -791,14 +791,14 @@ client.login(process.env.TOKEN);
 
 const refreshMessages = async () => {
   let games = await Game.fetchAllBy(
-    { s: { $in: client.guilds.cache.array().map((g) => g.id) }, when: "datetime", method: "automated", timestamp: { $gte: new Date().getTime() } },
+    { s: { $in: client.guilds.cache.array().map((g) => g.id) }, messageId: null, when: "datetime", method: "automated", timestamp: { $gte: new Date().getTime() } },
     client
   );
   games.forEach(async (game) => {
     if (!game.discordGuild) return;
 
     try {
-      const message = await game.discordChannel.messages.fetch(game.messageId);
+      // await game.save();
     } catch (err) {}
   });
 };
@@ -1061,9 +1061,6 @@ const postReminders = async () => {
   });
 
   const query: FilterQuery<any> = {
-    s: {
-      $in: client.guilds.cache.array().map((g) => g.id),
-    },
     when: "datetime",
     timestamp: {
       $gt: cTime,
@@ -1090,137 +1087,151 @@ const postReminders = async () => {
     })
     .sort((a: any, b: any) => (a.name > b.name ? 1 : -1));
 
-  const games = await Game.fetchAllBy(query, client);
-  const filteredGames = games.filter((game) => {
-    if (!client.guilds.cache.array().find((g) => g.id === game.s)) return false;
-    if (game.timestamp - parseInt(game.reminder) * 60 * 1000 > new Date().getTime()) return false;
-    if (!game.discordGuild) return false;
-    if (!game.discordChannel) return false;
-    if (game.reminded) return false;
-    return true;
-  });
-  if (filteredGames.length > 0) aux.log(`Posting reminders for ${filteredGames.length} games`);
-  return;
-  filteredGames.forEach(async (game) => {
-    try {
-      const reserved: string[] = [];
-      const reservedUsers: GuildMember[] = [];
+  const guildIds = client.guilds.cache.array().map((g) => g.id);
 
+  let page = 0;
+  const perpage = 200;
+  let pages = guildIds.length / perpage;
+  while (pages > 0 && page < pages) {
+    query.s = {
+      $in: guildIds.slice(page * perpage, page * perpage + perpage),
+    };
+
+    page++;
+    console.log(page, query);
+    // const games = await Game.fetchAllBy(query, client);
+    const games = [];
+    const filteredGames = games.filter((game) => {
+      if (!client.guilds.cache.array().find((g) => g.id === game.s)) return false;
+      if (game.timestamp - parseInt(game.reminder) * 60 * 1000 > new Date().getTime()) return false;
+      if (!game.discordGuild) return false;
+      if (!game.discordChannel) return false;
+      if (game.reminded) return false;
+      return true;
+    });
+    if (filteredGames.length > 0) aux.log(`Posting reminders for ${filteredGames.length} games`);
+    return;
+    filteredGames.forEach(async (game) => {
       try {
-        const guildMembers = await game.discordGuild.members;
+        const reserved: string[] = [];
+        const reservedUsers: GuildMember[] = [];
 
-        var where = game.where;
-        game.reserved.forEach((rsvp) => {
-          if (rsvp.tag.length === 0) return;
-          let member = guildMembers.find((mem) => mem.user.tag === rsvp.tag.replace("@", "") || rsvp.id === member.user.id);
-
-          let name = rsvp.tag.replace("@", "");
-          if (member) name = member.user.toString();
-          if (member) reservedUsers.push(member);
-
-          if (reserved.length < parseInt(game.players)) {
-            reserved.push(name);
-          }
-        });
-
-        const member = guildMembers.find((mem) => mem.user.tag === game.dm.tag.trim().replace("@", "") || mem.user.id === game.dm.id);
-        var dm = game.dm.tag.trim().replace("@", "");
-        var dmMember = member;
-        if (member) dm = member.user.toString();
-      } catch (err) {}
-
-      if (reserved.length == 0) return;
-
-      let minPlayers = parseInt(game.minPlayers);
-      if (!isNaN(parseInt(game.minPlayers))) minPlayers = 0;
-      if (reserved.length < minPlayers) return;
-
-      const message = await game.discordChannel.messages.fetch(game.messageId);
-      if (!message || (message && message.author.id !== process.env.CLIENT_ID)) return false;
-
-      try {
-        game.reminded = true;
-        game.save(true);
-      } catch (err) {
-        aux.log("RemindedSaveError", game._id, err);
-        return;
-      }
-
-      const channels = game.where.match(/#[a-z0-9\-_]+/gi);
-      if (channels) {
-        channels.forEach((chan) => {
-          const guildChannel = game.discordGuild.channels.find((c) => c.name === chan.replace(/#/, ""));
-          if (guildChannel) {
-            where = game.where.replace(chan, guildChannel.toString());
-          }
-        });
-      }
-
-      const guildConfig = await GuildConfig.fetch(game.discordGuild.id);
-      const lang = langs.find((l) => l.code === guildConfig.lang) || langs.find((l) => l.code === "en");
-      const reminder = game.reminder;
-
-      const siUnit = parseInt(reminder) > 60 ? "HOURS" : "MINUTES";
-      const siLabel = lang.game[`STARTING_IN_${siUnit}`].replace(`:${siUnit}`, parseInt(reminder) / (parseInt(reminder) > 60 ? 60 : 1));
-
-      if (!game.template) game.template = (guildConfig.gameTemplates.find((gt) => gt.isDefault) || guildConfig.gameTemplates[0]).id;
-      const gameTemplate = guildConfig.gameTemplates.find((gt) => gt.id === game.template);
-
-      if (guildConfig.privateReminders) {
         try {
-          const dmEmbed = new MessageEmbed();
-          dmEmbed.setColor(gameTemplate && gameTemplate.embedColor ? gameTemplate.embedColor : guildConfig.embedColor);
-          dmEmbed.setDescription(
-            `${lang.game.REMINDER_FOR} **[${game.adventure.replace(/\*/gi, "")}](https://discordapp.com/channels/${game.discordGuild.id}/${game.discordChannel.id}/${
-              game.messageId
-            })**\n`
-          );
-          dmEmbed.addField(lang.game.WHEN, siLabel, true);
-          if (game.discordGuild) dmEmbed.addField(lang.game.SERVER, game.discordGuild.name, true);
-          dmEmbed.addField(lang.game.GM, dmMember ? (dmMember.nickname ? dmMember.nickname : dmMember.user && dmMember.user.username) : game.dm, true);
-          dmEmbed.addField(lang.game.WHERE, where);
+          const guildMembers = await game.discordGuild.members;
 
-          for (const member of reservedUsers) {
-            try {
-              if (member) member.send(dmEmbed);
-              if (dmMember && dmMember.user && member && member.user && dmMember.user.username == member.user.username) dmMember = null;
-            } catch (err) {
-              aux.log("PrivateMemberReminderError:", member && member.user && member.user.tag, err);
+          var where = game.where;
+          game.reserved.forEach((rsvp) => {
+            if (rsvp.tag.length === 0) return;
+            let member = guildMembers.find((mem) => mem.user.tag === rsvp.tag.replace("@", "") || rsvp.id === member.user.id);
+
+            let name = rsvp.tag.replace("@", "");
+            if (member) name = member.user.toString();
+            if (member) reservedUsers.push(member);
+
+            if (reserved.length < parseInt(game.players)) {
+              reserved.push(name);
             }
-          }
+          });
 
-          try {
-            if (dmMember) dmMember.send(dmEmbed);
-          } catch (err) {
-            aux.log("PrivateGMReminderError:", dmMember && dmMember.user && dmMember.user.tag, err);
-          }
-        } catch (err) {
-          aux.log("PrivateReminderError:", err);
-        }
-      } else {
+          const member = guildMembers.find((mem) => mem.user.tag === game.dm.tag.trim().replace("@", "") || mem.user.id === game.dm.id);
+          var dm = game.dm.tag.trim().replace("@", "");
+          var dmMember = member;
+          if (member) dm = member.user.toString();
+        } catch (err) {}
+
+        if (reserved.length == 0) return;
+
+        let minPlayers = parseInt(game.minPlayers);
+        if (!isNaN(parseInt(game.minPlayers))) minPlayers = 0;
+        if (reserved.length < minPlayers) return;
+
+        const message = await game.discordChannel.messages.fetch(game.messageId);
+        if (!message || (message && message.author.id !== process.env.CLIENT_ID)) return false;
+
         try {
-          let message = `${lang.game.REMINDER_FOR} **${game.adventure.replace(/\*/gi, "")}**\n`;
-          message += `**${lang.game.WHEN}:** ${siLabel}\n`;
-          message += `**${lang.game.WHERE}:** ${where}\n\n`;
-          message += `**${lang.game.GM}:** ${dm}\n`;
-          message += `**${lang.game.RESERVED}:**\n`;
-          message += `${reserved.join(`\n`)}`;
-
-          try {
-            var sent = <Message>await game.discordChannel.send(message);
-          } catch (err) {
-            aux.log("PublicReminderError:", err);
-          }
-
-          game.reminderMessageId = sent.id;
-
-          game.save();
+          game.reminded = true;
+          game.save(true);
         } catch (err) {
-          aux.log("PublicReminderSaveError:", err);
+          aux.log("RemindedSaveError", game._id, err);
+          return;
         }
+
+        const channels = game.where.match(/#[a-z0-9\-_]+/gi);
+        if (channels) {
+          channels.forEach((chan) => {
+            const guildChannel = game.discordGuild.channels.find((c) => c.name === chan.replace(/#/, ""));
+            if (guildChannel) {
+              where = game.where.replace(chan, guildChannel.toString());
+            }
+          });
+        }
+
+        const guildConfig = await GuildConfig.fetch(game.discordGuild.id);
+        const lang = langs.find((l) => l.code === guildConfig.lang) || langs.find((l) => l.code === "en");
+        const reminder = game.reminder;
+
+        const siUnit = parseInt(reminder) > 60 ? "HOURS" : "MINUTES";
+        const siLabel = lang.game[`STARTING_IN_${siUnit}`].replace(`:${siUnit}`, parseInt(reminder) / (parseInt(reminder) > 60 ? 60 : 1));
+
+        if (!game.template) game.template = (guildConfig.gameTemplates.find((gt) => gt.isDefault) || guildConfig.gameTemplates[0]).id;
+        const gameTemplate = guildConfig.gameTemplates.find((gt) => gt.id === game.template);
+
+        if (guildConfig.privateReminders) {
+          try {
+            const dmEmbed = new MessageEmbed();
+            dmEmbed.setColor(gameTemplate && gameTemplate.embedColor ? gameTemplate.embedColor : guildConfig.embedColor);
+            dmEmbed.setDescription(
+              `${lang.game.REMINDER_FOR} **[${game.adventure.replace(/\*/gi, "")}](https://discordapp.com/channels/${game.discordGuild.id}/${game.discordChannel.id}/${
+                game.messageId
+              })**\n`
+            );
+            dmEmbed.addField(lang.game.WHEN, siLabel, true);
+            if (game.discordGuild) dmEmbed.addField(lang.game.SERVER, game.discordGuild.name, true);
+            dmEmbed.addField(lang.game.GM, dmMember ? (dmMember.nickname ? dmMember.nickname : dmMember.user && dmMember.user.username) : game.dm, true);
+            dmEmbed.addField(lang.game.WHERE, where);
+
+            for (const member of reservedUsers) {
+              try {
+                if (member) member.send(dmEmbed);
+                if (dmMember && dmMember.user && member && member.user && dmMember.user.username == member.user.username) dmMember = null;
+              } catch (err) {
+                aux.log("PrivateMemberReminderError:", member && member.user && member.user.tag, err);
+              }
+            }
+
+            try {
+              if (dmMember) dmMember.send(dmEmbed);
+            } catch (err) {
+              aux.log("PrivateGMReminderError:", dmMember && dmMember.user && dmMember.user.tag, err);
+            }
+          } catch (err) {
+            aux.log("PrivateReminderError:", err);
+          }
+        } else {
+          try {
+            let message = `${lang.game.REMINDER_FOR} **${game.adventure.replace(/\*/gi, "")}**\n`;
+            message += `**${lang.game.WHEN}:** ${siLabel}\n`;
+            message += `**${lang.game.WHERE}:** ${where}\n\n`;
+            message += `**${lang.game.GM}:** ${dm}\n`;
+            message += `**${lang.game.RESERVED}:**\n`;
+            message += `${reserved.join(`\n`)}`;
+
+            try {
+              var sent = <Message>await game.discordChannel.send(message);
+            } catch (err) {
+              aux.log("PublicReminderError:", err);
+            }
+
+            game.reminderMessageId = sent.id;
+
+            game.save();
+          } catch (err) {
+            aux.log("PublicReminderSaveError:", err);
+          }
+        }
+      } catch (err) {
+        aux.log("GameReminderError:", err);
       }
-    } catch (err) {
-      aux.log("GameReminderError:", err);
-    }
+    });
   });
 };

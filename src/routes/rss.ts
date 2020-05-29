@@ -11,6 +11,8 @@ export default (options: any) => {
   const client: Client = options.client;
 
   router.use(config.urls.rss.path, async (req, res, next) => {
+    res.sendStatus(404);
+    return;
     const uid = req.params.uid;
     const guilds = [];
 
