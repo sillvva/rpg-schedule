@@ -43,7 +43,7 @@ client.on("ready", async () => {
 
       // discord.fixReschedules();
       if (!process.env.LOCALENV) {
-        refreshMessages();
+        // refreshMessages();
 
         // Once per hour, prune games from the database that are more than 48 hours old
         pruneOldGames();
@@ -60,12 +60,12 @@ client.on("ready", async () => {
         }
 
         // Post Game Reminders
-        if (process.env.REMINDERS) {
-          postReminders();
-          setInterval(() => {
-            postReminders();
-          }, 1 * 60 * 1000); // 1 minute
-        }
+        // if (process.env.REMINDERS) {
+        //   postReminders();
+        //   setInterval(() => {
+        //     postReminders();
+        //   }, 1 * 60 * 1000); // 1 minute
+        // }
       }
     }
   }
@@ -798,7 +798,7 @@ const refreshMessages = async () => {
     if (!game.discordGuild) return;
 
     try {
-      // await game.save();
+      await game.save();
     } catch (err) {}
   });
 };
@@ -835,41 +835,57 @@ const rescheduleOldGames = async (guildId?: string) => {
       ],
     };
 
-    if (guildId) query.s = guildId;
-    else
+    let guildIds = [];
+    if (guildId) {
+      guildIds.push(guildId);
+    }
+    else {
+      guildIds = client.guilds.cache.array().map((g) => g.id);
+    }
+
+    let page = 0;
+    const perpage = 200;
+    let pages = guildIds.length / perpage;
+    let count = 0;
+    let totalGames = 0;
+    while (pages > 0 && page < pages) {
       query.s = {
-        $in: client.guilds.cache.array().map((g) => g.id),
+        $in: guildIds.slice(page * perpage, page * perpage + perpage),
       };
 
-    let games = await Game.fetchAllBy(query, client);
-    if (games.length > 0) aux.log(`Found ${games.length} games scheduled before now`);
-    let count = 0;
-    for (let i = 0; i < games.length; i++) {
-      const game = games[i];
+      page++;
 
-      if (
-        game.canReschedule() &&
-        !rescheduled.find((g) => g.s == game.s && g.c == game.c && g.adventure == game.adventure && g.date == game.date && g.time == game.time && g.timezone == game.timezone)
-      ) {
-        rescheduled.push(game);
-        count++;
-        try {
-          await game.reschedule();
-        } catch (err) {
-          const newGames = await Game.fetchAllBy(
-            {
-              s: game.s,
-              c: game.c,
-              adventure: game.adventure,
-              date: {
-                $ne: game.date,
+      console.log(page, query.s.length);
+      let games = await Game.fetchAllBy(query, client);
+      totalGames += games.length;
+      if (totalGames > 0 && page === pages) aux.log(`Found ${totalGames} games scheduled before now`);
+      for (let i = 0; i < games.length; i++) {
+        const game = games[i];
+
+        if (
+          game.canReschedule() &&
+          !rescheduled.find((g) => g.s == game.s && g.c == game.c && g.adventure == game.adventure && g.date == game.date && g.time == game.time && g.timezone == game.timezone)
+        ) {
+          rescheduled.push(game);
+          count++;
+          try {
+            await game.reschedule();
+          } catch (err) {
+            const newGames = await Game.fetchAllBy(
+              {
+                s: game.s,
+                c: game.c,
+                adventure: game.adventure,
+                date: {
+                  $ne: game.date,
+                },
+                time: game.time,
               },
-              time: game.time,
-            },
-            client
-          );
-          if (newGames.length > 0) {
-            await game.delete();
+              client
+            );
+            if (newGames.length > 0) {
+              await game.delete();
+            }
           }
         }
       }
@@ -1092,6 +1108,7 @@ const postReminders = async () => {
   let page = 0;
   const perpage = 100;
   let pages = Math.ceil(guildIds.length / perpage);
+  let totalGames = 0;
   while (pages > 0 && page < pages) {
     query.s = {
       $in: guildIds.slice(page * perpage, page * perpage + perpage),
@@ -1108,8 +1125,8 @@ const postReminders = async () => {
       if (game.reminded) return false;
       return true;
     });
-    if (filteredGames.length > 0) aux.log(`Posting reminders for ${filteredGames.length} games (${page}/${pages})`);
-    continue;
+    totalGames += filteredGames.length;
+    if (page === pages) aux.log(`Posting reminders for ${totalGames} games`);
     filteredGames.forEach(async (game) => {
       try {
         const reserved: string[] = [];
