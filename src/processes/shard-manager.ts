@@ -205,8 +205,10 @@ const shardGuilds = async (guildIds: string[] = []) => {
     console.log(query);
     const shards = await discordClient().broadcastEval(query);
     console.log(shards.length > 0 && shards.map(s => s.length));
-    console.log(shards.length > 0 ? JSON.stringify(shards[0][0] && shards[0][0].members && shards[0][0].members.length > 0 && shards[0][0].members[0]) : null);
-    console.log(shards.length > 0 ? JSON.stringify(shards[0][0] && shards[0][0].users && shards[0][0].users.length > 0 && shards[0][0].users[0]) : null);
+    const sIndex = shards.findIndex(s => s.length > 0);
+    const sI = sIndex >= 0 ? sIndex : 0;
+    console.log(shards.length > 0 ? JSON.stringify(shards[sI][0] && shards[sI][0].members && shards[sI][0].members.length > 0 && shards[sI][0].members[0]) : null);
+    console.log(shards.length > 0 ? JSON.stringify(shards[sI][0] && shards[sI][0].users && shards[sI][0].users.length > 0 && shards[sI][0].users[0]) : null);
     // const sGuildMembers = await discordClient().broadcastEval(
     //   `this.guilds.cache${guildIds.length > 0 ? `.filter(g => ${JSON.stringify(guildIds)}.includes(g.id))` : ``}.map(g => g.members.cache)`
     // );
