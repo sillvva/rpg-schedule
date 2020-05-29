@@ -1090,7 +1090,7 @@ const postReminders = async () => {
   const guildIds = client.guilds.cache.array().map((g) => g.id);
 
   let page = 0;
-  const perpage = 200;
+  const perpage = 100;
   let pages = guildIds.length / perpage;
   while (pages > 0 && page < pages) {
     query.s = {
@@ -1098,9 +1098,8 @@ const postReminders = async () => {
     };
 
     page++;
-    console.log(page, query);
-    // const games = await Game.fetchAllBy(query, client);
-    const games = [];
+    
+    const games = await Game.fetchAllBy(query, client);
     const filteredGames = games.filter((game) => {
       if (!client.guilds.cache.array().find((g) => g.id === game.s)) return false;
       if (game.timestamp - parseInt(game.reminder) * 60 * 1000 > new Date().getTime()) return false;
@@ -1109,7 +1108,7 @@ const postReminders = async () => {
       if (game.reminded) return false;
       return true;
     });
-    if (filteredGames.length > 0) aux.log(`Posting reminders for ${filteredGames.length} games`);
+    if (filteredGames.length > 0) aux.log(`Posting reminders for ${filteredGames.length} games (${page}/${pages})`);
     return;
     filteredGames.forEach(async (game) => {
       try {
