@@ -347,7 +347,7 @@ const shardGuilds = async (guildIds: string[] = []) => {
           .filter((g) => g),
       ];
     }, []);
-    console.log(result.length > 0 ? JSON.stringify(result[0] && result[0].members && result[0].members.length > 0 && result[0].members[0]) : null);
+    console.log(result.length > 0 ? JSON.stringify(result[0]) : null);
     return [];
     return result;
   } catch (err) {
