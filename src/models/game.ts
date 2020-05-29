@@ -444,7 +444,7 @@ export class Game implements GameModel {
               if (this.client) message = await ShardManager.clientMessageEdit(this.client, guild.id, channel.id, message.id, msg, embed);
               else message = await ShardManager.shardMessageEdit(guild.id, channel.id, message.id, msg, embed);
             }
-          } else {
+          } else if (channel) {
             message = <Message>(await channel.send(msg, embed))[0];
 
             if (message) {
@@ -475,7 +475,7 @@ export class Game implements GameModel {
           prev._id = prev._id.toString();
           game._id = game._id.toString();
 
-          this.dmNextWaitlist(prev.reserved, game.reserved);
+          if (message) this.dmNextWaitlist(prev.reserved, game.reserved);
 
           const updatedGame = aux.objectChanges(prev, game);
           if (this.client)
