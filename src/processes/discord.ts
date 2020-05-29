@@ -855,7 +855,7 @@ const rescheduleOldGames = async (guildId?: string) => {
 
       page++;
 
-      console.log(page, query.s.length);
+      console.log(page, query.s.$in.length);
       let games = await Game.fetchAllBy(query, client);
       totalGames += games.length;
       if (totalGames > 0 && page === pages) aux.log(`Found ${totalGames} games scheduled before now`);
