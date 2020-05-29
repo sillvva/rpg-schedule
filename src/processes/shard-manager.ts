@@ -197,6 +197,7 @@ const shardGuilds = async (guildIds: string[] = []) => {
           ownerID: guild.ownerID,
           members: guild.members.cache.array(),
           users: guild.members.cache.array().map(m => m.user),
+          memberRoles: guild.members.cache.map(m => m.roles.cache),
           channels: guild.channels.cache.array(),
           roles: guild.roles.cache.array()
         };
@@ -217,10 +218,10 @@ const shardGuilds = async (guildIds: string[] = []) => {
     // const sGuildRoles = await discordClient().broadcastEval(
     //   `this.guilds.cache${guildIds.length > 0 ? `.filter(g => ${JSON.stringify(guildIds)}.includes(g.id))` : ``}.map(g => g.roles.cache)`
     // );
+    // const sGuildMemberRoles = await discordClient().broadcastEval(
+    //   `this.guilds.cache${guildIds.length > 0 ? `.filter(g => ${JSON.stringify(guildIds)}.includes(g.id))` : ``}.map(g => g.members.cache.map(m => m.roles.cache))`
+    // );
     return [];
-    const sGuildMemberRoles = await discordClient().broadcastEval(
-      `this.guilds.cache${guildIds.length > 0 ? `.filter(g => ${JSON.stringify(guildIds)}.includes(g.id))` : ``}.map(g => g.members.cache.map(m => m.roles.cache))`
-    );
     const result = shards.reduce<ShardGuild[]>((iter, shard, shardIndex) => {
       return [
         ...iter,
@@ -232,7 +233,7 @@ const shardGuilds = async (guildIds: string[] = []) => {
               icon: guild.icon,
               shardID: guild.shardID,
               members: /*sGuildMembers[shardIndex][guildIndex]*/guild.members.map((member, memberIndex) => {
-                const user = guild.u[memberIndex];
+                const user = guild.users[memberIndex];
                 return {
                   id: user.id,
                   nickname: member.nickname,
