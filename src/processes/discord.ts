@@ -1233,5 +1233,5 @@ const postReminders = async () => {
         aux.log("GameReminderError:", err);
       }
     });
-  });
+  };
 };
