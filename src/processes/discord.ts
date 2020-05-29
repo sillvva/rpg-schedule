@@ -46,26 +46,26 @@ client.on("ready", async () => {
         // refreshMessages();
 
         // Once per hour, prune games from the database that are more than 48 hours old
-        // pruneOldGames();
-        // setInterval(() => {
-        //   pruneOldGames();
-        // }, 60 * 60 * 1000); // 1 hour
+        pruneOldGames();
+        setInterval(() => {
+          pruneOldGames();
+        }, 60 * 60 * 1000); // 1 hour
 
         // Once per hour, reschedule recurring games from the database that have already occurred
-        // if (process.env.RESCHEDULING) {
-        //   rescheduleOldGames();
-        //   setInterval(() => {
-        //     rescheduleOldGames();
-        //   }, 60 * 60 * 1000); // 1 hour
-        // }
+        if (process.env.RESCHEDULING) {
+          // rescheduleOldGames();
+          setInterval(() => {
+            rescheduleOldGames();
+          }, 60 * 60 * 1000); // 1 hour
+        }
 
         // Post Game Reminders
-        // if (process.env.REMINDERS) {
-        //   postReminders();
-        //   setInterval(() => {
-        //     postReminders();
-        //   }, 5 * 60 * 1000); // 1 minute
-        // }
+        if (process.env.REMINDERS) {
+          // postReminders();
+          setInterval(() => {
+            postReminders();
+          }, 1 * 60 * 1000); // 1 minute
+        }
       }
     }
   }
