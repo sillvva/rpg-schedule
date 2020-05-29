@@ -98,14 +98,6 @@ if (process.env.MAINTENANCE == "true") {
             connecting = false;
           });
 
-          server.on("uncaughtException", () => {
-            server.close();
-          });
-
-          server.on("SIGTERM", () => {
-            server.close();
-          });
-
           const io = socket(server);
 
           aux.log("App started!");
@@ -119,8 +111,10 @@ if (process.env.MAINTENANCE == "true") {
   /**
    * Routes
    */
-  app.use(apiRoutes({ client: client }));
-  app.use(rssRoutes({ client: client }));
+  if (!process.env.BACKGROUND || process.env.ALLLOGIC) {
+    app.use(apiRoutes({ client: client }));
+    app.use(rssRoutes({ client: client }));
+  }
   app.use("/", (req: any, res, next) => {
     res.render("home");
   });
