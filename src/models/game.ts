@@ -196,6 +196,8 @@ export class Game implements GameModel {
       } else this[key] = value;
     }
 
+    if (!game.author) game.author = game.dm;
+
     const d = new Date();
     d.setDate(d.getDate() - 2);
     if (!this.createdTimestamp) {
@@ -711,7 +713,6 @@ export class Game implements GameModel {
         delete data.pm;
         delete data.messageId;
         delete data.reminderMessageId;
-        console.log(!!this.client, guilds.length)
         const game = new Game(data, guilds, this.client);
         const newGame = await game.save();
         const del = await this.delete();
