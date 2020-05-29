@@ -177,7 +177,6 @@ const clientGuilds = async (client: Client, guildIds: string[] = []) => {
       });
       return [...iter, ...append];
     }, []);
-    console.log(guildIds, result.length);
     return result;
   } catch (err) {
     console.log("ClientGuildsError:", err);
