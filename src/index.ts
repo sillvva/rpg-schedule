@@ -85,6 +85,7 @@ if (process.env.MAINTENANCE == "true") {
     async () => {
       // Create the database connection
       if (!connected) connected = await db.database.connect();
+      else connected = false;
       if (connected) {
         aux.log("Database connected!");
 
