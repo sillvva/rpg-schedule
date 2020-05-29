@@ -702,9 +702,9 @@ export class Game implements GameModel {
         let data = cloneDeep(this.data);
         let guilds;
         if (this.client) {
-          guilds = await ShardManager.shardGuilds([data.s]);
-        } else {
           guilds = await ShardManager.clientGuilds(this.client, [data.s]);
+        } else {
+          guilds = await ShardManager.shardGuilds([data.s]);
         }
         const id = data._id;
         delete data._id;
@@ -712,7 +712,7 @@ export class Game implements GameModel {
         delete data.messageId;
         delete data.reminderMessageId;
         console.log(!!this.client, guilds)
-        const game = new Game(data, guilds);
+        const game = new Game(data, guilds, this.client);
         const newGame = await game.save();
         const del = await this.delete();
         if (del.deletedCount == 0) {
