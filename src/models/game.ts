@@ -592,7 +592,7 @@ export class Game implements GameModel {
     const game = await connection()
       .collection(collection)
       .findOne({ _id: new ObjectId(gameId) });
-    const guilds = client ? await ShardManager.clientGuilds(client) : await ShardManager.shardGuilds();
+    const guilds = game.s ? (client ? await ShardManager.clientGuilds(client, game.s) : await ShardManager.shardGuilds(game.s)) : [];
     return game ? new Game(game, guilds, client) : null;
   }
 
@@ -613,16 +613,12 @@ export class Game implements GameModel {
       return [];
     }
     const games: GameModel[] = await connection().collection(collection).find(query).toArray();
-    const guilds = client ? await ShardManager.clientGuilds(client) : await ShardManager.shardGuilds();
-    return (
-      games
-        // .filter(game => {
-        //   return guilds.find(g => g.id === game.s);
-        // })
-        .map((game) => {
-          return new Game(game, guilds, client);
-        })
-    );
+    const out: Game[] = [];
+    for (let i = 0; i < games.length; i++) {
+      const guilds = client ? await ShardManager.clientGuilds(client, games[i].s) : await ShardManager.shardGuilds(games[i].s);
+      out.push(new Game(games[i], guilds, client));
+    }
+    return out;
   }
 
   static async fetchAllByLimit(query: mongodb.FilterQuery<any>, limit: number, client?: Client): Promise<Game[]> {
@@ -704,12 +700,10 @@ export class Game implements GameModel {
         await this.save();
       } else if (guildConfig.rescheduleMode === RescheduleMode.REPOST) {
         let data = cloneDeep(this.data);
-        console.log(data);
         let guilds;
         if (this.client) {
           guilds = await ShardManager.shardGuilds(data.s);
-        }
-        else {
+        } else {
           guilds = await ShardManager.clientGuilds(this.client, data.s);
         }
         const id = data._id;
@@ -755,7 +749,7 @@ export class Game implements GameModel {
     }
 
     // const guilds = options.client ? await ShardManager.clientGuilds(options.client) : await ShardManager.shardGuilds();
-    // const guild = 
+    // const guild =
 
     try {
       var result = await Game.softDelete(this._id);
