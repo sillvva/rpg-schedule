@@ -73,6 +73,8 @@ if (process.env.MAINTENANCE == "true") {
     })
   );
 
+  let connected: boolean;
+
   // Initialize the Discord event handlers and then call a
   // callback function when the bot has logged in.
   // Return the client to pass to the app routing logic.
@@ -82,7 +84,7 @@ if (process.env.MAINTENANCE == "true") {
     },
     async () => {
       // Create the database connection
-      let connected = await db.database.connect();
+      if (!connected) connected = await db.database.connect();
       if (connected) {
         aux.log("Database connected!");
 
