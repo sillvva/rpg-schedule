@@ -1184,13 +1184,13 @@ const fetchAccount = (token: any, options: AccountOptions) => {
               const games: any[] = [];
               for(let i = 0; i < fGames.length; i++) {
                 const game = fGames[i];
-                const dc = game.discordChannel;
-                if (dc) {
-                  const perm = await dc.permissionsFor(id, Permissions.FLAGS.VIEW_CHANNEL);
-                  if (perm) {
+                // const dc = game.discordChannel;
+                // if (dc) {
+                  // const perm = await dc.permissionsFor(id, Permissions.FLAGS.VIEW_CHANNEL);
+                  // if (perm) {
                     games.push(game.data);
-                  }
-                }
+                  // }
+                // }
               }
               games
                 .forEach(async (game) => {
