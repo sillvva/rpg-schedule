@@ -83,14 +83,14 @@ export default (options: APIRouteOptions) => {
             error: error,
             request: {
               form: {
-                client_id: '...' + process.env.CLIENT_ID.slice(-4),
-                client_secret: '...' + process.env.CLIENT_SECRET.slice(-4),
+                client_id: "..." + process.env.CLIENT_ID.slice(-4),
+                client_secret: "..." + process.env.CLIENT_SECRET.slice(-4),
                 grant_type: "authorization_code",
                 code: req.query.code,
                 redirect_uri: `${process.env.HOST}/login`,
                 scope: "identify guilds",
               },
-            }
+            },
           });
         }
 
@@ -144,12 +144,11 @@ export default (options: APIRouteOptions) => {
                 account: result.account,
                 redirect: config.urls.game.games.path,
               });
-            }
-            else {
+            } else {
               res.json({
                 status: "error",
                 code: 3,
-                message: "Session was not stored"
+                message: "Session was not stored",
               });
             }
           })
@@ -563,7 +562,7 @@ export default (options: APIRouteOptions) => {
               if (req.query.s) {
                 const sGuilds = await ShardManager.shardGuilds({
                   guildIds: [server],
-                  memberIds: [result.account.user.id]
+                  memberIds: [result.account.user.id],
                 });
                 game = new Game(req.body, sGuilds);
               }
@@ -1026,9 +1025,9 @@ const fetchAccount = (token: any, options: AccountOptions) => {
 
           if (options.guilds) {
             const sGuilds = await ShardManager.shardGuilds({
-              memberIds: [id]
+              memberIds: [id],
             });
-            
+
             sGuilds.forEach((guild) => {
               const guildInfo: AccountGuild = {
                 id: guild.id,
@@ -1103,9 +1102,11 @@ const fetchAccount = (token: any, options: AccountOptions) => {
                   const pm = await gcc[gcci].permissionsFor(id, Permissions.FLAGS.VIEW_CHANNEL);
                   if (pm) gccf.push(gcc[gcci]);
                 }
-                gccf.forEach(gc => channels.push(gc));
+                gccf.forEach((gc) => channels.push(gc));
               }
-              channels = channels.filter((c) => member && (member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) || !!guildConfig.shardMemberHasPermission(member, c.id)));
+              channels = channels.filter(
+                (c) => member && (member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) || guild.isAdmin || !!guildConfig.shardMemberHasPermission(member, c.id))
+              );
 
               guild.announcementChannels = channels;
               guild.config = guildConfig;
@@ -1184,40 +1185,39 @@ const fetchAccount = (token: any, options: AccountOptions) => {
 
               const fGames: Game[] = await Game.fetchAllBy(gameOptions, null, sGuilds);
               const games: any[] = [];
-              for(let i = 0; i < fGames.length; i++) {
+              for (let i = 0; i < fGames.length; i++) {
                 const game = fGames[i];
                 // const dc = game.discordChannel;
                 // if (dc) {
-                  // const perm = await dc.permissionsFor(id, Permissions.FLAGS.VIEW_CHANNEL);
-                  // if (perm) {
-                    games.push(game);
-                  // }
+                // const perm = await dc.permissionsFor(id, Permissions.FLAGS.VIEW_CHANNEL);
+                // if (perm) {
+                games.push(game);
+                // }
                 // }
               }
-              games
-                .forEach(async (game) => {
-                  if (!game.discordGuild) return;
-                  await game.updateReservedList();
+              games.forEach(async (game) => {
+                if (!game.discordGuild) return;
+                await game.updateReservedList();
 
-                  const date = Game.ISOGameDate(game);
-                  const parsed = aux.parseEventTimes(game);
-                  game.moment = {
-                    ...parsed,
-                    iso: date,
-                    date: moment(date).utcOffset(parseInt(game.timezone)).format(config.formats.dateLong),
-                    calendar: moment(date).utcOffset(parseInt(game.timezone)).calendar(),
-                    from: moment(date).utcOffset(parseInt(game.timezone)).fromNow(),
-                  };
+                const date = Game.ISOGameDate(game);
+                const parsed = aux.parseEventTimes(game);
+                game.moment = {
+                  ...parsed,
+                  iso: date,
+                  date: moment(date).utcOffset(parseInt(game.timezone)).format(config.formats.dateLong),
+                  calendar: moment(date).utcOffset(parseInt(game.timezone)).calendar(),
+                  from: moment(date).utcOffset(parseInt(game.timezone)).fromNow(),
+                };
 
-                  game.reserved = game.reserved.filter((r) => r.tag);
+                game.reserved = game.reserved.filter((r) => r.tag);
 
-                  game.slot = game.reserved.findIndex((t) => t.tag.replace("@", "") === tag || t.id === id) + 1;
-                  game.signedup = game.slot > 0 && game.slot <= parseInt(game.players);
-                  game.waitlisted = game.slot > parseInt(game.players);
+                game.slot = game.reserved.findIndex((t) => t.tag.replace("@", "") === tag || t.id === id) + 1;
+                game.signedup = game.slot > 0 && game.slot <= parseInt(game.players);
+                game.waitlisted = game.slot > parseInt(game.players);
 
-                  const gi = account.guilds.findIndex((g) => g.id === game.s);
-                  account.guilds[gi].games.push(game.data);
-                });
+                const gi = account.guilds.findIndex((g) => g.id === game.s);
+                account.guilds[gi].games.push(game.data);
+              });
             }
 
             account.guilds = account.guilds.map((guild) => {
