@@ -183,6 +183,7 @@ export class GuildConfig implements GuildConfigDataModel {
       return gt;
     });
     updates.channel = updates.channel.map((channel) => {
+      if (!channel.gameTemplates) channel.gameTemplates = [];
       channel.gameTemplates = channel.gameTemplates.filter((cgt) => updates.gameTemplates.find((gt) => gt.id === cgt));
       channel.gameTemplates = channel.gameTemplates.map((cgt) => new ObjectId(cgt).toHexString());
       if (channel.gameTemplates.length === 0) {

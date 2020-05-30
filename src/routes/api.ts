@@ -889,7 +889,7 @@ export default (options: APIRouteOptions) => {
       })
         .then(async (result: any) => {
           if (Object.keys(req.body).length > 0) {
-            const guild = result.account.guilds.find((g) => g.id === req.query.s);
+            const guild: AccountGuild = result.account.guilds.find((g: AccountGuild) => g.id === req.query.s);
             if (guild && guild.isAdmin) {
               const guildConfig = await GuildConfig.fetch(req.query.s);
               for (const item in guildConfig.data) {
@@ -928,6 +928,7 @@ export default (options: APIRouteOptions) => {
           });
         });
     } catch (err) {
+      console.log(err);
       res.json({
         status: "error",
         token: token,
