@@ -1111,7 +1111,6 @@ const fetchAccount = (token: any, options: AccountOptions) => {
               guild.config = guildConfig;
               account.guilds[gi] = guild;
             }
-            if (id == "202640192178225152") console.log(new Date().getTime());
             if (options.page === GamesPages.Server && !options.search) {
               account.guilds = account.guilds.filter((g) => account.guilds.find((s) => s.id === g.id && (s.isAdmin || config.author == tag)));
             }
@@ -1184,7 +1183,6 @@ const fetchAccount = (token: any, options: AccountOptions) => {
               }
 
               const fGames: Game[] = await Game.fetchAllBy(gameOptions);
-              if (id == "202640192178225152") console.log(new Date().getTime());
               const games: any[] = [];
               for(let i = 0; i < fGames.length; i++) {
                 const game = fGames[i];
