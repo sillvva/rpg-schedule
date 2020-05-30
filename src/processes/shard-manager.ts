@@ -334,20 +334,26 @@ const shardGuilds = async (filters: ShardFilters = {}) => {
                   },
                   permissionsFor: async function (id, permission) {
                     const call = `
-                    (async () => {
-                      const guild = this.guilds.cache.get(${JSON.stringify(guild.id)});
-                      if (guild) {
-                        const channel = guild.channels.cache.get(${JSON.stringify(channel.id)});
-                        if (channel) {
-                          return channel.permissionsFor(${JSON.stringify(id)}).has(${JSON.stringify(permission)});
+                      (async () => {
+                        const guild = this.guilds.cache.get(${JSON.stringify(guild.id)});
+                        if (guild) {
+                          const channel = guild.channels.cache.get(${JSON.stringify(channel.id)});
+                          if (channel) {
+                            return channel.permissionsFor(${JSON.stringify(id)}).has(${JSON.stringify(permission)});
+                          }
                         }
-                      }
-                      return false;
-                    })();
-                  `;
-                    return (await discordClient().broadcastEval(call)).reduce((acc, val) => {
+                        return false;
+                      })();
+                    `;
+                    console.log(call);
+                    const callResult = await discordClient().broadcastEval(call);
+                    console.log(callResult);
+                    const result = callResult.reduce((acc, val) => {
+                      console.log(val);
                       return !!val;
                     }, false);
+                    console.log(result);
+                    return result;
                   },
                 };
                 return sChannel;
