@@ -184,10 +184,21 @@ const clientGuilds = async (client: Client, guildIds: string[] = []) => {
   }
 };
 
-const shardGuilds = async (guildIds: string[] = []) => {
+interface ShardFilters {
+  guildIds?: string[];
+  memberIds?: string[];
+}
+
+const shardGuilds = async (filters: ShardFilters = {}) => {
+  const guildIds = filters.guildIds;
+  const memberIds = filters.memberIds;
+
   try {
     const query = `
-      this.guilds.cache.array()${guildIds && guildIds.length > 0 ? `.filter(g => ${JSON.stringify(guildIds)}.includes(g.id))` : ``}.map(guild => {
+      this.guilds.cache.array()
+      ${guildIds && guildIds.length > 0 ? `.filter(guild => ${JSON.stringify(guildIds)}.includes(guild.id))` : ``}
+      ${memberIds && memberIds.length > 0 ? `.filter(guild => guild.members.cache.array().find(member => ${JSON.stringify(memberIds)}.includes(guild.id)))` : ``}
+      .map(guild => {
         return {
           id: guild.id,
           name: guild.name,

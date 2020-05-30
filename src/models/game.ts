@@ -595,7 +595,7 @@ export class Game implements GameModel {
     const game = await connection()
       .collection(collection)
       .findOne({ _id: new ObjectId(gameId) });
-    const guilds = game.s ? (client ? await ShardManager.clientGuilds(client, [game.s]) : await ShardManager.shardGuilds([game.s])) : [];
+    const guilds = game.s ? (client ? await ShardManager.clientGuilds(client, [game.s]) : await ShardManager.shardGuilds({ guildIds: [game.s] })) : [];
     return game ? new Game(game, guilds, client) : null;
   }
 
@@ -606,7 +606,7 @@ export class Game implements GameModel {
     }
     const query: mongodb.FilterQuery<any> = aux.fromEntries([[key, value]]);
     const game: GameModel = await connection().collection(collection).findOne(query);
-    const guilds = client ? await ShardManager.clientGuilds(client, [game.s]) : await ShardManager.shardGuilds([game.s]);
+    const guilds = client ? await ShardManager.clientGuilds(client, [game.s]) : await ShardManager.shardGuilds({ guildIds: [game.s] });
     return game ? new Game(game, guilds, client) : null;
   }
 
@@ -618,7 +618,7 @@ export class Game implements GameModel {
     const games: GameModel[] = await connection().collection(collection).find(query).toArray();
     const out: Game[] = [];
     for (let i = 0; i < games.length; i++) {
-      const guilds = client ? await ShardManager.clientGuilds(client, [games[i].s]) : await ShardManager.shardGuilds([games[i].s]);
+      const guilds = client ? await ShardManager.clientGuilds(client, [games[i].s]) : await ShardManager.shardGuilds({ guildIds: [games[i].s] });
       out.push(new Game(games[i], guilds, client));
     }
     return out;
@@ -632,7 +632,7 @@ export class Game implements GameModel {
     const games: GameModel[] = await connection().collection(collection).find(query).limit(limit).toArray();
     const out: Game[] = [];
     for (let i = 0; i < games.length; i++) {
-      const guilds = client ? await ShardManager.clientGuilds(client, [games[i].s]) : await ShardManager.shardGuilds([games[i].s]);
+      const guilds = client ? await ShardManager.clientGuilds(client, [games[i].s]) : await ShardManager.shardGuilds({ guildIds: [games[i].s] });
       out.push(new Game(games[i], guilds, client));
     }
     return out;
@@ -705,7 +705,7 @@ export class Game implements GameModel {
         if (this.client) {
           guilds = await ShardManager.clientGuilds(this.client, [data.s]);
         } else {
-          guilds = await ShardManager.shardGuilds([data.s]);
+          guilds = await ShardManager.shardGuilds({ guildIds: [data.s] });
         }
         const id = data._id;
         delete data._id;
@@ -748,9 +748,6 @@ export class Game implements GameModel {
       aux.log("No database connection");
       return { deletedCount: 0 };
     }
-
-    // const guilds = options.client ? await ShardManager.clientGuilds(options.client) : await ShardManager.shardGuilds();
-    // const guild =
 
     try {
       var result = await Game.softDelete(this._id);
