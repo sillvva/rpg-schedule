@@ -22,10 +22,10 @@ app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, "..", "public")));
 app.use(cookieParser());
 
-app.use("/", async (req, res, next) => {
+app.use(async (req, res, next) => {
   res.set("Access-Control-Allow-Origin", "*");
-  res.set("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS");
-  res.set("Access-Control-Allow-Headers", "authorization, accept, content-type");
+  res.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.set("Access-Control-Allow-Headers", "authorization, accept, content-type, origin, x-requested-with");
   next();
 });
 
