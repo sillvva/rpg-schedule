@@ -270,7 +270,6 @@ export class Game implements GameModel {
     const guildConfig = await GuildConfig.fetch(guild.id);
 
     const game: GameModel = cloneDeep(this.data);
-    const prev = cloneDeep(game);
 
     try {
       if (guild && !channel) {
@@ -426,6 +425,7 @@ export class Game implements GameModel {
       if (game._id) {
         game.sequence++;
         const gameData = cloneDeep(game);
+        const prev = await Game.fetch(game._id, this.client, [this._guild]);
         delete gameData._id;
 
         gameData.updatedTimestamp = new Date().getTime();
@@ -433,20 +433,19 @@ export class Game implements GameModel {
         let message: Message;
         try {
           try {
-            message = await channel.messages.fetch(game.messageId);
+            if (game.messageId) message = await channel.messages.fetch(game.messageId);
           } catch (err) {}
 
           if (guildConfig.embeds) msg = [await parseDiscord(game.description, guild, true), dmmember && dmmember.user.toString(), rMentions.join(" ")].filter((m) => m).join(" ");
           else embed = null;
-          
+
           if (message) {
             if ((message.author ? message.author.id : (<any>message).authorID) === process.env.CLIENT_ID) {
               if (this.client) message = await ShardManager.clientMessageEdit(this.client, guild.id, channel.id, message.id, msg, embed);
               else message = await ShardManager.shardMessageEdit(guild.id, channel.id, message.id, msg, embed);
             }
           } else if (channel) {
-            message = <Message>(await channel.send(msg, embed))[0];
-
+            message = <Message>(await channel.send(msg, embed));
             if (message) {
               await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: { messageId: message.id } });
               game.messageId = message.id;
@@ -501,7 +500,7 @@ export class Game implements GameModel {
         const inserted = await dbCollection.insertOne(game);
         let message: Message;
         let gcUpdated = false;
-        
+
         try {
           if (guildConfig.embeds) msg = [await parseDiscord(game.description, guild, true), dmmember && dmmember.user.toString(), rMentions.join(" ")].filter((m) => m).join(" ");
           else embed = null;
@@ -587,7 +586,7 @@ export class Game implements GameModel {
     }
   }
 
-  static async fetch(gameId: string | number | ObjectID, client?: Client): Promise<Game> {
+  static async fetch(gameId: string | number | ObjectID, client?: Client, sGuilds?: ShardGuild[]): Promise<Game> {
     if (!connection()) {
       aux.log("No database connection");
       return null;
@@ -595,7 +594,7 @@ export class Game implements GameModel {
     const game = await connection()
       .collection(collection)
       .findOne({ _id: new ObjectId(gameId) });
-    const guilds = game.s ? (client ? await ShardManager.clientGuilds(client, [game.s]) : await ShardManager.shardGuilds({ guildIds: [game.s] })) : [];
+    const guilds = sGuilds ? sGuilds : (game.s ? (client ? await ShardManager.clientGuilds(client, [game.s]) : await ShardManager.shardGuilds({ guildIds: [game.s] })) : []);
     return game ? new Game(game, guilds, client) : null;
   }
 

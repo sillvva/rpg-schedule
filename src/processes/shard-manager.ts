@@ -6,6 +6,8 @@ type DiscordProcessesOptions = {
   app: Express;
 };
 
+let ready = false;
+
 const manager = new ShardingManager("./app/processes/discord.js", {
   // for ShardingManager options see:
   // https://discord.js.org/#/docs/main/v11/class/ShardingManager
@@ -29,7 +31,10 @@ const managerConnect = (options: DiscordProcessesOptions, readyCallback: () => {
       }
     });
 
-    if (shard.id == 0) readyCallback();
+    if (!ready) {
+      ready = true;
+      readyCallback();
+    }
   });
 
   return manager;
