@@ -345,14 +345,12 @@ const shardGuilds = async (filters: ShardFilters = {}) => {
                         return false;
                       })();
                     `;
-                    // console.log(call);
                     const callResult = await discordClient().broadcastEval(call);
-                    // console.log(callResult);
+                    console.log(callResult);
                     const result = callResult.reduce((acc, val) => {
-                      // console.log(val);
                       return !!val;
                     }, false);
-                    // console.log(result);
+                    console.log(result);
                     return result;
                   },
                 };
