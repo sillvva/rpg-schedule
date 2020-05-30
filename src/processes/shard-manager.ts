@@ -346,11 +346,9 @@ const shardGuilds = async (filters: ShardFilters = {}) => {
                       })();
                     `;
                     const callResult = await discordClient().broadcastEval(call);
-                    console.log(callResult);
                     const result = callResult.reduce((acc, val) => {
-                      return !!val;
+                      return acc || !!val;
                     }, false);
-                    console.log(result);
                     return result;
                   },
                 };
