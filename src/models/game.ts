@@ -403,7 +403,7 @@ export class Game implements GameModel {
         if (game.hideDate) embed.addField(lang.game.WHEN, lang.game.labels.TBD, true);
         else embed.addField(lang.game.WHEN, when, true);
         if (game.runtime && game.runtime.trim().length > 0 && game.runtime.trim() != "0") embed.addField(lang.game.RUN_TIME, `${game.runtime} ${lang.game.labels.HOURS}`, true);
-        embed.addField(lang.game.WHERE, where);
+        if (where.trim().length > 0) embed.addField(lang.game.WHERE, where);
         if (guildConfig.embedMentions) embed.addField(lang.game.GM, gmTag);
         if (game.method === GameMethod.AUTOMATED) {
           embed.addField(`${lang.game.RESERVED} (${reserved.length}/${game.players})`, reserved.length > 0 ? reserved.join("\n") : lang.game.NO_PLAYERS, true);
