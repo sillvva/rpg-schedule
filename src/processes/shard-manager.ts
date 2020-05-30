@@ -213,9 +213,9 @@ const shardGuilds = async (filters: ShardFilters = {}) => {
         };
       });
     `;
-    console.log(query);
+    // console.log(query);
     const shards = await discordClient().broadcastEval(query);
-    console.log(shards.length > 0 && shards.map(s => s.length));
+    // console.log(shards.length > 0 && shards.map(s => s.length));
     const sIndex = shards.findIndex(s => s.length > 0);
     const sI = sIndex >= 0 ? sIndex : 0;
     // console.log(shards.length > 0 ? JSON.stringify(shards[sI][0] && shards[sI][0].members && shards[sI][0].members.length > 0 && shards[sI][0].members[0]) : null);
