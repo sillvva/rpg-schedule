@@ -105,12 +105,12 @@ export default (options: APIRouteOptions) => {
 
         req.session.api.access = token;
 
-        fetchAccount(token, {
-          client: client,
-          guilds: true,
-          ip: req.app.locals.ip,
-        })
-          .then(async (result: any) => {
+        // fetchAccount(token, {
+        //   client: client,
+        //   guilds: true,
+        //   ip: req.app.locals.ip,
+        // })
+        //   .then(async (result: any) => {
             const storedSession = await Session.fetch(token.access_token);
             if (storedSession) storedSession.delete();
 
@@ -142,7 +142,7 @@ export default (options: APIRouteOptions) => {
               res.json({
                 status: "success",
                 token: token.access_token,
-                account: result.account,
+                // account: result.account,
                 redirect: config.urls.game.games.path,
               });
             }
@@ -153,15 +153,15 @@ export default (options: APIRouteOptions) => {
                 message: "Session was not stored"
               });
             }
-          })
-          .catch((err) => {
-            res.json({
-              status: "error",
-              code: 3,
-              message: err,
-              redirect: "/",
-            });
-          });
+          // })
+          // .catch((err) => {
+          //   res.json({
+          //     status: "error",
+          //     code: 3,
+          //     message: err,
+          //     redirect: "/",
+          //   });
+          // });
       });
     } else if (req.query.error) {
       res.json({
