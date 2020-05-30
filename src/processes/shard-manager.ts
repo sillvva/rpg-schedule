@@ -284,34 +284,36 @@ const shardGuilds = async (filters: ShardFilters = {}) => {
                   messages: {
                     fetch: async function (messageId: string) {
                       const call = `
-                      (async () => {
-                        const guild = this.guilds.cache.get(${JSON.stringify(guild.id)});
-                        if (guild) {
-                          const channel = guild.channels.cache.get(${JSON.stringify(channel.id)});
-                          if (channel) {
-                            return await channel.messages.fetch(${JSON.stringify(messageId)});
+                        (async () => {
+                          const guild = this.guilds.cache.get(${JSON.stringify(guild.id)});
+                          if (guild) {
+                            const channel = guild.channels.cache.get(${JSON.stringify(channel.id)});
+                            if (channel) {
+                              return await channel.messages.fetch(${JSON.stringify(messageId)});
+                            }
                           }
-                        }
-                        return null;
-                      })();
-                    `;
+                          return null;
+                        })();
+                      `;
+                      console.log(call);
                       return (await discordClient().broadcastEval(call)).reduce((acc, val) => {
+                        console.log(val);
                         if (val) {
                           return {
                             ...val,
                             delete: async () => {
                               const call = `
-                              (async () => {
-                                const guild = this.guilds.cache.get(${JSON.stringify(guild.id)});
-                                if (guild) {
-                                  const channel = guild.channels.cache.get(${JSON.stringify(channel.id)});
-                                  if (channel) {
-                                    const message = await channel.messages.fetch(${JSON.stringify(messageId)});
-                                    if (message) message.delete();
+                                (async () => {
+                                  const guild = this.guilds.cache.get(${JSON.stringify(guild.id)});
+                                  if (guild) {
+                                    const channel = guild.channels.cache.get(${JSON.stringify(channel.id)});
+                                    if (channel) {
+                                      const message = await channel.messages.fetch(${JSON.stringify(messageId)});
+                                      if (message) message.delete();
+                                    }
                                   }
-                                }
-                              })();
-                            `;
+                                })();
+                              `;
                               await discordClient().broadcastEval(call);
                             },
                           };
