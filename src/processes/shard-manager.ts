@@ -297,7 +297,6 @@ const shardGuilds = async (filters: ShardFilters = {}) => {
                       `;
                       const callResult = await discordClient().broadcastEval(call);
                       const result = callResult.reduce((acc, val) => {
-                        console.log(!!acc, !!val);
                         if (val) {
                           return {
                             ...val,
@@ -318,9 +317,9 @@ const shardGuilds = async (filters: ShardFilters = {}) => {
                             },
                           };
                         }
-                        return null;
+                        if (acc) return acc;
+                        else return null;
                       }, null);
-                      console.log(!!result)
                       return result;
                     },
                   },
