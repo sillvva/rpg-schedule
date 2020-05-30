@@ -1182,18 +1182,16 @@ const fetchAccount = (token: any, options: AccountOptions) => {
 
               const fGames: Game[] = await Game.fetchAllBy(gameOptions);
               const games: any[] = [];
-              if (id == "202640192178225152") console.log(fGames.length);
               for(let i = 0; i < fGames.length; i++) {
                 const game = fGames[i];
                 // const dc = game.discordChannel;
                 // if (dc) {
                   // const perm = await dc.permissionsFor(id, Permissions.FLAGS.VIEW_CHANNEL);
                   // if (perm) {
-                    games.push(game.data);
+                    games.push(game);
                   // }
                 // }
               }
-              if (id == "202640192178225152") console.log(games.length);
               games
                 .forEach(async (game) => {
                   if (!game.discordGuild) return;
@@ -1216,7 +1214,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
                   game.waitlisted = game.slot > parseInt(game.players);
 
                   const gi = account.guilds.findIndex((g) => g.id === game.s);
-                  account.guilds[gi].games.push(game);
+                  account.guilds[gi].games.push(game.data);
                 });
             }
 
