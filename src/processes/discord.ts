@@ -22,6 +22,7 @@ app.locals.langs = app.locals.supportedLanguages.langs
 
 let client = new Client();
 let isReady = false;
+let connected = false;
 
 client.on("debug", function (info) {
   if (info.indexOf("hit on route") >= 0) return;
@@ -37,6 +38,10 @@ client.on("ready", async () => {
   aux.log(`Logged in as ${client.user.username}!`);
   if (!isReady) {
     isReady = true;
+    if (!connected) connected = await db.database.connect();
+    if (connected) {
+      aux.log("Database connected!");
+    }
     if (process.env.BACKGROUND || process.env.ALLLOGIC) {
       refreshMessages();
       // Once per hour, prune games from the database that are more than 48 hours old
