@@ -439,6 +439,8 @@ export class Game implements GameModel {
           if (guildConfig.embeds) msg = [await parseDiscord(game.description, guild, true), dmmember && dmmember.user.toString(), rMentions.join(" ")].filter((m) => m).join(" ");
           else embed = null;
 
+          console.log(guild.id, game.messageId, !!message)
+
           if (message) {
             if ((message.author ? message.author.id : (<any>message).authorID) === process.env.CLIENT_ID) {
               if (this.client) message = await ShardManager.clientMessageEdit(this.client, guild.id, channel.id, message.id, msg, embed);
