@@ -445,11 +445,11 @@ export class Game implements GameModel {
               else message = await ShardManager.shardMessageEdit(guild.id, channel.id, message.id, msg, embed);
             }
           } else if (channel) {
-            message = <Message>(await channel.send(msg, embed));
-            if (message) {
-              await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: { messageId: message.id } });
-              game.messageId = message.id;
-            }
+            // message = <Message>(await channel.send(msg, embed));
+            // if (message) {
+            //   await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: { messageId: message.id } });
+            //   game.messageId = message.id;
+            // }
           }
 
           if (message) {
