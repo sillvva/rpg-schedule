@@ -1188,11 +1188,10 @@ const fetchAccount = (token: any, options: AccountOptions) => {
                 if (dc) {
                   const perm = await dc.permissionsFor(id, Permissions.FLAGS.VIEW_CHANNEL);
                   if (perm) {
-                    games.push(game);
+                    games.push(game.data);
                   }
                 }
               }
-              if (id == "202640192178225152" && options.page === GamesPages.Server) console.log(games.length);
               games
                 .forEach(async (game) => {
                   if (!game.discordGuild) return;
