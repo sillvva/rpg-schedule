@@ -7,6 +7,7 @@ import { Game, GameMethod, gameReminderOptions } from "../models/game";
 import config from "../models/config";
 import aux from "../appaux";
 import db from "../db";
+import { ShardMember } from "./shard-manager";
 
 const app: any = { locals: {} };
 
@@ -59,7 +60,7 @@ client.on("ready", async () => {
       }
       // Post Game Reminders
       if (process.env.REMINDERS) {
-        // postReminders();
+        postReminders();
         setInterval(() => {
           postReminders();
         }, 1 * 60 * 1000); // 1 minute
@@ -1117,6 +1118,7 @@ const postReminders = async () => {
     const filteredGames = games.filter((game) => {
       if (!client.guilds.cache.array().find((g) => g.id === game.s)) return false;
       if (game.timestamp - parseInt(game.reminder) * 60 * 1000 > new Date().getTime()) return false;
+      if ((new Date().getTime() - (game.timestamp - parseInt(game.reminder) * 60 * 1000)) / 1000 > 5 * 60) return false;
       if (!game.discordGuild) return false;
       if (!game.discordChannel) return false;
       if (game.reminded) return false;
@@ -1127,7 +1129,7 @@ const postReminders = async () => {
     filteredGames.forEach(async (game) => {
       try {
         const reserved: string[] = [];
-        const reservedUsers: GuildMember[] = [];
+        const reservedUsers: ShardMember[] = [];
 
         try {
           const guildMembers = await game.discordGuild.members;
@@ -1135,7 +1137,7 @@ const postReminders = async () => {
           var where = game.where;
           game.reserved.forEach((rsvp) => {
             if (rsvp.tag.length === 0) return;
-            let member = guildMembers.find((mem) => mem.user.tag === rsvp.tag.replace("@", "") || rsvp.id === member.user.id);
+            let member = guildMembers.find((mem) => mem.user.tag === rsvp.tag.replace("@", "") || rsvp.id === mem.user.id);
 
             let name = rsvp.tag.replace("@", "");
             if (member) name = member.user.toString();
@@ -1150,7 +1152,9 @@ const postReminders = async () => {
           var dm = game.dm.tag.trim().replace("@", "");
           var dmMember = member;
           if (member) dm = member.user.toString();
-        } catch (err) {}
+        } catch (err) {
+          console.log(err);
+        }
 
         if (reserved.length == 0) return;
 
