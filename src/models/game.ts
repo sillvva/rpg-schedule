@@ -978,7 +978,6 @@ export class Game implements GameModel {
       rsvps.push(rsvp);
     });
     rsvps = rsvps.filter((r) => r.tag);
-    console.log("url2", rsvps);
     return rsvps;
   }
 
