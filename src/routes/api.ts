@@ -687,6 +687,8 @@ export default (options: APIRouteOptions) => {
                   data = { ...data, ...game };
                 }
 
+                console.log(req.body);
+
                 if (req.method === "POST") {
                   data = Object.assign(data, req.body);
                 }
