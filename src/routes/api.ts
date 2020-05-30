@@ -551,8 +551,6 @@ export default (options: APIRouteOptions) => {
               }
             }
 
-            const sGuilds = await ShardManager.shardGuilds();
-
             if (req.method === "POST") {
               // req.body.reserved = req.body.reserved.replace(/@/g, "");
 
@@ -563,12 +561,16 @@ export default (options: APIRouteOptions) => {
                 server = req.body.s;
               }
               if (req.query.s) {
+                const sGuilds = await ShardManager.shardGuilds({
+                  guildIds: [server],
+                  memberIds: [result.account.user.id]
+                });
                 game = new Game(req.body, sGuilds);
               }
             }
 
             if (server) {
-              let guild = sGuilds.find((g) => g.id === server);
+              let guild = game.discordGuild;
 
               if (guild) {
                 let password: string;
@@ -698,7 +700,7 @@ export default (options: APIRouteOptions) => {
                   game.hideDate = req.body["hideDate"] ? true : false;
                   game.clearReservedOnRepeat = req.body["clearReservedOnRepeat"] ? true : false;
 
-                  const updatedGame = new Game(game.data, sGuilds);
+                  const updatedGame = new Game(game.data, [game.discordGuild]);
 
                   updatedGame
                     .save()
