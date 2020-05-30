@@ -192,6 +192,7 @@ export class Game implements GameModel {
       } else if (key === "dm" && guildMembers) {
         this[key] = Game.updateDM(value, guildMembers);
       } else if (key === "reserved" && guildMembers) {
+        console.log('constructor', value, guildMembers.length);
         this[key] = Game.updateReservedList(value, guildMembers);
       } else this[key] = value;
     }
@@ -970,6 +971,7 @@ export class Game implements GameModel {
     const reserved = list.split(/\r?\n/);
     reserved.forEach((r) => {
       const rsvp: RSVP = { tag: r.trim() };
+      console.log(JSON.stringify(r.trim()))
       const member = guildMembers.find((m) => m.user.tag === r.trim());
       if (member) {
         rsvp.id = member.user.id;
