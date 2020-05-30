@@ -1183,7 +1183,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
               }
 
               const fGames: Game[] = await Game.fetchAllBy(gameOptions);
-              if (id == "202640192178225152" && options.page === GamesPages.Server) console.log(account.guilds.length, JSON.stringify(gameOptions), JSON.stringify(account.guilds.map(g => g.id)));
+              if (id == "202640192178225152" && options.page === GamesPages.Server) console.log(fGames.length);
               const games: any[] = [];
               for(let i = 0; i < fGames.length; i++) {
                 const game = fGames[i];
@@ -1195,6 +1195,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
                   }
                 }
               }
+              if (id == "202640192178225152" && options.page === GamesPages.Server) console.log(games.length);
               games
                 .forEach(async (game) => {
                   if (!game.discordGuild) return;
@@ -1220,6 +1221,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
                   account.guilds[gi].games.push(game);
                 });
             }
+            if (id == "202640192178225152" && options.page === GamesPages.Server) console.log(account.guilds.map(g => g.games.length));
 
             account.guilds = account.guilds.map((guild) => {
               guild.games.sort((a, b) => {
