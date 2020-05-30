@@ -50,7 +50,7 @@ export default () => {
       if (req.query.redirect) {
         req.session.redirect = req.query.redirect;
       }
-      res.redirect(process.env.AUTH_URL);
+      res.redirect(`https://discord.com/api/oauth2/authorize?client_id=${process.env.CLIENT_ID}&redirect_uri=${encodeURI(process.env.HOST + config.urls.login.path)}&response_type=code&scope=identify%20guilds`);
     }
   });
 

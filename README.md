@@ -196,16 +196,12 @@ Each next announcement will be posted X hours after the date/time of the current
 * install [git](https://git-scm.com/downloads), [node](https://nodejs.org/en/download/), [heroku-cli](https://devcenter.heroku.com/articles/heroku-cli#download-and-install), and [mongodb server](https://www.mongodb.com/download-center/community)
 * Run `npm install`
 * Set up a [discord bot application](https://discordapp.com/developers) with permissions and a token
-  * permissions: 
-    * send messages
-    * manage messages
-    * embed links
-    * read message history
-    * add reactions
-  * OAuth2 redirect
-    * `http://localhost:5000/login`
-      * guilds
-      * identify
+  * Configure the bot as following
+  * OAuth2
+    * Redirects
+      * `http://localhost:5000/login`
+  * Bot
+    * Follow instructions after clicking to create a bot
 * Copy `.env template` to `.devenv` and fill out the values
 * Create a file called `dev` (no extension) with the following content:
   ```javascript
