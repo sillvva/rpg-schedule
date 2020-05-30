@@ -611,7 +611,7 @@ export class Game implements GameModel {
     return game ? new Game(game, guilds, client) : null;
   }
 
-  static async fetchAllBy(query: mongodb.FilterQuery<any>, client?: Client): Promise<Game[]> {
+  static async fetchAllBy(query: mongodb.FilterQuery<any>, client?: Client, sGuilds?: ShardGuild[]): Promise<Game[]> {
     if (!connection()) {
       aux.log("No database connection");
       return [];
@@ -619,7 +619,7 @@ export class Game implements GameModel {
     const games: GameModel[] = await connection().collection(collection).find(query).toArray();
     const out: Game[] = [];
     for (let i = 0; i < games.length; i++) {
-      const guilds = client ? await ShardManager.clientGuilds(client, [games[i].s]) : await ShardManager.shardGuilds({ guildIds: [games[i].s] });
+      const guilds = sGuilds ? sGuilds : client ? await ShardManager.clientGuilds(client, [games[i].s]) : await ShardManager.shardGuilds({ guildIds: [games[i].s] });
       out.push(new Game(games[i], guilds, client));
     }
     return out;

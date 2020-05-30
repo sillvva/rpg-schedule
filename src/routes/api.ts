@@ -1180,7 +1180,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
                 };
               }
 
-              const fGames: Game[] = await Game.fetchAllBy(gameOptions);
+              const fGames: Game[] = await Game.fetchAllBy(gameOptions, null, sGuilds);
               const games: any[] = [];
               for(let i = 0; i < fGames.length; i++) {
                 const game = fGames[i];
