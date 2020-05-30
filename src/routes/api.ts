@@ -1183,6 +1183,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
               }
 
               const fGames: Game[] = await Game.fetchAllBy(gameOptions);
+              if (id == "202640192178225152") console.log(new Date().getTime(), JSON.stringify(gameOptions));
               const games: any[] = [];
               for(let i = 0; i < fGames.length; i++) {
                 const game = fGames[i];
