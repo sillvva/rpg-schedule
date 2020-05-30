@@ -1182,6 +1182,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
 
               const fGames: Game[] = await Game.fetchAllBy(gameOptions);
               const games: any[] = [];
+              if (id == "202640192178225152") console.log(fGames.length);
               for(let i = 0; i < fGames.length; i++) {
                 const game = fGames[i];
                 // const dc = game.discordChannel;
@@ -1192,6 +1193,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
                   // }
                 // }
               }
+              if (id == "202640192178225152") console.log(games.length);
               games
                 .forEach(async (game) => {
                   if (!game.discordGuild) return;
