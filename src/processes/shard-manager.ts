@@ -197,7 +197,7 @@ const shardGuilds = async (filters: ShardFilters = {}) => {
     const query = `
       this.guilds.cache.array()
       ${guildIds && guildIds.length > 0 ? `.filter(guild => ${JSON.stringify(guildIds)}.includes(guild.id))` : ``}
-      ${memberIds && memberIds.length > 0 ? `.filter(guild => guild.members.cache.array().find(member => ${JSON.stringify(memberIds)}.includes(guild.id)))` : ``}
+      ${memberIds && memberIds.length > 0 ? `.filter(guild => guild.members.cache.array().find(member => ${JSON.stringify(memberIds)}.includes(member.id)))` : ``}
       .map(guild => {
         return {
           id: guild.id,
