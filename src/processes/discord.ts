@@ -42,6 +42,7 @@ client.on("ready", async () => {
     if (connected) {
       aux.log("Database connected!");
     }
+    else return;
     if (process.env.BACKGROUND || process.env.ALLLOGIC) {
       refreshMessages();
       // Once per hour, prune games from the database that are more than 48 hours old
@@ -1162,7 +1163,8 @@ const postReminders = async () => {
 
         try {
           game.reminded = true;
-          game.save(true);
+          const result = await game.save(true);
+          if (!result.modified) return;
         } catch (err) {
           aux.log("RemindedSaveError", game._id, err);
           return;
