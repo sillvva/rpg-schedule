@@ -971,10 +971,11 @@ export class Game implements GameModel {
     reserved.forEach((r) => {
       const rsvp: RSVP = { tag: r.trim() };
       const member = guildMembers.find((m) => m.user.tag === r.trim());
-      console.log("url", !!member, JSON.stringify(r.trim()), JSON.stringify(guildMembers.map(m => m.user.tag)));
+      // console.log("url", !!member, JSON.stringify(r.trim()), JSON.stringify(guildMembers.map(m => m.user.tag)));
       if (member) {
         rsvp.id = member.user.id;
       }
+      rsvps.push(rsvp);
     });
     rsvps = rsvps.filter((r) => r.tag);
     console.log("url2", rsvps);
