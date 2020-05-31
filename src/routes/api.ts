@@ -1025,9 +1025,11 @@ const fetchAccount = (token: any, options: AccountOptions) => {
           };
 
           if (options.guilds) {
+            // const fTime = new Date().getTime();
             const sGuilds = await ShardManager.shardGuilds({
               memberIds: [id],
             });
+            // console.log(new Date().getTime() - fTime);
 
             sGuilds.forEach((guild) => {
               const guildInfo: AccountGuild = {
@@ -1069,7 +1071,9 @@ const fetchAccount = (token: any, options: AccountOptions) => {
                 }, []),
               },
             };
+
             const guildConfigs = await GuildConfig.fetchAllBy(gcQuery);
+            // console.log(new Date().getTime() - fTime);
 
             for (let gi = 0; gi < account.guilds.length; gi++) {
               const guild: AccountGuild = account.guilds[gi];
@@ -1077,13 +1081,15 @@ const fetchAccount = (token: any, options: AccountOptions) => {
               const member = guild.member;
 
               let gcChannels: ChannelConfig[] = guildConfig.channels;
+              if (gcChannels.length == 0 || !guild.channels.find((gc) => !!gcChannels.find((c) => gc.id === c.channelId))) {
               let firstChannel: ShardChannel;
               for (let i = 0; i < guild.channels.length; i++) {
                 const pf = await guild.channels[i].permissionsFor(guild.roles.find((r) => r.name === "@everyone").id, Permissions.FLAGS.VIEW_CHANNEL);
                 if (pf) firstChannel = guild.channels[i];
               }
-              if (firstChannel && guild.channels.length > 0 && (gcChannels.length == 0 || !guild.channels.find((gc) => !!gcChannels.find((c) => gc.id === c.channelId)))) {
+                if (firstChannel && guild.channels.length > 0) {
                 gcChannels.push({ channelId: firstChannel.id, gameTemplates: [guildConfig.defaultGameTemplate.id] });
+              }
               }
 
               if (member) {
@@ -1105,9 +1111,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
                 }
                 gccf.forEach((gc) => channels.push(gc));
               }
-              channels = channels.filter(
-                (c) => member && (member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) || guild.isAdmin || !!guildConfig.shardMemberHasPermission(member, c.id))
-              );
+              channels = channels.filter((c) => member && (guild.isAdmin || !!guildConfig.shardMemberHasPermission(member, c.id)));
 
               guild.announcementChannels = channels;
               guild.config = guildConfig;
@@ -1116,6 +1120,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
             if (options.page === GamesPages.Server && !options.search) {
               account.guilds = account.guilds.filter((g) => account.guilds.find((s) => s.id === g.id && (s.isAdmin || config.author == tag)));
             }
+            // console.log(new Date().getTime() - fTime);
 
             if (options.games) {
               const gameOptions: any = {
@@ -1185,6 +1190,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
               }
 
               const fGames: Game[] = await Game.fetchAllBy(gameOptions, null, sGuilds);
+              // console.log(new Date().getTime() - fTime);
               const games: any[] = [];
               for (let i = 0; i < fGames.length; i++) {
                 const game = fGames[i];
@@ -1341,12 +1347,12 @@ const getUserSettings = async (id: string, req: any) => {
   const userSettings = await User.fetch(id);
   let updated = false;
 
-  if (req.app.locals.lang) {
-    if (userSettings.lang != req.app.locals.lang.code) {
-      userSettings.lang = req.app.locals.lang.code;
-      updated = true;
-    }
-  }
+  // if (req.app.locals.lang) {
+  //   if (userSettings.lang != req.app.locals.lang.code) {
+  //     userSettings.lang = req.app.locals.lang.code;
+  //     updated = true;
+  //   }
+  // }
 
   if (updated) await userSettings.save();
 
