@@ -262,10 +262,9 @@ export class GuildConfig implements GuildConfigDataModel {
 
   shardMemberHasPermission(member: ShardMember, channelId?: string) {
     return !!this.gameTemplates.find((gt) => {
-      return (
-        this.channel.find((c) => c.gameTemplates.find((cgt) => cgt === gt.id) && (!channelId || c.channelId === channelId)) &&
-        (!gt.role || !!member.roles.find((r) => gt.role.trim() === r.name.toLowerCase().trim()))
-      );
+      const matchedChannel = this.channel.find((c) => c.gameTemplates.find((cgt) => cgt === gt.id) && (!channelId || c.channelId === channelId));
+      const userHasRole = !gt.role || !!member.roles.find((r) => gt.role.toLowerCase().trim() === r.name.toLowerCase().trim());
+      return matchedChannel && userHasRole;
     });
   }
 
@@ -273,7 +272,7 @@ export class GuildConfig implements GuildConfigDataModel {
     return !!this.gameTemplates.find((gt) => {
       return (
         this.channel.find((c) => c.gameTemplates.find((cgt) => cgt === gt.id) && (!channelId || c.channelId === channelId)) &&
-        (!gt.role || !!member.roles.cache.array().find((r) => gt.role.trim() === r.name.toLowerCase().trim()))
+        (!gt.role || !!member.roles.cache.array().find((r) => gt.role.toLowerCase().trim() === r.name.toLowerCase().trim()))
       );
     });
   }
