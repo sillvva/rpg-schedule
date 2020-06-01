@@ -656,8 +656,40 @@ if (!process.env.BACKGROUND || process.env.ALLLOGIC) {
     if (process.env.LOCALENV) return;
     // aux.log(aux.backslash(oldUser.tag));
     if (oldUser.tag != newUser.tag) {
-      const games = await Game.fetchAllBy({ $or: [{ dm: oldUser.tag }, { reserved: new RegExp(aux.backslash(oldUser.tag), "gi") }] }, client);
+      const games = await Game.fetchAllBy(
+        {
+          $or: [
+            { "author.tag": oldUser.tag },
+            { "author.id": oldUser.id },
+            { "dm.tag": oldUser.tag },
+            { "dm.id": oldUser.id },
+            { dm: oldUser.tag },
+            {
+              reserved: {
+                $elemMatch: {
+                  tag: oldUser.tag,
+                },
+              },
+            },
+            {
+              reserved: {
+                $elemMatch: {
+                  id: oldUser.id,
+                },
+              },
+            },
+            {
+              reserved: {
+                $regex: oldUser.tag.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&"),
+              },
+            },
+          ],
+        },
+        client
+      );
       games.forEach(async (game) => {
+        if (game.author.tag === oldUser.tag) game.author.tag = newUser.tag;
+        if (game.author.tag === oldUser.tag) game.author.id = newUser.id;
         if (game.dm.tag === oldUser.tag) game.dm.tag = newUser.tag;
         if (game.dm.tag === oldUser.tag) game.dm.id = newUser.id;
         if (game.reserved.find((r) => r.tag === oldUser.tag || r.id === oldUser.id)) {
