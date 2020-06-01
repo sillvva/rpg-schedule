@@ -1082,14 +1082,14 @@ const fetchAccount = (token: any, options: AccountOptions) => {
 
               let gcChannels: ChannelConfig[] = guildConfig.channels;
               if (gcChannels.length == 0 || !guild.channels.find((gc) => !!gcChannels.find((c) => gc.id === c.channelId))) {
-              let firstChannel: ShardChannel;
-              for (let i = 0; i < guild.channels.length; i++) {
-                const pf = await guild.channels[i].permissionsFor(guild.roles.find((r) => r.name === "@everyone").id, Permissions.FLAGS.VIEW_CHANNEL);
-                if (pf) firstChannel = guild.channels[i];
-              }
+                let firstChannel: ShardChannel;
+                for (let i = 0; i < guild.channels.length; i++) {
+                  const pf = await guild.channels[i].permissionsFor(guild.roles.find((r) => r.name === "@everyone").id, Permissions.FLAGS.VIEW_CHANNEL);
+                  if (pf) firstChannel = guild.channels[i];
+                }
                 if (firstChannel && guild.channels.length > 0) {
-                gcChannels.push({ channelId: firstChannel.id, gameTemplates: [guildConfig.defaultGameTemplate.id] });
-              }
+                  gcChannels.push({ channelId: firstChannel.id, gameTemplates: [guildConfig.defaultGameTemplate.id] });
+                }
               }
 
               if (member) {
@@ -1208,22 +1208,21 @@ const fetchAccount = (token: any, options: AccountOptions) => {
 
                 const date = Game.ISOGameDate(game);
                 const parsed = aux.parseEventTimes(game);
-                game.moment = {
-                  ...parsed,
-                  iso: date,
-                  date: moment(date).utcOffset(parseInt(game.timezone)).format(config.formats.dateLong),
-                  calendar: moment(date).utcOffset(parseInt(game.timezone)).calendar(),
-                  from: moment(date).utcOffset(parseInt(game.timezone)).fromNow(),
-                };
-
-                game.reserved = game.reserved.filter((r) => r.tag);
-
-                game.slot = game.reserved.findIndex((t) => t.tag.replace("@", "") === tag || t.id === id) + 1;
-                game.signedup = game.slot > 0 && game.slot <= parseInt(game.players);
-                game.waitlisted = game.slot > parseInt(game.players);
-
                 const gi = account.guilds.findIndex((g) => g.id === game.s);
-                account.guilds[gi].games.push(game.data);
+                account.guilds[gi].games.push({
+                  ...game.data,
+                  moment: {
+                    ...parsed,
+                    iso: date,
+                    date: moment(date).utcOffset(parseInt(game.timezone)).format(config.formats.dateLong),
+                    calendar: moment(date).utcOffset(parseInt(game.timezone)).calendar(),
+                    from: moment(date).utcOffset(parseInt(game.timezone)).fromNow(),
+                  },
+                  reserved: game.reserved.filter((r) => r.tag),
+                  slot: game.reserved.findIndex((t) => t.tag.replace("@", "") === tag || t.id === id) + 1,
+                  signedup: game.slot > 0 && game.slot <= parseInt(game.players),
+                  waitlisted: game.slot > parseInt(game.players),
+                });
               });
             }
 

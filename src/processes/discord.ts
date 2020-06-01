@@ -1,4 +1,4 @@
-import { TextChannel, Client, Message, User, GuildChannel, MessageEmbed, Permissions, Guild, GuildMember } from "discord.js";
+import { TextChannel, Client, Message, User, GuildChannel, MessageEmbed, Permissions, Guild } from "discord.js";
 import { DeleteWriteOpResultObject, FilterQuery, ObjectId, UpdateWriteOpResult } from "mongodb";
 
 import { io } from "./socket";
@@ -39,37 +39,35 @@ client.on("ready", async () => {
   aux.log(`Logged in as ${client.user.username}!`);
   if (!isReady) {
     isReady = true;
-    if (!connected) connected = await db.database.connect();
-    if (connected) {
-      aux.log("Database connected!");
-    }
-    else return;
-    if (process.env.BACKGROUND || process.env.ALLLOGIC) {
+    if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
+      if (!connected) connected = await db.database.connect();
+      if (connected) {
+        aux.log("Database connected!");
+      } else return;
+
       refreshMessages();
       // Once per hour, prune games from the database that are more than 48 hours old
       pruneOldGames();
       setInterval(() => {
         pruneOldGames();
       }, 60 * 60 * 1000); // 1 hour
+
       // Once per hour, reschedule recurring games from the database that have already occurred
-      if (process.env.RESCHEDULING) {
+      rescheduleOldGames();
+      setInterval(() => {
         rescheduleOldGames();
-        setInterval(() => {
-          rescheduleOldGames();
-        }, 60 * 60 * 1000); // 1 hour
-      }
+      }, 60 * 60 * 1000); // 1 hour
+
       // Post Game Reminders
-      if (process.env.REMINDERS) {
+      postReminders();
+      setInterval(() => {
         postReminders();
-        setInterval(() => {
-          postReminders();
-        }, 1 * 60 * 1000); // 1 minute
-      }
+      }, 1 * 60 * 1000); // 1 minute
     }
   }
 });
 
-if (!process.env.BACKGROUND || process.env.ALLLOGIC) {
+if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
   /**
    * Discord.JS - message
    */
@@ -87,10 +85,6 @@ if (!process.env.BACKGROUND || process.env.ALLLOGIC) {
           const guildConfig = await GuildConfig.fetch(guildId);
           // const author: User = message.author;
           const member = message.member;
-
-          if (process.env.LOCALENV && guildId != "532564186023329792") {
-            return;
-          }
 
           const prefix = (guildConfig.escape || "").trim().length ? guildConfig.escape.trim() : "!";
           const botcmd = `${prefix}${config.command}`;
@@ -632,10 +626,6 @@ if (!process.env.BACKGROUND || process.env.ALLLOGIC) {
   client.on("messageReactionAdd", async (reaction, user: User) => {
     try {
       const message = reaction.message;
-      const channelId = message.channel.id;
-      if (process.env.LOCALENV && channelId != "532564186023329794") {
-        return;
-      }
       const game = await Game.fetchBy("messageId", message.id, client);
       if (game.method !== GameMethod.AUTOMATED) return;
       if (game && user.id !== message.author.id) {

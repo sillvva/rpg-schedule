@@ -445,11 +445,11 @@ export class Game implements GameModel {
               else message = await ShardManager.shardMessageEdit(guild.id, channel.id, message.id, msg, embed);
             }
           } else if (channel) {
-            // message = <Message>(await channel.send(msg, embed));
-            // if (message) {
-            //   await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: { messageId: message.id } });
-            //   game.messageId = message.id;
-            // }
+            message = <Message>(await channel.send(msg, embed));
+            if (message) {
+              await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: { messageId: message.id } });
+              game.messageId = message.id;
+            }
           }
 
           if (message) {
@@ -994,7 +994,8 @@ export class Game implements GameModel {
   }
 
   async signUp(user: User) {
-    if (!this.reserved.find((r) => r.id === user.id || r.tag == user.tag)) {
+    const hourDiff = (new Date().getTime() - this.timestamp) / 1000 / 3600;
+    if (!this.reserved.find((r) => r.id === user.id || r.tag == user.tag) && hourDiff < 0) {
       this.reserved.push({ id: user.id, tag: user.tag });
       this.save();
       this.dmCustomInstructions(user.tag);
@@ -1002,7 +1003,8 @@ export class Game implements GameModel {
   }
 
   async dropOut(user: User, guildConfig: GuildConfig) {
-    if (this.reserved.find((r) => r.tag === user.tag || r.id === user.id) && guildConfig.dropOut) {
+    const hourDiff = (new Date().getTime() - this.timestamp) / 1000 / 3600;
+    if (this.reserved.find((r) => r.tag === user.tag || r.id === user.id) && guildConfig.dropOut && hourDiff < 0) {
       this.reserved = this.reserved.filter((r) => r.tag && r.tag !== user.tag && !(r.id && r.id === user.id));
       this.save();
     }

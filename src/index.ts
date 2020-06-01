@@ -35,7 +35,7 @@ app.use(async (req, res, next) => {
 app.set("view engine", "ejs");
 app.set("views", "views");
 
-if (process.env.MAINTENANCE == "true") {
+if (process.env.MAINTENANCE.toLowerCase() == "true") {
   const server = http.createServer(app).listen(process.env.PORT || 5000);
   aux.log("App started!");
 
