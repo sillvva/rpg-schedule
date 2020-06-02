@@ -13,7 +13,7 @@ export default {
       dashboard: { path: "/games/my-games", session: true, guildPermission: true, loadGames: true },
       calendar: { path: "/games/calendar", session: true, guildPermission: true, loadGames: true },
       server: { path: "/games/server", session: true, guildPermission: true, loadGames: true },
-      create: { path: "/games/edit" },
+      create: { path: "/games/edit", session: true },
       delete: { path: "/games/delete", session: true },
       password: { path: "/games/password", session: true },
       auth: { path: "/games/authenticate", session: true },

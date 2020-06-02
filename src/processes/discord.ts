@@ -645,9 +645,6 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
       const game = await Game.fetchBy("messageId", message.id, client);
       if (game.method !== GameMethod.AUTOMATED) return;
       if (game && user.id !== message.author.id) {
-        if (Array.isArray(game.reserved)) {
-          game.reserved = game.reserved.map((r) => r.tag).join("\n");
-        }
         const guildConfig = await GuildConfig.fetch(game.s);
         if (reaction.emoji.name === guildConfig.emojiAdd) {
           reaction.users.remove(user);
@@ -763,29 +760,6 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
       games.forEach(async (game) => {
         await game.delete();
       });
-    }
-  });
-
-  client.on("channelDelete", async (channel: GuildChannel) => {
-    if (!channel) return;
-    const channelId = channel.id;
-    const guildId = channel.guild.id;
-    const guildConfig = await GuildConfig.fetch(guildId);
-    if (!Array.isArray(guildConfig.channel)) guildConfig.channel = [guildConfig.channel];
-    if (guildConfig.channel.includes(channelId)) {
-      guildConfig.channel.splice(guildConfig.channel.indexOf(channelId), 1);
-      await guildConfig.save();
-
-      if (guildId && channelId) {
-        const games = await Game.fetchAllBy({
-          s: guildId,
-          c: channelId,
-        });
-
-        games.forEach(async (game) => {
-          await game.delete();
-        });
-      }
     }
   });
 
