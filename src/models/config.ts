@@ -1,5 +1,6 @@
 export default {
   title: "RPG Schedule",
+  sessionVersion: 3, // Incrementing this number will log users with existing sessions out
   urls: {
     base: { path: "/", session: true },
     redirects: {
@@ -12,7 +13,7 @@ export default {
       dashboard: { path: "/games/my-games", session: true, guildPermission: true, loadGames: true },
       calendar: { path: "/games/calendar", session: true, guildPermission: true, loadGames: true },
       server: { path: "/games/server", session: true, guildPermission: true, loadGames: true },
-      create: { path: "/games/edit", session: true },
+      create: { path: "/games/edit" },
       delete: { path: "/games/delete", session: true },
       password: { path: "/games/password", session: true },
       auth: { path: "/games/authenticate", session: true },
@@ -26,6 +27,7 @@ export default {
     login: { path: "/login" },
     logout: { path: "/logout" },
     rss: { path: "/rss/:uid" },
+    ics: { path: "/ics/:uid.ics" },
     timezone: {
       convert: { path: "/tz/:time/:tz" },
       countdown: { path: "/cd/:time/:tz" }

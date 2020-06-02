@@ -45,12 +45,12 @@
         <h2 class="guild-name">
             <img class="guild-icon" src="<%= guild.icon && guild.icon.length > 0 ? guild.icon : `/images/logo2.png` %>" alt="" />
             <%= guild.name %>
-            <% if ((account.viewing.dashboard || account.viewing.server) && (guild.permission || guild.isAdmin)) { %>
+            <% if ((account.viewing.dashboard || account.viewing.server) && (guild.permission || guild.isAdmin) && guild.announcementChannels.length > 0) { %>
                 <a href="<%= config.urls.game.create.path %>?s=<%= guild.id %>" class="btn btn-primary btn-sm float-right"><%= lang.buttons.NEW_GAME %></a>
             <% } %>
         </h2>
         <div class="games">
-            <% if (guild.games.length === 0) { %>
+            <% if (guild.games.filter(game => account.viewing.server || account.viewing.dashboard || game.discordChannel.permissionsFor(account.user.id).has(account.permissions.VIEW_CHANNEL)).length === 0) { %>
                 <div class="no-games">
                     <% if (account.viewing.dashboard) { %>
                         <%= lang.dashboard.EMPTY_MY_GAMES %>
@@ -59,8 +59,8 @@
                     <% } %>
                 </div>
             <% } %>
-            <% guild.games.forEach(game => { %>
-                <% if (account.viewing.server || (guild.permission && account.viewing.dashboard && account.user.tag === game.dm)) { %>
+            <% guild.games.filter(game => account.viewing.server || account.viewing.dashboard || game.discordChannel.permissionsFor(account.user.id).has(account.permissions.VIEW_CHANNEL)).forEach(game => { %>
+                <% if ((account.viewing.server && (guild.isAdmin || account.user.tag === config.author)) || (account.viewing.dashboard && account.user.tag === game.dm)) { %>
                     <div class="game my-games" id="<%= game._id %>" onclick="window.location = `<%= config.urls.game.create.path %>?g=<%= game._id %>`;">
                         <h4 class="game-name"><%= game.adventure %></h4>
                         <% if (account.viewing.server) { %>
@@ -84,14 +84,14 @@
                                 <% } %>
                             </div>
                             <div>
-                                <a href="http://www.google.com/calendar/render?action=TEMPLATE&text=<%= escape(game.adventure) %>&dates=<%= game.moment.isoutc %>/<%= game.moment.isoutc %>&location=<%= escape(`${guild.name} - ${game.where}`) %>&trp=false&sprop=&details=<%= escape(game.description) %>" target="_blank" rel="nofollow" onclick="event.stopPropagation();">Add to Google Calendar</a>
+                                <a href="<%= game.moment.googleCal %>" target="_blank" rel="nofollow" onclick="event.stopPropagation();">Add to Google Calendar</a>
                             </div>
                         <% } %>
                         <div class="game-reserved"><strong><%= lang.game.RESERVED %>:</strong> <%= Math.min(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0)%> / <%= game.players %></div>
                         <div class="game-reserved"><strong><%= lang.game.WAITLISTED %>:</strong> <%= Math.max(parseInt(game.players), game.reserved.trim().length > 0 ? game.reserved.trim().split("\n").length : 0) - parseInt(game.players)%></div>
                     </div>
                 <% } else if (account.viewing.games) { %>
-                    <div class="game upcoming" id="<%= game._id %>">
+                    <div class="game upcoming rsvp" id="<%= game._id %>">
                         <h4 class="game-name"><%= game.adventure %></h4>
                         <div class="game-dm">
                             <strong><%= lang.game.GM %>:</strong>
@@ -112,7 +112,7 @@
                                 <% } %>
                             </div>
                             <div>
-                                <a href="http://www.google.com/calendar/render?action=TEMPLATE&text=<%= escape(game.adventure) %>&dates=<%= game.moment.isoutc %>/<%= game.moment.isoutc %>&location=<%= escape(`${guild.name} - ${game.where}`) %>&trp=false&sprop=&details=<%= escape(game.description) %>" target="_blank" rel="nofollow" onclick="event.stopPropagation();"><%= lang.game.ADD_TO_CALENDAR %></a>
+                                <a href="<%= game.moment.googleCal %>" target="_blank" rel="nofollow" onclick="event.stopPropagation();"><%= lang.game.ADD_TO_CALENDAR %></a>
                             </div>
                         <% } %>
                         <div class="where parse-url">

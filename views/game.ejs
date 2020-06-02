@@ -43,18 +43,26 @@
             <div class="form-group col-sm-6">
                 <label for="channel" class="col-form-label"><%= lang.game.CHANNEL %></label>
                 <% if (is.editgame) { %>
-                    <input type="text" readonly class="form-control" id="channel" name="channel" value="<%= channel %>">
+                    <input type="text" readonly class="form-control" id="channelName" value="<%= channel %> <%= channels.find(ch => ch.id === c) && channels.find(ch => ch.id === c).parent ? `(${channels.find(ch => ch.id === c).parent.name})` : "" %>">
+                    <input type="hidden" id="channel" name="channel" value="<%= channel %>">
                     <input type="hidden" name="c" value="<%= c %>">
-                <% } else if (channels.length === 1) { %>
-                    <input type="text" readonly class="form-control" id="channel" name="channel" value="<%= channels[0].name %>">
-                    <input type="hidden" name="c" value="<%= channels[0].id %>">
                 <% } else { %>
                     <select class="form-control" id="c" name="c">
                         <% channels.forEach(c => {
-                            %><option value="<%= c.id %>"><%= c.name %></option><%
+                            %>
+                            <option value="<%= c.id %>">
+                                <%= c.name %>
+                                <%= c.parent ? `(${c.parent.name})` : "" %>
+                            </option>
+                            <%
                         }) %>
                     </select>
                     <input type="hidden" id="channel" name="channel" value="<%= channels[0].name %>">
+                <% } %>
+                <% if (!channels.find(ch => ch.id === c)) { %>
+                    <div>
+                        <small class="error">Channel not found on server</small>
+                    </div>
                 <% } %>
             </div>
         </div>
@@ -174,7 +182,7 @@
         </div>
         <% if (env.RESCHEDULING) { %>
             <div id="when__frequency" class="row">
-                <div class="col-sm-6 col-lg-3">
+                <div class="col-freq col-sm-6 col-lg-3">
                     <div class="form-group">
                         <label for="frequency" class="col-form-label"><%= lang.game.FREQUENCY %></label>
                         <select class="form-control" id="frequency" name="frequency">
@@ -191,7 +199,7 @@
                 </div>
                 <div class="form-group col-sm-6 col-lg-4 col-xl-3">
                     <div>
-                        <label class="col-form-label"><%= lang.game.WHEN_REPEAT %>:</label>
+                        <label class="col-form-label"><%= lang.game.WHEN_REPEAT %></label>
                     </div>
                     <div>
                         <label class="col-form-label">
@@ -200,7 +208,13 @@
                         </label>
                     </div>
                 </div>
-                <div class="col-sm-12 col-lg-5 col-xl-6">
+                <div class="form-group col-xweeks col-sm-3 col-lg-2 d-none">
+                    <div>
+                        <label class="col-form-label"><%= lang.game.options.BIWEEKLY %></label>
+                        <input type="number" name="xWeeks" id="xWeeks" min="1" value="<%= xWeeks %>" class="form-control" style="width: 100%;" />
+                    </div>
+                </div>
+                <div class="col-wm col-sm-12 col-lg-5 col-xl-6">
                     <div class="row">
                         <div class="form-group col" id="monthly-type-container">
                             <label for="frequency" class="col-form-label"><%= lang.game.MONTHLY_TYPE %></label>
@@ -232,7 +246,7 @@
             <% if (clearReservedOnRepeat) { %><input type="hidden" name="clearReservedOnRepeat" value="true" /><% } %>
         <% } %>
         <div class="row">
-            <div class="col-sm-3">
+            <div class="col-sm-5 col-md-4 col-lg-3">
                 <div class="form-group">
                     <label for="reserved" class="col-form-label"><%= lang.game.RESERVED_SLOTS %></label>
                     <textarea class="form-control" id="reserved" name="reserved" rows="7" placeholder="Username#1234"><%= reserved %></textarea>
@@ -248,23 +262,23 @@
                 </div>
                 <% } %>
             </div>
-            <div class="col-sm-4">
+            <div class="col-sm-7 col-md-8 col-lg-4">
                 <div class="form-group">
                     <label for="customSignup" class="col-form-label"><%= lang.game.CUSTOM_SIGNUP_INSTRUCTIONS %></label>
                     <textarea class="form-control" id="customSignup" name="customSignup" rows="7" maxlength="1500" onkeyup="document.getElementById('cs-len').innerHTML = this.value.length"><%= customSignup %></textarea>
                     <div>
                         <small>
-                            <span id="method__custom"><%= lang.game.SIGNUP_INSTRUCTIONS_DESC %></span> 
+                            <span id="method__custom"><%= lang.game.labels.DISCORD_FORMATTING %>. <%= lang.game.SIGNUP_INSTRUCTIONS_DESC %></span>
                             (<span id="cs-len"><%= customSignup.length %></span> / <%= lang.game.MAX %> <span id="cs-max">1500</span> <%= lang.game.CHARACTERS %>)
                         </small>
                     </div>
                 </div>
             </div>
-            <div class="col-sm-5">
+            <div class="col-lg-5">
                 <div class="form-group">
                     <label for="description" class="col-form-label"><%= lang.game.DESCRIPTION %></label>
                     <textarea class="form-control" id="description" name="description" rows="7" maxlength="1500" onkeyup="document.getElementById('desc-len').innerHTML = this.value.length"><%= description %></textarea>
-                    <small><%= lang.game.labels.DISCORD_FORMATTING %> (<span id="desc-len"><%= description.length %></span> / <%= lang.game.MAX %> <span id="desc-max">1500</span> <%= lang.game.CHARACTERS %>)</small>
+                    <small><%= lang.game.labels.DISCORD_FORMATTING %>. (<span id="desc-len"><%= description.length %></span> / <%= lang.game.MAX %> <span id="desc-max">1500</span> <%= lang.game.CHARACTERS %>)</small>
                 </div>
             </div>
         </div>
@@ -359,12 +373,26 @@
         $("#weekdays-container").addClass("d-none");
         $("#monthly-type-container").addClass("d-none");
         $('#date').removeAttr("disabled");
+        $('.col-freq').removeClass('col-lg-2').addClass('col-lg-3');
+        $('.col-freq .form-control').removeClass('pl-1').removeClass('pr-0');
+        $('.col-wm').removeClass('col-sm-9').addClass('col-sm-12');
+        $('.col-wm').removeClass('col-lg-4').addClass('col-lg-5');
+        $('.col-wm').removeClass('col-xl-5').addClass('col-xl-6');
+        $('.col-xweeks').addClass('d-none');
         if (frequency == '0') {
             $('#next-date').addClass('d-none');
         } else {
             if (['2','3'].includes(frequency)) {
                 $('#weekdays-container').removeClass("d-none");
                 $('#weekdays-container').removeClass("col-sm-6");
+                if (frequency == '3') {
+                    $('.col-freq').removeClass('col-lg-3').addClass('col-lg-2');
+                    $('.col-freq .form-control').addClass('pl-1').addClass('pr-0');
+                    $('.col-wm').removeClass('col-sm-12').addClass('col-sm-9');
+                    $('.col-wm').removeClass('col-lg-5').addClass('col-lg-4');
+                    $('.col-wm').removeClass('col-xl-6').addClass('col-xl-5');
+                    $('.col-xweeks').removeClass('d-none');
+                }
             }
             if (frequency == '4' && monthlyType == '<%= enums.MonthlyType.WEEKDAY %>') {
                 $('#monthly-type-container').removeClass("d-none");
@@ -372,7 +400,7 @@
             if (frequency == '4' && monthlyType == '<%= enums.MonthlyType.DATE %>') {
                 $('#monthly-type-container').removeClass("d-none");;
             }
-            updateNextDate($('#date').val(), frequency, monthlyType, $('#monthlyDate').val());
+            updateNextDate($('#date').val(), frequency, monthlyType, $('#monthlyDate').val(), $('#xWeeks').val());
             $('#next-date').removeClass('d-none');
         }
     });//.change();
@@ -382,14 +410,21 @@
         $(this).mouseup(function() {
             // we want the function to determine the "valid weekdays" only after the click is finished
             setTimeout(function() {
-                updateNextDate($('#date').val(), $('#frequency').val(), $('#monthlyType').val(), $('#monthlyDate').val());
+                updateNextDate($('#date').val(), $('#frequency').val(), $('#monthlyType').val(), $('#monthlyDate').val(), $('#xWeeks').val());
             }, 100);
             
         });
     });
 
     $('#monthlyDate').change(function() {
-        updateNextDate($('#date').val(), $('#frequency').val(), $('#monthlyType').val(), $('#monthlyDate').val());
+        updateNextDate($('#date').val(), $('#frequency').val(), $('#monthlyType').val(), $('#monthlyDate').val(), $('#xWeeks').val());
+    })
+    .keyup(function() {
+        $(this).change();
+    });
+
+    $('#xWeeks').change(function() {
+        updateNextDate($('#date').val(), $('#frequency').val(), $('#monthlyType').val(), $('#monthlyDate').val(), $('#xWeeks').val());
     })
     .keyup(function() {
         $(this).change();
@@ -402,8 +437,8 @@
         $(this).html(dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1));
     });
 
-    const updateNextDate = (currentDate, freq, monthlyType, monthlyDate) => {
-        const nextDate = getRecurrenceDate(currentDate, freq, monthlyType, monthlyDate);
+    const updateNextDate = (currentDate, freq, monthlyType, monthlyDate, xWeeks) => {
+        const nextDate = getRecurrenceDate(currentDate, freq, monthlyType, monthlyDate, parseInt(xWeeks));
         $('#nextDate').html(moment(nextDate).format('l'));
     }
 
@@ -454,20 +489,66 @@
         }
     };
 
-    const getTZUrls = (date, time, gmtOffset) => {
-        const d = new Date(`${date.replace(/-/g, "/").replace(/UTC\//, "UTC-")} ${time} UTC${gmtOffset < 0 ? '-' : '+'}${Math.abs(gmtOffset)}`).toISOString().replace(/[^0-9T]/gi,"").slice(0,13);
+    const getTZUrls = () => {
+        const date = $('#date').val();
+        const time = $('#time').val();
+        const gmtOffset = $('#timezone').val();
+        const runtime = $('#runtime').val();
+        const frequency = $('#frequency').val();
+        const monthlyType = $('#monthlyType').val();
+        const xWeeks = $('#xWeeks').val();
         const name = $('#adventure').val();
         const server = $('#guild').val();
         const where = $('#where').val();
         const description = $('#description').val();
 
+        const d1raw = new Date(`${date.replace(/-/g, "/").replace(/UTC\//, "UTC-")} ${time} UTC${gmtOffset < 0 ? '-' : '+'}${Math.abs(gmtOffset)}`);
+        const d1 = d1raw.toISOString().replace(/[^0-9T]/gi,"").slice(0,13);
+        const d2raw = new Date(`${date.replace(/-/g, "/").replace(/UTC\//, "UTC-")} ${time} UTC${gmtOffset < 0 ? '-' : '+'}${Math.abs(gmtOffset)}`);
+        d2raw.setHours(parseFloat(runtime.replace(/[^\d-\.]/g, "").trim() || "0"));
+        const d2 = d2raw.toISOString().replace(/[^0-9T]/gi,"").slice(0,13);
+
+        const googleCalExtras = [];
+        const days = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
+        const weekdays = $("#weekdays-selector label:not(.disabled):not(:disabled)").map(function(i) {
+            return $(this).hasClass('active');
+        }).get().map((w, i) => w && days[i]).filter(w => w);
+
+        if (weekdays.length == 0) {
+            const wd = moment(date).weekday();
+            weekdays.push(days[wd]);
+            $('#weekday'+wd).attr("checked", "checked");
+            $($("#weekdays-selector label:not(.disabled):not(:disabled)")[wd]).addClass('active');
+        }
+
+        if (frequency == 1) {
+            googleCalExtras.push(`&recur=RRULE:FREQ=DAILY`);
+        }
+        if (frequency == 2) {
+            googleCalExtras.push(`&recur=RRULE:FREQ=WEEKLY;BYDAY=${weekdays.join(",")}`);
+        }
+        if (frequency == 3) {
+            googleCalExtras.push(`&recur=RRULE:FREQ=WEEKLY;INTERVAL=${xWeeks || 2};BYDAY=${weekdays.join(",")}`);
+        }
+        if (frequency == 4) {
+            if (monthlyType == "date") {
+                googleCalExtras.push(`&recur=RRULE:FREQ=MONTHLY`);
+            } else if (monthlyType == "weekday") {
+                googleCalExtras.push(`&recur=RRULE:FREQ=MONTHLY;BYDAY=${moment(date).monthWeekByDay() + 1}${days[d1raw.getDay()]}`);
+            }
+        }
+
+        if (name) googleCalExtras.push(`&text=${escape(name)}`);
+        if (where) googleCalExtras.push(`&location=${escape(`${server} - ${where}`)}`);
+        if (description) googleCalExtras.push(`&details=${escape(description)}`);
+
         return {
-            convert: `https://timee.io/${d}`,
-            gcal: `http://www.google.com/calendar/render?action=TEMPLATE&text=${escape(name)}&dates=${d}00Z/${d}00Z&location=${escape(server)}%20-%20${escape(where)}&trp=false&sprop=&details=${escape(description)}`
+            convert: `https://timee.io/${d1}`,
+            gcal: `http://www.google.com/calendar/render?action=TEMPLATE&dates=${d1}/${d2}&trp=true${googleCalExtras.join("")}`
         };
     };
 
-    const getRecurrenceDate = (baseDate, frequency, monthlyType, weekOfMonth, monthlyDate) => {
+    const getRecurrenceDate = (baseDate, frequency, monthlyType, monthlyDate, xWeeks) => {
         if (frequency == 0)
             return moment(baseDate).format('YYYY-MM-DD');
 
@@ -494,7 +575,7 @@
                 // this is a compound interval...
                 dateGenerator = moment(baseDate).recur().every(validDays).daysOfWeek();
                 nextDate = dateGenerator.next(1)[0];
-                while(nextDate.week() - moment(baseDate).week() == 1) { // if the next date is in the same week, diff = 0. if it is just next week, diff = 1, so keep going forward.
+                while(nextDate.week() - moment(baseDate).week() < (xWeeks || 2)) { // if the next date is in the same week, diff = 0. if it is just next week, diff = 1, so keep going forward.
                     dateGenerator = moment(nextDate).recur().every(validDays).daysOfWeek();
                     nextDate = dateGenerator.next(1)[0];
                 }
@@ -537,29 +618,19 @@
         $('#timezone').val(parseInt(moment().format('ZZ')) / 100);
     <% } %>
 
-    $('#date').change(function() {
-        var link = getTZUrls($('#date').val(), $('#time').val(), $('#timezone').val());
+    $(`#date, #time, #timezone, #frequency, #monthlyType`).change(function() {
+        var link = getTZUrls();
         $('#convertLink').html(`<a href="${link.convert}" target="_blank" rel="nofollow">${link.convert}</a>`);
         // $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank" rel="nofollow">${link.countdown}</a>`);
         $('#gcalLink').html(`<a href="${link.gcal}" target="_blank" rel="nofollow"><%= lang.game.ADD_TO_CALENDAR %></a>`);
         updateNextDate($('#date').val(), $('#frequency').val());
     }).change();
 
-    // $('#date').attr('min', moment().format('YYYY-MM-DD'));
-
-    $('#time').change(function() {
-        var link = getTZUrls($('#date').val(), $('#time').val(), $('#timezone').val());
-        $('#convertLink').html(`<a href="${link.convert}" target="_blank" rel="nofollow">${link.convert}</a>`);
-        // $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank" rel="nofollow">${link.countdown}</a>`);
-        $('#gcalLink').html(`<a href="${link.gcal}" target="_blank" rel="nofollow"><%= lang.game.ADD_TO_CALENDAR %></a>`);
-    }).change();
-
-    $('#timezone').change(function() {
-        var link = getTZUrls($('#date').val(), $('#time').val(), $('#timezone').val());
-        $('#convertLink').html(`<a href="${link.convert}" target="_blank" rel="nofollow">${link.convert}</a>`);
-        // $('#countdownLink').html(`Countdown: <a href="${link.countdown}" target="_blank" rel="nofollow">${link.countdown}</a>`);
-        $('#gcalLink').html(`<a href="${link.gcal}" target="_blank" rel="nofollow"><%= lang.game.ADD_TO_CALENDAR %></a>`);
-    }).change();
+    $(`#weekdays-selector label:not(.disabled):not(:disabled)`).click(function() { 
+        setTimeout(function() {
+            $('#date').change();
+        }, 100); 
+    });
 
     <% if (is.editgame) { %>
     const gameId = '<%= _id %>';

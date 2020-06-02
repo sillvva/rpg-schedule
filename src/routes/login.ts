@@ -28,7 +28,7 @@ export default () => {
       request(requestData, function(error, response, body) {
         if (error || response.statusCode !== 200) {
           console.log(requestData, response.statusCode);
-          return res.render("error", { message: `Discord OAuth: ${response.statusCode}${error && `<br />${error}`}` });
+          return res.render("error", { message: `Discord OAuth: ${response.statusCode}${error ? `<br />${error}` : '' }` });
         }
 
         const token = JSON.parse(body);

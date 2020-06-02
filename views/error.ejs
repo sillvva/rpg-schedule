@@ -4,15 +4,9 @@
     <title>Error</title>
     <link rel="stylesheet" href="/styles/home.css" />
 
-    <%- include('head', {account: account, env: null}); %>
-
-    <script src="/locale/<%= lang.code %>.js"></script>
-    <script type="text/javascript">
-    moment.locale('<%= lang.code %>');
-    </script>
+    <%- include('head', {account: {}, env: null}); %>
   </head>
   <body>
-    <%- include('menu'); %>
     <div class="container">
       <div class="content" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%)">
         <h1>

@@ -1,4 +1,5 @@
 {
+  "code": "de",
   "name": "Deutsch",
   "buttons": {
     "SUBMIT": "Absenden",
@@ -8,7 +9,8 @@
     "DELETE_GAME": "Spiel löschen",
     "SAVE_COPY": "Speichern als Kopie",
     "SIGN_UP": "Eintragen",
-    "DROP_OUT": "Austragen"
+    "DROP_OUT": "Austragen",
+    "ADD_TO_GOOGLE_CALENDAR": "Zum Google Kalender hinzufügen"
   },
   "nav": {
     "GAMES": "Spiele",
@@ -17,6 +19,7 @@
     "UPCOMING_GAMES": "Anstehende Spiele",
     "MANAGE_SERVER": "Server verwalten",
     "CALENDAR": "Kalender",
+    "PAST_EVENTS": "Vergangene Ereignisse",
     "INVITE": "Einladen",
     "LOGIN": "Anmelden",
     "LOGOUT": "Abmelden",
@@ -37,6 +40,7 @@
     "SIGN_UP_METHOD": "Methode zum Eintragen",
     "WHEN": "Wann",
     "CUSTOM_SIGNUP_INSTRUCTIONS": "Benutzerdefinierter Befehl zum Eintragen",
+    "SIGNUP_INSTRUCTIONS_DESC": "Anweisungen werden DM an Benutzer gesendet, die sich über die automatisierte Methode anmelden.",
     "FREQUENCY": "Regelmäßigkeit",
     "WEEKDAYS": "Werktags",
     "DATE": "Datum",
@@ -65,11 +69,13 @@
     "COUNTDOWN": "Countdown",
     "MONTHLY_TYPE": "Monatlicher Typ",
     "HIDE_DATE": "Datum ausblenden",
+    "SLOT": "Slot",
+    "UNSAVED": "Du hast nicht gespeicherte Änderungen. Möchten Sie fortfahren?",
     "options": {
       "AUTOMATED_SIGNUP": "Automatisches Eintragen",
       "CUSTOM_SIGNUP_INSTRUCTIONS": "Benutzerdefinierter Befehl zum Eintragen",
       "DATE_TIME": "Datum/Zeit",
-      "NOW": "Jetzt",
+      "NOW": "Jetzt (Zeit der Post)",
       "NO_REMINDER": "Keine Erinnerung",
       "MINUTES_15": "15 Minuten",
       "MINUTES_30": "30 Minuten",
@@ -80,7 +86,7 @@
       "NO_REPEAT": "Nicht wiederholen",
       "DAILY": "Täglich",
       "WEEKLY": "Wöchentlich",
-      "BIWEEKLY": "Jede zweite Woche",
+      "BIWEEKLY": "Jede X Wochen",
       "MONTHLY": "Monatlich",
       "DATE": "Datum",
       "WEEKDAY": "Wochentag"
@@ -104,9 +110,17 @@
   },
   "config": {
     "COMMAND_LIST": "Liste mit Befehlen",
-    "GENERAL_CONFIGURATION": "Generelle Konfiguration",
-    "BOT_CONFIGURATION": "Bot Konfiguration",
-    "GAME_CONFIGURATION": "Spiel Konfiguration",
+    "CONFIGURATION": "Konfiguration",
+    "GENERAL_CONFIGURATION": "Generelle",
+    "BOT_CONFIGURATION": "Bot",
+    "GAME_CONFIGURATION": "Spiel",
+    "CHANNEL_CONFIGURATION": "Kanal",
+    "TEMPLATE_CONFIGURATION": "Vorlagen",
+    "GAME_DEFAULTS": "Spielstandards",
+    "NEW_TEMPLATE": "Neue Vorlage",
+    "DEFAULT": "Standard",
+    "TEMPLATE_NAME": "Vorlagenname",
+    "DEFAULT_SERVER": "Standard: Wie Server",
     "USAGE": "Verwendung",
     "GUILD": "Gilde",
     "CHANNELS": "Kanäle",
@@ -116,12 +130,17 @@
     "PRUNING_ON": "Automatisches Entfernen wurde aktiviert!",
     "PRUNING_OFF": "Automatisches Entfernen wurde deaktiviert!",
     "PRUNE": "Alte Spiele wurden entfernt.",
+    "PRUNE_INTERVAL_EVENTS": "Ereignisreinigungsintervall",
+    "PRUNE_INTERVAL_DISCORD": "Discord Schnittintervall",
     "EMBEDS": "Einbettungen",
     "EMBEDS_ON": "Einbettungen wurden aktiviert!",
     "EMBEDS_OFF": "Einbettungen wurden deaktiviert",
     "EMBED_USER_TAGS": "Eingebettete User Tags",
     "EMBED_USER_TAGS_ON": "Eingebettete User Tags wurden aktiviert!",
     "EMBED_USER_TAGS_OFF": "Eingebettete User Tags wurden deaktiviert!",
+    "EMBED_USER_TAGS_ABOVE": "Erwähnungen über Embed",
+    "EMBED_USER_TAGS_ABOVE_ON": "Mentions above embed were turned on!",
+    "EMBED_USER_TAGS_ABOVE_OFF": "Mentions above embed were turned off!",
     "EMBED_COLOR": "Farbe von Einbettungen",
     "EMBED_COLOR_SET": "Farbe von Einbettungen wurde gesetzt auf",
     "EMOJI_JOIN": "Emoji (Anmelden)",
@@ -137,6 +156,7 @@
     "PASSWORD_SET": "Passwort aktualisiert!",
     "ROLE": "Rolle",
     "ROLE_SET": "Rolle wurde auf `:ROLE` gesetzt!",
+    "NO_ROLE": "Keine Rolle",
     "ROLE_CLEARED": "Rolle gelöscht!",
     "MANAGER_ROLE": "Manager Rolle",
     "LANGUAGE": "Sprache",
@@ -152,12 +172,16 @@
       "HELP": "Zeige dieses Hilfefenster an.",
       "LINK": "Erhalte den Link für das veröffentliche Spiel.",
       "CONFIGURATION": "Zeige die Bot Konfiguration.",
+      "CHANNEL_CONFIGURATION": "Die hier konfigurierten Einstellungen überschreiben die entsprechenden Servereinstellungen für den angegebenen Kanal.",
       "ADD_CHANNEL": "Füge einen Kanal hinzu, in welchem Spiele veröffentlicht werden können.",
       "REMOVE_CHANNEL": "Entferne einen Kanal, in welchem Spiele veröffentlicht werden können.",
       "PRUNING": "Entferne alte Ankündigungen automatisch.",
       "PRUNE": "Entferne alte Spiele.",
+      "PRUNE_INTERVAL_EVENTS": "Spielereignisse werden alle X Tage aus der Datenbank entfernt",
+      "PRUNE_INTERVAL_DISCORD": "Spielankündigungen werden alle X Tage von Discord entfernt",
       "EMBEDS": "Verwende Discord Einbettungen für Ankündigungen.",
       "EMBED_USER_TAGS": "Verwende den User Tag in eingebetteten Ankündigungen (es können gelegentlich Fehler passieren).",
+      "EMBED_USER_TAGS_ABOVE": "Fügen Sie Erwähnungen über den Einbettungen der Ankündigung hinzu",
       "EMBED_COLOR": "Wähle eine Farbe für die Discord Einbettungen",
       "EMBED_COLOR_ERROR": "Farbe muss ein hexadezimales Format aufweisen. Beispiel: `#2196f3` Für mehr Informationen: https://www.color-hex.com/",
       "EMOJI": "Wähle das Emoji für das automatische Anmelden.",
@@ -173,8 +197,12 @@
       "RESCHEDULE_MODE": "Optionen: `repost` (standard, erstellt einen neuen Ankündigungsbeitrag), `update` (aktualisiert den originalen Ankündigungsbeitrag)"
     }
   },
-  "messages": {
+  "other": {
     "DM_WAITLIST": "Sie befinden sich derzeit auf Position :NUM der Warteliste.",
-    "DM_INSTRUCTIONS": "Eine Nachricht von :DM für :EVENT"
+    "DM_INSTRUCTIONS": "Eine Nachricht von :DM für :EVENT",
+    "MAINTENANCE": "Die Website wird gewartet :TIME für ungefähr :DURATION stunde(n).",
+    "UNDER_MAINTENANCE": "ist in Wartung",
+    "YOURE_IN": "Du bist in! Sie haben sich einen Platz für :GAME in :SERVER gesichert.",
+    "BACK_SOON": "Es wird bald zurück sein!"
   }
 }
