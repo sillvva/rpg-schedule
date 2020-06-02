@@ -111,10 +111,8 @@ if (process.env.MAINTENANCE.toLowerCase() == "true") {
   /**
    * Routes
    */
-  if (!process.env.BACKGROUND || process.env.ALLLOGIC) {
-    app.use(apiRoutes({ client: client }));
-    app.use(rssRoutes({ client: client }));
-  }
+  app.use(apiRoutes({ client: client }));
+  app.use(rssRoutes({ client: client }));
   app.use("/", (req: any, res, next) => {
     res.render("home");
   });
