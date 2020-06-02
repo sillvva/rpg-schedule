@@ -110,12 +110,14 @@
   },
   "config": {
     "COMMAND_LIST": "Список команд",
-    "GENERAL_CONFIGURATION": "Основные настройки",
-    "BOT_CONFIGURATION": "Настройки бота",
-    "GAME_CONFIGURATION": "Настройки игры",
+    "CONFIGURATION": "настройки",
+    "GENERAL_CONFIGURATION": "Основные",
+    "BOT_CONFIGURATION": "бота",
+    "GAME_CONFIGURATION": "игры",
     "CHANNEL_CONFIGURATION": "канала",
     "TEMPLATE_CONFIGURATION": "Шаблоны",
     "DEFAULT": "По умолчанию",
+    "TEMPLATE_NAME": "Имя Шаблона",
     "GAME_DEFAULTS": "Игра по умолчанию",
     "NEW_TEMPLATE": "Новый Шаблон",
     "DEFAULT_SERVER": "По умолчанию: такой же, как сервер",
@@ -133,9 +135,12 @@
     "EMBEDS": "Embeds",
     "EMBEDS_ON": "Embeds включены!",
     "EMBEDS_OFF": "Embeds выключены!",
-    "EMBED_USER_TAGS": "Embed User Tags",
-    "EMBED_USER_TAGS_ON": "Embed user tags включены!",
-    "EMBED_USER_TAGS_OFF": "Embed user tags выключены!",
+    "EMBED_USER_TAGS": "Вставить теги пользователя",
+    "EMBED_USER_TAGS_ON": "Вставить теги пользователя были включены!",
+    "EMBED_USER_TAGS_OFF": "Вставить теги пользователя были отключены!",
+    "EMBED_USER_TAGS_ABOVE": "Упоминает выше Embed",
+    "EMBED_USER_TAGS_ABOVE_ON": "Упомянутые выше включения были включены!",
+    "EMBED_USER_TAGS_ABOVE_OFF": "Упомянутые выше вставки были отключены!",
     "EMBED_COLOR": "Embed цвет",
     "EMBED_COLOR_SET": "Embed цвет установлен на",
     "EMOJI_JOIN": "Emoji (Записаться)",
@@ -176,12 +181,13 @@
       "PRUNE_INTERVAL_DISCORD": "Объявления об играх будут обрезаться от Discord каждые X дней",
       "EMBEDS": "Использовать discord embeds для объявлений",
       "EMBED_USER_TAGS": "Вставлять user tags в embeds (Иногда может шлючить)",
+      "EMBED_USER_TAGS_ABOVE": "Добавьте упоминания выше встраивания объявления",
       "EMBED_COLOR": "Установить цвет discord embed",
       "EMBED_COLOR_ERROR": "Цвет для вставки должен использовать шестнадцатеричный формат. Пример: #2196f3 Используйте https://www.color-hex.com/ для поиска цвета.",
       "EMOJI": "Установить emoji для автоматической записи игроков",
       "PREFIX": "Префикс для вызова бота. Сейчас :CHAR",
       "EMOJI_ERROR": "Emoji должен быть символ unicode emoji. Вы вписали :CHAR. Смотрите https://www.unicode.org/emoji/charts/full-emoji-list.html для полного списка emoji. Используйте браузерную версию.",
-      "PRIVATE_REMINDERS": "Переключить, отправляются ли напоминания об игре в личные сообщения.",
+      "PRIVATE_REMINDERS": "Переключить, отправляются ли напоминания об игре в личные сообщения. Сейчас :PR",
       "ROLE": "Назначить роль с доступом к публикации объявлений",
       "MANAGER_ROLE": "Назначить роль с доступом ко всем играм сервера",
       "PASSWORD_SET": "Настроить пароль для публикации игр",
@@ -191,9 +197,12 @@
       "RESCHEDULE_MODE": "Параметры: repost (по умолчанию, создает новую запись объявления), update (обновляет исходное сообщение)"
     }
   },
-  "messages": {
+  "other": {
     "DM_WAITLIST": "В настоящее время вы находитесь в слоте :NUM в списке ожидания.",
     "DM_INSTRUCTIONS": "Сообщение от :DM для :EVENT",
-    "YOURE_IN": "Ты в! Вы получили место для :GAME в :SERVER."
+    "MAINTENANCE": "Сайт будет в обслуживании :TIME приблизительно :DURATION часов.",
+    "UNDER_MAINTENANCE": "находится на обслуживании",
+    "YOURE_IN": "You're in! You've secured a spot for **:GAME** in **:SERVER**.",
+    "BACK_SOON": "Скоро вернусь!"
   }
 }

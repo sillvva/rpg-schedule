@@ -110,14 +110,16 @@
   },
   "config": {
     "COMMAND_LIST": "Command List",
-    "GENERAL_CONFIGURATION": "General Configuration",
-    "BOT_CONFIGURATION": "Bot Configuration",
-    "GAME_CONFIGURATION": "Game Configuration",
+    "CONFIGURATION": "Configuration",
+    "GENERAL_CONFIGURATION": "General",
+    "BOT_CONFIGURATION": "Bot",
+    "GAME_CONFIGURATION": "Game",
     "CHANNEL_CONFIGURATION": "Channel",
     "TEMPLATE_CONFIGURATION": "Template",
     "GAME_DEFAULTS": "Game Defaults",
     "NEW_TEMPLATE": "New Template",
     "DEFAULT": "Default",
+    "TEMPLATE_NAME": "Template Name",
     "DEFAULT_SERVER": "Default: Same as Server",
     "USAGE": "Usage",
     "GUILD": "Server",
@@ -136,6 +138,9 @@
     "EMBED_USER_TAGS": "Embed User Tags",
     "EMBED_USER_TAGS_ON": "Embed user tags were turned on!",
     "EMBED_USER_TAGS_OFF": "Embed user tags were turned off!",
+    "EMBED_USER_TAGS_ABOVE": "Mentions Above Embed",
+    "EMBED_USER_TAGS_ABOVE_ON": "Mentions above embed were turned on!",
+    "EMBED_USER_TAGS_ABOVE_OFF": "Mentions above embed were turned off!",
     "EMBED_COLOR": "Embed Color",
     "EMBED_COLOR_SET": "Embed color was set to",
     "EMOJI_JOIN": "Emoji (Sign Up)",
@@ -176,12 +181,13 @@
       "PRUNE_INTERVAL_DISCORD": "Game announcements will be pruned from Discord every X days",
       "EMBEDS": "Use discord embeds for announcements",
       "EMBED_USER_TAGS": "Include user tags in announcement embeds (Can occasionally glitch)",
+      "EMBED_USER_TAGS_ABOVE": "Add mentions above announcement embeds",
       "EMBED_COLOR": "Set a discord embed color",
       "EMBED_COLOR_ERROR": "Embed color must use hexadecimal format. Example: `#2196f3` See https://www.color-hex.com/ for more information.",
       "EMOJI": "Set the emoji used for automated sign up",
       "PREFIX": "Prefix character for the bot command. Currently `:CHAR`",
       "EMOJI_ERROR": "Emoji must be a unicode emoji character. You entered `:CHAR`. See https://www.unicode.org/emoji/charts/full-emoji-list.html for a full list of emoji. Use the browser version.",
-      "PRIVATE_REMINDERS": "Toggle whether the game reminders are sent to private messages.",
+      "PRIVATE_REMINDERS": "Toggle whether the game reminders are sent to private messages. Currently `:PR`",
       "ROLE": "Assign a role as a prerequisite for posting games",
       "MANAGER_ROLE": "Assign a role to allow managing all server games",
       "PASSWORD_SET": "Configure a password for posting games",
@@ -191,9 +197,12 @@
       "RESCHEDULE_MODE": "Options: `repost` (default, creates new announcement post), `update` (updates original announcement post)"
     }
   },
-  "messages": {
+  "other": {
     "DM_WAITLIST": "You are currently slot :NUM on the waitlist.",
     "DM_INSTRUCTIONS": "A message from :DM for :EVENT",
-    "YOURE_IN": "You're in! You've secured a spot for **:GAME** in **:SERVER**."
+    "MAINTENANCE": "The site will be under maintenance :TIME for approximately :DURATION hour(s).",
+    "UNDER_MAINTENANCE": "is under maintenance",
+    "YOURE_IN": "You're in! You've secured a spot for **:GAME** in **:SERVER**.",
+    "BACK_SOON": "It will be back soon!"
   }
 }

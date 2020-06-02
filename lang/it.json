@@ -117,6 +117,7 @@
     "GAME_DEFAULTS": "Impostazioni predefinite del gioco",
     "NEW_TEMPLATE": "Nuovo Modello",
     "DEFAULT": "Predefinito",
+    "TEMPLATE_NAME": "Nome modello",
     "DEFAULT_SERVER": "Predefinito: uguale al server",
     "USAGE": "Utilizzo",
     "GUILD": "Gilda",
@@ -137,6 +138,9 @@
     "EMBED_USER_TAGS": "Incorporare i tag utente",
     "EMBED_USER_TAGS_ON": "I tag utente incorporati sono stati attivati!",
     "EMBED_USER_TAGS_OFF": "I tag utente incorporati sono stati disattivati!",
+    "EMBED_USER_TAGS_ABOVE": "Menzioni sopra incorporate",
+    "EMBED_USER_TAGS_ABOVE_ON": "Sono state attivate le menzioni sopra gli incorporamenti!",
+    "EMBED_USER_TAGS_ABOVE_OFF": "Le menzioni sopra gli incorporamenti sono state disattivate!",
     "EMOJI_JOIN": "Emoji (registrati)",
     "EMOJI_LEAVE": "Emoji (cancellati)",
     "EMOJI_JOIN_SET": "emoji di iscrizione aggiornata!",
@@ -175,12 +179,13 @@
       "PRUNE_INTERVAL_DISCORD": "Gli annunci di gioco verranno eliminati da Discord ogni X giorni",
       "EMBEDS": "Usa gli incorporamenti di discord per gli annunci",
       "EMBED_USER_TAGS": "Includi tag utente negli incorporamenti degli annunci (può occasionalmente glitch)",
+      "EMBED_USER_TAGS_ABOVE": "Ajouter des mentions au-dessus des annonces intégrées",
       "EMBED_COLOR": "Imposta un colore di incorporamento discord",
       "EMBED_COLOR_ERROR": "Il colore di incorporamento deve usare un formato esadecimale. Esempio: `#2196f3` Vedi https://www.color-hex.com/ per maggiori informazioni.",
       "EMOJI": "Imposta l'emoji utilizzata per la registrazione automatica",
       "PREFIX": "Carattere di fuga per il comando del bot. Attuale `:CHAR`",
       "EMOJI_ERROR": "L'emoji deve essere un carattere emoji unicode. Hai inserito `:CHAR`. Vedi https://www.unicode.org/emoji/charts/full-emoji-list.html per una liosta completa di emoji. Usa la versione browser.",
-      "PRIVATE_REMINDERS": "Seleziona se i promemoria del gioco vengono inviati via messaggi privati.",
+      "PRIVATE_REMINDERS": "Seleziona se i promemoria del gioco vengono inviati via messaggi privati. Attuale `:PR`",
       "ROLE": "Assegna un ruolo come prerequisito per la pubblicazione di giochi",
       "MANAGER_ROLE": "Assegna un ruolo per consentire la gestione di tutti i giochi del server",
       "PASSWORD_SET": "Configura una password per la pubblicazione di giochi",
@@ -190,9 +195,12 @@
       "RESCHEDULE_MODE": ""
     }
   },
-  "messages": {
+  "other": {
     "DM_WAITLIST": "Attualmente sei nello slot :NUM della lista d'attesa.",
     "DM_INSTRUCTIONS": "Un messaggio di :DM per :EVENT",
-    "YOURE_IN": "Sei in! Hai ottenuto un posto per :GAME in :SERVER."
+    "MAINTENANCE": "Il sito sarà in manutenzione :TIME per circa :DURATION ora / e.",
+    "UNDER_MAINTENANCE": "è in manutenzione",
+    "YOURE_IN": "You're in! You've secured a spot for **:GAME** in **:SERVER**.",
+    "BACK_SOON": "Tornerà presto!"
   }
 }

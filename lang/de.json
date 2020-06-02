@@ -110,14 +110,16 @@
   },
   "config": {
     "COMMAND_LIST": "Liste mit Befehlen",
-    "GENERAL_CONFIGURATION": "Generelle Konfiguration",
-    "BOT_CONFIGURATION": "Bot Konfiguration",
-    "GAME_CONFIGURATION": "Spiel Konfiguration",
+    "CONFIGURATION": "Konfiguration",
+    "GENERAL_CONFIGURATION": "Generelle",
+    "BOT_CONFIGURATION": "Bot",
+    "GAME_CONFIGURATION": "Spiel",
     "CHANNEL_CONFIGURATION": "Kanal",
     "TEMPLATE_CONFIGURATION": "Vorlagen",
     "GAME_DEFAULTS": "Spielstandards",
     "NEW_TEMPLATE": "Neue Vorlage",
     "DEFAULT": "Standard",
+    "TEMPLATE_NAME": "Vorlagenname",
     "DEFAULT_SERVER": "Standard: Wie Server",
     "USAGE": "Verwendung",
     "GUILD": "Gilde",
@@ -136,6 +138,9 @@
     "EMBED_USER_TAGS": "Eingebettete User Tags",
     "EMBED_USER_TAGS_ON": "Eingebettete User Tags wurden aktiviert!",
     "EMBED_USER_TAGS_OFF": "Eingebettete User Tags wurden deaktiviert!",
+    "EMBED_USER_TAGS_ABOVE": "Erwähnungen über Embed",
+    "EMBED_USER_TAGS_ABOVE_ON": "Mentions above embed were turned on!",
+    "EMBED_USER_TAGS_ABOVE_OFF": "Mentions above embed were turned off!",
     "EMBED_COLOR": "Farbe von Einbettungen",
     "EMBED_COLOR_SET": "Farbe von Einbettungen wurde gesetzt auf",
     "EMOJI_JOIN": "Emoji (Anmelden)",
@@ -176,12 +181,13 @@
       "PRUNE_INTERVAL_DISCORD": "Spielankündigungen werden alle X Tage von Discord entfernt",
       "EMBEDS": "Verwende Discord Einbettungen für Ankündigungen.",
       "EMBED_USER_TAGS": "Verwende den User Tag in eingebetteten Ankündigungen (es können gelegentlich Fehler passieren).",
+      "EMBED_USER_TAGS_ABOVE": "Fügen Sie Erwähnungen über den Einbettungen der Ankündigung hinzu",
       "EMBED_COLOR": "Wähle eine Farbe für die Discord Einbettungen",
       "EMBED_COLOR_ERROR": "Farbe muss ein hexadezimales Format aufweisen. Beispiel: `#2196f3` Für mehr Informationen: https://www.color-hex.com/",
       "EMOJI": "Wähle das Emoji für das automatische Anmelden.",
       "PREFIX": "Prefix für Bot Befehle. Aktuell `:CHAR`",
       "EMOJI_ERROR": "Emoji muss ein Unicode Emoji Zeichen sein. Du hast eingegeben `:CHAR`. Hier eine vollständige Liste von Emojis (verwende die Browser-Version): https://www.unicode.org/emoji/charts/full-emoji-list.html",
-      "PRIVATE_REMINDERS": "Stellen Sie ein, ob die Spielerinnerungen an private Nachrichten gesendet werden.",
+      "PRIVATE_REMINDERS": "Stellen Sie ein, ob die Spielerinnerungen an private Nachrichten gesendet werden. Aktuell `:PR`",
       "ROLE": "Weise eine Rolle zu, die als Voraussetzung gilt, um Spiele zu veröffentlichen.",
       "MANAGER_ROLE": "Weise eine Rolle zu, um die Verwaltung aller Spiele auf dem Server zu ermöglichen.",
       "PASSWORD_SET": "Konfiguriere ein Passwort für das Veröffentlichen von Spielen.",
@@ -191,9 +197,12 @@
       "RESCHEDULE_MODE": "Optionen: `repost` (standard, erstellt einen neuen Ankündigungsbeitrag), `update` (aktualisiert den originalen Ankündigungsbeitrag)"
     }
   },
-  "messages": {
+  "other": {
     "DM_WAITLIST": "Sie befinden sich derzeit auf Position :NUM der Warteliste.",
     "DM_INSTRUCTIONS": "Eine Nachricht von :DM für :EVENT",
-    "YOURE_IN": "Du bist in! Sie haben sich einen Platz für :GAME in :SERVER gesichert."
+    "MAINTENANCE": "Die Website wird gewartet :TIME für ungefähr :DURATION stunde(n).",
+    "UNDER_MAINTENANCE": "ist in Wartung",
+    "YOURE_IN": "Du bist in! Sie haben sich einen Platz für :GAME in :SERVER gesichert.",
+    "BACK_SOON": "Es wird bald zurück sein!"
   }
 }

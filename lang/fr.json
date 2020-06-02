@@ -110,14 +110,16 @@
   },
   "config": {
     "COMMAND_LIST": "Liste de commandes",
-    "GENERAL_CONFIGURATION": "Configuration générale",
-    "BOT_CONFIGURATION": "Bot Configuration",
-    "GAME_CONFIGURATION": "Configuration du jeu",
+    "CONFIGURATION": "Configuration",
+    "GENERAL_CONFIGURATION": "générale",
+    "BOT_CONFIGURATION": "Bot",
+    "GAME_CONFIGURATION": "Jeu",
     "CHANNEL_CONFIGURATION": "Channels",
     "TEMPLATE_CONFIGURATION": "Modèles",
     "GAME_DEFAULTS": "Paramètres par défaut du jeu",
     "NEW_TEMPLATE": "Nouveau Modèle",
     "DEFAULT": "Défaut",
+    "TEMPLATE_NAME": "Nom du modèle",
     "DEFAULT_SERVER": "Par défaut: Identique au Server",
     "USAGE": "Utilisation",
     "GUILD": "Guilde",
@@ -138,6 +140,9 @@
     "EMBED_USER_TAGS": "Étiquettes d’utilisateur embed",
     "EMBED_USER_TAGS_ON": "Les étiquettes d’utilisateur d’embed ont été allumées !",
     "EMBED_USER_TAGS_OFF": "Les étiquettes d’utilisateur d’embed ont été éteintes !",
+    "EMBED_USER_TAGS_ABOVE": "Mentions ci-dessus Intégrer",
+    "EMBED_USER_TAGS_ABOVE_ON": "Les mentions au-dessus des intégrations ont été activées!",
+    "EMBED_USER_TAGS_ABOVE_OFF": "Les mentions au-dessus des intégrations ont été désactivées!",
     "EMOJI_JOIN": "Emoji (Inscription)",
     "EMOJI_LEAVE": "Emoji (Désinscription)",
     "EMOJI_JOIN_SET": "L'Emoji d'inscription a été mis à jour!",
@@ -176,12 +181,13 @@
       "PRUNE_INTERVAL_DISCORD": "Les annonces de jeux seront élaguées de Discord tous les X jours",
       "EMBEDS": "Utilisez l'intégration Discord pour les annonces de partie",
       "EMBED_USER_TAGS": "Inclure les balises utilisateur dans les embeds d’annonce (Peut parfois glitch)",
+      "EMBED_USER_TAGS_ABOVE": "Ajouter des mentions au-dessus des annonces intégrées",
       "EMBED_COLOR": "Définir une couleur d'intégration discord",
       "EMBED_COLOR_ERROR": "La couleur intégrée doit utiliser le format hexadécimal. Example: `#2196f3` Allez voir https://www.color-hex.com/ pour plus d'informations.",
       "EMOJI": "Définir les emoji utilisés pour l'inscription automatisée",
       "PREFIX": "Caractère de préfixe pour la commande de bot. C'est actuellement `:CHAR`",
       "EMOJI_ERROR": "L'emoji doit être un caractère unicode connu comme emoji. Tu as entré `:CHAR`. Allez voir https://www.unicode.org/emoji/charts/full-emoji-list.html pour une liste complete des Emojis. Utilisez la version du navigateur.",
-      "PRIVATE_REMINDERS": "Indiquez si les rappels de jeu sont envoyés aux messages privés.",
+      "PRIVATE_REMINDERS": "Indiquez si les rappels de jeu sont envoyés aux messages privés. Actuellement `:PR`",
       "ROLE": "Attribuer un rôle comme condition préalable à la publication de partie",
       "MANAGER_ROLE": "Attribuer un rôle pour permettre la gestion de tous les jeux sur serveur",
       "PASSWORD_SET": "Configurer un mot de passe pour les parties à créer",
@@ -191,9 +197,12 @@
       "RESCHEDULE_MODE": ""
     }
   },
-  "messages": {
+  "other": {
     "DM_WAITLIST": "Vous êtes actuellement à l'emplacement :NUM sur la liste d'attente.",
     "DM_INSTRUCTIONS": "Un message de :DM pour :EVENT",
-    "YOURE_IN": "Vous y êtes! Vous avez obtenu une place pour :GAME dans :SERVER."
+    "MAINTENANCE": "Le site sera en maintenance :TIME d'environ :DURATION heure(s).",
+    "UNDER_MAINTENANCE": "est en maintenance",
+    "YOURE_IN": "You're in! You've secured a spot for **:GAME** in **:SERVER**.",
+    "BACK_SOON": "Il sera bientôt de retour!"
   }
 }

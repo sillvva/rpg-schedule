@@ -833,7 +833,7 @@ export class Game implements GameModel {
         let waitlisted = "";
         if (this.reserved.findIndex((r) => r.id === member.user.id || r.tag === member.user.tag) + 1 > parseInt(this.players)) {
           const slotNum = this.reserved.findIndex((r) => r.id === member.user.id || r.tag === member.user.tag) + 1 - parseInt(this.players);
-          waitlisted = `\n\n${lang.messages.DM_WAITLIST.replace(":NUM", slotNum)}`;
+          waitlisted = `\n\n${lang.other.DM_WAITLIST.replace(":NUM", slotNum)}`;
         }
 
         const dmEmbed = new MessageEmbed();
@@ -842,7 +842,7 @@ export class Game implements GameModel {
         );
         dmEmbed.setColor(gameTemplate && gameTemplate.embedColor ? gameTemplate.embedColor : guildConfig.embedColor);
 
-        member.send(`${lang.messages.DM_INSTRUCTIONS.replace(":DM", dmmember ? dmmember.user.toString() : this.dm.tag).replace(" :EVENT", ``)}:`, {
+        member.send(`${lang.other.DM_INSTRUCTIONS.replace(":DM", dmmember ? dmmember.user.toString() : this.dm.tag).replace(" :EVENT", ``)}:`, {
           embed: dmEmbed,
         });
       }
@@ -869,7 +869,7 @@ export class Game implements GameModel {
 
         embed.setColor(gameTemplate && gameTemplate.embedColor ? gameTemplate.embedColor : guildConfig.embedColor);
 
-        let message = lang.messages.YOURE_IN;
+        let message = lang.other.YOURE_IN;
         message = message.replace(
           ":GAME",
           this.messageId ? `[${this.adventure}](https://discordapp.com/channels/${this.discordGuild.id}/${this.discordChannel.id}/${this.messageId})` : this.adventure

@@ -148,6 +148,9 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                         `\`${botcmd} embed-user-tags ${guildConfig.embedMentions || guildConfig.embedMentions == null ? "on" : "off"}\` - \`on/off\` - ${
                           lang.config.desc.EMBED_USER_TAGS
                         }\n` +
+                        `\`${botcmd} embed-user-tags-above ${guildConfig.embedMentionsAbove ? "on" : "off"}\` - \`on/off\` - ${
+                          lang.config.desc.EMBED_USER_TAGS_ABOVE
+                        }\n` +
                         `\`${botcmd} emoji-sign-up ${guildConfig.emojiAdd}\` - ${lang.config.desc.EMOJI}\n` +
                         `\`${botcmd} emoji-drop-out ${guildConfig.emojiRemove}\` - ${lang.config.desc.EMOJI}\n` +
                         `\`${botcmd} drop-outs ${guildConfig.dropOut || guildConfig.dropOut == null ? "on" : "off"}\` - \`on/off\` - ${lang.config.desc.TOGGLE_DROP_OUT}\n` +
@@ -283,6 +286,19 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                   })
                   .then((result) => {
                     (<TextChannel>message.channel).send(!(params[0] === "off") ? lang.config.EMBED_USER_TAGS_ON : lang.config.EMBED_USER_TAGS_OFF);
+                  })
+                  .catch((err) => {
+                    aux.log(err);
+                  });
+              }
+            } else if (cmd === "embed-user-tags-above" && isAdmin) {
+              if (params[0]) {
+                guildConfig
+                  .save({
+                    embedMentionsAbove: !(params[0] === "off"),
+                  })
+                  .then((result) => {
+                    (<TextChannel>message.channel).send(!(params[0] === "off") ? lang.config.EMBED_USER_TAGS_ABOVE_ON : lang.config.EMBED_USER_TAGS_ABOVE_OFF);
                   })
                   .catch((err) => {
                     aux.log(err);
