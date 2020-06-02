@@ -1,4 +1,7 @@
-import _ from "lodash";
+import cloneDeep from "lodash/cloneDeep";
+import isEqual from "lodash/isEqual";
+import fromPairs from "lodash/fromPairs";
+import toPairs from "lodash/toPairs";
 import moment from "moment";
 import "moment-recur-ts";
 import axios from "axios";
@@ -56,7 +59,7 @@ const log = (...content: any) => {
 
 const parseConfigURLs = (paths: Object) => {
   let urls: Path[] = [];
-  _.toPairs(paths).forEach((entry: any) => {
+  toPairs(paths).forEach((entry: any) => {
     const [id, path] = entry;
     if (path.hasOwnProperty("path")) {
       urls.push(path);
@@ -69,9 +72,9 @@ const parseConfigURLs = (paths: Object) => {
 };
 
 const parseConfigParam = (paths: Object, param: String, value: String): any => {
-  const parsedPaths = _.cloneDeep(paths);
-  return _.fromPairs(
-    _.toPairs(parsedPaths).map((entry: any) => {
+  const parsedPaths = cloneDeep(paths);
+  return fromPairs(
+    toPairs(parsedPaths).map((entry: any) => {
       let [id, path] = entry;
       if (path.hasOwnProperty("path")) {
         path.url = path.url.replace(`:${param}`, value);
@@ -84,16 +87,9 @@ const parseConfigParam = (paths: Object, param: String, value: String): any => {
 };
 
 const objectChanges = (before: Object | Array<any>, after: Object | Array<any>) => {
-  return _.toPairs(after).reduce((result, [key, value]) => {
-    if (before[key] !== value) {
-      result[key] = value instanceof Object && before[key] instanceof Object ? objectChanges(value, before[key]) : value;
-      if (Array.isArray(before[key])) {
-        let arr = [];
-        for (let i in after[key]) {
-          arr.push(after[key][i]);
-        }
-        result[key] = arr;
-      }
+  return toPairs(after).reduce((result, [key, value]) => {
+    if (!isEqual(before[key], value)) {
+      result[key] = value;
     }
     return result;
   }, {});
@@ -118,6 +114,14 @@ const parseTimeZoneISO = (timezone: number) => {
   return zeroPad(hours, 2) + zeroPad(minutes, 2);
 };
 
+const colorFixer = (color: string, defaultColor: string = "#2196f3") => {
+  if (/^#?([0-9abcdef]{4})$/i.test((color || "").trim())) color = color.slice(0, 4);
+  if (/^#?([0-9abcdef]{8})$/i.test((color || "").trim())) color = color.slice(0, 7);
+  if (!/^#?([0-9abcdef]{3}|[0-9abcdef]{6})$/i.test(color || "")) return defaultColor;
+  if (!color.startsWith("#")) color = "#" + color;
+  return color;
+};
+
 interface Event {
   name: string;
   location?: string;
@@ -129,16 +133,13 @@ interface EventTimeOptions {
 }
 
 const parseEventTimes = (event: GameModel, options: EventTimeOptions = {}) => {
-  if (!event.date || !event.time || event.timezone == null) {
-    return {};
-  }
   const raw = `${event.date} ${event.time} UTC${event.timezone < 0 ? "-" : "+"}${Math.abs(event.timezone)}`;
   const isoutcStart = `${new Date(raw)
     .toISOString()
     .replace(/[^0-9T]/gi, "")
     .slice(0, 13)}00Z`;
   const endTime = new Date(raw);
-  endTime.setHours(endTime.getHours() + parseFloat(event.runtime.replace(/[^\d-.]/g, "").trim() || '0'));
+  endTime.setHours(endTime.getHours() + parseFloat(event.runtime.replace(/[^\d\.-]/g, "").trim() || "0"));
   const isoutcEnd = `${endTime
     .toISOString()
     .replace(/[^0-9T]/gi, "")
@@ -161,16 +162,16 @@ const parseEventTimes = (event: GameModel, options: EventTimeOptions = {}) => {
   const weekdays = event.weekdays.map((w, i) => w && days[i]).filter((w) => w);
   if (weekdays.length === 0) weekdays.push(days[moment(event.date).weekday()]);
 
-  if (event.frequency === 1) {
+  if (event.frequency == 1) {
     googleCalExtras.push(`&recur=RRULE:FREQ=DAILY`);
   }
-  if (event.frequency === 2) {
+  if (event.frequency == 2) {
     googleCalExtras.push(`&recur=RRULE:FREQ=WEEKLY;BYDAY=${weekdays.join(",")}`);
   }
-  if (event.frequency === 3) {
+  if (event.frequency == 3) {
     googleCalExtras.push(`&recur=RRULE:FREQ=WEEKLY;INTERVAL=${event.xWeeks};BYDAY=${weekdays.join(",")}`);
   }
-  if (event.frequency === 4) {
+  if (event.frequency == 4) {
     if (event.monthlyType === "date") {
       googleCalExtras.push(`&recur=RRULE:FREQ=MONTHLY`);
     } else if (event.monthlyType === "weekday") {
@@ -361,11 +362,11 @@ export default {
   parseTimeZoneISO: parseTimeZoneISO,
   parseEventTimes: parseEventTimes,
   objectChanges: objectChanges,
-  fromEntries: _.fromPairs,
+  fromEntries: fromPairs,
   backslash: backslash,
   timer: timer,
   isEmoji: isEmoji,
   log: log,
   patreonPledges: patreonPledges,
-  colors: colors,
+  colorFixer: colorFixer,
 };

@@ -1,5 +1,6 @@
 export default {
   title: "RPG Schedule",
+  sessionVersion: 3, // Incrementing this number will log users with existing sessions out
   urls: {
     base: { path: "/", session: true },
     redirects: {
@@ -26,6 +27,7 @@ export default {
     login: { path: "/login" },
     logout: { path: "/logout" },
     rss: { path: "/rss/:uid" },
+    ics: { path: "/ics/:uid.ics" },
     timezone: {
       convert: { path: "/tz/:time/:tz" },
       countdown: { path: "/cd/:time/:tz" }

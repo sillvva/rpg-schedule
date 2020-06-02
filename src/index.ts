@@ -9,23 +9,25 @@ import cookieParser from "cookie-parser";
 import db from "./db";
 import aux from "./appaux";
 import config from "./models/config";
-import discord from "./processes/discord";
+import discord from "./processes/shard-manager";
 import { socket } from "./processes/socket";
 
-import initRoutes from "./routes/init";
-import gameRoutes from "./routes/game";
-import infoRoutes from "./routes/info";
-import otherRoutes from "./routes/other";
-import timezoneRoutes from "./routes/timezone";
-import loginRoutes from "./routes/login";
-import redirectRoutes from "./routes/redirects";
+import apiRoutes from "./routes/api";
 import rssRoutes from "./routes/rss";
 
 const app = express();
 
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, "..", "public")));
 app.use(cookieParser());
+
+app.use(async (req, res, next) => {
+  res.set("Access-Control-Allow-Origin", process.env.HOST);
+  res.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.set("Access-Control-Allow-Headers", "authorization, accept, content-type, origin, x-requested-with, host, origin, referer");
+  next();
+});
 
 /**
  * EJS
@@ -33,15 +35,14 @@ app.use(cookieParser());
 app.set("view engine", "ejs");
 app.set("views", "views");
 
-if (process.env.MAINTENANCE == 'true') {
+if (process.env.MAINTENANCE.toLowerCase() == "true") {
   const server = http.createServer(app).listen(process.env.PORT || 5000);
-  aux.log('App started!')
+  aux.log("App started!");
 
   app.use("/", (req: any, res, next) => {
     res.render("maintenance");
   });
-}
-else {
+} else {
   app.locals.config = config;
   app.locals.host = process.env.HOST;
   app.locals.supportedLanguages = require("../lang/langs.json");
@@ -49,7 +50,7 @@ else {
     .map((lang: String) => {
       return {
         code: lang,
-        ...require(`../lang/${lang}.json`)
+        ...require(`../lang/${lang}.json`),
       };
     })
     .sort((a: any, b: any) => (a.name > b.name ? 1 : -1));
@@ -60,7 +61,7 @@ else {
   const MongoDBStore = connect(session);
   const store = new MongoDBStore({
     uri: process.env.MONGODB_URL,
-    collection: "sessions" //,
+    collection: "sessions", //,
     // expires: 12 * 60 * 60 * 1000 // 12 hours
   });
   app.use(
@@ -68,80 +69,53 @@ else {
       secret: `${process.env.HOST}/${process.env.TOKEN}`,
       resave: false,
       saveUninitialized: false,
-      store: store
+      store: store,
     })
   );
+
+  let connected: boolean;
+  let connecting = false;
 
   // Initialize the Discord event handlers and then call a
   // callback function when the bot has logged in.
   // Return the client to pass to the app routing logic.
-  const client = discord.processes({
-    app: app
-  }, async () => {
-    // Create the database connection
-    let connected = await db.database.connect();
-    if (connected) {
-      aux.log("Database connected!");
+  const client = discord.processes(
+    {
+      app: app,
+    },
+    async () => {
+      // Create the database connection
+      if (!connected && !connecting) {
+        connecting = true;
+        connected = await db.database.connect();
+        if (connected) {
+          aux.log("Database connected!");
 
-      // Start the http server
-      const server = http.createServer(app).listen(process.env.PORT || 5000);
-      const io = socket(server);
-      aux.log('App started!')
+          // Start the http server
+          const server = http.createServer(app).listen(process.env.PORT || 5000);
 
-      // discord.fixReschedules();
-      if (!process.env.LOCALENV) {
-        discord.refreshMessages();
+          server.on("connection", () => {
+            connecting = false;
+          });
 
-        // Once per hour, prune games from the database that are more than 48 hours old
-        discord.pruneOldGames();
-        setInterval(() => {
-          discord.pruneOldGames();
-        }, 60 * 60 * 1000); // 1 hour
+          const io = socket(server);
 
-        // Once per hour, reschedule recurring games from the database that have already occurred
-        if (process.env.RESCHEDULING) {
-          discord.rescheduleOldGames();
-          setInterval(() => {
-            discord.rescheduleOldGames();
-          }, 60 * 60 * 1000); // 1 hour
-        }
-
-        // Post Game Reminders
-        if (process.env.REMINDERS) {
-          discord.postReminders(app);
-          setInterval(() => {
-            discord.postReminders(app);
-          }, 1 * 60 * 1000); // 1 minute
+          aux.log("App started!");
+        } else {
+          aux.log("Database not connected!");
         }
       }
-
-      // Stay awake...
-      // if (!process.env.SLEEP) {
-      //   setInterval(() => {
-      //     aux.log("STAY AWAKE!");
-      //     http.get(process.env.HOST.replace("https", "http"));
-      //   }, 5 * 60 * 1000); // 5 minutes
-      // }
-    } else {
-      aux.log("Database not connected!");
     }
-  });
+  );
 
   /**
    * Routes
    */
-  app.use(rssRoutes({ client: client }));
-  app.use(loginRoutes());
-  app.use(initRoutes({ client: client }));
-  app.use(gameRoutes({ client: client }));
-  app.use(infoRoutes());
-  app.use(otherRoutes());
-  app.use(timezoneRoutes());
-  app.use(redirectRoutes());
+  if (!process.env.BACKGROUND || process.env.ALLLOGIC) {
+    app.use(apiRoutes({ client: client }));
+    app.use(rssRoutes({ client: client }));
+  }
   app.use("/", (req: any, res, next) => {
     res.render("home");
   });
-
-  // Login the Discord bot
-  discord.login(client);
 }
