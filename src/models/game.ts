@@ -404,12 +404,13 @@ export class Game implements GameModel {
         if (game.runtime && game.runtime.trim().length > 0 && game.runtime.trim() != "0") embed.addField(lang.game.RUN_TIME, `${game.runtime} ${lang.game.labels.HOURS}`, true);
         if (where.trim().length > 0) embed.addField(lang.game.WHERE, where);
         if (guildConfig.embedMentions) embed.addField(lang.game.GM, gmTag);
-        if (game.method === GameMethod.AUTOMATED) {
-          embed.addField(`${lang.game.RESERVED} (${reserved.length}/${game.players})`, reserved.length > 0 ? reserved.join("\n") : lang.game.NO_PLAYERS, true);
-          if (waitlist.length > 0) embed.addField(`${lang.game.WAITLISTED} (${waitlist.length})`, waitlist.join("\n"), true);
-        } else if (game.method === GameMethod.CUSTOM) {
+        if (game.method === GameMethod.CUSTOM) {
           embed.addField(lang.game.CUSTOM_SIGNUP_INSTRUCTIONS, game.customSignup);
         }
+        if (game.method === GameMethod.AUTOMATED || (game.method === GameMethod.CUSTOM && reserved.length > 0)) {
+          embed.addField(`${lang.game.RESERVED} (${reserved.length}/${game.players})`, reserved.length > 0 ? reserved.join("\n") : lang.game.NO_PLAYERS, true);
+        }
+        if (waitlist.length > 0) embed.addField(`${lang.game.WAITLISTED} (${waitlist.length})`, waitlist.join("\n"), true);
         if (!game.hideDate)
           embed.addField(
             "Links",
@@ -436,8 +437,10 @@ export class Game implements GameModel {
             if (game.messageId) message = await channel.messages.fetch(game.messageId);
           } catch (err) {}
 
-          if (guildConfig.embeds) msg = [await parseDiscord(game.description, guild, true), dmmember && dmmember.user.toString(), rMentions.join(" ")].filter((m) => m).join(" ");
-          else embed = null;
+          if (guildConfig.embeds) {
+            if (guildConfig.embedMentionsAbove)
+              msg = [await parseDiscord(game.description, guild, true), dmmember && dmmember.user.toString(), rMentions.join(" ")].filter((m) => m).join(" ");
+          } else embed = null;
 
           if (message) {
             if ((message.author ? message.author.id : (<any>message).authorID) === process.env.CLIENT_ID) {
@@ -445,7 +448,7 @@ export class Game implements GameModel {
               else message = await ShardManager.shardMessageEdit(guild.id, channel.id, message.id, msg, embed);
             }
           } else if (channel) {
-            message = <Message>(await channel.send(msg, embed));
+            message = <Message>await channel.send(msg, embed);
             if (message) {
               await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: { messageId: message.id } });
               game.messageId = message.id;
@@ -502,8 +505,10 @@ export class Game implements GameModel {
         let gcUpdated = false;
 
         try {
-          if (guildConfig.embeds) msg = [await parseDiscord(game.description, guild, true), dmmember && dmmember.user.toString(), rMentions.join(" ")].filter((m) => m).join(" ");
-          else embed = null;
+          if (guildConfig.embeds) {
+            if (guildConfig.embedMentionsAbove)
+              msg = [await parseDiscord(game.description, guild, true), dmmember && dmmember.user.toString(), rMentions.join(" ")].filter((m) => m).join(" ");
+          } else embed = null;
 
           message = <Message>await channel.send(msg, embed);
 
@@ -594,7 +599,7 @@ export class Game implements GameModel {
     const game = await connection()
       .collection(collection)
       .findOne({ _id: new ObjectId(gameId) });
-    const guilds = sGuilds ? sGuilds : (game.s ? (client ? await ShardManager.clientGuilds(client, [game.s]) : await ShardManager.shardGuilds({ guildIds: [game.s] })) : []);
+    const guilds = sGuilds ? sGuilds : game.s ? (client ? await ShardManager.clientGuilds(client, [game.s]) : await ShardManager.shardGuilds({ guildIds: [game.s] })) : [];
     return game ? new Game(game, guilds, client) : null;
   }
 
