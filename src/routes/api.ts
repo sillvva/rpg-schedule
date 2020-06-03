@@ -536,13 +536,14 @@ export default (options: APIRouteOptions) => {
       fetchAccount(req.session.api.access, {
         client: client,
         ip: req.app.locals.ip,
+        guilds: true
       })
         .then(async (result: any) => {
           try {
             let game: Game;
             let server: string = req.query.s;
             if (req.query.g && !(req.body && req.body.copy)) {
-              game = await Game.fetch(req.query.g);
+              game = await Game.fetch(req.query.g, null, result.sGuilds);
               if (game) {
                 server = game.s;
               } else {
@@ -560,11 +561,7 @@ export default (options: APIRouteOptions) => {
                 server = req.body.s;
               }
               if (req.query.s) {
-                const sGuilds = await ShardManager.shardGuilds({
-                  guildIds: [server],
-                  memberIds: [result.account.user.id],
-                });
-                game = new Game(req.body, sGuilds);
+                game = new Game(req.body, result.sGuilds);
               }
             }
 
@@ -1024,9 +1021,11 @@ const fetchAccount = (token: any, options: AccountOptions) => {
             guilds: [],
           };
 
+          let sGuilds: ShardGuild[] = [];
+
           if (options.guilds) {
             // const fTime = new Date().getTime();
-            const sGuilds = await ShardManager.shardGuilds({
+            sGuilds = await ShardManager.shardGuilds({
               memberIds: [id],
             });
             // console.log(new Date().getTime() - fTime);
@@ -1117,10 +1116,10 @@ const fetchAccount = (token: any, options: AccountOptions) => {
               guild.config = guildConfig;
               account.guilds[gi] = guild;
             }
-            if (options.page === GamesPages.Server && !options.search) {
-              account.guilds = account.guilds.filter((g) => account.guilds.find((s) => s.id === g.id && (s.isAdmin || config.author == tag)));
-            }
-            // console.log(new Date().getTime() - fTime);
+
+            // if (options.page === GamesPages.Server && !options.search) {
+            //   account.guilds = account.guilds.filter((g) => account.guilds.find((s) => s.id === g.id && (s.isAdmin || config.author == tag)));
+            // }
 
             if (options.games) {
               const gameOptions: any = {
@@ -1247,6 +1246,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
           return resolve({
             status: "success",
             account: account,
+            sGuilds: sGuilds
           });
         }
         throw new Error(`OAuth: ${error}`);

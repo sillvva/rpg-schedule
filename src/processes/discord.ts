@@ -1172,7 +1172,7 @@ const postReminders = async () => {
         try {
           const guildMembers = await game.discordGuild.members;
 
-          var where = game.where;
+          var where = Game.parseDiscord(game.where, game.discordGuild);
           game.reserved.forEach((rsvp) => {
             if (rsvp.tag.length === 0) return;
             let member = guildMembers.find((mem) => mem.user.tag === rsvp.tag.replace("@", "") || rsvp.id === mem.user.id);
@@ -1210,16 +1210,6 @@ const postReminders = async () => {
         } catch (err) {
           aux.log("RemindedSaveError", game._id, err);
           return;
-        }
-
-        const channels = game.where.match(/#[a-z0-9\-_]+/gi);
-        if (channels) {
-          channels.forEach((chan) => {
-            const guildChannel = game.discordGuild.channels.find((c) => c.name === chan.replace(/#/, ""));
-            if (guildChannel) {
-              where = game.where.replace(chan, guildChannel.toString());
-            }
-          });
         }
 
         const guildConfig = await GuildConfig.fetch(game.discordGuild.id);

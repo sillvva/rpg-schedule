@@ -265,13 +265,14 @@ export class Game implements GameModel {
       aux.log("No database connection");
       return null;
     }
-    let channel = this._channel;
-    const guild = this._guild;
-    const guildConfig = await GuildConfig.fetch(guild.id);
 
     const game: GameModel = cloneDeep(this.data);
 
     try {
+      let channel = this._channel;
+      const guild = this._guild;
+      const guildConfig = await GuildConfig.fetch(guild.id);
+
       if (guild && !channel) {
         const textChannels = guild.channels.filter((c) => c.type === "text");
         const channels = guildConfig.channels.filter((c) => guild.channels.find((gc) => gc.id == c.channelId)).map((c) => guild.channels.find((ch) => ch.id === c.channelId));
@@ -287,28 +288,47 @@ export class Game implements GameModel {
 
       moment.locale(lang.code);
 
-      let dm = game.dm.tag
-        .trim()
-        .replace("@", "")
-        .replace(/\#\d{4}/, "");
-      const dmParts = game.dm.tag.split("#");
-      let dmmember = guildMembers.find((mem) => {
-        return (
-          (game.dm && mem.user.tag === game.dm.tag.trim().replace("@", "")) ||
-          (dmParts[0] && dmParts[1] && mem.user.username === dmParts[0].trim() && mem.user.discriminator === dmParts[1].trim()) ||
-          (dmParts[0] && mem.user.username === dmParts[0].trim()) ||
-          mem.user.id === game.dm.id
-        );
-      });
+      const authorParts = game.author.tag.replace("@", "").split("#");
+      const dmParts = game.dm.tag.replace("@", "").split("#");
+      let dm = dmParts[0];
+      let dmmember =
+        guildMembers.find((mem) => {
+          return (
+            mem.user.id === game.dm.id ||
+            mem.user.tag === game.dm.tag.trim().replace("@", "") ||
+            (dmParts[0] && dmParts[1] && mem.user.username === dmParts[0].trim() && mem.user.discriminator === dmParts[1].trim())
+          );
+        }) ||
+        guildMembers.find((mem) => {
+          return (
+            mem.user.id === game.author.id ||
+            mem.user.tag === game.author.tag.trim().replace("@", "") ||
+            (authorParts[0] && authorParts[1] && mem.user.username === authorParts[0].trim() && mem.user.discriminator === authorParts[1].trim())
+          );
+        });
       if (dmmember) {
         var gmTag = dmmember.user.toString();
         if (guildConfig.embeds === false) dm = gmTag;
         else dm = dmmember.nickname || dm;
       } else if (!game._id && !force) {
-        return {
-          _id: "",
-          message: null,
-          modified: false,
+        game.dm = game.author;
+        dm = authorParts[0];
+        dmmember = {
+          id: game.author.id,
+          nickname: null,
+          send: (content, options) => {},
+          hasPermission: (permission: number) => {
+            return false;
+          },
+          roles: [],
+          user: {
+            id: game.author.id,
+            tag: game.author.tag,
+            username: authorParts[0].trim(),
+            discriminator: authorParts[1].trim(),
+            avatar: "",
+            avatarUrl: "",
+          },
         };
       }
 
@@ -341,8 +361,8 @@ export class Game implements GameModel {
       });
       const rawDate = eventTimes.rawDate;
       const timezone = "UTC" + (game.timezone >= 0 ? "+" : "") + game.timezone;
-      const where = (await parseDiscord(game.where, guild)).trim();
-      let description = (await parseDiscord(game.description, guild)).trim();
+      const where = Game.parseDiscord(game.where, guild).trim();
+      let description = Game.parseDiscord(game.description, guild).trim();
 
       let signups = "";
       let automatedInstructions = `\n(${guildConfig.emojiAdd} ${lang.buttons.SIGN_UP}${guildConfig.dropOut ? ` | ${guildConfig.emojiRemove} ${lang.buttons.DROP_OUT}` : ""})`;
@@ -439,7 +459,7 @@ export class Game implements GameModel {
 
           if (guildConfig.embeds) {
             if (guildConfig.embedMentionsAbove)
-              msg = [await parseDiscord(game.description, guild, true), dmmember && dmmember.user.toString(), rMentions.join(" ")].filter((m) => m).join(" ");
+              msg = [Game.parseDiscord(game.description, guild, true), dmmember && dmmember.user.toString(), rMentions.join(" ")].filter((m) => m).join(" ");
           } else embed = null;
 
           if (message) {
@@ -507,7 +527,7 @@ export class Game implements GameModel {
         try {
           if (guildConfig.embeds) {
             if (guildConfig.embedMentionsAbove)
-              msg = [await parseDiscord(game.description, guild, true), dmmember && dmmember.user.toString(), rMentions.join(" ")].filter((m) => m).join(" ");
+              msg = [Game.parseDiscord(game.description, guild, true), dmmember && dmmember.user.toString(), rMentions.join(" ")].filter((m) => m).join(" ");
           } else embed = null;
 
           message = <Message>await channel.send(msg, embed);
@@ -838,7 +858,10 @@ export class Game implements GameModel {
 
         const dmEmbed = new MessageEmbed();
         dmEmbed.setDescription(
-          `**[${this.adventure}](https://discordapp.com/channels/${this.discordGuild.id}/${this.discordChannel.id}/${this.messageId})**\n${this.customSignup}${waitlisted}`
+          `**[${this.adventure}](https://discordapp.com/channels/${this.discordGuild.id}/${this.discordChannel.id}/${this.messageId})**\n${Game.parseDiscord(
+            this.customSignup,
+            this.discordGuild
+          )}${waitlisted}`
         );
         dmEmbed.setColor(gameTemplate && gameTemplate.embedColor ? gameTemplate.embedColor : guildConfig.embedColor);
 
@@ -877,7 +900,7 @@ export class Game implements GameModel {
         message = message.replace(":SERVER", this.discordGuild.name);
         embed.setDescription(message);
 
-        embed.addField(lang.game.WHERE, parseDiscord(this.where, this.discordGuild));
+        embed.addField(lang.game.WHERE, Game.parseDiscord(this.where, this.discordGuild));
 
         const eventTimes = aux.parseEventTimes(this.data);
         if (!this.hideDate) embed.setTimestamp(new Date(eventTimes.rawDate));
@@ -1014,28 +1037,28 @@ export class Game implements GameModel {
       this.save();
     }
   }
-}
 
-const parseDiscord = async (text: string, guild: ShardGuild, getMentions: boolean = false) => {
-  const mentions: string[] = [];
-  try {
-    guild.members.forEach((mem) => {
-      if (new RegExp(`\@${aux.backslash(mem.user.tag)}`, "gi").test(text)) mentions.push(mem.user.toString());
-      text = text.replace(new RegExp(`\@${aux.backslash(mem.user.tag)}`, "gi"), mem.user.toString());
-    });
-    guild.channels.forEach((c) => {
-      text = text.replace(new RegExp(`\#${aux.backslash(c.name)}`, "gi"), `<#${c.id}>`);
-    });
-    guild.roles.forEach((role) => {
-      // const canMention = guild.members.hasPermission(Permissions.FLAGS.toString()_EVERYONE);
-      const canMention = true;
-      if ((!role.mentionable && !canMention) || ["@everyone", "@here"].includes(role.name)) return;
-      if (new RegExp(`\@${aux.backslash(role.name)}`, "gi").test(text)) mentions.push(`<@&${role.id}>`);
-      text = text.replace(new RegExp(`\@${aux.backslash(role.name)}`, "gi"), `<@&${role.id}>`);
-    });
-  } catch (err) {
-    aux.log(err);
+  static parseDiscord(text: string, guild: ShardGuild, getMentions: boolean = false) {
+    const mentions: string[] = [];
+    try {
+      guild.members.forEach((mem) => {
+        if (new RegExp(`\@${aux.backslash(mem.user.tag)}`, "gi").test(text)) mentions.push(mem.user.toString());
+        text = text.replace(new RegExp(`\@${aux.backslash(mem.user.tag)}`, "gi"), mem.user.toString());
+      });
+      guild.channels.forEach((c) => {
+        text = text.replace(new RegExp(`\#${aux.backslash(c.name)}`, "gi"), `<#${c.id}>`);
+      });
+      guild.roles.forEach((role) => {
+        // const canMention = guild.members.hasPermission(Permissions.FLAGS.toString()_EVERYONE);
+        const canMention = true;
+        if ((!role.mentionable && !canMention) || ["@everyone", "@here"].includes(role.name)) return;
+        if (new RegExp(`\@${aux.backslash(role.name)}`, "gi").test(text)) mentions.push(`<@&${role.id}>`);
+        text = text.replace(new RegExp(`\@${aux.backslash(role.name)}`, "gi"), `<@&${role.id}>`);
+      });
+    } catch (err) {
+      aux.log(err);
+    }
+    if (getMentions) return mentions.join(" ");
+    return text;
   }
-  if (getMentions) return mentions.join(" ");
-  return text;
-};
+}
