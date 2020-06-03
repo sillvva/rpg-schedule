@@ -1,13 +1,10 @@
 HOST="" # host for web frontend
-MONGODB_URL=""
-PORT=""
-TOKEN="" # discord bot token
 CLIENT_ID="" # discord
 CLIENT_SECRET="" # discord
-RESCHEDULING=true
-REMINDERS=true
-LOCALENV=true
-MAINTENANCE=false
+TOKEN="" # discord bot token
 SITE=dev
 PATREON_API_ACCESS_TOKEN=""
 PATREON_CAMPAIGN_ID=""
+MONGODB_URL=""
+DISCORD_LOGIC=true
+MAINTENANCE=false

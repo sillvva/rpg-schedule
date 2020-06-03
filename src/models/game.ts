@@ -271,6 +271,12 @@ export class Game implements GameModel {
     try {
       let channel = this._channel;
       const guild = this._guild;
+
+      if (!guild) {
+        aux.log(`Server (${game.s}) not found`);
+        aux.log(JSON.stringify(this.data));
+      }
+      
       const guildConfig = await GuildConfig.fetch(guild.id);
 
       if (guild && !channel) {
@@ -410,7 +416,7 @@ export class Game implements GameModel {
           embed.setImage(game.gameImage.trim().substr(0, 2048));
         }
       } else {
-        const urlRegex = /^((([A-Za-z]{3,9}:(?:\/\/)?)(?:[\-;:&=\+\$,\w]+@)?[A-Za-z0-9\.\-]+|(?:www\.|[\-;:&=\+\$,\w]+@)[A-Za-z0-9\.\-]+)((?:\/[\+~%\/\.\w\-_]*)?\??(?:[\-\+=&;%@\.\w_]*)#?(?:[\.\!\/\\\w]*))?)$/gi;
+        const urlRegex = /^((([A-Za-z]{3,9}:(?:\/\/)?)(?:[\-;:&=\+\$,\w]+@)?[A-Za-z0-9\.\-]+|(?:www\.|[\-;:&=\+\$,\w]+@)[A-Za-z0-9\.\-]+)((?:\/[\+~%\/\.\w\-_]*)?\??(?:[\-\+=&;%@\.\w_:\(\)]*)#?(?:[\.\!\/\\\w]*))?)$/gi;
 
         msg = "";
         embed = new discord.MessageEmbed();

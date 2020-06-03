@@ -106,6 +106,11 @@ https://www.rpg-schedule.com/
 <td>Include user tags in announcement embeds (<a href="https://cdn.discordapp.com/attachments/532565396746928149/682786099679985665/unknown.png" target="_blank">Can occasionally glitch</a>)</td>
 </tr>
 <tr>
+<td>!schedule embed-user-tags-above <code>on/off</code></td>
+<td>on</td>
+<td>Add mentions above the embed. Unlike user tags inside the embed, user tags outside the embed will trigger a notification and highlight the post.</td>
+</tr>
+<tr>
 <td>!schedule emoji-sign-up ➕</td>
 <td>➕</td>
 <td>Set the emoji used for automated sign up</td>
@@ -192,7 +197,7 @@ The first announcement is always on the date you entered. Any following announce
 
 Each next announcement will be posted X hours after the date/time of the current announcement, where X is the duration of the game. If no duration is entered, it defaults to 0 hours.
 
-## How to Develop
+## How to Develop the Bot/API Layer
 * install [git](https://git-scm.com/downloads), [node](https://nodejs.org/en/download/), [heroku-cli](https://devcenter.heroku.com/articles/heroku-cli#download-and-install), and [mongodb server](https://www.mongodb.com/download-center/community)
 * Run `npm install`
 * Set up a [discord bot application](https://discordapp.com/developers) with permissions and a token
@@ -215,10 +220,15 @@ Each next announcement will be posted X hours after the date/time of the current
 * Start mongodb
 * Run `npm run dev`
 
+## How to Develop the UI Layer
+
+Visit the [UI Repository](https://github.com/sillvva/rpg-schedule-nuxt) for more information.
+
 ## About the bot
 
 The discord bot is deployed with Heroku as a Node.js and discord.js application and MongoDB for data storage. When an update is pushed to this repository, the update is automatically deployed to Heroku.
 
-[Change Log](https://github.com/sillvva/rpg-schedule/blob/master/CHANGELOG.md)
+[Discord Server](https://discord.gg/mazZEe3)
+[Discord Change Log](https://discordapp.com/channels/532564186023329792/682247375699705857)
 
-Donate: [Patreon](https://www.patreon.com/rpg_schedule) | [PayPal](https://www.paypal.me/Sillvva) | [My Website](https://www.mattdekok.dev/#donate)
+Donate: [Patreon](https://www.patreon.com/rpg_schedule) | [PayPal](https://www.paypal.me/Sillvva) | [Cash App](https://cash.app/$SillvvaSensei) | [My Website](https://www.mattdekok.dev/#donate)

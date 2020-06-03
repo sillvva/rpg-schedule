@@ -1,7 +1,6 @@
 import { TextChannel, Client, Message, User, GuildChannel, MessageEmbed, Permissions, Guild } from "discord.js";
 import { DeleteWriteOpResultObject, FilterQuery, ObjectId, UpdateWriteOpResult } from "mongodb";
 
-import { io } from "./socket";
 import { GuildConfig, GuildConfigModel } from "../models/guild-config";
 import { Game, GameMethod, gameReminderOptions } from "../models/game";
 import config from "../models/config";
@@ -999,10 +998,18 @@ const pruneOldGames = async (guild?: Guild) => {
             if (game.messageId) {
               if (guildConfig.pruneIntDiscord < guildConfig.pruneIntEvents && new Date().getTime() - game.timestamp < guildConfig.pruneIntEvents * 24 * 3600 * 1000) {
                 prunedIds.push(game._id);
-                io().emit("game", { action: "pruned", gameId: game._id });
+                client.shard.send({
+                  type: "socket",
+                  name: "game",
+                  data: { action: "pruned", gameId: game._id },
+                });
               } else {
                 deletedIds.push(game._id);
-                io().emit("game", { action: "deleted", gameId: game._id });
+                client.shard.send({
+                  type: "socket",
+                  name: "game",
+                  data: { action: "deleted", gameId: game._id },
+                });
               }
               gameChannelMessages.push({ guild: game.s, channel: game.c, message: game.messageId });
             }
@@ -1018,7 +1025,11 @@ const pruneOldGames = async (guild?: Guild) => {
             // }
           } else if (new Date().getTime() - game.timestamp >= guildConfig.pruneIntEvents * 24 * 3600 * 1000) {
             deletedIds.push(game._id);
-            io().emit("game", { action: "deleted", gameId: game._id });
+            client.shard.send({
+              type: "socket",
+              name: "game",
+              data: { action: "deleted", gameId: game._id },
+            });
           }
         } catch (err) {
           aux.log("MessagePruningError:", err);
