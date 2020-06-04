@@ -133,6 +133,17 @@ const managerConnect = (options: DiscordProcessesOptions, readyCallback: () => {
               });
               return g;
             });
+          } else if (message.name === "guildUpdate") {
+            guildData = guildData.map((g) => {
+              if (g.id !== message.data.id) return g;
+              g.name = message.data.name;
+              return g;
+            });
+          } else if (message.name === "guildDelete") {
+            const index = guildData.findIndex(g => g.id === message.data);
+            if (index >= 0) {
+              guildData.splice(index, 1);
+            }
           }
         }
       }

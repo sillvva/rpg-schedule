@@ -39,25 +39,11 @@ client.on("ready", async () => {
   if (!isReady) {
     isReady = true;
 
-    const guilds = client.guilds.cache.array();
-    client.shard.send({
-      type: "shard",
-      name: "guilds",
-      data: guilds.map((guild) => {
-        return {
-          id: guild.id,
-          name: guild.name,
-          icon: guild.icon,
-          shardID: guild.shardID,
-          ownerID: guild.ownerID,
-          members: guild.members.cache.array(),
-          users: guild.members.cache.array().map((m) => m.user),
-          memberRoles: guild.members.cache.map((m) => m.roles.cache),
-          channels: guild.channels.cache.array(),
-          roles: guild.roles.cache.array(),
-        };
-      }),
-    });
+    // Send updated server information to the API
+    sendGuildsToAPI(true);
+    setInterval(() => {
+      sendGuildsToAPI(true);
+    }, 30 * 60 * 1000);
 
     if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
       if (!connected) connected = await db.database.connect();
@@ -752,31 +738,47 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
   });
 
   client.on("guildMemberAdd", async (member) => {
-    client.shard.send({
-      type: "shard",
-      name: "guildMemberAdd",
-      data: member,
-      user: member.user
-    });
+    if (member.user.id === client.user.id) {
+      sendGuildsToAPI();
+    } else {
+      client.shard.send({
+        type: "shard",
+        name: "guildMemberAdd",
+        data: member,
+        user: member.user,
+      });
+    }
   });
 
   client.on("guildMemberUpdate", async (oldR, member) => {
-    client.shard.send({
-      type: "shard",
-      name: "guildMemberUpdate",
-      data: member,
-      user: member.user,
-      roles: member.roles.cache.array(),
-    });
+    if (member.user.id === client.user.id) {
+      sendGuildsToAPI();
+    } else {
+      client.shard.send({
+        type: "shard",
+        name: "guildMemberUpdate",
+        data: member,
+        user: member.user,
+        roles: member.roles.cache.array(),
+      });
+    }
   });
 
   client.on("guildMemberRemove", async (member) => {
-    client.shard.send({
-      type: "shard",
-      name: "guildMemberRemove",
-      data: member,
-      user: member.user,
-    });
+    if (member.user.id === client.user.id) {
+      client.shard.send({
+        type: "shard",
+        name: "guildDelete",
+        data: member.guild.id,
+      });
+    } else {
+      client.shard.send({
+        type: "shard",
+        name: "guildMemberRemove",
+        data: member,
+        user: member.user,
+      });
+    }
   });
 
   client.on("userUpdate", async (oldUser: User, newUser: User) => {
@@ -833,6 +835,22 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
         game.save();
       });
     }
+  });
+
+  client.on("guildUpdate", async (oldG, newG) => {
+    client.shard.send({
+      type: "shard",
+      name: "guildUpdate",
+      data: newG,
+    });
+  });
+
+  client.on("guildDelete", async (guild) => {
+    client.shard.send({
+      type: "shard",
+      name: "guildDelete",
+      data: guild.id,
+    });
   });
 
   /**
@@ -1388,4 +1406,32 @@ const postReminders = async () => {
       }
     });
   }
+};
+
+const apiGuildIds: any = {};
+
+const sendGuildsToAPI = (all: boolean = false) => {
+  const guilds = client.guilds.cache.array();
+  client.shard.send({
+    type: "shard",
+    name: "guilds",
+    data: guilds
+      .filter((guild) => all || !apiGuildIds[guild.shardID] || !apiGuildIds[guild.shardID].includes(guild.id))
+      .map((guild) => {
+        if (!apiGuildIds[guild.shardID]) apiGuildIds[guild.shardID] = [];
+        if (!apiGuildIds[guild.shardID].includes(guild.id)) apiGuildIds[guild.shardID].push(guild.id);
+        return {
+          id: guild.id,
+          name: guild.name,
+          icon: guild.icon,
+          shardID: guild.shardID,
+          ownerID: guild.ownerID,
+          members: guild.members.cache.array(),
+          users: guild.members.cache.array().map((m) => m.user),
+          memberRoles: guild.members.cache.map((m) => m.roles.cache),
+          channels: guild.channels.cache.array(),
+          roles: guild.roles.cache.array(),
+        };
+      }),
+  });
 };
