@@ -1,7 +1,6 @@
-import { TextChannel, Client, Message, User, GuildChannel, MessageEmbed, Permissions, Guild } from "discord.js";
+import { TextChannel, Client, Message, User, GuildChannel, MessageEmbed, Permissions, Guild, Channel } from "discord.js";
 import { DeleteWriteOpResultObject, FilterQuery, ObjectId, UpdateWriteOpResult } from "mongodb";
 
-import { io } from "./socket";
 import { GuildConfig, GuildConfigModel } from "../models/guild-config";
 import { Game, GameMethod, gameReminderOptions } from "../models/game";
 import config from "../models/config";
@@ -39,6 +38,27 @@ client.on("ready", async () => {
   aux.log(`Logged in as ${client.user.username}!`);
   if (!isReady) {
     isReady = true;
+
+    const guilds = client.guilds.cache.array();
+    client.shard.send({
+      type: "shard",
+      name: "guilds",
+      data: guilds.map((guild) => {
+        return {
+          id: guild.id,
+          name: guild.name,
+          icon: guild.icon,
+          shardID: guild.shardID,
+          ownerID: guild.ownerID,
+          members: guild.members.cache.array(),
+          users: guild.members.cache.array().map((m) => m.user),
+          memberRoles: guild.members.cache.map((m) => m.roles.cache),
+          channels: guild.channels.cache.array(),
+          roles: guild.roles.cache.array(),
+        };
+      }),
+    });
+
     if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
       if (!connected) connected = await db.database.connect();
       if (connected) {
@@ -148,9 +168,7 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                         `\`${botcmd} embed-user-tags ${guildConfig.embedMentions || guildConfig.embedMentions == null ? "on" : "off"}\` - \`on/off\` - ${
                           lang.config.desc.EMBED_USER_TAGS
                         }\n` +
-                        `\`${botcmd} embed-user-tags-above ${guildConfig.embedMentionsAbove ? "on" : "off"}\` - \`on/off\` - ${
-                          lang.config.desc.EMBED_USER_TAGS_ABOVE
-                        }\n` +
+                        `\`${botcmd} embed-user-tags-above ${guildConfig.embedMentionsAbove ? "on" : "off"}\` - \`on/off\` - ${lang.config.desc.EMBED_USER_TAGS_ABOVE}\n` +
                         `\`${botcmd} emoji-sign-up ${guildConfig.emojiAdd}\` - ${lang.config.desc.EMOJI}\n` +
                         `\`${botcmd} emoji-drop-out ${guildConfig.emojiRemove}\` - ${lang.config.desc.EMOJI}\n` +
                         `\`${botcmd} drop-outs ${guildConfig.dropOut || guildConfig.dropOut == null ? "on" : "off"}\` - \`on/off\` - ${lang.config.desc.TOGGLE_DROP_OUT}\n` +
@@ -658,9 +676,116 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
     } catch (err) {}
   });
 
+  client.on("channelCreate", async (newC: any) => {
+    if (newC.type !== "text") return;
+    const channel: TextChannel = newC;
+    client.shard.send({
+      type: "shard",
+      name: "channelCreate",
+      data: channel,
+    });
+  });
+
+  client.on("channelUpdate", async (oldC, newC: any) => {
+    if (newC.type !== "text") return;
+    const channel: TextChannel = newC;
+    client.shard.send({
+      type: "shard",
+      name: "channelUpdate",
+      data: channel,
+    });
+  });
+
+  client.on("channelDelete", async (channel: GuildChannel) => {
+    client.shard.send({
+      type: "shard",
+      name: "channelDelete",
+      data: channel.id,
+    });
+
+    const channelId = channel.id;
+    const guildId = channel.guild.id;
+    const guildConfig = await GuildConfig.fetch(guildId);
+    if (guildConfig.channels.find((c) => c.channelId === channelId)) {
+      guildConfig.channel.splice(
+        guildConfig.channel.findIndex((c) => c.channelId === channelId),
+        1
+      );
+      await guildConfig.save();
+
+      const games = await Game.fetchAllBy(
+        {
+          s: guildId,
+          c: channelId,
+        },
+        client
+      );
+
+      games.forEach(async (game) => {
+        await game.delete();
+      });
+    }
+  });
+
+  client.on("roleCreate", async (role) => {
+    client.shard.send({
+      type: "shard",
+      name: "roleCreate",
+      data: role,
+    });
+  });
+
+  client.on("roleUpdate", async (oldR, role) => {
+    client.shard.send({
+      type: "shard",
+      name: "roleUpdate",
+      data: role,
+    });
+  });
+
+  client.on("roleDelete", async (role) => {
+    client.shard.send({
+      type: "shard",
+      name: "roleDelete",
+      data: role.id,
+    });
+  });
+
+  client.on("guildMemberAdd", async (member) => {
+    client.shard.send({
+      type: "shard",
+      name: "guildMemberAdd",
+      data: member,
+      user: member.user
+    });
+  });
+
+  client.on("guildMemberUpdate", async (oldR, member) => {
+    client.shard.send({
+      type: "shard",
+      name: "guildMemberUpdate",
+      data: member,
+      user: member.user,
+      roles: member.roles.cache.array(),
+    });
+  });
+
+  client.on("guildMemberRemove", async (member) => {
+    client.shard.send({
+      type: "shard",
+      name: "guildMemberRemove",
+      data: member,
+      user: member.user,
+    });
+  });
+
   client.on("userUpdate", async (oldUser: User, newUser: User) => {
-    if (process.env.LOCALENV) return;
-    // aux.log(aux.backslash(oldUser.tag));
+    client.shard.send({
+      type: "shard",
+      name: "userUpdate",
+      data: newUser,
+    });
+
     if (oldUser.tag != newUser.tag) {
       const games = await Game.fetchAllBy(
         {
@@ -732,35 +857,6 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
         });
       }
     });
-  });
-
-  /**
-   * Discord.JS - channelDelete
-   * Delete the games in the channel and remove the channel id from the guild configuration
-   */
-  client.on("channelDelete", async (channel: GuildChannel) => {
-    const channelId = channel.id;
-    const guildId = channel.guild.id;
-    const guildConfig = await GuildConfig.fetch(guildId);
-    if (guildConfig.channels.find((c) => c.channelId === channelId)) {
-      guildConfig.channel.splice(
-        guildConfig.channel.findIndex((c) => c.channelId === channelId),
-        1
-      );
-      await guildConfig.save();
-
-      const games = await Game.fetchAllBy(
-        {
-          s: guildId,
-          c: channelId,
-        },
-        client
-      );
-
-      games.forEach(async (game) => {
-        await game.delete();
-      });
-    }
   });
 
   /**
@@ -999,10 +1095,18 @@ const pruneOldGames = async (guild?: Guild) => {
             if (game.messageId) {
               if (guildConfig.pruneIntDiscord < guildConfig.pruneIntEvents && new Date().getTime() - game.timestamp < guildConfig.pruneIntEvents * 24 * 3600 * 1000) {
                 prunedIds.push(game._id);
-                io().emit("game", { action: "pruned", gameId: game._id });
+                client.shard.send({
+                  type: "socket",
+                  name: "game",
+                  data: { action: "pruned", gameId: game._id },
+                });
               } else {
                 deletedIds.push(game._id);
-                io().emit("game", { action: "deleted", gameId: game._id });
+                client.shard.send({
+                  type: "socket",
+                  name: "game",
+                  data: { action: "deleted", gameId: game._id },
+                });
               }
               gameChannelMessages.push({ guild: game.s, channel: game.c, message: game.messageId });
             }
@@ -1018,7 +1122,11 @@ const pruneOldGames = async (guild?: Guild) => {
             // }
           } else if (new Date().getTime() - game.timestamp >= guildConfig.pruneIntEvents * 24 * 3600 * 1000) {
             deletedIds.push(game._id);
-            io().emit("game", { action: "deleted", gameId: game._id });
+            client.shard.send({
+              type: "socket",
+              name: "game",
+              data: { action: "deleted", gameId: game._id },
+            });
           }
         } catch (err) {
           aux.log("MessagePruningError:", err);
@@ -1172,7 +1280,7 @@ const postReminders = async () => {
         try {
           const guildMembers = await game.discordGuild.members;
 
-          var where = game.where;
+          var where = Game.parseDiscord(game.where, game.discordGuild);
           game.reserved.forEach((rsvp) => {
             if (rsvp.tag.length === 0) return;
             let member = guildMembers.find((mem) => mem.user.tag === rsvp.tag.replace("@", "") || rsvp.id === mem.user.id);
@@ -1210,16 +1318,6 @@ const postReminders = async () => {
         } catch (err) {
           aux.log("RemindedSaveError", game._id, err);
           return;
-        }
-
-        const channels = game.where.match(/#[a-z0-9\-_]+/gi);
-        if (channels) {
-          channels.forEach((chan) => {
-            const guildChannel = game.discordGuild.channels.find((c) => c.name === chan.replace(/#/, ""));
-            if (guildChannel) {
-              where = game.where.replace(chan, guildChannel.toString());
-            }
-          });
         }
 
         const guildConfig = await GuildConfig.fetch(game.discordGuild.id);

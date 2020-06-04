@@ -54,7 +54,10 @@ const patreonPledges = async () => {
 };
 
 const log = (...content: any) => {
+  let locale = moment.locale();
+  if (locale !== "en") moment.locale("en");
   console.log(moment().format("lll") + ":", ...content);
+  moment.locale(locale);
 };
 
 const parseConfigURLs = (paths: Object) => {
