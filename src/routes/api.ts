@@ -15,6 +15,8 @@ import { User } from "../models/user";
 import config from "../models/config";
 import aux from "../appaux";
 
+const apiVersion = process.env.VERSION;
+
 interface APIRouteOptions {
   client: ShardingManager;
 }
@@ -246,6 +248,7 @@ export default (options: APIRouteOptions) => {
             token: req.session.api.access.access_token,
             account: result.account,
             user: userSettings.data,
+            version: apiVersion
           });
         })
         .catch((err) => {
