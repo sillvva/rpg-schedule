@@ -560,7 +560,7 @@ export class Game implements GameModel {
             }
           }
         } else {
-          aux.log(`GameMessageNotPostedError:\n`, game.s, `${msg}\n`, embed);
+          aux.log(`GameMessageNotPostedError:\n`, 's', game.s, '_id', game._id);
         }
 
         if (this.client)
@@ -714,12 +714,65 @@ export class Game implements GameModel {
     }
   }
 
+  static getNextDate(baseDate: moment.Moment, validDays: string[], frequency: Frequency, monthlyType: MonthlyType, xWeeks: number = 2) {
+    if (frequency == Frequency.NO_REPEAT) return null;
+
+    let dateGenerator;
+    let nextDate = baseDate;
+
+    try {
+      switch (frequency) {
+        case Frequency.DAILY:
+          nextDate = moment(baseDate).add(1, "days");
+          break;
+        case Frequency.WEEKLY: // weekly
+          if (validDays === undefined || validDays.length === 0) break;
+          dateGenerator = moment(baseDate).recur().every(validDays).daysOfWeek();
+          nextDate = dateGenerator.next(1)[0];
+          break;
+        case Frequency.BIWEEKLY: // biweekly
+          if (validDays === undefined || validDays.length === 0) break;
+          // this is a compound interval...
+          dateGenerator = moment(baseDate).recur().every(validDays).daysOfWeek();
+          nextDate = dateGenerator.next(1)[0];
+          while (nextDate.week() - moment(baseDate).week() < xWeeks) {
+            // if the next date is in the same week, diff = 0. if it is just next week, diff = 1, so keep going forward.
+            dateGenerator = moment(nextDate).recur().every(validDays).daysOfWeek();
+            nextDate = dateGenerator.next(1)[0];
+          }
+          break;
+        case Frequency.MONTHLY:
+          if (monthlyType == MonthlyType.WEEKDAY) {
+            const weekOfMonth = moment(baseDate).monthWeekByDay();
+            const validDay = moment(baseDate).day();
+            dateGenerator = moment(baseDate).recur().every(validDay).daysOfWeek().every(weekOfMonth).weeksOfMonthByDay();
+            nextDate = dateGenerator.next(1)[0];
+
+            if (weekOfMonth == 4 && moment(nextDate).month() != moment(baseDate).month() + 1) {
+              dateGenerator = moment(baseDate).recur().every(validDay).daysOfWeek().every(3).weeksOfMonthByDay();
+              nextDate = dateGenerator.next(1)[0];
+            }
+          } else {
+            nextDate = moment(baseDate).add(1, "month");
+          }
+          break;
+        default:
+          throw new Error(`invalid frequency ${frequency} specified`);
+      }
+    } catch (err) {
+      aux.log(err.message || err);
+      return null;
+    }
+
+    return moment(nextDate).format("YYYY-MM-DD");
+  }
+
   public getWeekdays() {
     const days = this.weekdays;
     const validDays = [];
     for (let i = 0; i < days.length; i++) {
       if (days[i] == true) {
-        validDays.push(moment.weekdays(true, i));
+        validDays.push(moment.weekdays(false, i));
       }
     }
     return validDays;
@@ -946,59 +999,6 @@ export class Game implements GameModel {
 
   static ISOGameDate(game: GameModel) {
     return `${game.date.replace(/-/g, "")}T${game.time.replace(/:/g, "")}00${game.timezone >= 0 ? "+" : "-"}${aux.parseTimeZoneISO(game.timezone)}`;
-  }
-
-  static getNextDate(baseDate: moment.Moment, validDays: string[], frequency: Frequency, monthlyType: MonthlyType, xWeeks: number = 2) {
-    if (frequency == Frequency.NO_REPEAT) return null;
-
-    let dateGenerator;
-    let nextDate = baseDate;
-
-    try {
-      switch (frequency) {
-        case Frequency.DAILY:
-          nextDate = moment(baseDate).add(1, "days");
-          break;
-        case Frequency.WEEKLY: // weekly
-          if (validDays === undefined || validDays.length === 0) break;
-          dateGenerator = moment(baseDate).recur().every(validDays).daysOfWeek();
-          nextDate = dateGenerator.next(1)[0];
-          break;
-        case Frequency.BIWEEKLY: // biweekly
-          if (validDays === undefined || validDays.length === 0) break;
-          // this is a compound interval...
-          dateGenerator = moment(baseDate).recur().every(validDays).daysOfWeek();
-          nextDate = dateGenerator.next(1)[0];
-          while (nextDate.week() - moment(baseDate).week() < xWeeks) {
-            // if the next date is in the same week, diff = 0. if it is just next week, diff = 1, so keep going forward.
-            dateGenerator = moment(nextDate).recur().every(validDays).daysOfWeek();
-            nextDate = dateGenerator.next(1)[0];
-          }
-          break;
-        case Frequency.MONTHLY:
-          if (monthlyType == MonthlyType.WEEKDAY) {
-            const weekOfMonth = moment(baseDate).monthWeekByDay();
-            const validDay = moment(baseDate).day();
-            dateGenerator = moment(baseDate).recur().every(validDay).daysOfWeek().every(weekOfMonth).weeksOfMonthByDay();
-            nextDate = dateGenerator.next(1)[0];
-
-            if (weekOfMonth == 4 && moment(nextDate).month() != moment(baseDate).month() + 1) {
-              dateGenerator = moment(baseDate).recur().every(validDay).daysOfWeek().every(3).weeksOfMonthByDay();
-              nextDate = dateGenerator.next(1)[0];
-            }
-          } else {
-            nextDate = moment(baseDate).add(1, "month");
-          }
-          break;
-        default:
-          throw new Error(`invalid frequency ${frequency} specified`);
-      }
-    } catch (err) {
-      aux.log(err.message || err);
-      return null;
-    }
-
-    return moment(nextDate).format("YYYY-MM-DD");
   }
 
   async updateReservedList() {
