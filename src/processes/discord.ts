@@ -7,6 +7,7 @@ import config from "../models/config";
 import aux from "../appaux";
 import db from "../db";
 import { ShardMember } from "./shard-manager";
+import cloneDeep from "lodash/cloneDeep";
 
 const app: any = { locals: {} };
 
@@ -580,8 +581,13 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                 const role = guild.roles.cache.array().find((r) => r.id === roleId);
                 if (role) roleName = role.name;
               }
-              const save: GuildConfigModel = {};
-              save.role = roleName == "" ? null : roleName;
+              const save: GuildConfigModel = {
+                role: roleName == "" ? null : roleName,
+                gameTemplates: cloneDeep(guildConfig.gameTemplates).map((gt) => {
+                  if (gt.name === "Default") gt.role = roleName == "" ? null : roleName;
+                  return gt;
+                }),
+              };
               guildConfig
                 .save(save)
                 .then((result) => {
