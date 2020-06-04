@@ -112,7 +112,7 @@ if (process.env.MAINTENANCE.toLowerCase() == "true") {
    * Routes
    */
   app.use(apiRoutes({ client: client }));
-  app.use(rssRoutes({ client: client }));
+  app.use(rssRoutes());
   app.use("/", (req: any, res, next) => {
     res.render("home");
   });

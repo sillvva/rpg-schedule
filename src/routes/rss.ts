@@ -1,4 +1,4 @@
-import { Client } from "discord.js";
+import ShardManager from "../processes/shard-manager";
 const ics = require("ics");
 import express from "express";
 import moment from "moment";
@@ -6,59 +6,61 @@ import moment from "moment";
 import config from "../models/config";
 import { Game, RSVP } from "../models/game";
 
-export default (options: any) => {
+export default () => {
   const router = express.Router();
-  const client: Client = options.client;
 
   router.use(config.urls.rss.path, async (req, res, next) => {
-    res.sendStatus(404);
-    return;
-    const uid = req.params.uid;
-    const guilds = [];
+    try {
+      const uid = req.params.uid;
+      const guilds = [];
 
-    let tag = "";
+      let tag = "";
 
-    client.guilds.cache.forEach((guild) => {
-      guild.members.cache.forEach((member) => {
-        if (member.id === uid) {
-          tag = member.user.tag;
-          guilds.push({
-            id: guild.id,
-            name: guild.name,
-          });
-        }
+      const shardGuilds = await ShardManager.shardGuilds({
+        memberIds: [uid],
       });
-    });
 
-    const gameOptions: any = {
-      s: {
-        $in: guilds.reduce((i, g) => {
-          i.push(g.id);
-          return i;
-        }, []),
-      },
-      timestamp: {
-        $gt: new Date().getTime(),
-      },
-      dm: {
-        $ne: tag,
-      },
-    };
+      shardGuilds.forEach((guild) => {
+        guild.members.forEach((member) => {
+          if (member.id === uid) {
+            tag = member.user.tag;
+            guilds.push({
+              id: guild.id,
+              name: guild.name,
+            });
+          }
+        });
+      });
 
-    const games: any[] = await Game.fetchAllBy(gameOptions);
+      const gameOptions: any = {
+        s: {
+          $in: guilds.reduce((i, g) => {
+            i.push(g.id);
+            return i;
+          }, []),
+        },
+        timestamp: {
+          $gt: new Date().getTime(),
+        },
+        dm: {
+          $ne: tag,
+        },
+      };
 
-    res.type("application/xml");
-    res.status(200);
-    res.send(`<?xml version="1.0" encoding="UTF-8" ?>
+      const games: any[] = await Game.fetchAllBy(gameOptions);
+
+      res.type("application/xml");
+      res.status(200);
+      res.send(`<?xml version="1.0" encoding="UTF-8" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>RPG Schedule</title>
-    <link>https://rpg-schedule.herokuapp.com</link>
+    <link>https://www.rpg-schedule.com</link>
     <description>Game scheduling bot for Discord</description>
     <image>
-      <url>https://rpg-schedule.herokuapp.com/images/logo2.png</url>
+      <url>https://www.rpg-schedule.com/images/logo2.png</url>
       <title>RPG Schedule</title>
-      <link>https://rpg-schedule.herokuapp.com</link>
+      <link>https://www.rpg-schedule.com</link>
     </image>
     ${games
       .map((game) => {
@@ -73,17 +75,17 @@ export default (options: any) => {
           from: moment(date).utcOffset(parseInt(game.timezone)).fromNow(),
         };
 
-        game.slot = game.reserved.split(/\r?\n/).findIndex((t) => t.trim().replace("@", "") === tag) + 1;
+        game.slot = game.reserved.findIndex((t) => t.id === uid || t.tag.trim().replace("@", "") === tag) + 1;
         game.signedup = game.slot > 0 && game.slot <= parseInt(game.players);
         game.waitlisted = game.slot > parseInt(game.players);
 
         return `
       <item>
         <title>${game.adventure}</title>
-        <link>https://rpg-schedule.herokuapp.com/games/upcoming</link>
-        <guid>https://rpg-schedule.herokuapp.com/games/view?g=${game._id.toString().slice(-12)}</guid>
+        <link>https://www.rpg-schedule.com/games/upcoming</link>
+        <guid>https://www.rpg-schedule.com/games/${game._id.toString().slice(-12)}</guid>
         <description>
-          <![CDATA[<p>Discord Server: ${(guilds.find((g) => g.id === game.s) || {}).name}</p><p>GM: ${game.dm}</p><p>Where: ${game.where.replace(/\&/g, "&amp;")}</p><p>When: ${
+          <![CDATA[<p>Discord Server: ${(guilds.find((g) => g.id === game.s) || {}).name}</p><p>GM: ${game.dm.tag}</p><p>Where: ${game.where.replace(/\&/g, "&amp;")}</p><p>When: ${
           game.moment.date
         }</p><p>${game.description.trim().replace(/\&/g, "&amp;").replace(/\r?\n/g, "<br>")}</p>]]>
         </description>
@@ -93,6 +95,10 @@ export default (options: any) => {
     <atom:link href="${req.protocol}s://${req.hostname}${req.originalUrl}" rel="self" type="application/rss+xml" />
   </channel>
 </rss>`);
+    } catch (err) {
+      console.log(err);
+      res.sendStatus(500);
+    }
   });
 
   router.use(config.urls.ics.path, async (req, res, next) => {
@@ -102,8 +108,12 @@ export default (options: any) => {
 
     let tag = "";
 
-    client.guilds.cache.forEach((guild) => {
-      guild.members.cache.forEach((member) => {
+    const shardGuilds = await ShardManager.shardGuilds({
+      memberIds: [uid],
+    });
+
+    shardGuilds.forEach((guild) => {
+      guild.members.forEach((member) => {
         if (member.id === uid) {
           tag = member.user.tag;
           guilds.push({
@@ -136,8 +146,7 @@ export default (options: any) => {
       var { error, value } = ics.createEvents(
         games
           .filter((game) => {
-            game.updateReservedList();
-            return signedup ? (<RSVP>game.dm).tag === tag || (<RSVP[]>game.reserved).find((r) => r.tag === tag) : true;
+            return signedup ? game.dm.id === uid || game.dm.tag === tag || game.reserved.find((r) => r.id === uid || r.tag === tag) : true;
           })
           .map((game) => {
             const d = new Date(game.timestamp);
@@ -149,8 +158,8 @@ export default (options: any) => {
               description: game.description,
               categories: ["RPG Schedule", game.discordGuild.name],
               location: game.where,
-              organizer: { name: (<RSVP>game.dm).tag, email: `${((<RSVP>game.dm).tag || "").replace(/[^a-z0-9_.]/gi, "")}@rpg-schedule.com` },
-              attendees: (<RSVP[]>game.reserved)
+              organizer: { name: game.dm.tag, email: `${(game.dm.tag || "").replace(/[^a-z0-9_.]/gi, "")}@rpg-schedule.com` },
+              attendees: game.reserved
                 .filter((r) => r.tag.trim().length > 0)
                 .map((r, i) => ({
                   name: r,
@@ -161,8 +170,7 @@ export default (options: any) => {
             };
           })
       );
-    }
-    catch(err) {
+    } catch (err) {
       console.log(err.message);
     }
 
