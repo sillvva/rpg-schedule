@@ -399,134 +399,159 @@ export default (options: APIRouteOptions) => {
     }
   });
 
-  router.get("/api/game", async (req, res, next) => {
+  router.get("/auth-api/game", async (req, res, next) => {
     try {
-      let game: Game;
-      let server: string = req.query.s;
-      if (req.query.g) {
-        game = await Game.fetch(req.query.g);
-        if (game) {
-          server = game.s;
-        } else {
-          throw new Error("Game not found");
-        }
-      }
+      fetchAccount(req.session.api.access, {
+        client: client,
+        ip: req.app.locals.ip,
+        guilds: true
+      })
+        .then(async (result: any) => {
+          try {
+            let game: Game;
+            let server: string = req.query.s;
+            if (req.query.g) {
+              game = await Game.fetch(req.query.g, null, result.sGuilds);
+              if (game) {
+                server = game.s;
+              } else {
+                throw new Error("Game not found");
+              }
+            }
 
-      if (server) {
-        let guild: ShardGuild;
-        if (req.query.g) guild = game.discordGuild;
-        else {
-          const sGuilds = await ShardManager.shardGuilds();
-          guild = sGuilds.find((g) => g.id === server);
-        }
+            if (server) {
+              let guild: ShardGuild;
+              if (req.query.g) guild = game.discordGuild;
 
-        if (guild) {
-          let password;
+              if (!guild) {
+                guild = result.sGuilds.find((g) => g.id === server);
+                if (req.query.g) game.discordGuild = guild;
+              }
 
-          const guildChannels = guild.channels;
-          const guildRoles = guild.roles;
-          const guildMembers = guild.members;
+              if (guild) {
+                let password;
 
-          const guildConfig = await GuildConfig.fetch(guild.id);
+                const guildChannels = guild.channels;
+                const guildRoles = guild.roles;
+                const guildMembers = guild.members;
 
-          let gcChannels: ChannelConfig[] = guildConfig.channels;
-          let firstChannel: ShardChannel;
-          for (let i = 0; i < guildChannels.length; i++) {
-            const pf = await guildChannels[i].permissionsFor(guildRoles.find((r) => r.name === "@everyone").id, Permissions.FLAGS.VIEW_CHANNEL);
-            if (pf) firstChannel = guildChannels[i];
+                const guildConfig = await GuildConfig.fetch(guild.id);
+
+                let gcChannels: ChannelConfig[] = guildConfig.channels;
+                let firstChannel: ShardChannel;
+                for (let i = 0; i < guildChannels.length; i++) {
+                  const pf = await guildChannels[i].permissionsFor(guildRoles.find((r) => r.name === "@everyone").id, Permissions.FLAGS.VIEW_CHANNEL);
+                  if (pf) firstChannel = guildChannels[i];
+                }
+                if (firstChannel && gcChannels.length == 0) gcChannels.push({ channelId: firstChannel.id, gameTemplates: [guildConfig.defaultGameTemplate.id] });
+                const channels = gcChannels.map((c) => {
+                  const channel = guildChannels.find((ch) => ch.id === c.channelId);
+                  return { id: channel.id, name: channel.name };
+                });
+
+                if (channels.length === 0) {
+                  throw new Error("Discord channel not found. Make sure your server has a text channel.");
+                }
+
+                let data: any = {
+                  title: req.query.g ? req.app.locals.lang.buttons.EDIT_GAME : req.app.locals.lang.buttons.NEW_GAME,
+                  guild: guild.name,
+                  channels: channels,
+                  s: server,
+                  c: channels[0].id,
+                  dm: "",
+                  adventure: "",
+                  runtime: "",
+                  where: "",
+                  reserved: "",
+                  description: "",
+                  method: GameMethod.AUTOMATED,
+                  customSignup: "",
+                  when: GameWhen.DATETIME,
+                  date: req.query.date || "",
+                  time: req.query.time || "",
+                  timezone: "",
+                  hideDate: false,
+                  gameImage: "",
+                  frequency: "0",
+                  monthlyType: MonthlyType.WEEKDAY,
+                  weekdays: [false, false, false, false, false, false, false],
+                  xWeeks: 2,
+                  clearReservedOnRepeat: false,
+                  env: {
+                    REMINDERS: process.env.REMINDERS,
+                    RESCHEDULING: process.env.RESCHEDULING,
+                  },
+                  is: {
+                    newgame: !req.query.g ? true : false,
+                    editgame: req.query.g ? true : false,
+                    locked: password ? true : false,
+                  },
+                  password: password ? password : false,
+                  enums: {
+                    GameMethod: GameMethod,
+                    GameWhen: GameWhen,
+                    RescheduleMode: RescheduleMode,
+                    MonthlyType: MonthlyType,
+                  },
+                  guildConfig: guildConfig,
+                  errors: {
+                    other: null,
+                    minPlayers: game && (isNaN(parseInt(game.minPlayers || "1")) || parseInt(game.minPlayers || "1") > parseInt(game.players || "0")),
+                    maxPlayers: game && (isNaN(parseInt(game.players || "0")) || parseInt(game.minPlayers || "1") > parseInt(game.players || "0")),
+                    dm:
+                      game &&
+                      !guildMembers.find((mem) => {
+                        return mem.user.tag === game.dm.tag.trim().replace("@", "") || mem.user.id === game.dm.id;
+                      }),
+                    reserved: game
+                      ? game.reserved.filter((res) => {
+                          if (res.tag.trim().length === 0) return false;
+                          return !guildMembers.find((mem) => mem.user.tag === res.tag.trim() || mem.user.id === res.id);
+                        })
+                      : [],
+                  },
+                };
+
+                if (req.query.g) {
+                  data = { ...data, ...game, _guild: null, _channel: null };
+                }
+
+                res.json({
+                  status: "success",
+                  token: req.session.api && req.session.api.access.access_token,
+                  game: data,
+                });
+              } else {
+                throw new Error("Discord server not found");
+              }
+            } else {
+              throw new Error("Discord server not specified");
+            }
+          } catch (err) {
+            res.json({
+              status: "error",
+              token: req.session.api && req.session.api.access.access_token,
+              message: err.message || err,
+              redirect: "/",
+              code: 16,
+            });
           }
-          if (firstChannel && gcChannels.length == 0) gcChannels.push({ channelId: firstChannel.id, gameTemplates: [guildConfig.defaultGameTemplate.id] });
-          const channels = gcChannels.map((c) => {
-            const channel = guildChannels.find((ch) => ch.id === c.channelId);
-            return { id: channel.id, name: channel.name };
-          });
-
-          if (channels.length === 0) {
-            throw new Error("Discord channel not found. Make sure your server has a text channel.");
-          }
-
-          let data: any = {
-            title: req.query.g ? req.app.locals.lang.buttons.EDIT_GAME : req.app.locals.lang.buttons.NEW_GAME,
-            guild: guild.name,
-            channels: channels,
-            s: server,
-            c: channels[0].id,
-            dm: "",
-            adventure: "",
-            runtime: "",
-            where: "",
-            reserved: "",
-            description: "",
-            method: GameMethod.AUTOMATED,
-            customSignup: "",
-            when: GameWhen.DATETIME,
-            date: req.query.date || "",
-            time: req.query.time || "",
-            timezone: "",
-            hideDate: false,
-            gameImage: "",
-            frequency: "0",
-            monthlyType: MonthlyType.WEEKDAY,
-            weekdays: [false, false, false, false, false, false, false],
-            xWeeks: 2,
-            clearReservedOnRepeat: false,
-            env: {
-              REMINDERS: process.env.REMINDERS,
-              RESCHEDULING: process.env.RESCHEDULING,
-            },
-            is: {
-              newgame: !req.query.g ? true : false,
-              editgame: req.query.g ? true : false,
-              locked: password ? true : false,
-            },
-            password: password ? password : false,
-            enums: {
-              GameMethod: GameMethod,
-              GameWhen: GameWhen,
-              RescheduleMode: RescheduleMode,
-              MonthlyType: MonthlyType,
-            },
-            guildConfig: guildConfig,
-            errors: {
-              other: null,
-              minPlayers: game && (isNaN(parseInt(game.minPlayers || "1")) || parseInt(game.minPlayers || "1") > parseInt(game.players || "0")),
-              maxPlayers: game && (isNaN(parseInt(game.players || "0")) || parseInt(game.minPlayers || "1") > parseInt(game.players || "0")),
-              dm:
-                game &&
-                !guildMembers.find((mem) => {
-                  return mem.user.tag === game.dm.tag.trim().replace("@", "") || mem.user.id === game.dm.id;
-                }),
-              reserved: game
-                ? game.reserved.filter((res) => {
-                    if (res.tag.trim().length === 0) return false;
-                    return !guildMembers.find((mem) => mem.user.tag === res.tag.trim() || mem.user.id === res.id);
-                  })
-                : [],
-            },
-          };
-
-          if (req.query.g) {
-            data = { ...data, ...game, _guild: null, _channel: null };
-          }
-
+        })
+        .catch((err) => {
           res.json({
-            status: "success",
-            token: req.session.api && req.session.api.access.access_token,
-            game: data,
+            status: "error",
+            token: req.session.api.access.access_token,
+            message: err.message || err,
+            code: 20,
           });
-        } else {
-          throw new Error("Discord server not found");
-        }
-      } else {
-        throw new Error("Discord server not specified");
-      }
+        });
     } catch (err) {
       res.json({
         status: "error",
-        token: req.session.api && req.session.api.access.access_token,
-        message: err.message || err,
-        redirect: "/",
-        code: 16,
+        token: req.session.api.access.access_token,
+        message: `FetchGameError: ${err.message || err}`,
+        code: 21,
       });
     }
   });
@@ -759,7 +784,7 @@ export default (options: APIRouteOptions) => {
       res.json({
         status: "error",
         token: req.session.api.access.access_token,
-        message: `SaveGuildConfigError: ${err.message || err}`,
+        message: `SaveGameError: ${err.message || err}`,
         code: 21,
       });
     }

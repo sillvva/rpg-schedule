@@ -211,6 +211,18 @@ export class Game implements GameModel {
     return this._guild;
   }
 
+  set discordGuild(guild: ShardGuild) {
+    this._guild = guild;
+    if (guild) this._guild.channels.forEach((c) => {
+      if (!this._channel && c.type === "text") {
+        this._channel = c;
+      }
+      if (c.id === this.c && c.type === "text") {
+        this._channel = c;
+      }
+    });
+  }
+
   private _channel: ShardChannel;
   get discordChannel() {
     return this._channel;
@@ -276,7 +288,7 @@ export class Game implements GameModel {
         aux.log(`Server (${game.s}) not found`);
         aux.log(JSON.stringify(this.data));
       }
-      
+
       const guildConfig = await GuildConfig.fetch(guild.id);
 
       if (guild && !channel) {

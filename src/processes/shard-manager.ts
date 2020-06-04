@@ -8,6 +8,8 @@ type DiscordProcessesOptions = {
 
 let ready = false;
 
+let guildData: any[] = [];
+
 const manager = new ShardingManager("./app/processes/discord.js", {
   // for ShardingManager options see:
   // https://discord.js.org/#/docs/main/v11/class/ShardingManager
@@ -27,6 +29,111 @@ const managerConnect = (options: DiscordProcessesOptions, readyCallback: () => {
       if (typeof message === "object") {
         if (message.type === "socket") {
           io().emit(message.name, message.data);
+        }
+        if (message.type === "shard") {
+          if (message.name === "guilds") {
+            const guilds: any[] = message.data;
+            guilds.forEach((guild, i) => {
+              const gdi = guildData.findIndex((g) => g.id === guild.id);
+              if (gdi >= 0) {
+                guildData[gdi] = guild;
+              } else {
+                guildData.push(guild);
+              }
+            });
+          } else if (message.name === "channelCreate") {
+            guildData = guildData.map((g) => {
+              if (g.id !== message.data.guild) return g;
+              g.channels.push(message.data);
+              g.channels.sort((a, b) => {
+                return a.rawPosition > b.rawPosition ? 1 : -1;
+              });
+              return g;
+            });
+          } else if (message.name === "channelUpdate") {
+            guildData = guildData.map((g) => {
+              if (g.id !== message.data.guild) return g;
+              g.channels = g.channels.map((c) => {
+                if (c.id === message.data.id) c = message.data;
+                return c;
+              });
+              return g;
+            });
+          } else if (message.name === "channelDelete") {
+            guildData = guildData.map((g) => {
+              const index = g.channels.findIndex((c) => c.id === message.data);
+              if (index < 0) return g;
+              g.channels.splice(index, 1);
+              return g;
+            });
+          } else if (message.name === "roleCreate") {
+            guildData = guildData.map((g) => {
+              if (g.id !== message.data.guild) return g;
+              g.roles.push(message.data);
+              g.roles.sort((a, b) => {
+                return a.name > b.name ? 1 : -1;
+              });
+              return g;
+            });
+          } else if (message.name === "roleUpdate") {
+            guildData = guildData.map((g) => {
+              if (g.id !== message.data.guild) return g;
+              g.roles = g.roles.map((c) => {
+                if (c.id === message.data.id) c = message.data;
+                return c;
+              });
+              g.roles.sort((a, b) => {
+                return a.name > b.name ? 1 : -1;
+              });
+              return g;
+            });
+          } else if (message.name === "roleDelete") {
+            guildData = guildData.map((g) => {
+              const index = g.roles.findIndex((c) => c.id === message.data);
+              if (index < 0) return g;
+              g.roles.splice(index, 1);
+              return g;
+            });
+          } else if (message.name === "guildMemberAdd") {
+            guildData = guildData.map((g) => {
+              if (g.id !== message.data.guildID) return g;
+              g.members.push(message.data);
+              g.users.push(message.user);
+              return g;
+            });
+          } else if (message.name === "guildMemberUpdate") {
+            guildData = guildData.map((g) => {
+              if (g.id !== message.data.guildID) return g;
+              g.members = g.members.map((c, i) => {
+                if (c.userID === message.data.userID) {
+                  g.memberRoles[i] = message.roles;
+                  g.users[i] = message.user;
+                  c = message.data;
+                }
+                return c;
+              });
+              return g;
+            });
+          } else if (message.name === "guildMemberRemove") {
+            guildData = guildData.map((g) => {
+              if (g.id !== message.data.guildID) return g;
+              const index = g.members.findIndex((c) => c.userID === message.data.userID);
+              if (index < 0) return g;
+              g.members.splice(index, 1);
+              g.users.splice(index, 1);
+              return g;
+            });
+          } else if (message.name === "userUpdate") {
+            guildData = guildData.map((g) => {
+              const index = g.users.findIndex((c) => c.id === message.data.id);
+              if (index < 0) return g;
+              g.users = g.users.map((c) => {
+                if (c.id === message.data.id) c = message.data;
+                return c;
+              });
+              return g;
+            });
+          }
         }
       }
     });
@@ -195,41 +302,22 @@ interface ShardFilters {
 }
 
 const shardGuilds = async (filters: ShardFilters = {}) => {
-  const guildIds = filters.guildIds;
-  const memberIds = filters.memberIds;
+  const guildIds = filters.guildIds || [];
+  const memberIds = filters.memberIds || [];
 
   try {
-    const query = `
-      this.guilds.cache
-      ${guildIds && guildIds.length > 0 ? `.filter(guild => ${JSON.stringify(guildIds)}.includes(guild.id))` : ``}
-      ${memberIds && memberIds.length > 0 ? `.filter(guild => guild.members.cache.find(member => ${JSON.stringify(memberIds)}.includes(member.id)))` : ``}
-      .map(guild => {
-        return {
-          id: guild.id,
-          name: guild.name,
-          icon: guild.icon,
-          shardID: guild.shardID,
-          ownerID: guild.ownerID,
-          members: guild.members.cache.array(),
-          users: guild.members.cache.array().map(m => m.user),
-          memberRoles: guild.members.cache.map(m => m.roles.cache),
-          channels: guild.channels.cache.array(),
-          roles: guild.roles.cache.array()
-        };
-      });
-    `;
-    // console.log(query);
-    const shards = await discordClient().broadcastEval(query);
-    // console.log(shards.length > 0 && shards.map(s => s.length));
-    const sIndex = shards.findIndex(s => s.length > 0);
-    const sI = sIndex >= 0 ? sIndex : 0;
-    // console.log(shards.length > 0 ? JSON.stringify(shards[sI][0] && shards[sI][0].members && shards[sI][0].members.length > 0 && shards[sI][0].members[0]) : null);
-    // console.log(shards.length > 0 ? JSON.stringify(shards[sI][0] && shards[sI][0].users && shards[sI][0].users.length > 0 && shards[sI][0].users[0]) : null);
+    const shards = [
+      guildData
+        .filter((guild) => guildIds.length === 0 || guildIds.includes(guild.id))
+        .filter((guild) => {
+          return guild.members.find((member) => memberIds.length === 0 || memberIds.includes(member.userID));
+        }),
+    ];
     const result = shards.reduce<ShardGuild[]>((iter, shard, shardIndex) => {
       return [
         ...iter,
         ...shard
-          .map(guild => {
+          .map((guild) => {
             const sGuild: ShardGuild = {
               id: guild.id,
               name: guild.name,
@@ -237,10 +325,10 @@ const shardGuilds = async (filters: ShardFilters = {}) => {
               shardID: guild.shardID,
               members: guild.members.map((member, memberIndex) => {
                 // console.log(guild.id, memberIndex, guild.users[memberIndex].id)
-                const user = guild.users[memberIndex];
+                const user = guild.users.find((u) => u.id === member.userID) || {};
                 return {
-                  id: user.id,
-                  nickname: member.nickname,
+                  id: member.userID,
+                  nickname: member.displayName,
                   user: {
                     id: user.id,
                     username: user.username,
@@ -276,7 +364,7 @@ const shardGuilds = async (filters: ShardFilters = {}) => {
                   },
                 };
               }),
-              channels: guild.channels.map(channel => {
+              channels: guild.channels.map((channel) => {
                 const sChannel: ShardChannel = {
                   id: channel.id,
                   name: channel.name,
@@ -371,7 +459,7 @@ const shardGuilds = async (filters: ShardFilters = {}) => {
     }, []);
     return result;
   } catch (err) {
-    console.log("ShardGuildsError:", err.message);
+    console.log("ShardGuildsError:", err);
     return [];
   }
 };
