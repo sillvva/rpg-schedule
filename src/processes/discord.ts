@@ -39,19 +39,20 @@ client.on("ready", async () => {
   if (!isReady) {
     isReady = true;
 
+    if (!connected) connected = await db.database.connect();
+    if (connected) {
+      aux.log("Database connected!");
+    } else return;
+
     // Send updated server information to the API
     sendGuildsToAPI(true);
     setInterval(() => {
-      sendGuildsToAPI(true);
-    }, 30 * 60 * 1000);
+      sendGuildsToAPI();
+    }, 10 * 60 * 1000);
 
     if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
-      if (!connected) connected = await db.database.connect();
-      if (connected) {
-        aux.log("Database connected!");
-      } else return;
-
       refreshMessages();
+
       // Once per hour, prune games from the database that are more than 48 hours old
       pruneOldGames();
       setInterval(() => {
@@ -1331,7 +1332,7 @@ const postReminders = async () => {
 
         try {
           game.reminded = true;
-          const result = await game.save(true);
+          const result = await game.save({ force: true });
           if (!result.modified) return;
         } catch (err) {
           aux.log("RemindedSaveError", game._id, err);
@@ -1409,29 +1410,40 @@ const postReminders = async () => {
 };
 
 const apiGuildIds: any = {};
+let nextShard = 0;
 
 const sendGuildsToAPI = (all: boolean = false) => {
   const guilds = client.guilds.cache.array();
-  client.shard.send({
-    type: "shard",
-    name: "guilds",
-    data: guilds
-      .filter((guild) => all || !apiGuildIds[guild.shardID] || !apiGuildIds[guild.shardID].includes(guild.id))
-      .map((guild) => {
-        if (!apiGuildIds[guild.shardID]) apiGuildIds[guild.shardID] = [];
-        if (!apiGuildIds[guild.shardID].includes(guild.id)) apiGuildIds[guild.shardID].push(guild.id);
-        return {
-          id: guild.id,
-          name: guild.name,
-          icon: guild.icon,
-          shardID: guild.shardID,
-          ownerID: guild.ownerID,
-          members: guild.members.cache.array(),
-          users: guild.members.cache.array().map((m) => m.user),
-          memberRoles: guild.members.cache.map((m) => m.roles.cache),
-          channels: guild.channels.cache.array(),
-          roles: guild.roles.cache.array(),
-        };
-      }),
-  });
+  const fGuild = guilds[0];
+  if (all || fGuild) {
+    if (all || fGuild.shardID === nextShard) {
+      aux.log("Refreshing data for shard", all ? "all shards" : nextShard);
+      client.shard.send({
+        type: "shard",
+        name: "guilds",
+        data: guilds
+          .filter((guild) => all || !apiGuildIds[guild.shardID] || !apiGuildIds[guild.shardID].includes(guild.id))
+          .map((guild) => {
+            if (!apiGuildIds[guild.shardID]) apiGuildIds[guild.shardID] = [];
+            if (!apiGuildIds[guild.shardID].includes(guild.id)) apiGuildIds[guild.shardID].push(guild.id);
+            return {
+              id: guild.id,
+              name: guild.name,
+              icon: guild.icon,
+              shardID: guild.shardID,
+              ownerID: guild.ownerID,
+              members: guild.members.cache.array(),
+              users: guild.members.cache.array().map((m) => m.user),
+              memberRoles: guild.members.cache.map((m) => m.roles.cache),
+              channels: guild.channels.cache.array(),
+              roles: guild.roles.cache.array(),
+            };
+          }),
+      });
+    }
+    if (!all) {
+      nextShard++;
+      if (nextShard === client.shard.count) nextShard = 0;
+    }
+  }
 };

@@ -107,6 +107,10 @@ interface GameSaveData {
   modified: boolean;
 }
 
+interface GameSaveOptions {
+  force?: boolean;
+}
+
 export enum GameReminder {
   NO_REMINDER = "0",
   MINUTES_15 = "15",
@@ -213,14 +217,15 @@ export class Game implements GameModel {
 
   set discordGuild(guild: ShardGuild) {
     this._guild = guild;
-    if (guild) this._guild.channels.forEach((c) => {
-      if (!this._channel && c.type === "text") {
-        this._channel = c;
-      }
-      if (c.id === this.c && c.type === "text") {
-        this._channel = c;
-      }
-    });
+    if (guild)
+      this._guild.channels.forEach((c) => {
+        if (!this._channel && c.type === "text") {
+          this._channel = c;
+        }
+        if (c.id === this.c && c.type === "text") {
+          this._channel = c;
+        }
+      });
   }
 
   private _channel: ShardChannel;
@@ -272,7 +277,7 @@ export class Game implements GameModel {
     };
   }
 
-  async save(force: boolean = false) {
+  async save(options?: GameSaveOptions) {
     if (!connection()) {
       aux.log("No database connection");
       return null;
@@ -328,7 +333,7 @@ export class Game implements GameModel {
         var gmTag = dmmember.user.toString();
         if (guildConfig.embeds === false) dm = gmTag;
         else dm = dmmember.nickname || dm;
-      } else if (!game._id && !force) {
+      } else if (!game._id && !options.force) {
         game.dm = game.author;
         dm = authorParts[0];
         dmmember = {
@@ -493,24 +498,7 @@ export class Game implements GameModel {
             }
           }
 
-          if (message) {
-            try {
-              if (game.method === GameMethod.AUTOMATED) await ShardManager.shardMessageReact(guild.id, channel.id, message.id, guildConfig.emojiAdd);
-            } catch (err) {
-              if (!aux.isEmoji(guildConfig.emojiAdd)) {
-                guildConfig.emojiAdd = "➕";
-                if (game.method === GameMethod.AUTOMATED) await ShardManager.shardMessageReact(guild.id, channel.id, message.id, guildConfig.emojiAdd);
-              }
-            }
-            try {
-              if (game.method === GameMethod.AUTOMATED && guildConfig.dropOut) ShardManager.shardMessageReact(guild.id, channel.id, message.id, guildConfig.emojiRemove);
-            } catch (err) {
-              if (!aux.isEmoji(guildConfig.emojiRemove)) {
-                guildConfig.emojiRemove = "➖";
-                if (game.method === GameMethod.AUTOMATED && guildConfig.dropOut) ShardManager.shardMessageReact(guild.id, channel.id, message.id, guildConfig.emojiRemove);
-              }
-            }
-          }
+          this.addReactions(message, guildConfig);
 
           prev._id = prev._id.toString();
           game._id = game._id.toString();
@@ -540,7 +528,6 @@ export class Game implements GameModel {
         game.updatedTimestamp = new Date().getTime();
         const inserted = await dbCollection.insertOne(game);
         let message: Message;
-        let gcUpdated = false;
 
         try {
           if (guildConfig.embeds) {
@@ -550,31 +537,9 @@ export class Game implements GameModel {
 
           message = <Message>await channel.send(msg, embed);
 
-          try {
-            if (game.method === GameMethod.AUTOMATED) await ShardManager.shardMessageReact(guild.id, channel.id, message.id, guildConfig.emojiAdd);
-          } catch (err) {
-            if (!aux.isEmoji(guildConfig.emojiAdd)) {
-              gcUpdated = true;
-              guildConfig.emojiAdd = "➕";
-              if (game.method === GameMethod.AUTOMATED) await ShardManager.shardMessageReact(guild.id, channel.id, message.id, guildConfig.emojiAdd);
-            }
-          }
-          try {
-            if (game.method === GameMethod.AUTOMATED && guildConfig.dropOut) await ShardManager.shardMessageReact(guild.id, channel.id, message.id, guildConfig.emojiRemove);
-          } catch (err) {
-            if (!aux.isEmoji(guildConfig.emojiRemove)) {
-              gcUpdated = true;
-              guildConfig.emojiRemove = "➖";
-              if (game.method === GameMethod.AUTOMATED && guildConfig.dropOut) await ShardManager.shardMessageReact(guild.id, channel.id, message.id, guildConfig.emojiRemove);
-            }
-          }
+          this.addReactions(message, guildConfig);
         } catch (err) {
           aux.log("InsertGameError:", game.s, err);
-        }
-
-        if (gcUpdated) {
-          guildConfig.save(guildConfig.data);
-          guildConfig.updateReactions(this.client);
         }
 
         let updated;
@@ -616,7 +581,7 @@ export class Game implements GameModel {
     } catch (err) {
       aux.log("GameSaveError", game._id, err);
 
-      if (game._id && force) {
+      if (game._id && options.force) {
         const dbCollection = connection().collection(collection);
         await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: game });
       }
@@ -696,6 +661,57 @@ export class Game implements GameModel {
     return await connection().collection(collection).updateMany(query, update, {
       upsert: false,
     });
+  }
+
+  async addReactions(message: Message, guildConfig: GuildConfig) {
+    try {
+      let gcChanged = false;
+      const game = cloneDeep(this.data);
+      const guild = this.discordGuild;
+      const channel = this.discordChannel;
+
+      if (message) {
+        try {
+          if (game.method === GameMethod.AUTOMATED) {
+            if (this.client) message.react(guildConfig.emojiAdd);
+            else await ShardManager.shardMessageReact(guild.id, channel.id, message.id, guildConfig.emojiAdd);
+          }
+        } catch (err) {
+          if (!aux.isEmoji(guildConfig.emojiAdd)) {
+            guildConfig.emojiAdd = "➕";
+            gcChanged = true;
+            if (game.method === GameMethod.AUTOMATED) {
+              if (this.client) message.react(guildConfig.emojiAdd);
+              else await ShardManager.shardMessageReact(guild.id, channel.id, message.id, guildConfig.emojiAdd);
+            }
+          }
+        }
+        if (guildConfig.dropOut) {
+          try {
+            if (game.method === GameMethod.AUTOMATED) {
+              if (this.client) message.react(guildConfig.emojiRemove);
+              else await ShardManager.shardMessageReact(guild.id, channel.id, message.id, guildConfig.emojiRemove);
+            }
+          } catch (err) {
+            if (!aux.isEmoji(guildConfig.emojiRemove)) {
+              guildConfig.emojiRemove = "➖";
+              gcChanged = true;
+              if (game.method === GameMethod.AUTOMATED) {
+                if (this.client) message.react(guildConfig.emojiRemove);
+                else await ShardManager.shardMessageReact(guild.id, channel.id, message.id, guildConfig.emojiRemove);
+              }
+            }
+          }
+        }
+      }
+
+      if (gcChanged) {
+        guildConfig.save(guildConfig.data);
+        guildConfig.updateReactions(this.client);
+      }
+    } catch (err) {
+      aux.log(err);
+    }
   }
 
   public getWeekdays() {
