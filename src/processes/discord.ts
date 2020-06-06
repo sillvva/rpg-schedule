@@ -46,7 +46,7 @@ client.on("ready", async () => {
     } else return;
 
     // Send updated server information to the API
-    sendGuildsToAPI(true);
+    sendGuildsToAPI();
     setInterval(() => {
       sendGuildsToAPI();
     }, 10 * 60 * 1000);
@@ -745,54 +745,58 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
   });
 
   client.on("guildMemberAdd", async (member) => {
-    if (member.user.id === client.user.id) {
-      sendGuildsToAPI();
-    } else {
-      client.shard.send({
-        type: "shard",
-        name: "guildMemberAdd",
-        data: member,
-        user: member.user,
-      });
-    }
+    client.shard.send({
+      type: "shard",
+      name: "guildMemberAdd",
+      data: member,
+      user: {
+        id: member.user.id,
+        username: member.user.username,
+        tag: member.user.tag,
+        discriminator: member.user.discriminator,
+        avatar: member.user.avatar,
+      },
+      roles: member.roles.cache.array().map((r) => ({
+        id: r.id,
+        name: r.name,
+        permissions: r.permissions,
+      })),
+    });
   });
 
   client.on("guildMemberUpdate", async (oldR, member) => {
-    if (member.user.id === client.user.id) {
-      sendGuildsToAPI();
-    } else {
-      client.shard.send({
-        type: "shard",
-        name: "guildMemberUpdate",
-        data: member,
-        user: member.user,
-        roles: member.roles.cache.array(),
-      });
-    }
+    client.shard.send({
+      type: "shard",
+      name: "guildMemberUpdate",
+      data: member,
+      roles: member.roles.cache.array().map((r) => ({
+        id: r.id,
+        name: r.name,
+        permissions: r.permissions,
+      })),
+    });
   });
 
   client.on("guildMemberRemove", async (member) => {
-    if (member.user.id === client.user.id) {
-      client.shard.send({
-        type: "shard",
-        name: "guildDelete",
-        data: member.guild.id,
-      });
-    } else {
-      client.shard.send({
-        type: "shard",
-        name: "guildMemberRemove",
-        data: member,
-        user: member.user,
-      });
-    }
+    client.shard.send({
+      type: "shard",
+      name: "guildMemberRemove",
+      data: member,
+      user: member.user,
+    });
   });
 
   client.on("userUpdate", async (oldUser: User, newUser: User) => {
     client.shard.send({
       type: "shard",
       name: "userUpdate",
-      data: newUser,
+      data: {
+        id: newUser.id,
+        username: newUser.username,
+        tag: newUser.tag,
+        discriminator: newUser.discriminator,
+        avatar: newUser.avatar,
+      },
     });
 
     if (oldUser.tag != newUser.tag) {
@@ -853,10 +857,20 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
   });
 
   client.on("guildDelete", async (guild) => {
+    aux.log(`Bot has left ${guild.name}!`);
     client.shard.send({
       type: "shard",
       name: "guildDelete",
       data: guild.id,
+    });
+  });
+
+  client.on("guildCreate", async (guild) => {
+    aux.log(`Bot has joined ${guild.name}!`);
+    client.shard.send({
+      type: "shard",
+      name: "guilds",
+      data: [guild].map(guildMap),
     });
   });
 
@@ -1416,40 +1430,45 @@ const postReminders = async () => {
 };
 
 const apiGuildIds: any = {};
-let nextShard = 0;
 
-const sendGuildsToAPI = (all: boolean = false) => {
+const sendGuildsToAPI = () => {
   const guilds = client.guilds.cache.array();
-  const fGuild = guilds[0];
-  if (all || fGuild) {
-    if (all || fGuild.shardID === nextShard) {
-      aux.log("Refreshing data for shard", all ? "all shards" : nextShard);
-      client.shard.send({
-        type: "shard",
-        name: "guilds",
-        data: guilds
-          .filter((guild) => all || !apiGuildIds[guild.shardID] || !apiGuildIds[guild.shardID].includes(guild.id))
-          .map((guild) => {
-            if (!apiGuildIds[guild.shardID]) apiGuildIds[guild.shardID] = [];
-            if (!apiGuildIds[guild.shardID].includes(guild.id)) apiGuildIds[guild.shardID].push(guild.id);
-            return {
-              id: guild.id,
-              name: guild.name,
-              icon: guild.icon,
-              shardID: guild.shardID,
-              ownerID: guild.ownerID,
-              members: guild.members.cache.array(),
-              users: guild.members.cache.array().map((m) => m.user),
-              memberRoles: guild.members.cache.map((m) => m.roles.cache),
-              channels: guild.channels.cache.array(),
-              roles: guild.roles.cache.array(),
-            };
-          }),
-      });
-    }
-    if (!all) {
-      nextShard++;
-      if (nextShard === client.shard.count) nextShard = 0;
-    }
+  const newGuilds = guilds.filter((guild) => !apiGuildIds[guild.shardID] || !apiGuildIds[guild.shardID].includes(guild.id));
+  if (newGuilds.length > 0) {
+    aux.log("Refreshing data for", newGuilds.length, "guilds");
+    client.shard.send({
+      type: "shard",
+      name: "guilds",
+      data: guilds.filter((guild) => !apiGuildIds[guild.shardID] || !apiGuildIds[guild.shardID].includes(guild.id)).map(guildMap),
+    });
   }
+};
+
+const guildMap = (guild: Guild) => {
+  if (!apiGuildIds[guild.shardID]) apiGuildIds[guild.shardID] = [];
+  if (!apiGuildIds[guild.shardID].includes(guild.id)) apiGuildIds[guild.shardID].push(guild.id);
+  return {
+    id: guild.id,
+    name: guild.name,
+    icon: guild.icon,
+    shardID: guild.shardID,
+    ownerID: guild.ownerID,
+    members: guild.members.cache.array(),
+    users: guild.members.cache.map((m) => ({
+      id: m.user.id,
+      username: m.user.username,
+      tag: m.user.tag,
+      discriminator: m.user.discriminator,
+      avatar: m.user.avatar,
+    })),
+    memberRoles: guild.members.cache.map((m) =>
+      m.roles.cache.map((r) => ({
+        id: r.id,
+        name: r.name,
+        permissions: r.permissions,
+      }))
+    ),
+    channels: guild.channels.cache.array(),
+    roles: guild.roles.cache.array(),
+  };
 };

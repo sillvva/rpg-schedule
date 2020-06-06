@@ -25,7 +25,7 @@ app.use(cookieParser());
 app.use(async (req, res, next) => {
   res.set("Access-Control-Allow-Origin", process.env.HOST);
   res.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.set("Access-Control-Allow-Headers", "authorization, accept, content-type, origin, x-requested-with, host, origin, referer");
+  res.set("Access-Control-Allow-Headers", "authorization, accept, content-type, origin, x-requested-with, host, origin, referer, locale");
   next();
 });
 

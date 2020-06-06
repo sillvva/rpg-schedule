@@ -99,6 +99,7 @@ const managerConnect = (options: DiscordProcessesOptions, readyCallback: () => {
               if (g.id !== message.data.guildID) return g;
               g.members.push(message.data);
               g.users.push(message.user);
+              g.memberRoles.push(message.roles);
               return g;
             });
           } else if (message.name === "guildMemberUpdate") {
@@ -107,7 +108,6 @@ const managerConnect = (options: DiscordProcessesOptions, readyCallback: () => {
               g.members = g.members.map((c, i) => {
                 if (c.userID === message.data.userID) {
                   g.memberRoles[i] = message.roles;
-                  g.users[i] = message.user;
                   c = message.data;
                 }
                 return c;
@@ -120,6 +120,7 @@ const managerConnect = (options: DiscordProcessesOptions, readyCallback: () => {
               const index = g.members.findIndex((c) => c.userID === message.data.userID);
               if (index < 0) return g;
               g.members.splice(index, 1);
+              g.memberRoles.splice(index, 1);
               g.users.splice(index, 1);
               return g;
             });
@@ -335,7 +336,6 @@ const shardGuilds = async (filters: ShardFilters = {}) => {
               icon: guild.icon,
               shardID: guild.shardID,
               members: guild.members.map((member, memberIndex) => {
-                // console.log(guild.id, memberIndex, guild.users[memberIndex].id)
                 const user = guild.users.find((u) => u.id === member.userID) || {};
                 return {
                   id: member.userID,

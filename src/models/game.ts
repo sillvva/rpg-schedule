@@ -560,7 +560,7 @@ export class Game implements GameModel {
             }
           }
         } else {
-          aux.log(`GameMessageNotPostedError:\n`, 's', game.s, '_id', game._id);
+          aux.log(`GameMessageNotPostedError:\n`, "s", game.s, "_id", game._id);
         }
 
         if (this.client)
@@ -1031,8 +1031,7 @@ export class Game implements GameModel {
     const reserved = list.split(/\r?\n/);
     reserved.forEach((r) => {
       const rsvp: RSVP = { tag: r.trim() };
-      const member = guildMembers.find((m) => m.user.tag === r.trim());
-      // console.log("url", !!member, JSON.stringify(r.trim()), JSON.stringify(guildMembers.map(m => m.user.tag)));
+      const member = guildMembers.find((m) => m.user.tag === r.trim().replace("@", "") || m.user.username === r.trim().replace("@", ""));
       if (member) {
         rsvp.id = member.user.id;
       }

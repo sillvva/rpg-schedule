@@ -42,7 +42,7 @@ export default (options: APIRouteOptions) => {
       res.locals.url = req.originalUrl;
       res.locals.env = process.env;
 
-      moment.locale(req.app.locals.lang.code);
+      moment.locale("en");
 
       next();
     } catch (err) {
@@ -182,7 +182,7 @@ export default (options: APIRouteOptions) => {
 
   router.use("/auth-api", async (req, res, next) => {
     const langs = req.app.locals.langs;
-    const selectedLang = req.cookies.lang && langs.map((l) => l.code).includes(req.cookies.lang) ? req.cookies.lang : "en";
+    const selectedLang = req.headers.locale && langs.map((l) => l.code).includes(req.headers.locale) ? req.headers.locale : "en";
 
     req.app.locals.ip = req.ip || req.headers["x-forwarded-for"] || req.connection.remoteAddress;
     req.app.locals.lang = merge(cloneDeep(langs.find((lang: any) => lang.code === "en")), cloneDeep(langs.find((lang: any) => lang.code === selectedLang)));
@@ -191,7 +191,7 @@ export default (options: APIRouteOptions) => {
     res.locals.url = req.originalUrl;
     res.locals.env = process.env;
 
-    moment.locale(req.app.locals.lang.code);
+    moment.locale("en");
 
     const bearer = (req.headers.authorization || "").replace("Bearer ", "").trim();
 
@@ -248,7 +248,7 @@ export default (options: APIRouteOptions) => {
             token: req.session.api.access.access_token,
             account: result.account,
             user: userSettings.data,
-            version: apiVersion
+            version: apiVersion,
           });
         })
         .catch((err) => {
@@ -256,6 +256,7 @@ export default (options: APIRouteOptions) => {
             status: "error",
             token: req.session.api.access.access_token,
             message: `UserAuthError`,
+            reauthenticate: true,
             code: 8,
           });
         });
@@ -263,8 +264,9 @@ export default (options: APIRouteOptions) => {
       res.json({
         status: "error",
         token: req.session.api.access.access_token,
-        code: 9,
         message: `UserAuthError`,
+        reauthenticate: true,
+        code: 9,
       });
     }
   });
@@ -407,7 +409,7 @@ export default (options: APIRouteOptions) => {
       fetchAccount(req.session.api.access, {
         client: client,
         ip: req.app.locals.ip,
-        guilds: true
+        guilds: true,
       })
         .then(async (result: any) => {
           try {
@@ -564,7 +566,7 @@ export default (options: APIRouteOptions) => {
       fetchAccount(req.session.api.access, {
         client: client,
         ip: req.app.locals.ip,
-        guilds: true
+        guilds: true,
       })
         .then(async (result: any) => {
           try {
@@ -793,26 +795,43 @@ export default (options: APIRouteOptions) => {
     }
   });
 
-  router.get("/api/delete-game", async (req, res, next) => {
-    try {
-      if (req.query.g) {
-        const game = await Game.fetch(req.query.g);
-        if (!game) throw new Error("Game not found");
-        game.delete({ sendWS: false }).then((response) => {
+  router.delete("/auth-api/game", async (req, res, next) => {
+    fetchAccount(req.session.api.access, {
+      client: client,
+      ip: req.app.locals.ip,
+    })
+      .then(async (result: any) => {
+        try {
+          if (req.query.g) {
+            const game = await Game.fetch(req.query.g);
+            if (!game) throw new Error("Game not found");
+            game.delete({ sendWS: false }).then((response) => {
+              res.json({
+                status: "success",
+                token: req.session.api.access.access_token,
+                gameId: req.query.g,
+              });
+            });
+          } else {
+            throw new Error("Game not found");
+          }
+        } catch (err) {
           res.json({
-            status: "success",
+            status: "error",
+            token: req.session.api.access.access_token,
+            message: `DeleteGameError`,
+            code: 30,
           });
+        }
+      })
+      .catch((err) => {
+        res.json({
+          status: "error",
+          token: req.session.api.access.access_token,
+          message: `UserAuthError`,
+          code: 31,
         });
-      } else {
-        throw new Error("Game not found");
-      }
-    } catch (err) {
-      res.json({
-        status: "error",
-        message: err.message || err,
       });
-      res.render("error", { message: "routes/game.ts:2:<br />" + err });
-    }
   });
 
   router.post("/auth-api/rsvp", async (req, res, next) => {
@@ -1074,7 +1093,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
                 config: new GuildConfig({ guild: guild.id }),
                 games: [],
               };
-              // console.log(guild.channels.filter(c => c instanceof TextChannel))
+
               guild.members.forEach((member) => {
                 if (member.id === id) {
                   guildInfo.member = member;
@@ -1120,7 +1139,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
               }
 
               if (member) {
-                guild.userRoles = guild.roles.filter((r) => member.roles.find((mr) => mr.id === r.id)).map((r) => r.name);
+                guild.userRoles = member.roles.map((r) => r.name);
                 guild.isAdmin = !!(
                   member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) ||
                   member.roles.find((r) => r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim())
@@ -1253,28 +1272,25 @@ const fetchAccount = (token: any, options: AccountOptions) => {
               });
             }
 
-            account.guilds = account.guilds.map((guild) => {
-              guild.games.sort((a, b) => {
-                return a.timestamp < b.timestamp ? -1 : 1;
-              });
-              return guild;
-            });
-
-            if (options.page === GamesPages.Upcoming || options.page === GamesPages.MyGames) {
-              account.guilds.sort((a, b) => {
+            account.guilds = account.guilds
+              .map((guild) => {
+                guild.games.sort((a, b) => {
+                  return a.timestamp < b.timestamp ? -1 : 1;
+                });
+                return guild;
+              })
+              .sort((a, b) => {
                 if (a.games.length === 0 && b.games.length === 0) return a.name < b.name ? -1 : 1;
+                if (a.games.length > 0 && b.games.length > 0) return a.name < b.name ? -1 : 1;
                 if (a.games.length === 0) return 1;
                 if (b.games.length === 0) return -1;
-
-                return a.games[0].timestamp < b.games[0].timestamp ? -1 : 1;
               });
-            }
           }
 
           return resolve({
             status: "success",
             account: account,
-            sGuilds: sGuilds
+            sGuilds: sGuilds,
           });
         }
         throw new Error(`OAuth: ${error}`);
