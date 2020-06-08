@@ -182,6 +182,8 @@ export interface ShardChannel {
   id: string;
   name: string;
   type: string;
+  parentID: string;
+  members: string[];
   messages: {
     fetch: (messageId: string) => Promise<Message>;
   };

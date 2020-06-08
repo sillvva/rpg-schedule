@@ -277,7 +277,7 @@ export class Game implements GameModel {
     };
   }
 
-  async save(options?: GameSaveOptions) {
+  async save(options: GameSaveOptions = {}) {
     if (!connection()) {
       aux.log("No database connection");
       return null;
@@ -360,15 +360,20 @@ export class Game implements GameModel {
       let reserved: string[] = [];
       let waitlist: string[] = [];
       let rMentions: string[] = [];
-      game.reserved.forEach((rsvp, i) => {
+      game.reserved.map((rsvp) => {
         if (rsvp.tag.trim().length === 0 && !rsvp.id) return;
-        let member = guildMembers.find((mem) => mem.user.tag.trim() === rsvp.tag.trim() || mem.user.id === rsvp.id);
+        let member = guildMembers.find(
+          (mem) => mem.user.tag.trim() === rsvp.tag.trim().replace("@", "") || mem.user.id == rsvp.tag.trim().replace(/[<@>]/g, "") || mem.user.id === rsvp.id
+        );
 
         let name = rsvp.tag.trim().replace(/\#\d{4}/, "");
         if (member) {
           if (guildConfig.embeds === false || guildConfig.embedMentions) name = member.user.toString();
           else name = member.nickname || member.user.username;
-          rsvp.tag = member.user.tag;
+          rsvp = {
+            id: member.user.id,
+            tag: member.user.tag,
+          };
         }
 
         if (reserved.length < parseInt(game.players)) {
@@ -377,6 +382,8 @@ export class Game implements GameModel {
         } else {
           waitlist.push(reserved.length + waitlist.length + 1 + ". " + name);
         }
+
+        return rsvp;
       });
 
       const eventTimes = aux.parseEventTimes(game, {

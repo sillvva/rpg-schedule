@@ -1240,13 +1240,10 @@ const fetchAccount = (token: any, options: AccountOptions) => {
               const games: any[] = [];
               for (let i = 0; i < fGames.length; i++) {
                 const game = fGames[i];
-                // const dc = game.discordChannel;
-                // if (dc) {
-                // const perm = await dc.permissionsFor(id, Permissions.FLAGS.VIEW_CHANNEL);
-                // if (perm) {
-                games.push(game);
-                // }
-                // }
+                const dc = game.discordChannel;
+                if (dc && dc.members.includes(id)) {
+                  games.push(game);
+                }
               }
               games.forEach(async (game) => {
                 if (!game.discordGuild) return;

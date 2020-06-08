@@ -1,4 +1,4 @@
-import { TextChannel, Client, Message, User, GuildChannel, MessageEmbed, Permissions, Guild, Channel } from "discord.js";
+import { TextChannel, Client, Message, User, GuildChannel, MessageEmbed, Permissions, Guild } from "discord.js";
 import { DeleteWriteOpResultObject, FilterQuery, ObjectId, UpdateWriteOpResult } from "mongodb";
 
 import { GuildConfig, GuildConfigModel } from "../models/guild-config";
@@ -40,16 +40,13 @@ client.on("ready", async () => {
   if (!isReady) {
     isReady = true;
 
-    if (!connected) connected = await db.database.connect();
-    if (connected) {
-      aux.log("Database connected!");
-    } else return;
-
-    // Send updated server information to the API
-    sendGuildsToAPI();
-    setInterval(() => {
+    if (process.env.DISCORD_API_LOGIC.toLowerCase() === "true") {
+      // Send updated server information to the API
       sendGuildsToAPI();
-    }, 10 * 60 * 1000);
+      setInterval(() => {
+        sendGuildsToAPI();
+      }, 10 * 60 * 1000);
+    }
 
     if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
       refreshMessages();
@@ -74,6 +71,219 @@ client.on("ready", async () => {
     }
   }
 });
+
+if (process.env.DISCORD_API_LOGIC.toLowerCase() === "true") {
+  client.on("channelCreate", async (newC: any) => {
+    if (newC.type !== "text") return;
+    const channel: TextChannel = newC;
+    client.shard.send({
+      type: "shard",
+      name: "channelCreate",
+      data: channel,
+    });
+  });
+
+  client.on("channelUpdate", async (oldC, newC: any) => {
+    if (newC.type !== "text") return;
+    const channel: TextChannel = newC;
+    client.shard.send({
+      type: "shard",
+      name: "channelUpdate",
+      data: {
+        id: channel.id,
+        type: channel.type,
+        name: channel.name,
+        parentID: channel.parentID,
+        members: channel.members.map(m => m.user.id)
+      },
+    });
+  });
+
+  client.on("channelDelete", async (channel: GuildChannel) => {
+    client.shard.send({
+      type: "shard",
+      name: "channelDelete",
+      data: channel.id,
+    });
+
+    const channelId = channel.id;
+    const guildId = channel.guild.id;
+    const guildConfig = await GuildConfig.fetch(guildId);
+    if (guildConfig.channels.find((c) => c.channelId === channelId)) {
+      guildConfig.channel.splice(
+        guildConfig.channel.findIndex((c) => c.channelId === channelId),
+        1
+      );
+      await guildConfig.save();
+
+      const games = await Game.fetchAllBy(
+        {
+          s: guildId,
+          c: channelId,
+        },
+        client
+      );
+
+      games.forEach(async (game) => {
+        await game.delete();
+      });
+    }
+  });
+
+  client.on("roleCreate", async (role) => {
+    client.shard.send({
+      type: "shard",
+      name: "roleCreate",
+      data: role,
+    });
+  });
+
+  client.on("roleUpdate", async (oldR, role) => {
+    client.shard.send({
+      type: "shard",
+      name: "roleUpdate",
+      data: role,
+    });
+  });
+
+  client.on("roleDelete", async (role) => {
+    client.shard.send({
+      type: "shard",
+      name: "roleDelete",
+      data: role.id,
+    });
+  });
+
+  client.on("guildMemberAdd", async (member) => {
+    client.shard.send({
+      type: "shard",
+      name: "guildMemberAdd",
+      data: member,
+      user: {
+        id: member.user.id,
+        username: member.user.username,
+        tag: member.user.tag,
+        discriminator: member.user.discriminator,
+        avatar: member.user.avatar,
+      },
+      roles: member.roles.cache.array().map((r) => ({
+        id: r.id,
+        name: r.name,
+        permissions: r.permissions,
+      })),
+    });
+  });
+
+  client.on("guildMemberUpdate", async (oldR, member) => {
+    client.shard.send({
+      type: "shard",
+      name: "guildMemberUpdate",
+      data: member,
+      roles: member.roles.cache.array().map((r) => ({
+        id: r.id,
+        name: r.name,
+        permissions: r.permissions,
+      })),
+    });
+  });
+
+  client.on("guildMemberRemove", async (member) => {
+    client.shard.send({
+      type: "shard",
+      name: "guildMemberRemove",
+      data: member,
+      user: member.user,
+    });
+  });
+
+  client.on("userUpdate", async (oldUser: User, newUser: User) => {
+    client.shard.send({
+      type: "shard",
+      name: "userUpdate",
+      data: {
+        id: newUser.id,
+        username: newUser.username,
+        tag: newUser.tag,
+        discriminator: newUser.discriminator,
+        avatar: newUser.avatar,
+      },
+    });
+
+    if (process.env.DISCORD_LOGIC.toLowerCase() === "true" && oldUser.tag != newUser.tag) {
+      const games = await Game.fetchAllBy(
+        {
+          $or: [
+            { "author.tag": oldUser.tag },
+            { "author.id": oldUser.id },
+            { "dm.tag": oldUser.tag },
+            { "dm.id": oldUser.id },
+            { dm: oldUser.tag },
+            {
+              reserved: {
+                $elemMatch: {
+                  tag: oldUser.tag,
+                },
+              },
+            },
+            {
+              reserved: {
+                $elemMatch: {
+                  id: oldUser.id,
+                },
+              },
+            },
+            {
+              reserved: {
+                $regex: oldUser.tag.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&"),
+              },
+            },
+          ],
+        },
+        client
+      );
+      games.forEach(async (game) => {
+        if (game.author.tag === oldUser.tag) game.author.tag = newUser.tag;
+        if (game.author.tag === oldUser.tag) game.author.id = newUser.id;
+        if (game.dm.tag === oldUser.tag) game.dm.tag = newUser.tag;
+        if (game.dm.tag === oldUser.tag) game.dm.id = newUser.id;
+        if (game.reserved.find((r) => r.tag === oldUser.tag || r.id === oldUser.id)) {
+          game.reserved = game.reserved.map((r) => {
+            if (r.tag === oldUser.tag) r.tag = newUser.tag;
+            if (r.id === oldUser.id) r.id = newUser.id;
+            return r;
+          });
+        }
+        game.save();
+      });
+    }
+  });
+
+  client.on("guildUpdate", async (oldG, newG) => {
+    client.shard.send({
+      type: "shard",
+      name: "guildUpdate",
+      data: newG,
+    });
+  });
+
+  client.on("guildDelete", async (guild) => {
+    aux.log(`Bot has left ${guild.name}!`);
+    client.shard.send({
+      type: "shard",
+      name: "guildDelete",
+      data: guild.id,
+    });
+  });
+
+  client.on("guildCreate", async (guild) => {
+    aux.log(`Bot has joined ${guild.name}!`);
+    client.shard.send({
+      type: "shard",
+      name: "guilds",
+      data: [guild].map(guildMap),
+    });
+  });
+}
 
 if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
   /**
@@ -457,18 +667,18 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
               };
               if (colors[color]) {
                 color = colors[color];
-              } else if (!color.match(/[0-9a-f]{3}|[0-9a-f]{6}/i)) {
+              } else if (!color.match(/[0-9a-f]{6}|[0-9a-f]{3}/i)) {
                 (<TextChannel>message.channel).send(lang.config.desc.EMBED_COLOR_ERROR);
                 return;
               }
               const save: GuildConfigModel = {};
-              save.embedColor = "#" + color.match(/[0-9a-f]{3}|[0-9a-f]{6}/i)[0];
+              save.embedColor = "#" + color.match(/[0-9a-f]{6}|[0-9a-f]{3}/i)[0];
               guildConfig
                 .save(save)
                 .then((result) => {
                   let embed = new MessageEmbed()
-                    .setColor("#" + color.match(/[0-9a-f]{3}|[0-9a-f]{6}/i)[0])
-                    .setDescription(`${lang.config.EMBED_COLOR_SET} \`#${color.match(/[0-9a-f]{3}|[0-9a-f]{6}/i)[0]}\`.`);
+                    .setColor("#" + color.match(/[0-9a-f]{6}|[0-9a-f]{3}/i)[0])
+                    .setDescription(`${lang.config.EMBED_COLOR_SET} \`#${color.match(/[0-9a-f]{6}|[0-9a-f]{3}/i)[0]}\`.`);
                   (<TextChannel>message.channel).send(embed);
                 })
                 .catch((err) => {
@@ -669,211 +879,6 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
     } catch (err) {}
   });
 
-  client.on("channelCreate", async (newC: any) => {
-    if (newC.type !== "text") return;
-    const channel: TextChannel = newC;
-    client.shard.send({
-      type: "shard",
-      name: "channelCreate",
-      data: channel,
-    });
-  });
-
-  client.on("channelUpdate", async (oldC, newC: any) => {
-    if (newC.type !== "text") return;
-    const channel: TextChannel = newC;
-    client.shard.send({
-      type: "shard",
-      name: "channelUpdate",
-      data: channel,
-    });
-  });
-
-  client.on("channelDelete", async (channel: GuildChannel) => {
-    client.shard.send({
-      type: "shard",
-      name: "channelDelete",
-      data: channel.id,
-    });
-
-    const channelId = channel.id;
-    const guildId = channel.guild.id;
-    const guildConfig = await GuildConfig.fetch(guildId);
-    if (guildConfig.channels.find((c) => c.channelId === channelId)) {
-      guildConfig.channel.splice(
-        guildConfig.channel.findIndex((c) => c.channelId === channelId),
-        1
-      );
-      await guildConfig.save();
-
-      const games = await Game.fetchAllBy(
-        {
-          s: guildId,
-          c: channelId,
-        },
-        client
-      );
-
-      games.forEach(async (game) => {
-        await game.delete();
-      });
-    }
-  });
-
-  client.on("roleCreate", async (role) => {
-    client.shard.send({
-      type: "shard",
-      name: "roleCreate",
-      data: role,
-    });
-  });
-
-  client.on("roleUpdate", async (oldR, role) => {
-    client.shard.send({
-      type: "shard",
-      name: "roleUpdate",
-      data: role,
-    });
-  });
-
-  client.on("roleDelete", async (role) => {
-    client.shard.send({
-      type: "shard",
-      name: "roleDelete",
-      data: role.id,
-    });
-  });
-
-  client.on("guildMemberAdd", async (member) => {
-    client.shard.send({
-      type: "shard",
-      name: "guildMemberAdd",
-      data: member,
-      user: {
-        id: member.user.id,
-        username: member.user.username,
-        tag: member.user.tag,
-        discriminator: member.user.discriminator,
-        avatar: member.user.avatar,
-      },
-      roles: member.roles.cache.array().map((r) => ({
-        id: r.id,
-        name: r.name,
-        permissions: r.permissions,
-      })),
-    });
-  });
-
-  client.on("guildMemberUpdate", async (oldR, member) => {
-    client.shard.send({
-      type: "shard",
-      name: "guildMemberUpdate",
-      data: member,
-      roles: member.roles.cache.array().map((r) => ({
-        id: r.id,
-        name: r.name,
-        permissions: r.permissions,
-      })),
-    });
-  });
-
-  client.on("guildMemberRemove", async (member) => {
-    client.shard.send({
-      type: "shard",
-      name: "guildMemberRemove",
-      data: member,
-      user: member.user,
-    });
-  });
-
-  client.on("userUpdate", async (oldUser: User, newUser: User) => {
-    client.shard.send({
-      type: "shard",
-      name: "userUpdate",
-      data: {
-        id: newUser.id,
-        username: newUser.username,
-        tag: newUser.tag,
-        discriminator: newUser.discriminator,
-        avatar: newUser.avatar,
-      },
-    });
-
-    if (oldUser.tag != newUser.tag) {
-      const games = await Game.fetchAllBy(
-        {
-          $or: [
-            { "author.tag": oldUser.tag },
-            { "author.id": oldUser.id },
-            { "dm.tag": oldUser.tag },
-            { "dm.id": oldUser.id },
-            { dm: oldUser.tag },
-            {
-              reserved: {
-                $elemMatch: {
-                  tag: oldUser.tag,
-                },
-              },
-            },
-            {
-              reserved: {
-                $elemMatch: {
-                  id: oldUser.id,
-                },
-              },
-            },
-            {
-              reserved: {
-                $regex: oldUser.tag.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&"),
-              },
-            },
-          ],
-        },
-        client
-      );
-      games.forEach(async (game) => {
-        if (game.author.tag === oldUser.tag) game.author.tag = newUser.tag;
-        if (game.author.tag === oldUser.tag) game.author.id = newUser.id;
-        if (game.dm.tag === oldUser.tag) game.dm.tag = newUser.tag;
-        if (game.dm.tag === oldUser.tag) game.dm.id = newUser.id;
-        if (game.reserved.find((r) => r.tag === oldUser.tag || r.id === oldUser.id)) {
-          game.reserved = game.reserved.map((r) => {
-            if (r.tag === oldUser.tag) r.tag = newUser.tag;
-            if (r.id === oldUser.id) r.id = newUser.id;
-            return r;
-          });
-        }
-        game.save();
-      });
-    }
-  });
-
-  client.on("guildUpdate", async (oldG, newG) => {
-    client.shard.send({
-      type: "shard",
-      name: "guildUpdate",
-      data: newG,
-    });
-  });
-
-  client.on("guildDelete", async (guild) => {
-    aux.log(`Bot has left ${guild.name}!`);
-    client.shard.send({
-      type: "shard",
-      name: "guildDelete",
-      data: guild.id,
-    });
-  });
-
-  client.on("guildCreate", async (guild) => {
-    aux.log(`Bot has joined ${guild.name}!`);
-    client.shard.send({
-      type: "shard",
-      name: "guilds",
-      data: [guild].map(guildMap),
-    });
-  });
-
   /**
    * Discord.JS - messageDelete
    * Delete the game from the database when the announcement message is deleted
@@ -960,9 +965,9 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
 }
 
 (async () => {
-  let connected = await db.database.connect();
+  if (!connected) connected = await db.database.connect();
   if (connected) {
-    aux.log("Database connected!");
+    aux.log("Database connected in shard!");
     // Login the Discord bot
     client.login(process.env.TOKEN);
   }
@@ -1322,9 +1327,11 @@ const postReminders = async () => {
           var where = Game.parseDiscord(game.where, game.discordGuild);
           game.reserved.forEach((rsvp) => {
             if (rsvp.tag.length === 0) return;
-            let member = guildMembers.find((mem) => mem.user.tag === rsvp.tag.replace("@", "") || rsvp.id === mem.user.id);
+            let member = guildMembers.find(
+              (mem) => mem.user.tag.trim() === rsvp.tag.trim().replace("@", "") || mem.user.id == rsvp.tag.trim().replace(/[<@>]/g, "") || mem.user.id === rsvp.id
+            );
 
-            let name = rsvp.tag.replace("@", "");
+            let name = rsvp.tag;
             if (member) name = member.user.toString();
             if (member) reservedUsers.push(member);
 
@@ -1468,7 +1475,13 @@ const guildMap = (guild: Guild) => {
         permissions: r.permissions,
       }))
     ),
-    channels: guild.channels.cache.array(),
+    channels: guild.channels.cache.array().map(c => ({
+      id: c.id,
+      type: c.type,
+      name: c.name,
+      parentID: c.parentID,
+      members: c.members.map(m => m.user.id)
+    })),
     roles: guild.roles.cache.array(),
   };
 };
