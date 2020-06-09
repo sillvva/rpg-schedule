@@ -1101,6 +1101,7 @@ const pruneOldGames = async (guild?: Guild) => {
       timestamp: {
         $lt: new Date().getTime() - 48 * 3600 * 1000,
       },
+      frequency: "0",
       hideDate: {
         $in: [false, null],
       },
