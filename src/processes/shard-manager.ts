@@ -1,4 +1,4 @@
-import { ShardingManager, Role, MessageEmbed, Message, Client, TextChannel } from "discord.js";
+import { ShardingManager, Role, MessageEmbed, Message, Client, TextChannel, Permissions } from "discord.js";
 import { Express } from "express";
 import { io } from "./socket";
 
@@ -141,7 +141,7 @@ const managerConnect = (options: DiscordProcessesOptions, readyCallback: () => {
               return g;
             });
           } else if (message.name === "guildDelete") {
-            const index = guildData.findIndex(g => g.id === message.data);
+            const index = guildData.findIndex((g) => g.id === message.data);
             if (index >= 0) {
               guildData.splice(index, 1);
             }
@@ -184,6 +184,7 @@ export interface ShardChannel {
   type: string;
   parentID: string;
   members: string[];
+  everyone: boolean;
   messages: {
     fetch: (messageId: string) => Promise<Message>;
   };
@@ -205,11 +206,6 @@ const clientGuilds = async (client: Client, guildIds: string[] = []) => {
   try {
     const guilds = client.guilds.cache.array().filter((g) => (guildIds.length > 0 ? guildIds.includes(g.id) : true));
     const shards = [guilds];
-    const sGuildMembers = [guilds.map((g) => g.members.cache.array())];
-    const sGuildUsers = [guilds.map((g) => g.members.cache.array().map((m) => m.user))];
-    const sGuildChannels = [guilds.map((g) => g.channels.cache.array())];
-    const sGuildRoles = [guilds.map((g) => g.roles.cache.array())];
-    const sGuildMemberRoles = [guilds.map((g) => g.members.cache.array().map((m) => m.roles.cache.array()))];
     const result = shards.reduce<ShardGuild[]>((iter, shard, shardIndex) => {
       const append = shard.map((guild, guildIndex) => {
         const sGuild: ShardGuild = {
@@ -217,8 +213,8 @@ const clientGuilds = async (client: Client, guildIds: string[] = []) => {
           name: guild.name,
           icon: guild.icon,
           shardID: guild.shardID,
-          members: sGuildMembers[shardIndex][guildIndex].map((member, memberIndex) => {
-            const user = sGuildUsers[shardIndex][guildIndex][memberIndex];
+          members: guild.members.cache.array().map((member, memberIndex) => {
+            const user = member.user;
             return {
               id: user.id,
               nickname: member.nickname,
@@ -231,7 +227,7 @@ const clientGuilds = async (client: Client, guildIds: string[] = []) => {
                 avatarUrl: `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`,
                 toString: () => `<@${user.id}>`,
               },
-              roles: sGuildMemberRoles[shardIndex][guildIndex][memberIndex],
+              roles: member.roles.cache.array(),
               isOwner: user.id === guild.ownerID,
               hasPermission: function (permission: number) {
                 if (this.isOwner) return true;
@@ -254,11 +250,14 @@ const clientGuilds = async (client: Client, guildIds: string[] = []) => {
               },
             };
           }),
-          channels: sGuildChannels[shardIndex][guildIndex].map((channel, channelIndex) => {
+          channels: guild.channels.cache.array().map((channel, channelIndex) => {
             const sChannel: ShardChannel = {
               id: channel.id,
               name: channel.name,
               type: channel.type,
+              parentID: channel.parentID,
+              members: channel.members.map((m) => m.user.id),
+              everyone: channel.permissionsFor(guild.roles.cache.find((r) => r.name === "@everyone").id).has(Permissions.FLAGS.VIEW_CHANNEL),
               messages: {
                 fetch: async function (messageId: string) {
                   const sGuild = client.guilds.cache.get(guild.id);
@@ -297,7 +296,7 @@ const clientGuilds = async (client: Client, guildIds: string[] = []) => {
             };
             return sChannel;
           }),
-          roles: sGuildRoles[shardIndex][guildIndex],
+          roles: guild.roles.cache.array(),
         };
         return sGuild;
       });
@@ -382,6 +381,9 @@ const shardGuilds = async (filters: ShardFilters = {}) => {
                   id: channel.id,
                   name: channel.name,
                   type: channel.type,
+                  parentID: channel.parentID,
+                  members: channel.members,
+                  everyone: channel.everyone,
                   messages: {
                     fetch: async function (messageId: string) {
                       const call = `

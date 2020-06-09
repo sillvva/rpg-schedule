@@ -845,19 +845,27 @@ export default (options: APIRouteOptions) => {
             ip: req.app.locals.ip,
           })
             .then(async (result: any) => {
+              let rsvp = false;
               if (!game.reserved.find((r) => r.id === result.account.user.id || r.tag === result.account.user.tag)) {
-                await game.signUp(<discord.User>result.account.user);
+                rsvp = await game.signUp(<discord.User>result.account.user);
               } else {
                 const guildConfig = await GuildConfig.fetch(game.s);
-                await game.dropOut(<discord.User>result.account.user, guildConfig);
+                rsvp = await game.dropOut(<discord.User>result.account.user, guildConfig);
               }
 
-              res.json({
-                status: "success",
-                token: token,
-                gameId: game._id,
-                reserved: game.reserved,
-              });
+              if (rsvp)
+                res.json({
+                  status: "success",
+                  token: token,
+                  gameId: game._id,
+                  reserved: game.reserved,
+                });
+              else
+                res.json({
+                  status: "success",
+                  token: token,
+                  past: true,
+                });
             })
             .catch((err) => {
               res.json({
@@ -1130,7 +1138,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
               if (gcChannels.length == 0 || !guild.channels.find((gc) => !!gcChannels.find((c) => gc.id === c.channelId))) {
                 let firstChannel: ShardChannel;
                 for (let i = 0; i < guild.channels.length; i++) {
-                  const pf = await guild.channels[i].permissionsFor(guild.roles.find((r) => r.name === "@everyone").id, Permissions.FLAGS.VIEW_CHANNEL);
+                  const pf = await guild.channels[i].everyone;
                   if (pf) firstChannel = guild.channels[i];
                 }
                 if (firstChannel && guild.channels.length > 0) {
@@ -1150,12 +1158,10 @@ const fetchAccount = (token: any, options: AccountOptions) => {
               let channels: ShardChannel[] = [];
               for (let gci = 0; gci < gcChannels.length; gci++) {
                 const gcc = guild.channels.filter((gc: ShardChannel) => gc.id == gcChannels[gci].channelId);
-                const gccf: ShardChannel[] = [];
                 for (let gcci = 0; gcci < gcc.length; gcci++) {
-                  const pm = await gcc[gcci].permissionsFor(id, Permissions.FLAGS.VIEW_CHANNEL);
-                  if (pm) gccf.push(gcc[gcci]);
+                  const pm = gcc[gcci].members.includes(id);
+                  if (pm) channels.push(gcc[gcci]);
                 }
-                gccf.forEach((gc) => channels.push(gc));
               }
               channels = channels.filter((c) => member && (guild.isAdmin || !!guildConfig.shardMemberHasPermission(member, c.id)));
 
@@ -1163,10 +1169,6 @@ const fetchAccount = (token: any, options: AccountOptions) => {
               guild.config = guildConfig;
               account.guilds[gi] = guild;
             }
-
-            // if (options.page === GamesPages.Server && !options.search) {
-            //   account.guilds = account.guilds.filter((g) => account.guilds.find((s) => s.id === g.id && (s.isAdmin || config.author == tag)));
-            // }
 
             if (options.games) {
               const gameOptions: any = {
@@ -1247,8 +1249,6 @@ const fetchAccount = (token: any, options: AccountOptions) => {
               }
               games.forEach(async (game) => {
                 if (!game.discordGuild) return;
-                await game.updateReservedList();
-
                 const date = Game.ISOGameDate(game);
                 const parsed = aux.parseEventTimes(game);
                 const gi = account.guilds.findIndex((g) => g.id === game.s);

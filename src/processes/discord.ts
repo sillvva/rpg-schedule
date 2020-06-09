@@ -37,6 +37,7 @@ client.on("debug", function (info) {
  */
 client.on("ready", async () => {
   aux.log(`Logged in as ${client.user.username}!`);
+
   if (!isReady) {
     isReady = true;
 
@@ -69,6 +70,13 @@ client.on("ready", async () => {
         postReminders();
       }, 1 * 60 * 1000); // 1 minute
     }
+
+    // If client is the dev bot, leave any server that Sillvva is not part of.
+    // if (client.user.id === "532635202808315906") {
+    //   client.guilds.cache.forEach((guild) => {
+    //     if (!guild.members.cache.find((m) => m.user.id === "202640192178225152")) guild.leave();
+    //   });
+    // }
   }
 });
 
@@ -94,7 +102,8 @@ if (process.env.DISCORD_API_LOGIC.toLowerCase() === "true") {
         type: channel.type,
         name: channel.name,
         parentID: channel.parentID,
-        members: channel.members.map(m => m.user.id)
+        members: channel.members.map((m) => m.user.id),
+        everyone: channel.permissionsFor(channel.guild.roles.cache.find((r) => r.name === "@everyone").id).has(Permissions.FLAGS.VIEW_CHANNEL),
       },
     });
   });
@@ -1475,12 +1484,12 @@ const guildMap = (guild: Guild) => {
         permissions: r.permissions,
       }))
     ),
-    channels: guild.channels.cache.array().map(c => ({
+    channels: guild.channels.cache.array().map((c) => ({
       id: c.id,
       type: c.type,
       name: c.name,
       parentID: c.parentID,
-      members: c.members.map(m => m.user.id)
+      members: c.members.map((m) => m.user.id),
     })),
     roles: guild.roles.cache.array(),
   };
