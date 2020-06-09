@@ -290,8 +290,8 @@ export class Game implements GameModel {
       const guild = this._guild;
 
       if (!guild) {
-        aux.log(`Server (${game.s}) not found`);
-        aux.log(JSON.stringify(this.data));
+        aux.log(`Server (${game.s}) not found when saving game (${this._id})`);
+        // aux.log(JSON.stringify(this.data));
       }
 
       const guildConfig = await GuildConfig.fetch(guild.id);
