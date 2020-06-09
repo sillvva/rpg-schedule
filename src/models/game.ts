@@ -931,13 +931,13 @@ export class Game implements GameModel {
     return result;
   }
 
-  async dmCustomInstructions(tag: string) {
+  async dmCustomInstructions(user: User) {
     if (this.method === "automated" && this.customSignup.trim().length > 0 && this.discordGuild) {
       const guild = this.discordGuild;
       const guildMembers = await guild.members;
       const guildConfig = await GuildConfig.fetch(guild.id);
       const dmmember = guildMembers.find((m) => m.user.tag === this.dm.tag.trim() || m.user.id === this.dm.id);
-      const member = guildMembers.find((m) => m.user.tag === tag.trim());
+      const member = guildMembers.find((m) => m.user.tag === user.tag.trim() || m.user.id === user.id);
       if (!this.template) this.template = (guildConfig.gameTemplates.find((gt) => gt.isDefault) || guildConfig.gameTemplates[0]).id;
       const gameTemplate = guildConfig.gameTemplates.find((gt) => gt.id === this.template);
 
@@ -1066,8 +1066,10 @@ export class Game implements GameModel {
     if (!this.reserved.find((r) => r.id === user.id || r.tag == user.tag) && hourDiff < 0) {
       this.reserved.push({ id: user.id, tag: user.tag });
       this.save();
-      this.dmCustomInstructions(user.tag);
+      this.dmCustomInstructions(user);
+      return true;
     }
+    return false;
   }
 
   async dropOut(user: User, guildConfig: GuildConfig) {
@@ -1075,7 +1077,9 @@ export class Game implements GameModel {
     if (this.reserved.find((r) => r.tag === user.tag || r.id === user.id) && guildConfig.dropOut && hourDiff < 0) {
       this.reserved = this.reserved.filter((r) => r.tag && r.tag !== user.tag && !(r.id && r.id === user.id));
       this.save();
+      return true;
     }
+    return false;
   }
 
   static parseDiscord(text: string, guild: ShardGuild, getMentions: boolean = false) {
