@@ -164,7 +164,7 @@ export default () => {
                 .map((r, i) => ({
                   name: r,
                   rsvp: parseInt(game.players) - i > 0,
-                  email: `${r.id.replace(/[^a-z0-9_.]/gi, "")}@rpg-schedule.com`,
+                  email: `${(r.id || "").replace(/[^a-z0-9_.]/gi, "")}@rpg-schedule.com`,
                 })),
               sequence: game.sequence,
             };

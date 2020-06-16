@@ -330,6 +330,27 @@ export default (options: APIRouteOptions) => {
       })
         .then(async (result: any) => {
           const userSettings = await getUserSettings(result.account.user.id, req);
+          result.account.guilds = result.account.guilds.map((guild) => {
+            guild.roles = guild.roles.map((role) => {
+              delete role.hoist;
+              delete role.createdTimestamp;
+              delete role.deleted;
+              delete role.mentionable;
+              delete role.permissions;
+              return role;
+            });
+            guild.announcementChannels = guild.announcementChannels.map((channel) => {
+              delete channel.members;
+              delete channel.messages;
+              return channel;
+            });
+            guild.channels = guild.channels.map((channel) => {
+              delete channel.members;
+              delete channel.messages;
+              return channel;
+            });
+            return guild;
+          });
           res.json({
             status: "success",
             token: req.session.api.access.access_token,
@@ -1009,6 +1030,213 @@ export default (options: APIRouteOptions) => {
     });
   });
 
+  router.get("/test/account", async (req, res, next) => {
+    const { id, username, discriminator, guildId } = req.query;
+    const tag = `${username}#${discriminator}`;
+
+    const options = {
+      guilds: true,
+      games: false,
+      search: "",
+    };
+
+    const account = {
+      user: {
+        ...req.query,
+        ...{
+          tag: tag,
+        },
+      },
+      guilds: [],
+    };
+
+    let sGuilds: ShardGuild[] = [];
+
+    if (options.guilds) {
+      const fTime = new Date().getTime();
+      sGuilds = await ShardManager.shardGuilds(
+        id
+          ? {
+              memberIds: [id],
+            }
+          : {
+              guildIds: [guildId],
+            }
+      );
+      // console.log(new Date().getTime() - fTime, req.query, tag, sGuilds.length);
+
+      sGuilds.forEach((guild) => {
+        const guildInfo: AccountGuild = {
+          id: guild.id,
+          name: guild.name,
+          icon: guild.icon ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=128` : "/images/logo2.png",
+          permission: false,
+          isAdmin: false,
+          member: null,
+          roles: guild.roles,
+          userRoles: [],
+          channelCategories: guild.channels.filter((c) => c.type === "category"),
+          channels: guild.channels.filter((c) => c.type === "text"),
+          announcementChannels: [],
+          config: new GuildConfig({ guild: guild.id }),
+          games: [],
+        };
+
+        // console.log(guild.members);
+
+        guild.members.forEach((member) => {
+          if ((id && member.user.id === id) || member.user.tag === tag || (member.user.username === username && member.user.discriminator === discriminator)) {
+            guildInfo.member = member;
+            if (!options.search) account.guilds.push(guildInfo);
+          }
+        });
+        if (options.search) {
+          if (new RegExp(options.search, "gi").test(guild.name)) {
+            account.guilds.push(guildInfo);
+          }
+        }
+      });
+
+      account.guilds = account.guilds.filter((guild) => (!guild.config.hidden && !options.search) || config.author == tag);
+
+      const gcQuery = {
+        guild: {
+          $in: account.guilds.reduce((i, g) => {
+            i.push(g.id);
+            return i;
+          }, []),
+        },
+      };
+
+      const guildConfigs = await GuildConfig.fetchAllBy(gcQuery);
+      // console.log(new Date().getTime() - fTime);
+
+      for (let gi = 0; gi < account.guilds.length; gi++) {
+        const guild: AccountGuild = account.guilds[gi];
+        const guildConfig = guildConfigs.find((gc) => gc.guild === guild.id) || new GuildConfig({ guild: guild.id });
+        const member = guild.member;
+
+        let gcChannels: ChannelConfig[] = guildConfig.channels;
+        if (gcChannels.length == 0 || !guild.channels.find((gc) => !!gcChannels.find((c) => gc.id === c.channelId))) {
+          let firstChannel: ShardChannel;
+          for (let i = 0; i < guild.channels.length; i++) {
+            const pf = await guild.channels[i].everyone;
+            if (pf) firstChannel = guild.channels[i];
+          }
+          if (firstChannel && guild.channels.length > 0) {
+            gcChannels.push({ channelId: firstChannel.id, gameTemplates: [guildConfig.defaultGameTemplate.id] });
+          }
+        }
+
+        let channels: ShardChannel[] = [];
+
+        if (member) {
+          guild.userRoles = member.roles.map((r) => r.name);
+          guild.isAdmin = !!(
+            member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) || member.roles.find((r) => r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim())
+          );
+          guild.permission = guildConfig.shardMemberHasPermission(member) || guild.isAdmin;
+          gcChannels.forEach((c) => {
+            const gcc = guild.channels.find((gc) => gc.id === c.channelId);
+            if (gcc && (guild.permission || (gcc.members && gcc.members.includes(member.user.id)))) channels.push(gcc);
+          });
+          channels = channels.filter((c) => c && member && (guild.isAdmin || !!guildConfig.shardMemberHasPermission(member, c.id)));
+          // console.log(guild.isAdmin, guild.permission);
+        }
+
+        guild.announcementChannels = channels;
+        guild.config = guildConfig;
+        account.guilds[gi] = guild;
+      }
+
+      if (options.games) {
+        const gameOptions: any = {
+          s: {
+            $in: account.guilds.reduce((i, g) => {
+              i.push(g.id);
+              return i;
+            }, []),
+          },
+        };
+
+        const fGames: Game[] = await Game.fetchAllBy(gameOptions, null, sGuilds);
+        // console.log(new Date().getTime() - fTime);
+        const games: any[] = [];
+        for (let i = 0; i < fGames.length; i++) {
+          const game = fGames[i];
+          const dc = game.discordChannel;
+          if (dc && (dc.members || []).includes(id)) {
+            games.push(game);
+          }
+        }
+        games.forEach(async (game) => {
+          if (!game.discordGuild) return;
+          const date = Game.ISOGameDate(game);
+          const parsed = aux.parseEventTimes(game);
+          const gi = account.guilds.findIndex((g) => g.id === game.s);
+          account.guilds[gi].games.push({
+            ...game.data,
+            moment: {
+              ...parsed,
+              iso: date,
+              date: moment(date).utcOffset(parseInt(game.timezone)).format(config.formats.dateLong),
+              calendar: moment(date).utcOffset(parseInt(game.timezone)).calendar(),
+              from: moment(date).utcOffset(parseInt(game.timezone)).fromNow(),
+            },
+            reserved: game.reserved.filter((r) => r.tag),
+            slot: game.reserved.findIndex((t) => t.tag.replace("@", "") === tag || t.id === id) + 1,
+            signedup: game.slot > 0 && game.slot <= parseInt(game.players),
+            waitlisted: game.slot > parseInt(game.players),
+          });
+        });
+      }
+
+      account.guilds = account.guilds
+        .map((guild) => {
+          guild.games.sort((a, b) => {
+            return a.timestamp < b.timestamp ? -1 : 1;
+          });
+          return guild;
+        })
+        .sort((a, b) => {
+          if (a.games.length === 0 && b.games.length === 0) return a.name < b.name ? -1 : 1;
+          if (a.games.length > 0 && b.games.length > 0) return a.name < b.name ? -1 : 1;
+          if (a.games.length === 0) return 1;
+          if (b.games.length === 0) return -1;
+        });
+
+      account.guilds = account.guilds.map((guild) => {
+        guild.roles = guild.roles.map((role) => {
+          delete role.hoist;
+          delete role.createdTimestamp;
+          delete role.deleted;
+          delete role.mentionable;
+          delete role.permissions;
+          delete role.rawPosition;
+          return role;
+        });
+        guild.channelCategories = guild.channelCategories.map((channel) => {
+          delete channel.members;
+          delete channel.messages;
+          return channel;
+        });
+        guild.announcementChannels = guild.announcementChannels.map((channel) => {
+          delete channel.members;
+          delete channel.messages;
+          return channel;
+        });
+        guild.channels = guild.channels.map((channel) => {
+          delete channel.members;
+          delete channel.messages;
+          return channel;
+        });
+        return guild;
+      });
+    }
+
+    res.json(account);
+  });
+
   return router;
 };
 
@@ -1070,7 +1298,6 @@ const fetchAccount = (token: any, options: AccountOptions) => {
               ...{
                 tag: tag,
                 avatarURL: `https://cdn.discordapp.com/avatars/${id}/${avatar}.png?size=128`,
-                settings: await User.fetch(id),
               },
             },
             guilds: [],
@@ -1156,14 +1383,12 @@ const fetchAccount = (token: any, options: AccountOptions) => {
               }
 
               let channels: ShardChannel[] = [];
-              for (let gci = 0; gci < gcChannels.length; gci++) {
-                const gcc = guild.channels.filter((gc: ShardChannel) => gc.id == gcChannels[gci].channelId);
-                for (let gcci = 0; gcci < gcc.length; gcci++) {
-                  const pm = gcc[gcci].members.includes(id);
-                  if (pm) channels.push(gcc[gcci]);
-                }
-              }
-              channels = channels.filter((c) => member && (guild.isAdmin || !!guildConfig.shardMemberHasPermission(member, c.id)));
+              gcChannels.forEach((c) => {
+                const gcc = guild.channels.find((gc) => gc.id === c.channelId);
+                if (gcc && (guild.permission || (gcc.members && gcc.members.includes(id)))) channels.push(gcc);
+              });
+
+              channels = channels.filter((c) => c && member && (guild.isAdmin || !!guildConfig.shardMemberHasPermission(member, c.id)));
 
               guild.announcementChannels = channels;
               guild.config = guildConfig;
@@ -1243,7 +1468,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
               for (let i = 0; i < fGames.length; i++) {
                 const game = fGames[i];
                 const dc = game.discordChannel;
-                if (dc && dc.members.includes(id)) {
+                if (dc && (dc.members || []).includes(id)) {
                   games.push(game);
                 }
               }
@@ -1341,7 +1566,7 @@ const refreshToken = (access: any) => {
 
         const token = JSON.parse(body);
 
-        aux.log(access.access_token, token.access_token);
+        if (process.env.SITE === "dev") aux.log(access.access_token, token.access_token);
 
         if (storedSession && storedSession.token != token.access_token) {
           await storedSession.delete();

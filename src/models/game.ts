@@ -287,11 +287,17 @@ export class Game implements GameModel {
 
     try {
       let channel = this._channel;
-      const guild = this._guild;
+      let guild = this._guild;
+
+      if (this.client && !guild) {
+        const sGuilds = await ShardManager.clientGuilds(this.client);
+        guild = sGuilds.find((g) => g.id === game.s);
+      }
 
       if (!guild) {
         aux.log(`Server (${game.s}) not found when saving game (${this._id})`);
         // aux.log(JSON.stringify(this.data));
+        return;
       }
 
       const guildConfig = await GuildConfig.fetch(guild.id);
@@ -339,10 +345,6 @@ export class Game implements GameModel {
         dmmember = {
           id: game.author.id,
           nickname: null,
-          send: (content, options) => {},
-          hasPermission: (permission: number) => {
-            return false;
-          },
           roles: [],
           user: {
             id: game.author.id,
@@ -351,6 +353,10 @@ export class Game implements GameModel {
             discriminator: authorParts[1].trim(),
             avatar: "",
             avatarUrl: "",
+          },
+          send: (content, options) => {},
+          hasPermission: (permission: number) => {
+            return false;
           },
         };
       }
@@ -546,7 +552,7 @@ export class Game implements GameModel {
 
           this.addReactions(message, guildConfig);
         } catch (err) {
-          aux.log("InsertGameError:", game.s, err);
+          aux.log("InsertGameError:", "game.s", game.s, "game._id", game._id, err.message);
         }
 
         let updated;
@@ -619,7 +625,9 @@ export class Game implements GameModel {
       return null;
     }
     const query: mongodb.FilterQuery<any> = aux.fromEntries([[key, value]]);
-    const game: GameModel = await connection().collection(collection).findOne(query);
+    const game: GameModel = await connection()
+      .collection(collection)
+      .findOne({ deleted: { $in: [null, false] }, ...query });
     const guilds = client ? await ShardManager.clientGuilds(client, [game.s]) : await ShardManager.shardGuilds({ guildIds: [game.s] });
     return game ? new Game(game, guilds, client) : null;
   }
@@ -629,7 +637,10 @@ export class Game implements GameModel {
       aux.log("No database connection");
       return [];
     }
-    const games: GameModel[] = await connection().collection(collection).find(query).toArray();
+    const games: GameModel[] = await connection()
+      .collection(collection)
+      .find({ deleted: { $in: [null, false] }, ...query })
+      .toArray();
     const out: Game[] = [];
     for (let i = 0; i < games.length; i++) {
       const guilds = sGuilds ? sGuilds : client ? await ShardManager.clientGuilds(client, [games[i].s]) : await ShardManager.shardGuilds({ guildIds: [games[i].s] });
@@ -643,7 +654,11 @@ export class Game implements GameModel {
       aux.log("No database connection");
       return [];
     }
-    const games: GameModel[] = await connection().collection(collection).find(query).limit(limit).toArray();
+    const games: GameModel[] = await connection()
+      .collection(collection)
+      .find({ deleted: { $in: [null, false] }, ...query })
+      .limit(limit)
+      .toArray();
     const out: Game[] = [];
     for (let i = 0; i < games.length; i++) {
       const guilds = client ? await ShardManager.clientGuilds(client, [games[i].s]) : await ShardManager.shardGuilds({ guildIds: [games[i].s] });
@@ -652,12 +667,24 @@ export class Game implements GameModel {
     return out;
   }
 
-  static async deleteAllBy(query: mongodb.FilterQuery<any>) {
+  static async softDeleteAllBy(query: mongodb.FilterQuery<any>) {
     if (!connection()) {
       aux.log("No database connection");
       return null;
     }
-    return await connection().collection(collection).deleteMany(query);
+    return await connection()
+      .collection(collection)
+      .updateMany({ deleted: { $in: [null, false] }, ...query }, { $set: { deleted: true } });
+  }
+
+  static async hardDeleteAllBy(query: mongodb.FilterQuery<any>) {
+    if (!connection()) {
+      aux.log("No database connection");
+      return null;
+    }
+    return await connection()
+      .collection(collection)
+      .deleteMany({ deleted: { $nin: [null, false] }, ...query });
   }
 
   static async updateAllBy(query: mongodb.FilterQuery<any>, update: any) {
@@ -832,12 +859,14 @@ export class Game implements GameModel {
         delete data.reminderMessageId;
         const game = new Game(data, guilds, this.client);
         const newGame = await game.save();
-        const del = await this.delete();
-        if (del.deletedCount == 0) {
-          const del2 = await Game.softDelete(id);
-          if (del2.deletedCount == 0) {
-            this.rescheduled = true;
-            await this.save();
+        if (newGame.message && newGame.modified) {
+          const del = await this.delete();
+          if (del.modifiedCount == 0) {
+            const del2 = await Game.softDelete(id);
+            if (del2.modifiedCount == 0) {
+              this.rescheduled = true;
+              await this.save();
+            }
           }
         }
         if (this.client)
@@ -855,16 +884,22 @@ export class Game implements GameModel {
     }
   }
 
+  static async hardDelete(_id: string | number | mongodb.ObjectID) {
+    return await connection()
+      .collection(collection)
+      .deleteOne({ _id: new ObjectId(_id), deleted: { $nin: [null, false] } });
+  }
+
   static async softDelete(_id: string | number | mongodb.ObjectID) {
     return await connection()
       .collection(collection)
-      .deleteOne({ _id: new ObjectId(_id) });
+      .updateOne({ _id: new ObjectId(_id) }, { $set: { deleted: true } });
   }
 
   async delete(options: any = {}) {
     if (!connection()) {
       aux.log("No database connection");
-      return { deletedCount: 0 };
+      return { modifiedCount: 0 };
     }
 
     try {
@@ -889,7 +924,7 @@ export class Game implements GameModel {
           }
         }
       } catch (e) {
-        aux.log("Announcement: ", e.message);
+        // aux.log("Announcement:", e.message);
       }
 
       try {
@@ -903,7 +938,7 @@ export class Game implements GameModel {
           }
         }
       } catch (e) {
-        aux.log("Reminder: ", e.message);
+        aux.log("Reminder:", e.message);
       }
 
       // try {
@@ -915,7 +950,7 @@ export class Game implements GameModel {
       //     }
       //   }
       // } catch (e) {
-      //   aux.log("DM: ", e.message);
+      //   aux.log("DM:", e.message);
       // }
     }
 
@@ -981,7 +1016,7 @@ export class Game implements GameModel {
     this.reserved.forEach((res, index) => {
       var member = guildMembers.find((mem) => mem.user.tag.trim() === res.tag.trim() || mem.user.id === res.id);
 
-      if (index + 1 === parseInt(this.players)) {
+      if (index + 1 === parseInt(this.players) && lang.other) {
         const embed = new MessageEmbed();
 
         embed.setColor(gameTemplate && gameTemplate.embedColor ? gameTemplate.embedColor : guildConfig.embedColor);

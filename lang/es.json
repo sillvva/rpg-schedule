@@ -197,7 +197,7 @@
       "RESCHEDULE_MODE": "Options: `repost` (default, crea u nuevo anuncio), `update` (actualiza el post original)"
     }
   },
-  "messages": {
+  "other": {
     "DM_WAITLIST": "Estas ahora mismo en el slot :NUM de reservados.",
     "DM_INSTRUCTIONS": "Mensaje para el :DM for :EVENT",
     "MAINTENANCE": "The site will be under maintenance :TIME for approximately :DURATION hour(s).",
