@@ -1,4 +1,4 @@
-import discord, { Permissions, Role, ShardingManager } from "discord.js";
+import discord, { Permissions, Role, ShardingManager, DataResolver } from "discord.js";
 import express from "express";
 import moment from "moment";
 import request from "request";
@@ -337,7 +337,13 @@ export default (options: APIRouteOptions) => {
               delete role.deleted;
               delete role.mentionable;
               delete role.permissions;
+              delete role.rawPosition;
               return role;
+            });
+            guild.channelCategories = guild.channelCategories.map((channel) => {
+              delete channel.members;
+              delete channel.messages;
+              return channel;
             });
             guild.announcementChannels = guild.announcementChannels.map((channel) => {
               delete channel.members;
@@ -430,14 +436,14 @@ export default (options: APIRouteOptions) => {
       fetchAccount(req.session.api.access, {
         client: client,
         ip: req.app.locals.ip,
-        guilds: true,
       })
         .then(async (result: any) => {
+          const sGuilds: ShardGuild[] = result.sGuilds;
           try {
             let game: Game;
             let server: string = req.query.s;
             if (req.query.g) {
-              game = await Game.fetch(req.query.g, null, result.sGuilds);
+              game = await Game.fetch(req.query.g, null, sGuilds);
               if (game) {
                 server = game.s;
               } else {
@@ -446,11 +452,15 @@ export default (options: APIRouteOptions) => {
             }
 
             if (server) {
-              let guild: ShardGuild;
-              if (req.query.g) guild = game.discordGuild;
+              let guild: ShardGuild = await new Promise(async (resolve) => {
+                const g = await ShardManager.refreshGuild(server);
+                resolve(g.find((g) => g.id === server));
+              });
+
+              if (!guild && req.query.g) guild = game.discordGuild;
 
               if (!guild) {
-                guild = result.sGuilds.find((g) => g.id === server);
+                guild = sGuilds.find((g) => g.id === server);
                 if (req.query.g) game.discordGuild = guild;
               }
 
@@ -591,10 +601,12 @@ export default (options: APIRouteOptions) => {
       })
         .then(async (result: any) => {
           try {
+            const sGuilds: ShardGuild[] = result.sGuilds;
+
             let game: Game;
             let server: string = req.query.s;
             if (req.query.g && !(req.body && req.body.copy)) {
-              game = await Game.fetch(req.query.g, null, result.sGuilds);
+              game = await Game.fetch(req.query.g, null, sGuilds);
               if (game) {
                 server = game.s;
               } else {
@@ -612,12 +624,17 @@ export default (options: APIRouteOptions) => {
                 server = req.body.s;
               }
               if (req.query.s) {
-                game = new Game(req.body, result.sGuilds);
+                game = new Game(req.body, sGuilds);
               }
             }
 
             if (server) {
-              let guild = game.discordGuild;
+              let guild: ShardGuild = await new Promise(async (resolve) => {
+                const g = await ShardManager.refreshGuild(server);
+                resolve(g.find((g) => g.id === server));
+              });
+
+              if (!guild) guild = game.discordGuild;
 
               if (guild) {
                 let password: string;
@@ -1048,21 +1065,32 @@ export default (options: APIRouteOptions) => {
         },
       },
       guilds: [],
+      sGuilds: [],
     };
 
     let sGuilds: ShardGuild[] = [];
 
     if (options.guilds) {
       const fTime = new Date().getTime();
-      sGuilds = await ShardManager.shardGuilds(
-        id
-          ? {
-              memberIds: [id],
-            }
-          : {
-              guildIds: [guildId],
-            }
-      );
+      if (guildId) {
+        let guild: ShardGuild = await new Promise(async (resolve) => {
+          const g = await ShardManager.refreshGuild(guildId);
+          resolve(g.find((g) => g.id === guildId));
+        });
+        sGuilds.push(guild);
+      } else {
+        sGuilds = await ShardManager.shardGuilds(
+          id
+            ? {
+                memberIds: [id],
+              }
+            : {
+                guildIds: [guildId],
+              }
+        );
+      }
+
+      account.sGuilds = sGuilds;
       // console.log(new Date().getTime() - fTime, req.query, tag, sGuilds.length);
 
       sGuilds.forEach((guild) => {
@@ -1204,34 +1232,6 @@ export default (options: APIRouteOptions) => {
           if (a.games.length === 0) return 1;
           if (b.games.length === 0) return -1;
         });
-
-      account.guilds = account.guilds.map((guild) => {
-        guild.roles = guild.roles.map((role) => {
-          delete role.hoist;
-          delete role.createdTimestamp;
-          delete role.deleted;
-          delete role.mentionable;
-          delete role.permissions;
-          delete role.rawPosition;
-          return role;
-        });
-        guild.channelCategories = guild.channelCategories.map((channel) => {
-          delete channel.members;
-          delete channel.messages;
-          return channel;
-        });
-        guild.announcementChannels = guild.announcementChannels.map((channel) => {
-          delete channel.members;
-          delete channel.messages;
-          return channel;
-        });
-        guild.channels = guild.channels.map((channel) => {
-          delete channel.members;
-          delete channel.messages;
-          return channel;
-        });
-        return guild;
-      });
     }
 
     res.json(account);
@@ -1303,15 +1303,13 @@ const fetchAccount = (token: any, options: AccountOptions) => {
             guilds: [],
           };
 
-          let sGuilds: ShardGuild[] = [];
+          // const fTime = new Date().getTime();
+          let sGuilds: ShardGuild[] = await ShardManager.shardGuilds({
+            memberIds: [id],
+          });
+          // console.log(new Date().getTime() - fTime);
 
           if (options.guilds) {
-            // const fTime = new Date().getTime();
-            sGuilds = await ShardManager.shardGuilds({
-              memberIds: [id],
-            });
-            // console.log(new Date().getTime() - fTime);
-
             sGuilds.forEach((guild) => {
               const guildInfo: AccountGuild = {
                 id: guild.id,

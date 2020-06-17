@@ -294,10 +294,15 @@ export class Game implements GameModel {
         guild = sGuilds.find((g) => g.id === game.s);
       }
 
+      if (!guild && !this.client) {
+        guild = await new Promise(async (resolve) => {
+          const g = await ShardManager.refreshGuild(game.s);
+          resolve(g.find(g => g.id === game.s));
+        });
+      }
+
       if (!guild) {
-        aux.log(`Server (${game.s}) not found when saving game (${this._id})`);
-        // aux.log(JSON.stringify(this.data));
-        return;
+        throw new Error(`Server (${game.s}) not found when saving game (${this._id})`);
       }
 
       const guildConfig = await GuildConfig.fetch(guild.id);
@@ -349,8 +354,8 @@ export class Game implements GameModel {
           user: {
             id: game.author.id,
             tag: game.author.tag,
-            username: authorParts[0].trim(),
-            discriminator: authorParts[1].trim(),
+            username: (authorParts[0] || "").trim(),
+            discriminator: (authorParts[1] || "").trim(),
             avatar: "",
             avatarUrl: "",
           },
@@ -843,6 +848,7 @@ export class Game implements GameModel {
 
       const guildConfig = await GuildConfig.fetch(this.s);
       if (guildConfig.rescheduleMode === RescheduleMode.UPDATE) {
+        this.reminded = null;
         await this.save();
       } else if (guildConfig.rescheduleMode === RescheduleMode.REPOST) {
         let data = cloneDeep(this.data);
@@ -854,6 +860,7 @@ export class Game implements GameModel {
         }
         const id = data._id;
         delete data._id;
+        delete data.reminded;
         delete data.pm;
         delete data.messageId;
         delete data.reminderMessageId;

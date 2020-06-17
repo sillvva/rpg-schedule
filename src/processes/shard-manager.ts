@@ -34,7 +34,7 @@ const managerConnect = (options: DiscordProcessesOptions, readyCallback: () => {
         if (message.type === "shard") {
           if (message.name === "guilds") {
             const guilds: any[] = message.data;
-            // console.log(message.name, guilds.length)
+            aux.log('Adding guild data to API memory', guilds.length)
             guilds.forEach((guild, i) => {
               const gdi = guildData.findIndex((g) => g.id === guild.id);
               if (gdi >= 0) {
@@ -206,6 +206,7 @@ export interface ShardGuild {
   channels: ShardChannel[];
   roles: Role[];
   shardID: number;
+  refresh: () => void;
 }
 
 const clientGuilds = async (client: Client, guildIds: string[] = []) => {
@@ -303,6 +304,7 @@ const clientGuilds = async (client: Client, guildIds: string[] = []) => {
             return sChannel;
           }),
           roles: guild.roles.cache.array(),
+          refresh: () => {},
         };
         return sGuild;
       });
@@ -318,20 +320,23 @@ const clientGuilds = async (client: Client, guildIds: string[] = []) => {
 interface ShardFilters {
   guildIds?: string[];
   memberIds?: string[];
+  guild?: any;
 }
 
 const shardGuilds = async (filters: ShardFilters = {}) => {
   const guildIds = filters.guildIds || [];
   const memberIds = filters.memberIds || [];
+  const sGuild = filters.guild;
 
   try {
-    const shards = [
+    let shards = [
       guildData
         .filter((guild) => guildIds.length === 0 || guildIds.includes(guild.id))
         .filter((guild) => {
           return guild.members.find((member) => memberIds.length === 0 || memberIds.includes(member.userID));
         }),
     ];
+    if (sGuild) shards = [ [ sGuild ] ];
     const result = shards.reduce<ShardGuild[]>((iter, shard, shardIndex) => {
       return [
         ...iter,
@@ -472,6 +477,53 @@ const shardGuilds = async (filters: ShardFilters = {}) => {
                 return sChannel;
               }),
               roles: guild.roles,
+              refresh: async function () {
+                const call = `
+                  (async () => {
+                    const guild = this.guilds.cache.get(${JSON.stringify(guild.id)});
+                    if (!guild) return;
+                    const sGuild = {
+                      id: guild.id,
+                      name: guild.name,
+                      icon: guild.icon,
+                      shardID: guild.shardID,
+                      ownerID: guild.ownerID,
+                      members: guild.members.cache.array(),
+                      users: guild.members.cache.map((m) => ({
+                        id: m.user.id,
+                        username: m.user.username,
+                        tag: m.user.tag,
+                        discriminator: m.user.discriminator,
+                        avatar: m.user.avatar,
+                      })),
+                      memberRoles: guild.members.cache.map((m) =>
+                        m.roles.cache.map((r) => ({
+                          id: r.id,
+                          name: r.name,
+                          permissions: r.permissions,
+                        }))
+                      ),
+                      channels: guild.channels.cache.array().map((c) => ({
+                        id: c.id,
+                        type: c.type,
+                        name: c.name,
+                        guild: c.guild.id,
+                        parentID: c.parentID,
+                        members: c.members.map((m) => m.user.id),
+                        everyone: c.permissionsFor(c.guild.roles.cache.find((r) => r.name === "@everyone").id).has(Permissions.FLAGS.VIEW_CHANNEL),
+                      })),
+                      roles: guild.roles.cache.array(),
+                    };
+                    await this.shard.send({
+                      type: "shard",
+                      name: "guilds",
+                      data: [sGuild]
+                    });
+                    return sGuild;
+                  })();
+                `;
+                const result = await discordClient().broadcastEval(call);
+              },
             };
             return sGuild;
           })
@@ -483,6 +535,55 @@ const shardGuilds = async (filters: ShardFilters = {}) => {
     console.log("ShardGuildsError:", err);
     return [];
   }
+};
+
+const refreshGuild = async function (guildId: string) {
+  const call = `
+    (async () => {
+      const guild = this.guilds.cache.get(${JSON.stringify(guildId)});
+      if (!guild) return;
+      const sGuild = {
+        id: guild.id,
+        name: guild.name,
+        icon: guild.icon,
+        shardID: guild.shardID,
+        ownerID: guild.ownerID,
+        members: guild.members.cache.array(),
+        users: guild.members.cache.map((m) => ({
+          id: m.user.id,
+          username: m.user.username,
+          tag: m.user.tag,
+          discriminator: m.user.discriminator,
+          avatar: m.user.avatar,
+        })),
+        memberRoles: guild.members.cache.map((m) =>
+          m.roles.cache.map((r) => ({
+            id: r.id,
+            name: r.name,
+            permissions: r.permissions,
+          }))
+        ),
+        channels: guild.channels.cache.array().map((c) => ({
+          id: c.id,
+          type: c.type,
+          name: c.name,
+          guild: c.guild.id,
+          parentID: c.parentID,
+          members: c.members.map((m) => m.user.id),
+          everyone: c.permissionsFor(c.guild.roles.cache.find((r) => r.name === "@everyone").id).has(Permissions.FLAGS.VIEW_CHANNEL),
+        })),
+        roles: guild.roles.cache.array(),
+      };
+      await this.shard.send({
+        type: "shard",
+        name: "guilds",
+        data: [sGuild]
+      });
+      return sGuild;
+    })();
+  `;
+  const guildData = (await discordClient().broadcastEval(call)).find(s => s);
+  return shardGuilds({ guild: guildData });
 };
 
 const shardUser = async () => {
@@ -557,6 +658,7 @@ export default {
   shardMessageReact: shardMessageReact,
   shardMessageEdit: shardMessageEdit,
   clientMessageEdit: clientMessageEdit,
+  refreshGuild: refreshGuild
 };
 
 export function discordClient() {
