@@ -43,9 +43,11 @@ client.on("ready", async () => {
 
     if (process.env.DISCORD_API_LOGIC.toLowerCase() === "true") {
       // Send updated server information to the API
-      sendGuildsToAPI();
-      setInterval(() => {
-        sendGuildsToAPI();
+      sendGuildsToAPI(true);
+      let i = 0;
+      setInterval(async () => {
+        i++;
+        sendGuildsToAPI(i % client.shard.count === client.guilds.cache.array()[0].shardID);
       }, 10 * 60 * 1000);
     }
 
@@ -847,6 +849,10 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                 .catch((err) => {
                   aux.log(err);
                 });
+            } else if (cmd === "refresh-data" && member.user.tag === config.author) {
+              client.shard.send({
+                type: "refresh"
+              });
             } else {
               const response = await (<TextChannel>message.channel).send("Command not recognized");
               if (response) {

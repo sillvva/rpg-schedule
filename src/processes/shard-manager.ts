@@ -153,6 +153,50 @@ const managerConnect = (options: DiscordProcessesOptions, readyCallback: () => {
             }
           }
         }
+        if (message.type === "refresh") {
+          manager.broadcastEval(`
+          const guilds = this.guilds.cache.array();
+          console.log("Force refreshing data for ", guilds.length, "guilds");
+          this.shard.send({
+            type: "shard",
+            name: "guilds",
+            data: guilds.map((guild) => {
+              return {
+                id: guild.id,
+                name: guild.name,
+                icon: guild.icon,
+                shardID: guild.shardID,
+                ownerID: guild.ownerID,
+                members: guild.members.cache.array(),
+                users: guild.members.cache.map((m) => ({
+                  id: m.user.id,
+                  username: m.user.username,
+                  tag: m.user.tag,
+                  discriminator: m.user.discriminator,
+                  avatar: m.user.avatar,
+                })),
+                memberRoles: guild.members.cache.map((m) =>
+                  m.roles.cache.map((r) => ({
+                    id: r.id,
+                    name: r.name,
+                    permissions: r.permissions,
+                  }))
+                ),
+                channels: guild.channels.cache.array().map((c) => ({
+                  id: c.id,
+                  type: c.type,
+                  name: c.name,
+                  guild: c.guild.id,
+                  parentID: c.parentID,
+                  members: c.members.map((m) => m.user.id),
+                  everyone: c.permissionsFor(c.guild.roles.cache.find((r) => r.name === "@everyone").id).has(Permissions.FLAGS.VIEW_CHANNEL),
+                })),
+                roles: guild.roles.cache.array(),
+              };
+            }),
+          });
+          `);
+        }
       }
     });
 
