@@ -29,7 +29,7 @@
   "game": {
     "SERVER": "Server",
     "CHANNEL": "Channel",
-    "GAME_NAME": "Event Name",
+    "GAME_NAME": "Game / Adventure Name",
     "RUN_TIME": "Run Time",
     "MIN_PLAYERS": "Min Players",
     "MAX_PLAYERS": "Max Players",
@@ -69,6 +69,7 @@
     "COUNTDOWN": "Countdown",
     "MONTHLY_TYPE": "Monthly Type",
     "HIDE_DATE": "Hide Date",
+    "PAST_SIGNUPS": "Allow signups past the signup date/time",
     "SLOT": "Slot",
     "UNSAVED": "You have unsaved changes. Do you wish to proceed?",
     "options": {
@@ -203,6 +204,10 @@
     "MAINTENANCE": "The site will be under maintenance :TIME for approximately :DURATION hour(s).",
     "UNDER_MAINTENANCE": "is under maintenance",
     "YOURE_IN": "You're in! You've secured a spot for **:GAME** in **:SERVER**.",
-    "BACK_SOON": "It will be back soon!"
+    "BACK_SOON": "It will be back soon!",
+    "RESCHEDULED": "The game has been rescheduled",
+    "DELETED": "The game has been deleted",
+    "EDIT_PERMISSION": "You do not have permission to edit this game",
+    "ALREADY_STARTED": "That game has already started!"
   }
 }

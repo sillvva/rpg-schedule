@@ -69,6 +69,7 @@
     "COUNTDOWN": "Countdown",
     "MONTHLY_TYPE": "Monatlicher Typ",
     "HIDE_DATE": "Datum ausblenden",
+    "PAST_SIGNUPS": "Zulassen von Anmeldungen nach dem Datum / der Uhrzeit der Anmeldung",
     "SLOT": "Slot",
     "UNSAVED": "Du hast nicht gespeicherte Änderungen. Möchten Sie fortfahren?",
     "options": {
@@ -203,6 +204,10 @@
     "MAINTENANCE": "Die Website wird gewartet :TIME für ungefähr :DURATION stunde(n).",
     "UNDER_MAINTENANCE": "ist in Wartung",
     "YOURE_IN": "Du bist in! Sie haben sich einen Platz für :GAME in :SERVER gesichert.",
-    "BACK_SOON": "Es wird bald zurück sein!"
+    "BACK_SOON": "Es wird bald zurück sein!",
+    "RESCHEDULED": "Das Spiel wurde verschoben",
+    "DELETED": "Das Spiel wurde gelöscht",
+    "EDIT_PERMISSION": "Sie haben keine Berechtigung, dieses Spiel zu bearbeiten",
+    "ALREADY_STARTED": "Das Spiel hat bereits begonnen!"
   }
 }

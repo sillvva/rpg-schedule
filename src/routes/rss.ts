@@ -4,7 +4,7 @@ import express from "express";
 import moment from "moment";
 
 import config from "../models/config";
-import { Game, RSVP } from "../models/game";
+import { Game } from "../models/game";
 
 export default () => {
   const router = express.Router();
@@ -47,7 +47,7 @@ export default () => {
         },
       };
 
-      const games: any[] = await Game.fetchAllBy(gameOptions);
+      const games: any[] = await Game.fetchAllBy(gameOptions, null, shardGuilds);
 
       res.type("application/xml");
       res.status(200);
@@ -140,7 +140,7 @@ export default () => {
     //   gameOptions.$or = [{ dm: tag }, { reserved: { $regex: tag } }];
     // }
 
-    const games = await Game.fetchAllBy(gameOptions);
+    const games = await Game.fetchAllBy(gameOptions, null, shardGuilds);
 
     try {
       var { error, value } = ics.createEvents(

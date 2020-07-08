@@ -5,9 +5,10 @@ import "moment-recur-ts";
 
 import db from "../db";
 import aux from "../appaux";
-import ShardManager, { ShardGuild, ShardMember, ShardChannel } from "../processes/shard-manager";
+import ShardManager, { ShardGuild, ShardMember, ShardChannel, ShardUser } from "../processes/shard-manager";
 import { io } from "../processes/socket";
 import { GuildConfig } from "./guild-config";
+import { GameRSVP } from "./game-signups";
 import config from "./config";
 import cloneDeep from "lodash/cloneDeep";
 
@@ -55,8 +56,11 @@ export enum RescheduleMode {
 }
 
 export interface RSVP {
+  _id?: string | number | ObjectID;
+  gameId?: string | number | ObjectID;
   id?: string;
   tag: string;
+  timestamp?: number;
 }
 
 export interface GameModel {
@@ -68,13 +72,14 @@ export interface GameModel {
   template: string | number | ObjectID;
   adventure: string;
   runtime: string;
+  duration: number;
   minPlayers: string;
   players: string;
   dm: RSVP;
   author: RSVP;
+  reserved: RSVP[];
   where: string;
   description: string;
-  reserved: RSVP[];
   method: GameMethod;
   customSignup: string;
   when: GameWhen;
@@ -95,6 +100,7 @@ export interface GameModel {
   monthlyType: MonthlyType;
   clearReservedOnRepeat: boolean;
   rescheduled: boolean;
+  pastSignups: boolean;
   sequence: number;
   pruned?: boolean;
   createdTimestamp: number;
@@ -132,13 +138,14 @@ export class Game implements GameModel {
   template: string | number | ObjectID;
   adventure: string;
   runtime: string;
+  duration: number;
   minPlayers: string;
   players: string;
   dm: RSVP;
   author: RSVP;
+  reserved: RSVP[];
   where: string;
   description: string;
-  reserved: RSVP[];
   method: GameMethod;
   customSignup: string;
   when: GameWhen;
@@ -159,15 +166,19 @@ export class Game implements GameModel {
   monthlyType: MonthlyType = MonthlyType.WEEKDAY;
   clearReservedOnRepeat: boolean = false;
   rescheduled: boolean = false;
+  pastSignups: boolean = false;
   sequence: number = 1;
   pruned: boolean = false;
   createdTimestamp: number;
   updatedTimestamp: number;
+  slot: number = 0;
 
   client: Client;
+  guilds: ShardGuild[] = [];
 
   constructor(game: GameModel, guilds: ShardGuild[], client?: Client) {
     if (client) this.client = client;
+    if (guilds) this.guilds = guilds;
 
     let guildMembers: ShardMember[] = [];
     const gameEntries = Object.entries(game || {});
@@ -195,8 +206,6 @@ export class Game implements GameModel {
         });
       } else if (key === "dm" && guildMembers) {
         this[key] = Game.updateDM(value, guildMembers);
-      } else if (key === "reserved" && guildMembers) {
-        this[key] = Game.updateReservedList(value, guildMembers);
       } else this[key] = value;
     }
 
@@ -243,13 +252,14 @@ export class Game implements GameModel {
       template: this.template,
       adventure: this.adventure,
       runtime: this.runtime,
+      duration: this.duration,
       minPlayers: this.minPlayers,
       players: this.players,
       dm: this.dm,
       author: this.author,
+      reserved: this.reserved,
       where: this.where,
       description: this.description,
-      reserved: this.reserved,
       method: this.method,
       customSignup: this.customSignup,
       when: this.when,
@@ -270,6 +280,7 @@ export class Game implements GameModel {
       monthlyType: this.monthlyType,
       clearReservedOnRepeat: this.clearReservedOnRepeat,
       rescheduled: this.rescheduled,
+      pastSignups: this.pastSignups,
       sequence: this.sequence,
       pruned: this.pruned,
       createdTimestamp: this.createdTimestamp,
@@ -283,22 +294,22 @@ export class Game implements GameModel {
       return null;
     }
 
-    const game: GameModel = cloneDeep(this.data);
+    let game: GameModel = cloneDeep(this.data);
 
     try {
       let channel = this._channel;
       let guild = this._guild;
 
-      if (this.client && !guild) {
-        const sGuilds = await ShardManager.clientGuilds(this.client);
-        guild = sGuilds.find((g) => g.id === game.s);
-      }
-
-      if (!guild && !this.client) {
-        guild = await new Promise(async (resolve) => {
-          const g = await ShardManager.refreshGuild(game.s);
-          resolve(g.find(g => g.id === game.s));
-        });
+      if (!guild) {
+        if (this.client) {
+          const sGuilds = await ShardManager.clientGuilds(this.client, [game.s]);
+          guild = sGuilds.find((g) => g.id === game.s);
+        } else {
+          guild = await new Promise(async (resolve) => {
+            const g = await ShardManager.refreshGuild(game.s);
+            resolve(g.find((g) => g.id === game.s));
+          });
+        }
       }
 
       if (!guild) {
@@ -366,12 +377,26 @@ export class Game implements GameModel {
         };
       }
 
-      game.reserved = game.reserved.filter((r) => r.tag);
+      const rsvps = await GameRSVP.fetch(game._id);
+      game.reserved = game._id ? rsvps.map((r) => r.data).sort((a, b) => (a.timestamp > b.timestamp ? 1 : -1)) : game.reserved.filter((r) => r.tag);
+      const checkDupes = game.reserved.filter((r, i) => game.reserved.findIndex((rr) => (rr.id ? rr.id === r.id : false) || rr.tag === r.tag) === i);
+      if (game.reserved.length > checkDupes.length) {
+        game.reserved = checkDupes;
+        rsvps.forEach((r, i) => {
+          if (rsvps.findIndex((rr) => (rr.id ? rr.id === r.id : false) || rr.tag === r.tag) < i) {
+            r.delete();
+          }
+        });
+      }
 
       let reserved: string[] = [];
       let waitlist: string[] = [];
       let rMentions: string[] = [];
       game.reserved.map((rsvp) => {
+        delete rsvp._id;
+        delete rsvp.timestamp;
+        delete rsvp.gameId;
+
         if (rsvp.tag.trim().length === 0 && !rsvp.id) return;
         let member = guildMembers.find(
           (mem) => mem.user.tag.trim() === rsvp.tag.trim().replace("@", "") || mem.user.id == rsvp.tag.trim().replace(/[<@>]/g, "") || mem.user.id === rsvp.id
@@ -397,6 +422,7 @@ export class Game implements GameModel {
         return rsvp;
       });
 
+      game.duration = Game.runtimeToHours(this.runtime);
       const eventTimes = aux.parseEventTimes(game, {
         isField: true,
       });
@@ -495,12 +521,15 @@ export class Game implements GameModel {
         let message: Message;
         try {
           try {
-            if (game.messageId) message = await channel.messages.fetch(game.messageId);
+            if (game.messageId) message = await ShardManager.findMessage(this.client, guild.id, channel.id, game.messageId, dmmember, game.timestamp); // channel.messages.fetch(game.messageId);
+            // console.log(guild.id, channel.id, game.messageId, !!dmmember, game.timestamp, !!message);
           } catch (err) {}
 
           if (guildConfig.embeds) {
-            if (guildConfig.embedMentionsAbove)
-              msg = [Game.parseDiscord(game.description, guild, true), dmmember && dmmember.user.toString(), rMentions.join(" ")].filter((m) => m).join(" ");
+            if (guildConfig.embedMentionsAbove) {
+              const mentions = [Game.parseDiscord(game.description, guild, true), dmmember && dmmember.user.toString(), rMentions.join(" ")];
+              msg = mentions.filter((m, i) => m && mentions.indexOf(m) === i).join(" ");
+            }
           } else embed = null;
 
           if (message) {
@@ -508,13 +537,14 @@ export class Game implements GameModel {
               if (this.client) message = await ShardManager.clientMessageEdit(this.client, guild.id, channel.id, message.id, msg, embed);
               else message = await ShardManager.shardMessageEdit(guild.id, channel.id, message.id, msg, embed);
             }
-          } else if (channel) {
-            message = <Message>await channel.send(msg, embed);
-            if (message) {
-              await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: { messageId: message.id } });
-              game.messageId = message.id;
-            }
-          }
+          } // else if (channel && !game.messageId && !(<any>game).deleted && !game.pruned && game.timestamp >= new Date().getTime() + parseInt(game.reminder) * 60 * 1000) {
+          //   message = <Message>await channel.send(msg, embed);
+          //   if (message) {
+          //     await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: { messageId: message.id } });
+          //     game.messageId = message.id;
+          //   }
+          // }
+          else return;
 
           this.addReactions(message, guildConfig);
 
@@ -548,9 +578,26 @@ export class Game implements GameModel {
         let message: Message;
 
         try {
+          if (inserted.insertedCount > 0) {
+            const updatedGame = new Game(game, this.guilds, this.client);
+            for (let i = 0; i < updatedGame.reserved.length; i++) {
+              const ru = updatedGame.reserved[i];
+              let member = guildMembers.find(
+                (mem) => mem.user.tag.trim() === ru.tag.trim().replace("@", "") || mem.user.id == ru.tag.trim().replace(/[<@>]/g, "") || mem.user.id === ru.id
+              );
+              const rsvp = new GameRSVP({ _id: new ObjectID(), gameId: inserted.insertedId, id: ru.id, tag: ru.tag, timestamp: new Date().getTime() });
+              await rsvp.save();
+              if (member) {
+                this.dmCustomInstructions(member.user);
+              }
+            }
+          }
+
           if (guildConfig.embeds) {
-            if (guildConfig.embedMentionsAbove)
-              msg = [Game.parseDiscord(game.description, guild, true), dmmember && dmmember.user.toString(), rMentions.join(" ")].filter((m) => m).join(" ");
+            if (guildConfig.embedMentionsAbove) {
+              const mentions = [Game.parseDiscord(game.description, guild, true), dmmember && dmmember.user.toString(), rMentions.join(" ")];
+              msg = mentions.filter((m, i) => m && mentions.indexOf(m) === i).join(" ");
+            }
           } else embed = null;
 
           message = <Message>await channel.send(msg, embed);
@@ -558,6 +605,16 @@ export class Game implements GameModel {
           this.addReactions(message, guildConfig);
         } catch (err) {
           aux.log("InsertGameError:", "game.s", game.s, "game._id", game._id, err.message);
+          if (inserted.insertedCount > 0) {
+            await Game.hardDelete(inserted.insertedId);
+            inserted.insertedCount = 0;
+          }
+
+          return {
+            _id: "",
+            message: null,
+            modified: false,
+          };
         }
 
         let updated;
@@ -578,7 +635,19 @@ export class Game implements GameModel {
             }
           }
         } else {
-          aux.log(`GameMessageNotPostedError:\n`, "s", game.s, "_id", game._id);
+          if (inserted.insertedCount > 0) {
+            aux.log(`GameMessageNotPostedError:\n`, "s", game.s, "_id", game._id);
+            await Game.hardDelete(inserted.insertedId);
+          }
+          if (dmmember) {
+            dmmember.send("The bot does not have sufficient permissions to post in the configured Discord channel");
+          }
+
+          return {
+            _id: "",
+            message: null,
+            modified: false,
+          };
         }
 
         if (this.client)
@@ -601,7 +670,13 @@ export class Game implements GameModel {
 
       if (game._id && options.force) {
         const dbCollection = connection().collection(collection);
-        await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: game });
+        const result = await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: game });
+
+        return {
+          _id: "",
+          message: null,
+          modified: result.modifiedCount > 0,
+        };
       }
 
       return {
@@ -620,41 +695,58 @@ export class Game implements GameModel {
     const game = await connection()
       .collection(collection)
       .findOne({ _id: new ObjectId(gameId) });
+    if (!game) return null;
     const guilds = sGuilds ? sGuilds : game.s ? (client ? await ShardManager.clientGuilds(client, [game.s]) : await ShardManager.shardGuilds({ guildIds: [game.s] })) : [];
-    return game ? new Game(game, guilds, client) : null;
+    const sGame = new Game(game, guilds, client);
+    if (sGame) {
+      await sGame.updateReservedList();
+      return sGame;
+    } else return null;
   }
 
   static async fetchBy(key: string, value: any, client?: Client): Promise<Game> {
-    if (!connection()) {
-      aux.log("No database connection");
+    try {
+      if (!connection()) {
+        aux.log("No database connection");
+        return null;
+      }
+      const query: mongodb.FilterQuery<any> = aux.fromEntries([[key, value]]);
+      const game: GameModel = await connection()
+        .collection(collection)
+        .findOne({ deleted: { $in: [null, false] }, ...query });
+      if (!game) return null;
+      const guilds = client ? await ShardManager.clientGuilds(client, [game.s]) : await ShardManager.shardGuilds({ guildIds: [game.s] });
+      const sGame = new Game(game, guilds, client);
+      if (sGame) {
+        await sGame.updateReservedList();
+        return sGame;
+      } else return null;
+    } catch (err) {
+      aux.log("Game.fetchBy Error:", err);
       return null;
     }
-    const query: mongodb.FilterQuery<any> = aux.fromEntries([[key, value]]);
-    const game: GameModel = await connection()
-      .collection(collection)
-      .findOne({ deleted: { $in: [null, false] }, ...query });
-    const guilds = client ? await ShardManager.clientGuilds(client, [game.s]) : await ShardManager.shardGuilds({ guildIds: [game.s] });
-    return game ? new Game(game, guilds, client) : null;
   }
 
-  static async fetchAllBy(query: mongodb.FilterQuery<any>, client?: Client, sGuilds?: ShardGuild[]): Promise<Game[]> {
+  static async fetchAllBy(query: mongodb.FilterQuery<any>, client?: Client, sGuilds?: ShardGuild[], includeDeleted: boolean = false): Promise<Game[]> {
     if (!connection()) {
       aux.log("No database connection");
       return [];
     }
     const games: GameModel[] = await connection()
       .collection(collection)
-      .find({ deleted: { $in: [null, false] }, ...query })
+      .find({ ...(includeDeleted ? null : { deleted: { $in: [null, false] } }), ...query })
       .toArray();
     const out: Game[] = [];
     for (let i = 0; i < games.length; i++) {
       const guilds = sGuilds ? sGuilds : client ? await ShardManager.clientGuilds(client, [games[i].s]) : await ShardManager.shardGuilds({ guildIds: [games[i].s] });
-      out.push(new Game(games[i], guilds, client));
+      const game = new Game(games[i], guilds, client);
+      await game.updateReservedList();
+      out.push(game);
     }
     return out;
   }
 
-  static async fetchAllByLimit(query: mongodb.FilterQuery<any>, limit: number, client?: Client): Promise<Game[]> {
+  static async fetchAllByLimit(query: mongodb.FilterQuery<any>, limit: number, client?: Client, sGuilds?: ShardGuild[]): Promise<Game[]> {
     if (!connection()) {
       aux.log("No database connection");
       return [];
@@ -666,30 +758,12 @@ export class Game implements GameModel {
       .toArray();
     const out: Game[] = [];
     for (let i = 0; i < games.length; i++) {
-      const guilds = client ? await ShardManager.clientGuilds(client, [games[i].s]) : await ShardManager.shardGuilds({ guildIds: [games[i].s] });
-      out.push(new Game(games[i], guilds, client));
+      const guilds = sGuilds ? sGuilds : client ? await ShardManager.clientGuilds(client, [games[i].s]) : await ShardManager.shardGuilds({ guildIds: [games[i].s] });
+      let game = new Game(games[i], guilds, client);
+      await game.updateReservedList();
+      out.push(game);
     }
     return out;
-  }
-
-  static async softDeleteAllBy(query: mongodb.FilterQuery<any>) {
-    if (!connection()) {
-      aux.log("No database connection");
-      return null;
-    }
-    return await connection()
-      .collection(collection)
-      .updateMany({ deleted: { $in: [null, false] }, ...query }, { $set: { deleted: true } });
-  }
-
-  static async hardDeleteAllBy(query: mongodb.FilterQuery<any>) {
-    if (!connection()) {
-      aux.log("No database connection");
-      return null;
-    }
-    return await connection()
-      .collection(collection)
-      .deleteMany({ deleted: { $nin: [null, false] }, ...query });
   }
 
   static async updateAllBy(query: mongodb.FilterQuery<any>, update: any) {
@@ -750,6 +824,7 @@ export class Game implements GameModel {
       }
     } catch (err) {
       aux.log(err);
+      if (this.discordChannel) this.discordChannel.send("The bot does not have sufficient permissions to add reactions in this channel.");
     }
   }
 
@@ -817,9 +892,18 @@ export class Game implements GameModel {
     return validDays;
   }
 
+  static runtimeToHours(runtime: string | number) {
+    let hours = 0,
+      x: RegExpExecArray;
+    if ((x = /[\d\.]/g.exec(runtime.toString().trim()))) {
+      if (x[0]) hours = parseInt(x[0]);
+    }
+    return hours;
+  }
+
   public canReschedule() {
     const validDays = this.getWeekdays();
-    const hours = isNaN(parseFloat(this.runtime.replace(/[^\d\.-]/g, "").trim())) ? 0 : Math.abs(parseFloat(this.runtime.replace(/[^\d\.-]/g, "").trim()));
+    const hours = this.duration !== null ? this.duration : Game.runtimeToHours(this.runtime);
     const gameEnded = this.timestamp + hours * 3600 * 1000 < new Date().getTime();
     const nextDate = Game.getNextDate(moment(this.date), validDays, Number(this.frequency), this.monthlyType, this.xWeeks);
     const nextISO = `${nextDate.replace(/-/g, "")}T${this.time.replace(/:/g, "")}00${this.timezone >= 0 ? "+" : "-"}${aux.parseTimeZoneISO(this.timezone)}`;
@@ -865,36 +949,85 @@ export class Game implements GameModel {
         delete data.messageId;
         delete data.reminderMessageId;
         const game = new Game(data, guilds, this.client);
-        const newGame = await game.save();
-        if (newGame.message && newGame.modified) {
-          const del = await this.delete();
-          if (del.modifiedCount == 0) {
-            const del2 = await Game.softDelete(id);
-            if (del2.modifiedCount == 0) {
-              this.rescheduled = true;
-              await this.save();
+        try {
+          const newGame = await game.save();
+          if (newGame.message && newGame.modified) {
+            const del = await this.delete();
+            if (del.modifiedCount == 0) {
+              const del2 = await Game.softDelete(id);
+              if (del2.modifiedCount == 0) {
+                this.rescheduled = true;
+                await this.save();
+              }
             }
+            if (this.client)
+              this.client.shard.send({
+                type: "socket",
+                name: "game",
+                data: { action: "rescheduled", gameId: this._id, newGameId: newGame._id },
+              });
+            else io().emit("game", { action: "rescheduled", gameId: this._id, newGameId: newGame._id });
+            return true;
+          } else {
+            await game.delete();
+            return false;
           }
+        } catch (err) {
+          aux.log(err);
+          await game.delete();
+          return false;
         }
-        if (this.client)
-          this.client.shard.send({
-            type: "socket",
-            name: "game",
-            data: { action: "rescheduled", gameId: this._id, newGameId: newGame._id },
-          });
-        else io().emit("game", { action: "rescheduled", gameId: this._id, newGameId: newGame._id });
       }
-      return true;
     } catch (err) {
       aux.log("GameRescheduleError:", err.message || err);
       return false;
     }
   }
 
-  static async hardDelete(_id: string | number | mongodb.ObjectID) {
+  static async;
+
+  static async softDeleteAllBy(query: mongodb.FilterQuery<any>) {
+    if (!connection()) {
+      aux.log("No database connection");
+      return null;
+    }
     return await connection()
       .collection(collection)
-      .deleteOne({ _id: new ObjectId(_id), deleted: { $nin: [null, false] } });
+      .updateMany({ ...query }, { $set: { deleted: true } });
+  }
+
+  static async hardDeleteAllBy(query: mongodb.FilterQuery<any>) {
+    if (!connection()) {
+      aux.log("No database connection");
+      return { deletedCount: 0 };
+    }
+    return await connection()
+      .collection(collection)
+      .deleteMany({ ...query });
+  }
+
+  static async deleteAllBy(query: mongodb.FilterQuery<any>, client?: Client, sGuilds?: ShardGuild[]) {
+    if (!connection()) {
+      aux.log("No database connection");
+      return { deletedCount: 0 };
+    }
+    let games = await Game.fetchAllByLimit(query, 200, client, sGuilds);
+    let deletedCount = 0;
+    while (games.length > 0 && deletedCount < 2000) {
+      const gameIds = games.map((g) => g._id);
+      await GameRSVP.deleteAllGames(gameIds);
+      const result = await Game.hardDeleteAllBy({ _id: { $in: gameIds.map((gid) => new ObjectID(gid)) } });
+      deletedCount += result.deletedCount;
+      games = await Game.fetchAllByLimit(query, 200, client);
+    }
+    return { deletedCount: deletedCount };
+  }
+
+  static async hardDelete(_id: string | number | mongodb.ObjectID) {
+    await GameRSVP.deleteGame(_id);
+    return await connection()
+      .collection(collection)
+      .deleteOne({ _id: new ObjectId(_id) });
   }
 
   static async softDelete(_id: string | number | mongodb.ObjectID) {
@@ -973,7 +1106,7 @@ export class Game implements GameModel {
     return result;
   }
 
-  async dmCustomInstructions(user: User) {
+  async dmCustomInstructions(user: User | ShardUser) {
     if (this.method === "automated" && this.customSignup.trim().length > 0 && this.discordGuild) {
       const guild = this.discordGuild;
       const guildMembers = await guild.members;
@@ -1052,42 +1185,41 @@ export class Game implements GameModel {
 
   async updateReservedList() {
     let guildMembers: ShardMember[];
-    let updated = false;
     try {
-      if (this.dm && typeof this.dm === "string") {
-        if (!guildMembers) guildMembers = this.discordGuild.members;
-        this.dm = Game.updateDM(this.dm, guildMembers);
-        updated = true;
+      const rsvps = await GameRSVP.fetch(this._id);
+      const t = new Date().getTime() - 100 * this.reserved.length;
+      if (!this.discordGuild) return;
+      if (!guildMembers) guildMembers = this.discordGuild.members;
+      const checkDupes = this.reserved.filter((r, i) => this.reserved.findIndex((rr) => (rr.id ? rr.id === r.id : false) || rr.tag === r.tag) === i);
+      if (this.reserved.length > checkDupes.length) {
+        this.reserved = checkDupes;
       }
+      for (let i = 0; i < this.reserved.length; i++) {
+        try {
+          const res = cloneDeep(this.reserved[i]);
+          const member = guildMembers.find((m) => (this.reserved[i] && m.user.id === this.reserved[i].id) || m.user.tag === this.reserved[i].tag.trim());
+          let rsvp = rsvps.find((r) => r._id === res._id || (r.id && r.id === res.id) || r.tag === res.tag);
+          if (!rsvp) rsvp = await GameRSVP.fetchRSVP(this._id, res.id || res.tag);
+          if (!rsvp) {
+            rsvp = new GameRSVP({
+              _id: new ObjectID(res._id),
+              gameId: this._id,
+              id: member ? member.user.id : (rsvp && rsvp.id) || (res && res.id),
+              tag: member ? member.user.tag : res.tag,
+              timestamp: t + i * 100,
+            });
+            await rsvp.save();
+          }
+          if (rsvp) this.reserved[i] = rsvp.data;
+        } catch (err) {
+          aux.log("InsertRSVPError:", err);
+        }
+      }
+      this.reserved = this.reserved.filter((r, i) => i === this.reserved.findIndex((ri) => ri.id === r.id || ri.tag === r.tag));
     } catch (err) {
-      aux.log(err.message);
+      aux.log("UpdateReservedListError:", err);
     }
-    try {
-      if (typeof this.reserved === "string") {
-        if (!guildMembers) guildMembers = await this.discordGuild.members;
-        this.reserved = Game.updateReservedList(this.reserved, guildMembers);
-        updated = true;
-      }
-    } catch (err) {
-      aux.log(err.message);
-    }
-    if (updated && this._id) this.save();
-  }
-
-  static updateReservedList(list: RSVP[] | string, guildMembers: ShardMember[]) {
-    if (Array.isArray(list)) return list;
-    let rsvps: RSVP[] = [];
-    const reserved = list.split(/\r?\n/);
-    reserved.forEach((r) => {
-      const rsvp: RSVP = { tag: r.trim() };
-      const member = guildMembers.find((m) => m.user.tag === r.trim().replace("@", "") || m.user.username === r.trim().replace("@", ""));
-      if (member) {
-        rsvp.id = member.user.id;
-      }
-      rsvps.push(rsvp);
-    });
-    rsvps = rsvps.filter((r) => r.tag);
-    return rsvps;
+    return this.data;
   }
 
   static updateDM(dm: RSVP | string, guildMembers: ShardMember[]) {
@@ -1103,23 +1235,53 @@ export class Game implements GameModel {
     }
   }
 
-  async signUp(user: User) {
+  async signUp(user: User | ShardUser, t?: number) {
     const hourDiff = (new Date().getTime() - this.timestamp) / 1000 / 3600;
-    if (!this.reserved.find((r) => r.id === user.id || r.tag == user.tag) && hourDiff < 0) {
-      this.reserved.push({ id: user.id, tag: user.tag });
-      this.save();
-      this.dmCustomInstructions(user);
-      return true;
+    if (hourDiff < 0 || this.pastSignups || this.hideDate) {
+      let match = await GameRSVP.fetchRSVP(this._id, user.id);
+      if (match && !this.reserved.find((r) => r.id === match.id || r.tag === match.tag)) {
+        await GameRSVP.deleteUser(this._id, user.id);
+        match = null;
+      }
+      if (!match) {
+        const rsvp = new GameRSVP({ _id: new ObjectID(), gameId: this._id, id: user.id, tag: user.tag, timestamp: t || new Date().getTime() });
+        await rsvp.save();
+        await this.save();
+        this.dmCustomInstructions(user);
+        return true;
+      }
+      return false;
+    } else {
+      if (!this.discordGuild) return;
+      const member = this.discordGuild.members.find((m) => m.user.tag === user.tag.trim() || m.user.id === user.id);
+      const guildConfig = await GuildConfig.fetch(this.s);
+      const lang = gmLanguages.find((l) => l.code === guildConfig.lang) || gmLanguages.find((l) => l.code === "en");
+      if (member) member.send(lang.other.ALREADY_STARTED);
     }
     return false;
   }
 
-  async dropOut(user: User, guildConfig: GuildConfig) {
+  async dropOut(user: User | ShardUser, guildConfig: GuildConfig) {
     const hourDiff = (new Date().getTime() - this.timestamp) / 1000 / 3600;
-    if (this.reserved.find((r) => r.tag === user.tag || r.id === user.id) && guildConfig.dropOut && hourDiff < 0) {
-      this.reserved = this.reserved.filter((r) => r.tag && r.tag !== user.tag && !(r.id && r.id === user.id));
-      this.save();
-      return true;
+    if (guildConfig.dropOut) {
+      if (hourDiff < 0 || this.pastSignups || this.hideDate) {
+        const rsvps = await GameRSVP.fetch(this._id);
+        const frsvp = rsvps.filter((r) => r.id == user.id || r.tag == user.tag);
+        for (let i = 0; i < frsvp.length; i++) {
+          const rsvp = frsvp[i];
+          await rsvp.delete();
+        }
+        await this.save();
+        await GameRSVP.deleteUser(this._id, user.id);
+        await GameRSVP.deleteUser(this._id, user.tag);
+        return true;
+      } else {
+        if (!this.discordGuild) return;
+        const member = this.discordGuild.members.find((m) => m.user.tag === user.tag.trim() || m.user.id === user.id);
+        const guildConfig = await GuildConfig.fetch(this.s);
+        const lang = gmLanguages.find((l) => l.code === guildConfig.lang) || gmLanguages.find((l) => l.code === "en");
+        if (member) member.send(lang.other.ALREADY_STARTED);
+      }
     }
     return false;
   }

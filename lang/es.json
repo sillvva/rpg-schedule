@@ -69,6 +69,7 @@
     "COUNTDOWN": "Cuenta atras",
     "MONTHLY_TYPE": "Tipo del mes",
     "HIDE_DATE": "Ocultar Fecha",
+    "PAST_SIGNUPS": "Permitir registros después de la fecha / hora de registro",
     "SLOT": "Espacio",
     "UNSAVED": "Usted tiene cambios no guardados. ¿Desea continuar?",
     "options": {
@@ -197,12 +198,16 @@
       "RESCHEDULE_MODE": "Options: `repost` (default, crea u nuevo anuncio), `update` (actualiza el post original)"
     }
   },
-  "other": {
+  "messages": {
     "DM_WAITLIST": "Estas ahora mismo en el slot :NUM de reservados.",
     "DM_INSTRUCTIONS": "Mensaje para el :DM for :EVENT",
     "MAINTENANCE": "The site will be under maintenance :TIME for approximately :DURATION hour(s).",
     "UNDER_MAINTENANCE": "is under maintenance",
     "YOURE_IN": "¡Estas Dentro! Has asegurado una plaza en el **:GAME** in **:SERVER**.",
-    "BACK_SOON": "¡Regresará pronto!"
+    "BACK_SOON": "¡Regresará pronto!",
+    "RESCHEDULED": "El juego ha sido reprogramado",
+    "DELETED": "El juego ha sido eliminado",
+    "EDIT_PERMISSION": "No tienes permiso para editar este juego",
+    "ALREADY_STARTED": "¡Ese juego ya ha comenzado!"
   }
 }

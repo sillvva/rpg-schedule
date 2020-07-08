@@ -198,6 +198,7 @@ export default (options: any) => {
             guild.permission = guildConfig.role ? member.roles.cache.find(r => r.name.toLowerCase().trim() === (guildConfig.role || "").toLowerCase().trim()) : true;
             guild.isAdmin =
               member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) ||
+              member.hasPermission(Permissions.FLAGS.ADMINISTRATOR) ||
               member.roles.cache.find(r => r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim());
             guild.config = guildConfig;
             return guild;
