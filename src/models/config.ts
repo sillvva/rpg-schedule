@@ -27,6 +27,7 @@ export default {
     login: { path: "/login" },
     logout: { path: "/logout" },
     rss: { path: "/rss/:uid" },
+    guildRss: { path: "/rss/:uid/:guildId" },
     ics: { path: "/ics/:uid.ics" },
     timezone: {
       convert: { path: "/tz/:time/:tz" },
