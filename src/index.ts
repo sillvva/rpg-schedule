@@ -114,6 +114,6 @@ if (process.env.MAINTENANCE.toLowerCase() == "true") {
   app.use(apiRoutes({ client: client }));
   app.use(rssRoutes());
   app.use("/", (req: any, res, next) => {
-    res.render("home");
+    res.send("");
   });
 }

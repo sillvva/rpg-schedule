@@ -6,7 +6,7 @@ import { Game, GameMethod, gameReminderOptions } from "../models/game";
 import config from "../models/config";
 import aux from "../appaux";
 import db from "../db";
-import { ShardMember } from "./shard-manager";
+import shardManager, { ShardMember } from "./shard-manager";
 import cloneDeep from "lodash/cloneDeep";
 import { GameRSVP } from "../models/game-signups";
 
@@ -392,7 +392,7 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                     `\n${lang.config.USAGE}\n` +
                     (permission ? `\`${botcmd} link\` - ${lang.config.desc.LINK}` : ``)
                 );
-              (<TextChannel>message.channel).send(embed);
+              if (embed.description.length > 0) (<TextChannel>message.channel).send(embed);
               let embed2 = new MessageEmbed()
                 .setTitle("RPG Schedule Help")
                 .setColor(guildConfig.embedColor)
@@ -408,10 +408,11 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                         `\`${botcmd} emoji-sign-up ${guildConfig.emojiAdd}\` - ${lang.config.desc.EMOJI}\n` +
                         `\`${botcmd} emoji-drop-out ${guildConfig.emojiRemove}\` - ${lang.config.desc.EMOJI}\n` +
                         `\`${botcmd} drop-outs ${guildConfig.dropOut || guildConfig.dropOut == null ? "on" : "off"}\` - \`on/off\` - ${lang.config.desc.TOGGLE_DROP_OUT}\n` +
-                        `\`${botcmd} prefix-char ${prefix}\` - ${lang.config.desc.PREFIX.replace(/\:CHAR/gi, prefix)}\n`
+                        `\`${botcmd} prefix-char ${prefix}\` - ${lang.config.desc.PREFIX.replace(/\:CHAR/gi, prefix)}\n` +
+                        `\`${botcmd} bot-permissions #channel-name\` - ${lang.config.desc.BOT_PERMISSIONS}\n`
                     : ``
                 );
-              if (isAdmin) (<TextChannel>message.channel).send(embed2);
+              if (embed2.description.length > 0) (<TextChannel>message.channel).send(embed2);
               let embed3 = new MessageEmbed()
                 .setTitle("RPG Schedule Help")
                 .setColor(guildConfig.embedColor)
@@ -426,7 +427,7 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                         `\`${botcmd} reschedule-mode ${guildConfig.rescheduleMode}\` - ${lang.config.desc.RESCHEDULE_MODE}\n`
                     : ``
                 );
-              if (isAdmin) (<TextChannel>message.channel).send(embed3);
+              if (embed3.description.length > 0) (<TextChannel>message.channel).send(embed3);
             } else if (cmd === "link" && permission) {
               (<TextChannel>message.channel).send(process.env.HOST + config.urls.game.create.path + "?s=" + guildId);
             } else if (cmd === "configuration" && isAdmin) {
@@ -824,6 +825,8 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                 });
             } else if (cmd === "reschedule" && isAdmin) {
               await rescheduleOldGames(message.guild.id);
+            } else if (cmd === "remind" && isAdmin) {
+              await postReminders(message.guild.id);
             } else if (cmd === "password" && isAdmin) {
               guildConfig
                 .save({
@@ -919,6 +922,27 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                   message.channel.send(`Data refresh started for the \`${guild.name}\` server`);
                 }
               }
+            } else if (cmd === "bot-permissions" && (isAdmin || member.user.tag === config.author)) {
+              let channelId = message.channel.id;
+              if (params[0]) {
+                channelId = params[0].replace(/\<\#|\>/g, "");
+                if (channelId.trim().length === params[0].trim().length) {
+                  const c = message.guild.channels.cache.find((ch) => ch.name === channelId.trim());
+                  if (c) channelId = c.id;
+                }
+                if (channelId.trim().length === params[0].trim().length) {
+                  return (<TextChannel>message.channel).send(`Channel not found!`);
+                }
+              }
+              const sGuilds = await shardManager.clientGuilds(client, [message.guild.id]);
+              const sChannel = sGuilds[0].channels.find((c) => c.id === channelId);
+              const requiredPermissions = ["VIEW_CHANNEL", "READ_MESSAGE_HISTORY", "SEND_MESSAGES", "MANAGE_MESSAGES", "EMBED_LINKS", "ADD_REACTIONS"];
+              const missingPermissions = requiredPermissions.filter((rp) => !sChannel.botPermissions.includes(rp));
+              if (missingPermissions.length > 0) {
+                (<TextChannel>message.channel).send(`The bot is missing the following permissions in <#${sChannel.id}>: ${missingPermissions.join(", ")}`);
+              } else {
+                (<TextChannel>message.channel).send(`The bot has all the permissions it needs in <#${sChannel.id}>.`);
+              }
             } else {
               const response = await (<TextChannel>message.channel).send("Command not recognized");
               if (response) {
@@ -942,11 +966,12 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
    */
   client.on("messageReactionAdd", async (reaction, user: User) => {
     try {
+      if (!reaction) return;
       const message = reaction.message;
       const t = new Date().getTime();
-      const guildConfig = await GuildConfig.fetch(reaction.message.guild.id);
+      const guildConfig = await GuildConfig.fetch(message.guild.id);
       if (user.id !== message.author.id && (reaction.emoji.name === guildConfig.emojiAdd || reaction.emoji.name === guildConfig.emojiRemove)) {
-        if (guildConfig.channel.length > 0 && guildConfig.channel.find((c) => c.channelId === reaction.message.channel.id)) reaction.users.remove(user);
+        if (guildConfig.channel.length > 0 && guildConfig.channel.find((c) => c.channelId === message.channel.id)) reaction.users.remove(user);
         const game = await Game.fetchBy("messageId", message.id, client);
         if (game) {
           if (game.method !== GameMethod.AUTOMATED) return;
@@ -1305,6 +1330,9 @@ const pruneOldGames = async (guild?: Guild) => {
 
       const hardDeleted = await Game.deleteAllBy(
         {
+          hideDate: {
+            $in: [false, null],
+          },
           timestamp: {
             $lt: new Date().getTime() - 14 * 24 * 3600 * 1000,
           },
@@ -1361,7 +1389,7 @@ const pruneOldGames = async (guild?: Guild) => {
   return pruned;
 };
 
-const postReminders = async () => {
+const postReminders = async (guildId?: string) => {
   const cTime = new Date().getTime();
   const remExprs = gameReminderOptions.map((r) => {
     const rt = parseInt(r);
@@ -1393,6 +1421,10 @@ const postReminders = async () => {
     },
     $or: remExprs,
   };
+
+  if (guildId) {
+    query.s = guildId;
+  }
 
   const supportedLanguages = require("../../lang/langs.json");
   const langs = supportedLanguages.langs
@@ -1466,7 +1498,7 @@ const postReminders = async () => {
         try {
           game.reminded = true;
           const result = await game.save({ force: true });
-          if (!result.modified) return;
+          if (!result || !result.modified) return;
         } catch (err) {
           aux.log("RemindedSaveError", game._id, err);
           return;

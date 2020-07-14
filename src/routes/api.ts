@@ -642,8 +642,10 @@ export default (options: APIRouteOptions) => {
               // req.body.reserved = req.body.reserved.replace(/@/g, "");
 
               if (req.body.copy) {
-                delete req.query.g;
                 delete req.body._id;
+                delete req.query.g;
+                delete req.body.messageId;
+                delete req.body.createdTimestamp;
                 req.query.s = req.body.s;
                 server = req.body.s;
               }
@@ -797,6 +799,12 @@ export default (options: APIRouteOptions) => {
                   game.hideDate = req.body["hideDate"] ? true : false;
                   game.clearReservedOnRepeat = req.body["clearReservedOnRepeat"] ? true : false;
 
+                  if (req.body.copy) {
+                    delete game.reminded;
+                    delete (<any>game).deleted;
+                    delete game.rescheduled;
+                  }
+
                   const updatedGame = new Game(game.data, [game.discordGuild]);
 
                   updatedGame
@@ -805,10 +813,12 @@ export default (options: APIRouteOptions) => {
                       updatedGame._id = response.modified ? response._id : null;
                       let uRes: GameModel;
                       if (!req.query.g) uRes = await updatedGame.updateReservedList();
+                      uRes = { ...data, ...uRes };
+                      uRes.reserved = uRes.reserved.filter((r, i) => !/#\d{4}$/.test(r.tag.trim()) || uRes.reserved.findIndex((rr) => (rr.id ? rr.id === r.id : false) || (rr.tag === r.tag && /#\d{4}/i.test(r.tag))) === i);
                       res.json({
                         status: response.modified ? "success" : "error",
                         token: req.session.api.access.access_token,
-                        game: { ...data, ...uRes },
+                        game: uRes,
                         _id: response.modified ? response._id : null,
                       });
                     })
@@ -822,7 +832,7 @@ export default (options: APIRouteOptions) => {
                         status: "error",
                         token: req.session.api.access.access_token,
                         game: data,
-                        message: err,
+                        message: err.message,
                         code: 17,
                       });
                     });

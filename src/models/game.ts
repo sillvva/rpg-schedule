@@ -378,12 +378,21 @@ export class Game implements GameModel {
       }
 
       const rsvps = await GameRSVP.fetch(game._id);
+      game.reserved = game.reserved.map(r => {
+        r.tag = r.tag.trim().replace(/^@/g, "");
+        return r;
+      });
       game.reserved = game._id ? rsvps.map((r) => r.data).sort((a, b) => (a.timestamp > b.timestamp ? 1 : -1)) : game.reserved.filter((r) => r.tag);
-      const checkDupes = game.reserved.filter((r, i) => game.reserved.findIndex((rr) => (rr.id ? rr.id === r.id : false) || rr.tag === r.tag) === i);
+      const checkDupes = game.reserved.filter((r, i) => {
+        const test = !/#\d{4}$/.test(r.tag.trim()) || game.reserved.findIndex((rr) => (rr.id ? rr.id === r.id : false) || (rr.tag === r.tag && /#\d{4}/i.test(r.tag))) === i;
+        // console.log(r, test);
+        return test;
+      });
+      // console.log(checkDupes, game.reserved.length, checkDupes.length);
       if (game.reserved.length > checkDupes.length) {
         game.reserved = checkDupes;
         rsvps.forEach((r, i) => {
-          if (rsvps.findIndex((rr) => (rr.id ? rr.id === r.id : false) || rr.tag === r.tag) < i) {
+          if (!/#\d{4}$/.test(r.tag.trim()) || game.reserved.findIndex((rr) => (rr.id ? rr.id === r.id : false) || (rr.tag === r.tag && /#\d{4}/i.test(r.tag))) < i) {
             r.delete();
           }
         });
@@ -513,7 +522,7 @@ export class Game implements GameModel {
       if (game._id) {
         game.sequence++;
         const gameData = cloneDeep(game);
-        const prev = await Game.fetch(game._id, this.client, [this._guild]);
+        const prev = await Game.fetch(game._id, this.client, [this._guild], false);
         delete gameData._id;
 
         gameData.updatedTimestamp = new Date().getTime();
@@ -565,6 +574,7 @@ export class Game implements GameModel {
           aux.log("UpdateGameError:", err);
           if (updated) updated.modifiedCount = 0;
         }
+        
         const saved: GameSaveData = {
           _id: game._id,
           message: <Message>message,
@@ -585,7 +595,7 @@ export class Game implements GameModel {
               let member = guildMembers.find(
                 (mem) => mem.user.tag.trim() === ru.tag.trim().replace("@", "") || mem.user.id == ru.tag.trim().replace(/[<@>]/g, "") || mem.user.id === ru.id
               );
-              const rsvp = new GameRSVP({ _id: new ObjectID(), gameId: inserted.insertedId, id: ru.id, tag: ru.tag, timestamp: new Date().getTime() });
+              const rsvp = new GameRSVP({ _id: new ObjectID(), gameId: inserted.insertedId, id: ru.id, tag: ru.tag, timestamp: game.createdTimestamp+i });
               await rsvp.save();
               if (member) {
                 this.dmCustomInstructions(member.user);
@@ -639,6 +649,7 @@ export class Game implements GameModel {
             aux.log(`GameMessageNotPostedError:\n`, "s", game.s, "_id", game._id);
             await Game.hardDelete(inserted.insertedId);
           }
+          
           if (dmmember) {
             dmmember.send("The bot does not have sufficient permissions to post in the configured Discord channel");
           }
@@ -687,7 +698,7 @@ export class Game implements GameModel {
     }
   }
 
-  static async fetch(gameId: string | number | ObjectID, client?: Client, sGuilds?: ShardGuild[]): Promise<Game> {
+  static async fetch(gameId: string | number | ObjectID, client?: Client, sGuilds?: ShardGuild[], updateResList: boolean = true): Promise<Game> {
     if (!connection()) {
       aux.log("No database connection");
       return null;
@@ -699,7 +710,7 @@ export class Game implements GameModel {
     const guilds = sGuilds ? sGuilds : game.s ? (client ? await ShardManager.clientGuilds(client, [game.s]) : await ShardManager.shardGuilds({ guildIds: [game.s] })) : [];
     const sGame = new Game(game, guilds, client);
     if (sGame) {
-      await sGame.updateReservedList();
+      if (updateResList) await sGame.updateReservedList();
       return sGame;
     } else return null;
   }
@@ -906,6 +917,7 @@ export class Game implements GameModel {
     const hours = this.duration !== null ? this.duration : Game.runtimeToHours(this.runtime);
     const gameEnded = this.timestamp + hours * 3600 * 1000 < new Date().getTime();
     const nextDate = Game.getNextDate(moment(this.date), validDays, Number(this.frequency), this.monthlyType, this.xWeeks);
+    if (!nextDate) return false;
     const nextISO = `${nextDate.replace(/-/g, "")}T${this.time.replace(/:/g, "")}00${this.timezone >= 0 ? "+" : "-"}${aux.parseTimeZoneISO(this.timezone)}`;
     const nextGamePassed = new Date(nextISO).getTime() <= new Date().getTime();
     return (
@@ -926,13 +938,15 @@ export class Game implements GameModel {
       aux.log(`Rescheduling ${this.s}: ${this.adventure} from ${this.date} (${this.time}) to ${nextDate} (${this.time})`);
       this.date = nextDate;
 
-      if (this.clearReservedOnRepeat) {
-        this.reserved = [];
-      }
-
       const guildConfig = await GuildConfig.fetch(this.s);
       if (guildConfig.rescheduleMode === RescheduleMode.UPDATE) {
+        if (this.clearReservedOnRepeat) {
+          this.reserved = [];
+          await GameRSVP.deleteGame(this._id);
+        }
         this.reminded = null;
+        this.reminderMessageId = null;
+        this.pm = null;
         await this.save();
       } else if (guildConfig.rescheduleMode === RescheduleMode.REPOST) {
         let data = cloneDeep(this.data);
@@ -943,11 +957,15 @@ export class Game implements GameModel {
           guilds = await ShardManager.shardGuilds({ guildIds: [data.s] });
         }
         const id = data._id;
+        if (this.clearReservedOnRepeat) {
+          data.reserved = [];
+        }
         delete data._id;
         delete data.reminded;
         delete data.pm;
         delete data.messageId;
         delete data.reminderMessageId;
+        delete data.sequence;
         const game = new Game(data, guilds, this.client);
         try {
           const newGame = await game.save();
@@ -1186,21 +1204,28 @@ export class Game implements GameModel {
   async updateReservedList() {
     let guildMembers: ShardMember[];
     try {
-      const rsvps = await GameRSVP.fetch(this._id);
       const t = new Date().getTime() - 100 * this.reserved.length;
       if (!this.discordGuild) return;
       if (!guildMembers) guildMembers = this.discordGuild.members;
-      const checkDupes = this.reserved.filter((r, i) => this.reserved.findIndex((rr) => (rr.id ? rr.id === r.id : false) || rr.tag === r.tag) === i);
+      this.reserved = this.reserved.map(r => {
+        r.tag = r.tag.trim().replace(/^@/g, "");
+        return r;
+      });
+      const checkDupes = this.reserved.filter((r, i) => !/#\d{4}$/.test(r.tag.trim()) || this.reserved.findIndex((rr) => (rr.id ? rr.id === r.id : false) || (rr.tag === r.tag && /#\d{4}/i.test(r.tag))) === i);
       if (this.reserved.length > checkDupes.length) {
         this.reserved = checkDupes;
       }
+      const rsvps = await GameRSVP.fetch(this._id);
       for (let i = 0; i < this.reserved.length; i++) {
         try {
           const res = cloneDeep(this.reserved[i]);
           const member = guildMembers.find((m) => (this.reserved[i] && m.user.id === this.reserved[i].id) || m.user.tag === this.reserved[i].tag.trim());
+          const countMatches = this.reserved.filter((rr, ri) => ri <= i && ((rr.id ? rr.id === res.id : false) || (rr.tag === res.tag && !/#\d{4}/i.test(res.tag))));
+          const rsvpMatches = rsvps.filter(r => r._id === res._id || (r.id && r.id === res.id) || r.tag === res.tag);
+          // console.log(res.tag, countMatches.length, rsvpMatches.length);
           let rsvp = rsvps.find((r) => r._id === res._id || (r.id && r.id === res.id) || r.tag === res.tag);
           if (!rsvp) rsvp = await GameRSVP.fetchRSVP(this._id, res.id || res.tag);
-          if (!rsvp) {
+          if (!rsvp || (!/#\d{4}/i.test(res.tag) && countMatches.length > rsvpMatches.length)) {
             rsvp = new GameRSVP({
               _id: new ObjectID(res._id),
               gameId: this._id,
@@ -1209,13 +1234,20 @@ export class Game implements GameModel {
               timestamp: t + i * 100,
             });
             await rsvp.save();
+            rsvps.push(rsvp);
           }
-          if (rsvp) this.reserved[i] = rsvp.data;
+          if (rsvp) {
+            this.reserved[i] = {
+              id: rsvp.id,
+              tag: rsvp.tag,
+            };
+          }
         } catch (err) {
           aux.log("InsertRSVPError:", err);
         }
       }
-      this.reserved = this.reserved.filter((r, i) => i === this.reserved.findIndex((ri) => ri.id === r.id || ri.tag === r.tag));
+      this.reserved = this.reserved.filter((r, i) => !/#\d{4}$/.test(r.tag.trim()) || this.reserved.findIndex((rr) => (rr.id ? rr.id === r.id : false) || (rr.tag === r.tag && /#\d{4}/i.test(r.tag))) === i);
+      // console.log(this.reserved);
     } catch (err) {
       aux.log("UpdateReservedListError:", err);
     }

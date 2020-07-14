@@ -691,9 +691,9 @@ const findMessage = async (client: Client, guildId: string, channelId: string, m
       if (guild) {
         const channel = <TextChannel>guild.channels.cache.get(channelId);
         if (channel) {
-          let message = channel.messages.cache.find(m => m.id === messageId || !!m.embeds.find(e => e.timestamp === timestamp && (e.author.name === author.user.tag || e.author.name === author.user.username || e.author.name === author.nickname)));
+          let message = await channel.messages.fetch(messageId);
           if (message) return message;
-          message = await channel.messages.fetch(messageId);
+          message = channel.messages.cache.find(m => m.id === messageId || !!m.embeds.find(e => e.timestamp === timestamp && (e.author.name === author.user.tag || e.author.name === author.user.username || e.author.name === author.nickname)));
           if (message) return message;
           const messages = await channel.messages.fetch({ limit: 100 });
           message = messages.find(m => m.id === messageId || !!m.embeds.find(e => e.timestamp === timestamp && (e.author.name === author.user.tag || e.author.name === author.user.username || e.author.name === author.nickname)));
@@ -708,9 +708,9 @@ const findMessage = async (client: Client, guildId: string, channelId: string, m
           if (guild) {
             const channel = guild.channels.cache.get(${JSON.stringify(channelId)});
             if (channel) {
-              let message = channel.messages.cache.find(m => m.id === "${messageId}" || !!m.embeds.find(e => e.timestamp === ${timestamp} && (e.author.name === "${author.user.tag}" || e.author.name === "${author.user.username}" || e.author.name === "${author.nickname}")));
+              let message = await channel.messages.fetch("${messageId}");
               if (message) return message;
-              message = await channel.messages.fetch("${messageId}");
+              message = channel.messages.cache.find(m => m.id === "${messageId}" || !!m.embeds.find(e => e.timestamp === ${timestamp} && (e.author.name === "${author.user.tag}" || e.author.name === "${author.user.username}" || e.author.name === "${author.nickname}")));
               if (message) return message;
               const messages = await channel.messages.fetch({ limit: 100 });
               message = messages.find(m => m.id === "${messageId}" || !!m.embeds.find(e => e.timestamp === ${timestamp} && (e.author.name === "${author.user.tag}" || e.author.name === "${author.user.username}" || e.author.name === "${author.nickname}")));

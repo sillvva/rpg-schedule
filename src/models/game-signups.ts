@@ -1,8 +1,7 @@
 import db from "../db";
 import { ObjectID } from "mongodb";
-import { RSVP, Game } from "./game";
-import { Client, User } from "discord.js";
-import { ShardGuild } from "../processes/shard-manager";
+import { RSVP } from "./game";
+import { User } from "discord.js";
 
 const connection = db.connection;
 const collection = "rsvps";
