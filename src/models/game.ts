@@ -970,6 +970,14 @@ export class Game implements GameModel {
         try {
           const newGame = await game.save();
           if (newGame.message && newGame.modified) {
+            if (this.client)
+              this.client.shard.send({
+                type: "socket",
+                name: "game",
+                data: { action: "rescheduled", gameId: this._id, newGameId: newGame._id },
+              });
+            else io().emit("game", { action: "rescheduled", gameId: this._id, newGameId: newGame._id });
+
             const del = await this.delete();
             if (del.modifiedCount == 0) {
               const del2 = await Game.softDelete(id);
@@ -978,13 +986,6 @@ export class Game implements GameModel {
                 await this.save();
               }
             }
-            if (this.client)
-              this.client.shard.send({
-                type: "socket",
-                name: "game",
-                data: { action: "rescheduled", gameId: this._id, newGameId: newGame._id },
-              });
-            else io().emit("game", { action: "rescheduled", gameId: this._id, newGameId: newGame._id });
             return true;
           } else {
             await game.delete();

@@ -11,6 +11,87 @@ export default () => {
 
   router.use(config.urls.guildRss.path, async (req, res, next) => {
     try {
+      const { guildId } = req.params;
+      const guilds = [];
+
+      let tag = "";
+
+      const shardGuilds = await ShardManager.shardGuilds({
+        guildIds: [guildId],
+      });
+
+      shardGuilds.forEach((guild) => {
+        if (guild.id !== guildId) return;
+        guilds.push({
+          id: guild.id,
+          name: guild.name,
+        });
+      });
+
+      const gameOptions: any = {
+        s: {
+          $in: guilds.reduce((i, g) => {
+            i.push(g.id);
+            return i;
+          }, []),
+        },
+        timestamp: {
+          $gt: new Date().getTime(),
+        },
+      };
+
+      const games: any[] = await Game.fetchAllBy(gameOptions, null, shardGuilds);
+
+      res.type("application/xml");
+      res.status(200);
+      res.send(`<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>RPG Schedule</title>
+    <link>https://www.rpg-schedule.com</link>
+    <description>Game scheduling bot for Discord</description>
+    <image>
+      <url>https://www.rpg-schedule.com/images/logo2.png</url>
+      <title>RPG Schedule</title>
+      <link>https://www.rpg-schedule.com</link>
+    </image>
+    <atom:link href="${req.protocol}s://${req.hostname}${req.originalUrl}" rel="self" type="application/rss+xml" />
+    ${games
+      .map((game) => {
+        if (!game.discordGuild) return "";
+
+        const date = Game.ISOGameDate(game);
+        game.moment = {
+          raw: `${game.date} ${game.time} UTC${game.timezone < 0 ? "-" : "+"}${Math.abs(game.timezone)}`,
+          iso: date,
+          date: moment(date).utcOffset(parseInt(game.timezone)).format(config.formats.dateLong),
+          calendar: moment(date).utcOffset(parseInt(game.timezone)).calendar(),
+          from: moment(date).utcOffset(parseInt(game.timezone)).fromNow(),
+        };
+
+        return `
+      <item>
+        <title>${game.adventure}</title>
+        <link>https://www.rpg-schedule.com/games/upcoming</link>
+        <guid>https://www.rpg-schedule.com/games/${game._id.toString().slice(-12)}</guid>
+        <description>
+          <![CDATA[<p>Discord Server: ${(guilds.find((g) => g.id === game.s) || {}).name}</p><p>GM: ${game.dm.tag}</p><p>Where: ${game.where.replace(/\&/g, "&amp;")}</p><p>When: ${
+          game.moment.date
+        }</p><p>${game.description.trim().replace(/\&/g, "&amp;").replace(/\r?\n/g, "<br>")}</p>]]>
+        </description>
+      </item>`;
+      })
+      .join("\n")}
+  </channel>
+</rss>`);
+    } catch (err) {
+      console.log(err);
+      res.sendStatus(500);
+    }
+  });
+
+  router.use(config.urls.guildUserRss.path, async (req, res, next) => {
+    try {
       const { guildId, uid } = req.params;
       const guilds = [];
 
@@ -63,6 +144,7 @@ export default () => {
       <title>RPG Schedule</title>
       <link>https://www.rpg-schedule.com</link>
     </image>
+    <atom:link href="${req.protocol}s://${req.hostname}${req.originalUrl}" rel="self" type="application/rss+xml" />
     ${games
       .map((game) => {
         if (!game.discordGuild) return "";
@@ -93,7 +175,6 @@ export default () => {
       </item>`;
       })
       .join("\n")}
-    <atom:link href="${req.protocol}s://${req.hostname}${req.originalUrl}" rel="self" type="application/rss+xml" />
   </channel>
 </rss>`);
     } catch (err) {
@@ -155,6 +236,7 @@ export default () => {
       <title>RPG Schedule</title>
       <link>https://www.rpg-schedule.com</link>
     </image>
+    <atom:link href="${req.protocol}s://${req.hostname}${req.originalUrl}" rel="self" type="application/rss+xml" />
     ${games
       .map((game) => {
         if (!game.discordGuild) return "";
@@ -185,7 +267,6 @@ export default () => {
       </item>`;
       })
       .join("\n")}
-    <atom:link href="${req.protocol}s://${req.hostname}${req.originalUrl}" rel="self" type="application/rss+xml" />
   </channel>
 </rss>`);
     } catch (err) {
