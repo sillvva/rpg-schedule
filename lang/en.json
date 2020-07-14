@@ -195,7 +195,8 @@
       "PASSWORD_CLEAR": "Remove the password",
       "TOGGLE_DROP_OUT": "Enable/disable the ability for players to drop out",
       "LANG": "Set the bot's language. Supported:",
-      "RESCHEDULE_MODE": "Options: `repost` (default, creates new announcement post), `update` (updates original announcement post)"
+      "RESCHEDULE_MODE": "Options: `repost` (default, creates new announcement post), `update` (updates original announcement post)",
+      "BOT_PERMISSIONS": "Shows which permissions the bot is missing in the desginated channel"
     }
   },
   "other": {

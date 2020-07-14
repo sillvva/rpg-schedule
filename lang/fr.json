@@ -195,7 +195,8 @@
       "PASSWORD_CLEAR": "Supprimer le mot de passe",
       "TOGGLE_DROP_OUT": "Activer / désactiver la possibilité pour les joueurs de se désinscrire",
       "LANG": "Définissez la langue du bot. Prise en charge:",
-      "RESCHEDULE_MODE": ""
+      "RESCHEDULE_MODE": "Options: `repost` (par défaut, crée un nouveau message d'annonce), `update` (met à jour le message d'annonce d'origine)",
+      "BOT_PERMISSIONS": "Montre quelles autorisations le bot manque dans le canal désigné"
     }
   },
   "other": {

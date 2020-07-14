@@ -195,7 +195,8 @@
       "PASSWORD_CLEAR": "Passwort entfernen",
       "TOGGLE_DROP_OUT": "Aktivieren/Deaktivieren, ob sich Spieler austragen dürfen.",
       "LANG": "Wähle die Sprache des Bots. Unterstützt:",
-      "RESCHEDULE_MODE": "Optionen: `repost` (standard, erstellt einen neuen Ankündigungsbeitrag), `update` (aktualisiert den originalen Ankündigungsbeitrag)"
+      "RESCHEDULE_MODE": "Optionen: `repost` (standard, erstellt einen neuen Ankündigungsbeitrag), `update` (aktualisiert den originalen Ankündigungsbeitrag)",
+      "BOT_PERMISSIONS": "Zeigt an, welche Berechtigungen die Bot in dem bezeichneten Platz Kanal fehlt."
     }
   },
   "other": {

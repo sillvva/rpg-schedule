@@ -195,10 +195,11 @@
       "PASSWORD_CLEAR": "Eliminar la contraseña",
       "TOGGLE_DROP_OUT": "Activa/Desactiva la opcion a los jugadores de desconectarse",
       "LANG": "Pon el lenguaje del bot. Supported:",
-      "RESCHEDULE_MODE": "Options: `repost` (default, crea u nuevo anuncio), `update` (actualiza el post original)"
+      "RESCHEDULE_MODE": "Options: `repost` (default, crea u nuevo anuncio), `update` (actualiza el post original)",
+      "BOT_PERMISSIONS": "Muestra qué permisos falta el bot en el canal designado"
     }
   },
-  "messages": {
+  "other": {
     "DM_WAITLIST": "Estas ahora mismo en el slot :NUM de reservados.",
     "DM_INSTRUCTIONS": "Mensaje para el :DM for :EVENT",
     "MAINTENANCE": "The site will be under maintenance :TIME for approximately :DURATION hour(s).",

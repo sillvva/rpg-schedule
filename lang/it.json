@@ -193,7 +193,8 @@
       "PASSWORD_CLEAR": "Rimuovi la password",
       "TOGGLE_DROP_OUT": "Abilita/disabilita la possibilità per i giocatori di abbandonare",
       "LANG": "Imposta la lingua del bot. Supportate:",
-      "RESCHEDULE_MODE": ""
+      "RESCHEDULE_MODE": "Opzioni: `repost` (impostazione predefinita, crea un nuovo annuncio),` update` (aggiorna l'annuncio originale)",
+      "BOT_PERMISSIONS": "Mostra quali autorizzazioni manca il bot nel canale desginated"
     }
   },
   "other": {
