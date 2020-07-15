@@ -458,7 +458,7 @@ export class Game implements GameModel {
       if (game.when === GameWhen.DATETIME) {
         const date = Game.ISOGameDate(game);
         const tz = Math.round(parseFloat(game.timezone.toString()) * 4) / 4;
-        if (game.tz) when = moment(date).tz(game.tz).format(config.formats.dateLong) + ` (${timezone})`;
+        if (game.tz) when = moment(date).tz(game.tz).format(config.formats.dateLongTZ) + ` (${timezone})`;
         else when = moment(date).utcOffset(tz).format(config.formats.dateLong) + ` (${timezone})`;
         gameDate = new Date(rawDate);
       } else if (game.when === GameWhen.NOW) {
