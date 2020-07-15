@@ -429,7 +429,7 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                 );
               if (embed3.description.length > 0) (<TextChannel>message.channel).send(embed3);
             } else if (cmd === "link" && permission) {
-              (<TextChannel>message.channel).send(process.env.HOST + config.urls.game.create.path + "?s=" + guildId);
+              (<TextChannel>message.channel).send(responseEmbed(process.env.HOST + config.urls.game.create.path + "?s=" + guildId));
             } else if (cmd === "configuration" && isAdmin) {
               const channel =
                 guildConfig.channels.length > 0
@@ -475,7 +475,7 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                   if (c) channel = c.id;
                 }
                 if (channel.trim().length === params[0].trim().length) {
-                  return (<TextChannel>message.channel).send(`Channel not found!`);
+                  return (<TextChannel>message.channel).send(responseEmbed(`Channel not found!`));
                 }
                 const channels = guildConfig.channels;
                 if (!channels.find((c) => c.channelId === channel)) channels.push({ channelId: channel, gameTemplates: [guildConfig.defaultGameTemplate.id] });
@@ -484,7 +484,7 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                     channel: channels,
                   })
                   .then((result) => {
-                    (<TextChannel>message.channel).send(`${lang.config.CHANNEL_ADDED}`);
+                    (<TextChannel>message.channel).send(responseEmbed(lang.config.CHANNEL_ADDED));
                     const addedChannel = message.guild.channels.cache.find((c) => c.id === channel);
                     if (addedChannel) {
                       const missingPermissions = [
@@ -496,7 +496,9 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                         !addedChannel.permissionsFor(client.user.id).has(Permissions.FLAGS.ADD_REACTIONS) && "ADD_REACTIONS",
                       ].filter((check) => check);
                       if (missingPermissions.length > 0) {
-                        (<TextChannel>message.channel).send(`The bot is missing the following permissions in ${addedChannel.toString()}: ${missingPermissions.join(", ")}`);
+                        (<TextChannel>message.channel).send(
+                          responseEmbed(`The bot is missing the following permissions in ${addedChannel.toString()}: ${missingPermissions.join(", ")}`)
+                        );
                       }
                     }
                   })
@@ -512,7 +514,7 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                   if (c) channel = c.id;
                 }
                 if (channel.trim().length === params[0].trim().length) {
-                  return (<TextChannel>message.channel).send(`Channel not found!`);
+                  return (<TextChannel>message.channel).send(responseEmbed(`Channel not found!`));
                 }
                 const channels = guildConfig.channels;
                 if (channels.find((c) => c.channelId === channel)) {
@@ -526,7 +528,7 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                     channel: channels,
                   })
                   .then((result) => {
-                    (<TextChannel>message.channel).send(`${lang.config.CHANNEL_REMOVED}`);
+                    (<TextChannel>message.channel).send(responseEmbed(lang.config.CHANNEL_REMOVED));
                   })
                   .catch((err) => {
                     aux.log(err);
@@ -539,7 +541,7 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                     pruning: params[0] === "on",
                   })
                   .then((result) => {
-                    (<TextChannel>message.channel).send(params[0] === "on" ? lang.config.PRUNING_ON : lang.config.PRUNING_OFF);
+                    (<TextChannel>message.channel).send(responseEmbed(params[0] === "on" ? lang.config.PRUNING_ON : lang.config.PRUNING_OFF));
                   })
                   .catch((err) => {
                     aux.log(err);
@@ -547,7 +549,7 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
               }
             } else if (cmd === "prune" && isAdmin) {
               await pruneOldGames(message.guild);
-              (<TextChannel>message.channel).send(lang.config.PRUNE);
+              (<TextChannel>message.channel).send(responseEmbed(lang.config.PRUNE));
             } else if (cmd === "embeds" && isAdmin) {
               if (params[0]) {
                 guildConfig
@@ -555,7 +557,7 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                     embeds: !(params[0] === "off"),
                   })
                   .then((result) => {
-                    (<TextChannel>message.channel).send(!(params[0] === "off") ? lang.config.EMBEDS_ON : lang.config.EMBEDS_OFF);
+                    (<TextChannel>message.channel).send(responseEmbed(!(params[0] === "off") ? lang.config.EMBEDS_ON : lang.config.EMBEDS_OFF));
                   })
                   .catch((err) => {
                     aux.log(err);
@@ -568,7 +570,7 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                     embedMentions: !(params[0] === "off"),
                   })
                   .then((result) => {
-                    (<TextChannel>message.channel).send(!(params[0] === "off") ? lang.config.EMBED_USER_TAGS_ON : lang.config.EMBED_USER_TAGS_OFF);
+                    (<TextChannel>message.channel).send(responseEmbed(!(params[0] === "off") ? lang.config.EMBED_USER_TAGS_ON : lang.config.EMBED_USER_TAGS_OFF));
                   })
                   .catch((err) => {
                     aux.log(err);
@@ -581,7 +583,7 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                     embedMentionsAbove: !(params[0] === "off"),
                   })
                   .then((result) => {
-                    (<TextChannel>message.channel).send(!(params[0] === "off") ? lang.config.EMBED_USER_TAGS_ABOVE_ON : lang.config.EMBED_USER_TAGS_ABOVE_OFF);
+                    (<TextChannel>message.channel).send(responseEmbed(!(params[0] === "off") ? lang.config.EMBED_USER_TAGS_ABOVE_ON : lang.config.EMBED_USER_TAGS_ABOVE_OFF));
                   })
                   .catch((err) => {
                     aux.log(err);
@@ -735,7 +737,7 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
               if (colors[color]) {
                 color = colors[color];
               } else if (!color.match(/[0-9a-f]{6}|[0-9a-f]{3}/i)) {
-                (<TextChannel>message.channel).send(lang.config.desc.EMBED_COLOR_ERROR);
+                (<TextChannel>message.channel).send(responseEmbed(lang.config.desc.EMBED_COLOR_ERROR));
                 return;
               }
               const save: GuildConfigModel = {};
@@ -754,7 +756,7 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
             } else if (cmd === "emoji-sign-up" && isAdmin) {
               const emoji = params.join(" ");
               if (!aux.isEmoji(emoji) || (emoji.length > 2 && emoji.match(/\:[^\:]+\:/))) {
-                (<TextChannel>message.channel).send(lang.config.desc.EMOJI_ERROR.replace(/\:char/gi, emoji.replace(/\<|\>/g, "")));
+                (<TextChannel>message.channel).send(responseEmbed(lang.config.desc.EMOJI_ERROR.replace(/\:char/gi, emoji.replace(/\<|\>/g, ""))));
                 return;
               }
               guildConfig
@@ -762,7 +764,7 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                   emojiAdd: emoji,
                 })
                 .then((result) => {
-                  (<TextChannel>message.channel).send(lang.config.EMOJI_JOIN_SET);
+                  (<TextChannel>message.channel).send(responseEmbed(lang.config.EMOJI_JOIN_SET));
                   guildConfig.emojiAdd = emoji;
                   guildConfig.updateReactions(client);
                 })
@@ -772,7 +774,7 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
             } else if (cmd === "emoji-drop-out" && isAdmin) {
               const emoji = params.join(" ");
               if (!aux.isEmoji(emoji) || (emoji.length > 2 && emoji.match(/\:[^\:]+\:/))) {
-                (<TextChannel>message.channel).send(lang.config.desc.EMOJI_ERROR.replace(/\:char/gi, emoji.replace(/\<|\>/g, "")));
+                (<TextChannel>message.channel).send(responseEmbed(lang.config.desc.EMOJI_ERROR.replace(/\:char/gi, emoji.replace(/\<|\>/g, ""))));
                 return;
               }
               await guildConfig
@@ -780,7 +782,7 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                   emojiRemove: emoji,
                 })
                 .then((result) => {
-                  (<TextChannel>message.channel).send(lang.config.EMOJI_LEAVE_SET);
+                  (<TextChannel>message.channel).send(responseEmbed(lang.config.EMOJI_LEAVE_SET));
                   guildConfig.emojiRemove = emoji;
                   guildConfig.updateReactions(client);
                 })
@@ -794,7 +796,7 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                   escape: prefix.length ? prefix : "!",
                 })
                 .then((result) => {
-                  (<TextChannel>message.channel).send(lang.config.PREFIX_CHAR.replace(/\:CMD/gi, `${prefix.length ? prefix : "!"}${config.command}`));
+                  (<TextChannel>message.channel).send(responseEmbed(lang.config.PREFIX_CHAR.replace(/\:CMD/gi, `${prefix.length ? prefix : "!"}${config.command}`)));
                 })
                 .catch((err) => {
                   aux.log(err);
@@ -805,7 +807,7 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                   privateReminders: !guildConfig.privateReminders,
                 })
                 .then((result) => {
-                  (<TextChannel>message.channel).send(!guildConfig.privateReminders ? lang.config.PRIVATE_REMINDERS_ON : lang.config.PRIVATE_REMINDERS_OFF);
+                  (<TextChannel>message.channel).send(responseEmbed(!guildConfig.privateReminders ? lang.config.PRIVATE_REMINDERS_ON : lang.config.PRIVATE_REMINDERS_OFF));
                 })
                 .catch((err) => {
                   aux.log(err);
@@ -818,7 +820,7 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                   rescheduleMode: options.includes(mode) ? mode : "repost",
                 })
                 .then((result) => {
-                  (<TextChannel>message.channel).send(lang.config.RESCHEDULE_MODE_UPDATED);
+                  (<TextChannel>message.channel).send(responseEmbed(lang.config.RESCHEDULE_MODE_UPDATED));
                 })
                 .catch((err) => {
                   aux.log(err);
@@ -833,7 +835,7 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                   password: params.join(" "),
                 })
                 .then((result) => {
-                  (<TextChannel>message.channel).send(lang.config.PASSWORD_SET);
+                  (<TextChannel>message.channel).send(responseEmbed(lang.config.PASSWORD_SET));
                 })
                 .catch((err) => {
                   aux.log(err);
@@ -844,7 +846,7 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                   dropOut: guildConfig.dropOut === false,
                 })
                 .then((result) => {
-                  (<TextChannel>message.channel).send(guildConfig.dropOut === false ? lang.config.DROP_OUTS_ENABLED : lang.config.DROP_OUTS_DISABLED);
+                  (<TextChannel>message.channel).send(responseEmbed(guildConfig.dropOut === false ? lang.config.DROP_OUTS_ENABLED : lang.config.DROP_OUTS_DISABLED));
                 })
                 .catch((err) => {
                   aux.log(err);
@@ -870,7 +872,7 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
               guildConfig
                 .save(save)
                 .then((result) => {
-                  (<TextChannel>message.channel).send(roleName.length > 0 ? lang.config.ROLE_SET.replace(/\:role/gi, roleName) : lang.config.ROLE_CLEARED);
+                  (<TextChannel>message.channel).send(responseEmbed(roleName.length > 0 ? lang.config.ROLE_SET.replace(/\:role/gi, roleName) : lang.config.ROLE_CLEARED));
                 })
                 .catch((err) => {
                   aux.log(err);
@@ -888,7 +890,7 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                   managerRole: roleName == "" ? null : roleName,
                 })
                 .then((result) => {
-                  (<TextChannel>message.channel).send(roleName.length > 0 ? lang.config.ROLE_SET.replace(/\:role/gi, roleName) : lang.config.ROLE_CLEARED);
+                  (<TextChannel>message.channel).send(responseEmbed(roleName.length > 0 ? lang.config.ROLE_SET.replace(/\:role/gi, roleName) : lang.config.ROLE_CLEARED));
                 })
                 .catch((err) => {
                   aux.log(err);
@@ -903,7 +905,7 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                   lang: newLang.code,
                 })
                 .then((result) => {
-                  (<TextChannel>message.channel).send(newLang.config.LANG_SET.replace(/\:lang/gi, newLang.name));
+                  (<TextChannel>message.channel).send(responseEmbed(newLang.config.LANG_SET.replace(/\:lang/gi, newLang.name)));
                 })
                 .catch((err) => {
                   aux.log(err);
@@ -914,12 +916,12 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                 type: "refresh",
                 guildId: guildId,
               });
-              if (params[0] === "all") message.channel.send(`Data refresh started for all servers`);
+              if (params[0] === "all") message.channel.send(responseEmbed(`Data refresh started for all servers`));
               else {
                 const shards = await client.shard.broadcastEval(`this.guilds.cache.find(g => g.id === "${guildId}");`);
                 const guild = shards.find((s) => s);
                 if (guild) {
-                  message.channel.send(`Data refresh started for the \`${guild.name}\` server`);
+                  message.channel.send(responseEmbed(`Data refresh started for the \`${guild.name}\` server`));
                 }
               }
             } else if (cmd === "bot-permissions" && (isAdmin || member.user.tag === config.author)) {
@@ -931,7 +933,7 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                   if (c) channelId = c.id;
                 }
                 if (channelId.trim().length === params[0].trim().length) {
-                  return (<TextChannel>message.channel).send(`Channel not found!`);
+                  return (<TextChannel>message.channel).send(responseEmbed(`Channel not found!`));
                 }
               }
               const sGuilds = await shardManager.clientGuilds(client, [message.guild.id]);
@@ -939,9 +941,9 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
               const requiredPermissions = ["VIEW_CHANNEL", "READ_MESSAGE_HISTORY", "SEND_MESSAGES", "MANAGE_MESSAGES", "EMBED_LINKS", "ADD_REACTIONS"];
               const missingPermissions = requiredPermissions.filter((rp) => !sChannel.botPermissions.includes(rp));
               if (missingPermissions.length > 0) {
-                (<TextChannel>message.channel).send(`The bot is missing the following permissions in <#${sChannel.id}>: ${missingPermissions.join(", ")}`);
+                (<TextChannel>message.channel).send(responseEmbed(`The bot is missing the following permissions in <#${sChannel.id}>: ${missingPermissions.join(", ")}`));
               } else {
-                (<TextChannel>message.channel).send(`The bot has all the permissions it needs in <#${sChannel.id}>.`);
+                (<TextChannel>message.channel).send(responseEmbed(`The bot has all the permissions it needs in <#${sChannel.id}>.`));
               }
             } else {
               const response = await (<TextChannel>message.channel).send("Command not recognized");
@@ -1104,6 +1106,14 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
   }
 })();
 
+const responseEmbed = (message: string, title?: string) => {
+  const embed = new MessageEmbed();
+  if (title) embed.setTitle(title);
+  embed.setDescription(message);
+  embed.setColor("#2196f3");
+  return embed;
+};
+
 const refreshMessages = async () => {
   let games = await Game.fetchAllBy(
     { s: { $in: client.guilds.cache.array().map((g) => g.id) }, messageId: null, when: "datetime", method: "automated", timestamp: { $gte: new Date().getTime() } },
@@ -1243,7 +1253,6 @@ const pruneOldGames = async (guild?: Guild) => {
 
       let games = await Game.fetchAllBy(query, client);
       const guildConfigs = await GuildConfig.fetchAllBy({
-        pruning: true,
         guild: guild
           ? guild.id
           : {
@@ -1265,9 +1274,9 @@ const pruneOldGames = async (guild?: Guild) => {
 
           if (!game.pruned && game.discordChannel && new Date().getTime() - game.timestamp >= guildConfig.pruneIntDiscord * 24 * 3600 * 1000) {
             if (game.messageId) {
+              if (guildConfig.pruning) prunedMessageIds.push(game.messageId);
               if (guildConfig.pruneIntDiscord < guildConfig.pruneIntEvents && new Date().getTime() - game.timestamp < guildConfig.pruneIntEvents * 24 * 3600 * 1000) {
                 prunedIds.push(game._id);
-                if (guildConfig.pruning) prunedMessageIds.push(game.messageId);
                 client.shard.send({
                   type: "socket",
                   name: "game",
@@ -1312,9 +1321,6 @@ const pruneOldGames = async (guild?: Guild) => {
         {
           $set: {
             pruned: true,
-            // messageId: null,
-            // reminderMessageId: null,
-            // pm: null,
           },
         }
       );
@@ -1347,22 +1353,25 @@ const pruneOldGames = async (guild?: Guild) => {
         const gc = guildConfigs[gci];
         const guild = client.guilds.cache.find((g) => g.id === gc.guild);
         const channels = <TextChannel[]>guild.channels.cache.array().filter((c) => gc.channels.find((gcc) => gcc.channelId === c.id) && c instanceof TextChannel);
+
         for (let ci = 0; ci < channels.length; ci++) {
           const c = channels[ci];
           const messages = await c.messages.fetch({ limit: 100 });
           if (messages.size === 0) continue;
+
           const clientMessages = messages
             .array()
             .filter(
               (m) =>
-                m.embeds.filter(
-                  (e) => new Date().getTime() - m.createdTimestamp >= 14 * 24 * 3600 * 1000 && new Date().getTime() - e.timestamp >= gc.pruneIntDiscord * 24 * 3600 * 1000
-                ).length > 0 &&
                 m.author.id === client.user.id &&
-                prunedMessageIds.includes(m.id) &&
                 m.deletable &&
-                !m.deleted
+                !m.deleted &&
+                (m.embeds.filter(
+                  (e) => new Date().getTime() - m.createdTimestamp >= 14 * 24 * 3600 * 1000 && new Date().getTime() - e.timestamp >= gc.pruneIntDiscord * 24 * 3600 * 1000
+                ).length > 0 ||
+                  prunedMessageIds.includes(m.id))
             );
+
           for (let i = 0; i < gameChannelMessages.length; i++) {
             const msg = gameChannelMessages[i];
             if (guild.id === msg.guild && c.id === msg.channel && !clientMessages.find((cm) => cm.id === msg.message)) {
