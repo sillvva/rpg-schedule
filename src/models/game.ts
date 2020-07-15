@@ -1,6 +1,6 @@
 import mongodb, { ObjectID } from "mongodb";
 import discord, { Message, MessageEmbed, User, Client } from "discord.js";
-import moment from "moment";
+import moment from "moment-timezone";
 import "moment-recur-ts";
 
 import db from "../db";
@@ -86,6 +86,7 @@ export interface GameModel {
   date: string;
   time: string;
   timezone: number;
+  tz: string;
   timestamp: number;
   hideDate: boolean;
   reminder: string;
@@ -152,6 +153,7 @@ export class Game implements GameModel {
   date: string;
   time: string;
   timezone: number;
+  tz: string;
   timestamp: number;
   hideDate: boolean;
   reminder: string;
@@ -266,6 +268,7 @@ export class Game implements GameModel {
       date: this.date,
       time: this.time,
       timezone: this.timezone,
+      tz: this.tz,
       timestamp: this.timestamp,
       hideDate: this.hideDate,
       reminder: this.reminder,
@@ -455,7 +458,8 @@ export class Game implements GameModel {
       if (game.when === GameWhen.DATETIME) {
         const date = Game.ISOGameDate(game);
         const tz = Math.round(parseFloat(game.timezone.toString()) * 4) / 4;
-        when = moment(date).utcOffset(tz).format(config.formats.dateLong) + ` (${timezone})`;
+        if (game.tz) when = moment(date).tz(game.tz).format(config.formats.dateLong) + ` (${timezone})`;
+        else when = moment(date).utcOffset(tz).format(config.formats.dateLong) + ` (${timezone})`;
         gameDate = new Date(rawDate);
       } else if (game.when === GameWhen.NOW) {
         when = lang.game.options.NOW;

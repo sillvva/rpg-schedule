@@ -36,7 +36,7 @@ export default {
     }
   },
   formats: {
-    dateLong: "llll"
+    dateLong: "llll z"
   },
   author: "Sillvva#2532",
   command: "schedule",

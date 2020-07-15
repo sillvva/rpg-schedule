@@ -2,7 +2,7 @@ import cloneDeep from "lodash/cloneDeep";
 import isEqual from "lodash/isEqual";
 import fromPairs from "lodash/fromPairs";
 import toPairs from "lodash/toPairs";
-import moment from "moment";
+import moment from "moment-timezone";
 import "moment-recur-ts";
 import axios from "axios";
 import { GameModel } from "./models/game";
