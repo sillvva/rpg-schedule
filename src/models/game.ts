@@ -910,8 +910,8 @@ export class Game implements GameModel {
   static runtimeToHours(runtime: string | number) {
     let hours = 0,
       x: RegExpExecArray;
-    if ((x = /[\d\.]/g.exec(runtime.toString().trim()))) {
-      if (x[0]) hours = parseInt(x[0]);
+    if ((x = /[\d\.]+/g.exec(runtime.toString().trim()))) {
+      if (x[0]) hours = parseFloat(x[0]);
     }
     return hours;
   }

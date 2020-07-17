@@ -1149,7 +1149,7 @@ export default (options: APIRouteOptions) => {
 
     const options = {
       guilds: true,
-      games: false,
+      games: req.query.games,
       search: "",
     };
 
@@ -1161,7 +1161,6 @@ export default (options: APIRouteOptions) => {
         },
       },
       guilds: [],
-      sGuilds: [],
     };
 
     let sGuilds: ShardGuild[] = [];
@@ -1185,8 +1184,6 @@ export default (options: APIRouteOptions) => {
               }
         );
       }
-
-      account.sGuilds = sGuilds;
       // console.log(new Date().getTime() - fTime, req.query, tag, sGuilds.length);
 
       sGuilds.forEach((guild) => {
@@ -1285,14 +1282,6 @@ export default (options: APIRouteOptions) => {
 
         const fGames: Game[] = await Game.fetchAllBy(gameOptions, null, sGuilds);
         // console.log(new Date().getTime() - fTime);
-        // const games: any[] = [];
-        // for (let i = 0; i < fGames.length; i++) {
-        //   const game = fGames[i];
-        //   const dc = game.discordChannel;
-        //   if (dc && (dc.members || []).includes(id)) {
-        //     games.push(game);
-        //   }
-        // }
         fGames.forEach(async (game) => {
           if (!game.discordGuild) return;
           const date = Game.ISOGameDate(game);
