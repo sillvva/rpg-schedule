@@ -100,6 +100,7 @@ export interface GameModel {
   xWeeks: number;
   monthlyType: MonthlyType;
   clearReservedOnRepeat: boolean;
+  disableWaitlist: boolean;
   rescheduled: boolean;
   pastSignups: boolean;
   sequence: number;
@@ -167,6 +168,7 @@ export class Game implements GameModel {
   xWeeks: number = 2;
   monthlyType: MonthlyType = MonthlyType.WEEKDAY;
   clearReservedOnRepeat: boolean = false;
+  disableWaitlist: boolean = false;
   rescheduled: boolean = false;
   pastSignups: boolean = false;
   sequence: number = 1;
@@ -282,6 +284,7 @@ export class Game implements GameModel {
       xWeeks: this.xWeeks,
       monthlyType: this.monthlyType,
       clearReservedOnRepeat: this.clearReservedOnRepeat,
+      disableWaitlist: this.disableWaitlist,
       rescheduled: this.rescheduled,
       pastSignups: this.pastSignups,
       sequence: this.sequence,
@@ -447,7 +450,7 @@ export class Game implements GameModel {
       let automatedInstructions = `\n(${guildConfig.emojiAdd} ${lang.buttons.SIGN_UP}${guildConfig.dropOut ? ` | ${guildConfig.emojiRemove} ${lang.buttons.DROP_OUT}` : ""})`;
       if (game.method === GameMethod.AUTOMATED) {
         if (reserved.length > 0) signups += `\n**${lang.game.RESERVED}:**\n${reserved.join("\n")}\n`;
-        if (waitlist.length > 0) signups += `\n**${lang.game.WAITLISTED}:**\n${waitlist.join("\n")}\n`;
+        if (waitlist.length > 0 && !game.disableWaitlist) signups += `\n**${lang.game.WAITLISTED}:**\n${waitlist.join("\n")}\n`;
         signups += automatedInstructions;
       } else if (game.method === GameMethod.CUSTOM) {
         signups += `\n${game.customSignup}`;
@@ -510,7 +513,7 @@ export class Game implements GameModel {
         if (game.method === GameMethod.AUTOMATED || (game.method === GameMethod.CUSTOM && reserved.length > 0)) {
           embed.addField(`${lang.game.RESERVED} (${reserved.length}/${game.players})`, reserved.length > 0 ? reserved.join("\n") : lang.game.NO_PLAYERS, true);
         }
-        if (waitlist.length > 0) embed.addField(`${lang.game.WAITLISTED} (${waitlist.length})`, waitlist.join("\n"), true);
+        if (waitlist.length > 0 && !game.disableWaitlist) embed.addField(`${lang.game.WAITLISTED} (${waitlist.length})`, waitlist.join("\n"), true);
         if (!game.hideDate)
           embed.addField(
             "Links",
@@ -1274,26 +1277,36 @@ export class Game implements GameModel {
 
   async signUp(user: User | ShardUser, t?: number) {
     const hourDiff = (new Date().getTime() - this.timestamp) / 1000 / 3600;
-    if (hourDiff < 0 || this.pastSignups || this.hideDate) {
-      let match = await GameRSVP.fetchRSVP(this._id, user.id);
-      if (match && !this.reserved.find((r) => r.id === match.id || r.tag === match.tag)) {
-        await GameRSVP.deleteUser(this._id, user.id);
-        match = null;
-      }
-      if (!match) {
-        const rsvp = new GameRSVP({ _id: new ObjectID(), gameId: this._id, id: user.id, tag: user.tag, timestamp: t || new Date().getTime() });
-        await rsvp.save();
-        await this.save();
-        this.dmCustomInstructions(user);
-        return true;
-      }
-      return false;
-    } else {
-      if (!this.discordGuild) return;
+
+    if (hourDiff >= 0 && !this.pastSignups && !this.hideDate) {
+      if (!this.discordGuild) return false;
       const member = this.discordGuild.members.find((m) => m.user.tag === user.tag.trim() || m.user.id === user.id);
       const guildConfig = await GuildConfig.fetch(this.s);
       const lang = gmLanguages.find((l) => l.code === guildConfig.lang) || gmLanguages.find((l) => l.code === "en");
       if (member) member.send(lang.other.ALREADY_STARTED);
+      return false;
+    }
+
+    if (this.disableWaitlist && this.reserved.length >= parseInt(this.players)) {
+      if (!this.discordGuild) return false;
+      const member = this.discordGuild.members.find((m) => m.user.tag === user.tag.trim() || m.user.id === user.id);
+      const guildConfig = await GuildConfig.fetch(this.s);
+      const lang = gmLanguages.find((l) => l.code === guildConfig.lang) || gmLanguages.find((l) => l.code === "en");
+      if (member) member.send(lang.other.MAX_NO_WAITLIST);
+      return false;
+    }
+
+    let match = await GameRSVP.fetchRSVP(this._id, user.id);
+    if (match && !this.reserved.find((r) => r.id === match.id || r.tag === match.tag)) {
+      await GameRSVP.deleteUser(this._id, user.id);
+      match = null;
+    }
+    if (!match) {
+      const rsvp = new GameRSVP({ _id: new ObjectID(), gameId: this._id, id: user.id, tag: user.tag, timestamp: t || new Date().getTime() });
+      await rsvp.save();
+      await this.save();
+      this.dmCustomInstructions(user);
+      return true;
     }
     return false;
   }
