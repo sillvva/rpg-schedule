@@ -72,6 +72,10 @@
     "PAST_SIGNUPS": "Allow signups past the signup date/time",
     "SLOT": "Slot",
     "UNSAVED": "You have unsaved changes. Do you wish to proceed?",
+    "GAME_OPTIONS": "Game Options",
+    "DISABLE_WAITLIST": "Disable Waitlist",
+    "UPLOAD_GAME_IMAGE": "Upload Game Image",
+    "MAX_UPLOAD_SIZE": "Max size (5 MB)",
     "options": {
       "AUTOMATED_SIGNUP": "Automated Signup",
       "CUSTOM_SIGNUP_INSTRUCTIONS": "Custom Signup Instructions",
@@ -209,6 +213,7 @@
     "RESCHEDULED": "The game has been rescheduled",
     "DELETED": "The game has been deleted",
     "EDIT_PERMISSION": "You do not have permission to edit this game",
-    "ALREADY_STARTED": "That game has already started!"
+    "ALREADY_STARTED": "That game has already started.",
+    "MAX_NO_WAITLIST": "That game is full and not accepting additional signups."
   }
 }

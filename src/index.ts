@@ -18,12 +18,13 @@ import rssRoutes from "./routes/rss";
 const app = express();
 
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: "10mb" }));
 app.use(express.static(path.join(__dirname, "..", "public")));
 app.use(cookieParser());
 
 app.use(async (req, res, next) => {
-  res.set("Access-Control-Allow-Origin", process.env.HOST);
+  // res.set("Access-Control-Allow-Origin", process.env.HOST);
+  res.set("Access-Control-Allow-Origin", "*");
   res.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   res.set("Access-Control-Allow-Headers", "authorization, accept, content-type, origin, x-requested-with, host, origin, referer, locale");
   next();

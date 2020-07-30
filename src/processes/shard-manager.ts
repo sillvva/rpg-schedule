@@ -598,12 +598,12 @@ const refreshGuild = async function (guildId: string) {
           members: [], // c.members.map((m) => m.user.id),
           everyone: c.permissionsFor(c.guild.roles.cache.find((r) => r.name === "@everyone").id).has(Permissions.FLAGS.VIEW_CHANNEL),
           botPermissions: [
-            c.permissionsFor(client.user.id).has(Permissions.FLAGS.VIEW_CHANNEL) && "VIEW_CHANNEL",
-            c.permissionsFor(client.user.id).has(Permissions.FLAGS.READ_MESSAGE_HISTORY) && "READ_MESSAGE_HISTORY",
-            c.permissionsFor(client.user.id).has(Permissions.FLAGS.SEND_MESSAGES) && "SEND_MESSAGES",
-            c.permissionsFor(client.user.id).has(Permissions.FLAGS.MANAGE_MESSAGES) && "MANAGE_MESSAGES",
-            c.permissionsFor(client.user.id).has(Permissions.FLAGS.EMBED_LINKS) && "EMBED_LINKS",
-            c.permissionsFor(client.user.id).has(Permissions.FLAGS.ADD_REACTIONS) && "ADD_REACTIONS",
+            c.permissionsFor(this.user.id).has(Permissions.FLAGS.VIEW_CHANNEL) && "VIEW_CHANNEL",
+            c.permissionsFor(this.user.id).has(Permissions.FLAGS.READ_MESSAGE_HISTORY) && "READ_MESSAGE_HISTORY",
+            c.permissionsFor(this.user.id).has(Permissions.FLAGS.SEND_MESSAGES) && "SEND_MESSAGES",
+            c.permissionsFor(this.user.id).has(Permissions.FLAGS.MANAGE_MESSAGES) && "MANAGE_MESSAGES",
+            c.permissionsFor(this.user.id).has(Permissions.FLAGS.EMBED_LINKS) && "EMBED_LINKS",
+            c.permissionsFor(this.user.id).has(Permissions.FLAGS.ADD_REACTIONS) && "ADD_REACTIONS",
           ].filter((check) => check)
         })),
         roles: guild.roles.cache.array(),

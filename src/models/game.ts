@@ -384,7 +384,7 @@ export class Game implements GameModel {
       }
 
       const rsvps = await GameRSVP.fetch(game._id);
-      game.reserved = game.reserved.map(r => {
+      game.reserved = game.reserved.map((r) => {
         r.tag = r.tag.trim().replace(/^@/g, "");
         return r;
       });
@@ -504,9 +504,9 @@ export class Game implements GameModel {
         if (description.length > 0) embed.setDescription(description);
         if (game.hideDate) embed.addField(lang.game.WHEN, lang.game.labels.TBD, true);
         else embed.addField(lang.game.WHEN, when, true);
-        if (game.runtime && game.runtime.trim().length > 0 && game.runtime.trim() != "0") embed.addField(lang.game.RUN_TIME, `${game.runtime} ${lang.game.labels.HOURS}`, true);
+        if (game.runtime && game.runtime.trim().length > 0 && game.runtime.trim() != "0") embed.addField(lang.game.RUN_TIME, `${game.runtime} ${lang.game.labels.HOURS}`, guildConfig.embedMentions || where.trim().length > 0);
+        if (guildConfig.embedMentions) embed.addField(lang.game.GM, gmTag, where.trim().length > 0);
         if (where.trim().length > 0) embed.addField(lang.game.WHERE, where);
-        if (guildConfig.embedMentions) embed.addField(lang.game.GM, gmTag);
         if (game.method === GameMethod.CUSTOM) {
           embed.addField(lang.game.CUSTOM_SIGNUP_INSTRUCTIONS, game.customSignup);
         }
@@ -543,7 +543,7 @@ export class Game implements GameModel {
 
           if (guildConfig.embeds) {
             if (guildConfig.embedMentionsAbove) {
-              const mentions = [Game.parseDiscord(game.description, guild, true), dmmember && dmmember.user.toString(), rMentions.join(" ")];
+              const mentions = [dmmember && dmmember.user.toString(), Game.parseDiscord(game.description, guild, true), rMentions.join(" ")].join(" ").trim().split(" ");
               msg = mentions.filter((m, i) => m && mentions.indexOf(m) === i).join(" ");
             }
           } else embed = null;
@@ -581,7 +581,7 @@ export class Game implements GameModel {
           aux.log("UpdateGameError:", err);
           if (updated) updated.modifiedCount = 0;
         }
-        
+
         const saved: GameSaveData = {
           _id: game._id,
           message: <Message>message,
@@ -602,7 +602,7 @@ export class Game implements GameModel {
               let member = guildMembers.find(
                 (mem) => mem.user.tag.trim() === ru.tag.trim().replace("@", "") || mem.user.id == ru.tag.trim().replace(/[<@>]/g, "") || mem.user.id === ru.id
               );
-              const rsvp = new GameRSVP({ _id: new ObjectID(), gameId: inserted.insertedId, id: ru.id, tag: ru.tag, timestamp: game.createdTimestamp+i });
+              const rsvp = new GameRSVP({ _id: new ObjectID(), gameId: inserted.insertedId, id: ru.id, tag: ru.tag, timestamp: game.createdTimestamp + i });
               await rsvp.save();
               if (member) {
                 this.dmCustomInstructions(member.user);
@@ -612,7 +612,7 @@ export class Game implements GameModel {
 
           if (guildConfig.embeds) {
             if (guildConfig.embedMentionsAbove) {
-              const mentions = [Game.parseDiscord(game.description, guild, true), dmmember && dmmember.user.toString(), rMentions.join(" ")];
+              const mentions = [dmmember && dmmember.user.toString(), Game.parseDiscord(game.description, guild, true), rMentions.join(" ")].join(" ").trim().split(" ");
               msg = mentions.filter((m, i) => m && mentions.indexOf(m) === i).join(" ");
             }
           } else embed = null;
@@ -656,7 +656,7 @@ export class Game implements GameModel {
             aux.log(`GameMessageNotPostedError:\n`, "s", game.s, "_id", game._id);
             await Game.hardDelete(inserted.insertedId);
           }
-          
+
           if (dmmember) {
             dmmember.send("The bot does not have sufficient permissions to post in the configured Discord channel");
           }
@@ -942,10 +942,25 @@ export class Game implements GameModel {
     try {
       const validDays = this.getWeekdays();
       const nextDate = Game.getNextDate(moment(this.date), validDays, Number(this.frequency), this.monthlyType, this.xWeeks);
-      aux.log(`Rescheduling ${this.s}: ${this.adventure} from ${this.date} (${this.time}) to ${nextDate} (${this.time})`);
       this.date = nextDate;
 
       const guildConfig = await GuildConfig.fetch(this.s);
+
+      if (this.client && this.dm.id) {
+        const guild = this.client.guilds.cache.find(g => g.id === this.s);
+        if (guild) {
+          const member = guild.members.cache.find(m => m.user.id === this.dm.id);
+          if (!member || !guildConfig.memberHasPermission(member, this.c)) {
+            aux.log(`Removing game ${this._id} from ${this.s}. User no longer has permission to post games.`);
+            this.frequency = Frequency.NO_REPEAT;
+            await this.save();
+            await this.delete();
+            return false;
+          }
+        }
+      }
+
+      aux.log(`Rescheduling ${this.s}: ${this.adventure} from ${this.date} (${this.time}) to ${nextDate} (${this.time})`);
       if (guildConfig.rescheduleMode === RescheduleMode.UPDATE) {
         if (this.clearReservedOnRepeat) {
           this.reserved = [];
@@ -1010,8 +1025,6 @@ export class Game implements GameModel {
     }
   }
 
-  static async;
-
   static async softDeleteAllBy(query: mongodb.FilterQuery<any>) {
     if (!connection()) {
       aux.log("No database connection");
@@ -1019,7 +1032,7 @@ export class Game implements GameModel {
     }
     return await connection()
       .collection(collection)
-      .updateMany({ ...query }, { $set: { deleted: true } });
+      .updateMany({ ...query }, { $set: { deleted: true, frequency: Frequency.NO_REPEAT } });
   }
 
   static async hardDeleteAllBy(query: mongodb.FilterQuery<any>) {
@@ -1059,7 +1072,7 @@ export class Game implements GameModel {
   static async softDelete(_id: string | number | mongodb.ObjectID) {
     return await connection()
       .collection(collection)
-      .updateOne({ _id: new ObjectId(_id) }, { $set: { deleted: true } });
+      .updateOne({ _id: new ObjectId(_id) }, { $set: { deleted: true, frequency: Frequency.NO_REPEAT } });
   }
 
   async delete(options: any = {}) {
@@ -1215,11 +1228,13 @@ export class Game implements GameModel {
       const t = new Date().getTime() - 100 * this.reserved.length;
       if (!this.discordGuild) return;
       if (!guildMembers) guildMembers = this.discordGuild.members;
-      this.reserved = this.reserved.map(r => {
+      this.reserved = this.reserved.map((r) => {
         r.tag = r.tag.trim().replace(/^@/g, "");
         return r;
       });
-      const checkDupes = this.reserved.filter((r, i) => !/#\d{4}$/.test(r.tag.trim()) || this.reserved.findIndex((rr) => (rr.id ? rr.id === r.id : false) || (rr.tag === r.tag && /#\d{4}/i.test(r.tag))) === i);
+      const checkDupes = this.reserved.filter(
+        (r, i) => !/#\d{4}$/.test(r.tag.trim()) || this.reserved.findIndex((rr) => (rr.id ? rr.id === r.id : false) || (rr.tag === r.tag && /#\d{4}/i.test(r.tag))) === i
+      );
       if (this.reserved.length > checkDupes.length) {
         this.reserved = checkDupes;
       }
@@ -1229,7 +1244,7 @@ export class Game implements GameModel {
           const res = cloneDeep(this.reserved[i]);
           const member = guildMembers.find((m) => (this.reserved[i] && m.user.id === this.reserved[i].id) || m.user.tag === this.reserved[i].tag.trim());
           const countMatches = this.reserved.filter((rr, ri) => ri <= i && ((rr.id ? rr.id === res.id : false) || (rr.tag === res.tag && !/#\d{4}/i.test(res.tag))));
-          const rsvpMatches = rsvps.filter(r => r._id === res._id || (r.id && r.id === res.id) || r.tag === res.tag);
+          const rsvpMatches = rsvps.filter((r) => r._id === res._id || (r.id && r.id === res.id) || r.tag === res.tag);
           // console.log(res.tag, countMatches.length, rsvpMatches.length);
           let rsvp = rsvps.find((r) => r._id === res._id || (r.id && r.id === res.id) || r.tag === res.tag);
           if (!rsvp) rsvp = await GameRSVP.fetchRSVP(this._id, res.id || res.tag);
@@ -1254,7 +1269,9 @@ export class Game implements GameModel {
           aux.log("InsertRSVPError:", err);
         }
       }
-      this.reserved = this.reserved.filter((r, i) => !/#\d{4}$/.test(r.tag.trim()) || this.reserved.findIndex((rr) => (rr.id ? rr.id === r.id : false) || (rr.tag === r.tag && /#\d{4}/i.test(r.tag))) === i);
+      this.reserved = this.reserved.filter(
+        (r, i) => !/#\d{4}$/.test(r.tag.trim()) || this.reserved.findIndex((rr) => (rr.id ? rr.id === r.id : false) || (rr.tag === r.tag && /#\d{4}/i.test(r.tag))) === i
+      );
       // console.log(this.reserved);
     } catch (err) {
       aux.log("UpdateReservedListError:", err);
@@ -1339,19 +1356,19 @@ export class Game implements GameModel {
   static parseDiscord(text: string, guild: ShardGuild, getMentions: boolean = false) {
     const mentions: string[] = [];
     try {
-      guild.members.forEach((mem) => {
-        if (new RegExp(`\@${aux.backslash(mem.user.tag)}`, "gi").test(text)) mentions.push(mem.user.toString());
-        text = text.replace(new RegExp(`\@${aux.backslash(mem.user.tag)}`, "gi"), mem.user.toString());
-      });
-      guild.channels.forEach((c) => {
-        text = text.replace(new RegExp(`\#${aux.backslash(c.name)}`, "gi"), `<#${c.id}>`);
-      });
       guild.roles.forEach((role) => {
         // const canMention = guild.members.hasPermission(Permissions.FLAGS.toString()_EVERYONE);
         const canMention = true;
         if ((!role.mentionable && !canMention) || ["@everyone", "@here"].includes(role.name)) return;
-        if (new RegExp(`\@${aux.backslash(role.name)}`, "gi").test(text)) mentions.push(`<@&${role.id}>`);
-        text = text.replace(new RegExp(`\@${aux.backslash(role.name)}`, "gi"), `<@&${role.id}>`);
+        if (new RegExp(`<?\@&?(${aux.backslash(role.id)}|${aux.backslash(role.name)})>?`, "gi").test(text)) mentions.push(`<@&${role.id}>`);
+        text = text.replace(new RegExp(`<?\@&?(${aux.backslash(role.id)}|${aux.backslash(role.name)})>?`, "gi"), `<@&${role.id}>`);
+      });
+      guild.members.forEach((mem) => {
+        if (new RegExp(`<?\@(${aux.backslash(mem.user.id)}|${aux.backslash(mem.user.tag)})>?`, "gi").test(text)) mentions.push(mem.user.toString());
+        text = text.replace(new RegExp(`<?\@(${aux.backslash(mem.user.id)}|${aux.backslash(mem.user.tag)})>?`, "gi"), mem.user.toString());
+      });
+      guild.channels.forEach((c) => {
+        text = text.replace(new RegExp(`\#${aux.backslash(c.name)}`, "gi"), `<#${c.id}>`);
       });
     } catch (err) {
       aux.log(err);

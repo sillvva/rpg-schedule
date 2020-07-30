@@ -72,6 +72,10 @@
     "PAST_SIGNUPS": "Permitir registros después de la fecha / hora de registro",
     "SLOT": "Espacio",
     "UNSAVED": "Usted tiene cambios no guardados. ¿Desea continuar?",
+    "GAME_OPTIONS": "Opciones de juego",
+    "DISABLE_WAITLIST": "Desactivar la Lista de Espera",
+    "UPLOAD_GAME_IMAGE": "Subir imagen juego",
+    "MAX_UPLOAD_SIZE": "Tamaño máximo (5 MB)",
     "options": {
       "AUTOMATED_SIGNUP": "Registrarse Automaticamente",
       "CUSTOM_SIGNUP_INSTRUCTIONS": "Instrucciones para unirse al evento",
@@ -209,6 +213,7 @@
     "RESCHEDULED": "El juego ha sido reprogramado",
     "DELETED": "El juego ha sido eliminado",
     "EDIT_PERMISSION": "No tienes permiso para editar este juego",
-    "ALREADY_STARTED": "¡Ese juego ya ha comenzado!"
+    "ALREADY_STARTED": "¡Ese juego ya ha comenzado!",
+    "MAX_NO_WAITLIST": "Ese juego está lleno y no aceptar suscripciones adicionales."
   }
 }

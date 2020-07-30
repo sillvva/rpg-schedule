@@ -42,7 +42,8 @@ export default {
   author: "Sillvva#2532",
   command: "schedule",
   patreon: {
-    creditPledge: '4773971'
+    creditPledge: "4773971",
+    apiPledge: "5658220"
   },
   defaults: {
     sessionStatus: {

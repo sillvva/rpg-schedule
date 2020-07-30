@@ -5,6 +5,8 @@ import toPairs from "lodash/toPairs";
 import moment from "moment-timezone";
 import "moment-recur-ts";
 import axios from "axios";
+import md5 from "md5";
+import config from "./models/config";
 import { GameModel } from "./models/game";
 
 interface Path {
@@ -51,6 +53,24 @@ const patreonPledges = async () => {
       error: err,
     };
   }
+};
+
+const getAPIKey = async (discordId: string) => {
+  const pledges = await patreonPledges();
+  const pledge =
+    pledges.status === "success"
+      ? pledges.data.find((p) => p.reward.id === config.patreon.apiPledge && (p.patron.attributes.social_connections.discord || {}).user_id === discordId)
+      : null;
+  return pledge && md5(`${pledge.patron.id}${discordId}`);
+};
+
+const validateAPIKey = async (key: string) => {
+  const pledges = await patreonPledges();
+  const pledge =
+    pledges.status === "success"
+      ? pledges.data.find((p) => config.patreon.apiPledge.split(",").includes(p.reward.id) && md5(`${p.patron.id}${(p.patron.attributes.social_connections.discord || {}).user_id}`) === key)
+      : null;
+  return pledge && (pledge.patron.attributes.social_connections.discord || {}).user_id;
 };
 
 const log = (...content: any) => {
@@ -372,4 +392,6 @@ export default {
   log: log,
   patreonPledges: patreonPledges,
   colorFixer: colorFixer,
+  getAPIKey: getAPIKey,
+  validateAPIKey: validateAPIKey
 };

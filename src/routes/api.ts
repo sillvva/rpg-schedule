@@ -2,6 +2,7 @@ import discord, { Permissions, Role, ShardingManager } from "discord.js";
 import express from "express";
 import moment from "moment";
 import request from "request";
+import axios from "axios";
 import merge from "lodash/merge";
 import cloneDeep from "lodash/cloneDeep";
 
@@ -244,10 +245,14 @@ export default (options: APIRouteOptions) => {
       })
         .then(async (result: any) => {
           const userSettings = await getUserSettings(result.account.user.id, req);
+          const apiKey = await aux.getAPIKey(result.account.user.id);
           res.json({
             status: "success",
             token: req.session.api.access.access_token,
-            account: result.account,
+            account: {
+              ...result.account,
+              apiKey: await aux.getAPIKey(result.account.user.id),
+            },
             user: userSettings.data,
             version: apiVersion,
           });
@@ -361,7 +366,10 @@ export default (options: APIRouteOptions) => {
           res.json({
             status: "success",
             token: req.session.api.access.access_token,
-            account: result.account,
+            account: {
+              ...result.account,
+              apiKey: await aux.getAPIKey(result.account.user.id),
+            },
             user: userSettings.data,
             version: apiVersion,
           });
@@ -398,7 +406,7 @@ export default (options: APIRouteOptions) => {
           const guild = result.account.guilds.find((g) => g.id == req.body.id);
           if (!guild) throw new Error("Guild not found");
           if (!guild.isAdmin) throw new Error("You don't have permission to do that");
-          req.body.channel = req.body.channel.filter(c => !isNaN(c.channelId));
+          req.body.channel = req.body.channel.filter((c) => !isNaN(c.channelId));
           for (const property in guildConfig) {
             if (property === "_id") continue;
             if (typeof req.body[property] != "undefined") guildConfig[property] = req.body[property];
@@ -814,7 +822,10 @@ export default (options: APIRouteOptions) => {
                       let uRes: GameModel;
                       if (!req.query.g) uRes = await updatedGame.updateReservedList();
                       uRes = { ...data, ...uRes };
-                      uRes.reserved = uRes.reserved.filter((r, i) => !/#\d{4}$/.test(r.tag.trim()) || uRes.reserved.findIndex((rr) => (rr.id ? rr.id === r.id : false) || (rr.tag === r.tag && /#\d{4}/i.test(r.tag))) === i);
+                      uRes.reserved = uRes.reserved.filter(
+                        (r, i) =>
+                          !/#\d{4}$/.test(r.tag.trim()) || uRes.reserved.findIndex((rr) => (rr.id ? rr.id === r.id : false) || (rr.tag === r.tag && /#\d{4}/i.test(r.tag))) === i
+                      );
                       res.json({
                         status: response.modified ? "success" : "error",
                         token: req.session.api.access.access_token,
@@ -1143,6 +1154,315 @@ export default (options: APIRouteOptions) => {
     });
   });
 
+  router.get("/api/get-key", async (req, res, next) => {
+    const pledges = await aux.patreonPledges();
+    const pledge =
+      pledges.status === "success"
+        ? pledges.data.find((p) => p.reward.id === config.patreon.apiPledge && (p.patron.attributes.social_connections.discord || {}).user_id === req.query.id)
+        : null;
+    const key = await aux.getAPIKey(req.query.id);
+    res.json(
+      pledge
+        ? {
+            status: "success",
+            key: key,
+          }
+        : {
+            status: "error",
+            message: "Missing required Patreon pledge",
+          }
+    );
+  });
+
+  router.post("/api/upload-to-imgur", async (req, res, next) => {
+    try {
+      const result = await axios.post(
+        "https://api.imgur.com/3/image",
+        {
+          image: req.body.image
+        },
+        {
+          headers: {
+            Authorization: `Client-ID ${process.env.IMGUR_CLIENT_ID}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      res.json(result.data.data);
+    } catch (err) {
+      res.json({
+        error: err.message,
+      });
+    }
+  });
+
+  const patronAPILimit = 5; // Once per X minutes
+
+  router.get("/patron-api/games", async (req, res, next) => {
+    const { key, guildId } = req.query;
+    let id = await aux.validateAPIKey(key);
+    // id = "202640192178225152";
+
+    if (!id) {
+      return res.json({
+        status: "error",
+        message: "Invalid API key",
+      });
+    }
+
+    let userSettings = await getUserSettings(id, req, false);
+    if (userSettings) {
+      const tdiff = new Date().getTime() - userSettings.lastAPIAccess;
+      if (tdiff < patronAPILimit * 60 * 1000) {
+        const remTime = Math.round((5 * 60 * 1000 - tdiff) / 1000);
+        const remSeconds = remTime % 60;
+        const remMinutes = (remTime - remSeconds) / 60;
+        return res.json({
+          status: "error",
+          message: `Too soon. Please wait ${remMinutes > 0 ? `${remMinutes} minutes` : ""}${remMinutes > 0 && remSeconds > 0 ? ", " : ""}${
+            remSeconds > 0 ? `${remSeconds} seconds` : ""
+          }.`,
+        });
+      } else {
+        userSettings.lastAPIAccess = new Date().getTime();
+        await userSettings.save();
+      }
+    }
+
+    const options = {
+      guilds: true,
+      games: true,
+      search: "",
+    };
+
+    const account = {
+      user: {
+        ...req.query,
+        ...{
+          tag: "",
+        },
+      },
+      guilds: [],
+    };
+
+    let sGuilds: ShardGuild[] = [];
+
+    if (options.guilds) {
+      const fTime = new Date().getTime();
+      if (guildId) {
+        let guild: ShardGuild = await new Promise(async (resolve) => {
+          const g = await ShardManager.refreshGuild(guildId);
+          resolve(g.find((g) => g.id === guildId));
+        });
+        const member = guild.members.find((member) => {
+          return id && member.user.id === id;
+        });
+        if (member) sGuilds.push(guild);
+        else
+          return res.json({
+            status: "error",
+            message: "API key's owner was not found in the specified server",
+          });
+      } else {
+        return res.json({
+          status: "error",
+          message: "Server id not specified",
+        });
+      }
+
+      if (sGuilds.length === 0) {
+        return res.json({
+          status: "error",
+          message: "Server not found",
+        });
+      }
+      // console.log(new Date().getTime() - fTime, req.query, tag, sGuilds.length);
+
+      sGuilds.forEach((guild) => {
+        const guildInfo: AccountGuild = {
+          id: guild.id,
+          name: guild.name,
+          icon: guild.icon ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=128` : "/images/logo2.png",
+          permission: false,
+          isAdmin: false,
+          member: null,
+          roles: guild.roles,
+          userRoles: [],
+          channelCategories: guild.channels.filter((c) => c.type === "category"),
+          channels: guild.channels.filter((c) => c.type === "text"),
+          announcementChannels: [],
+          config: new GuildConfig({ guild: guild.id }),
+          games: [],
+        };
+
+        guild.members.forEach((member) => {
+          if (id && member.user.id === id) {
+            guildInfo.member = member;
+            account.user = member.user;
+            if (!options.search) account.guilds.push(guildInfo);
+          }
+        });
+        if (options.search) {
+          if (new RegExp(options.search, "gi").test(guild.name)) {
+            account.guilds.push(guildInfo);
+          }
+        }
+      });
+
+      if (!userSettings) {
+        userSettings = await getUserSettings(account.user.id, req);
+        if (userSettings) {
+          const tdiff = new Date().getTime() - userSettings.lastAPIAccess;
+          if (tdiff < 5 * 60 * 1000) {
+            const remTime = Math.round((5 * 60 * 1000 - tdiff) / 1000);
+            const remSeconds = remTime % 60;
+            const remMinutes = (remTime - remSeconds) / 60;
+            return res.json({
+              status: "error",
+              message: `Too soon. Please wait ${remMinutes > 0 ? `${remMinutes} minutes` : ""}${remMinutes > 0 && remSeconds > 0 && ", "}${
+                remSeconds > 0 ? `${remSeconds} seconds` : ""
+              }.`,
+            });
+          } else {
+            userSettings.lastAPIAccess = new Date().getTime();
+            await userSettings.save();
+          }
+        } else {
+          userSettings.lastAPIAccess = new Date().getTime();
+          await userSettings.save();
+        }
+      }
+
+      const gcQuery = {
+        guild: {
+          $in: account.guilds.reduce((i, g) => {
+            i.push(g.id);
+            return i;
+          }, []),
+        },
+      };
+
+      const guildConfigs = await GuildConfig.fetchAllBy(gcQuery);
+      // console.log(new Date().getTime() - fTime);
+
+      for (let gi = 0; gi < account.guilds.length; gi++) {
+        const guild: AccountGuild = account.guilds[gi];
+        const guildConfig = guildConfigs.find((gc) => gc.guild === guild.id) || new GuildConfig({ guild: guild.id });
+        const member = guild.member;
+
+        let gcChannels: ChannelConfig[] = guildConfig.channels;
+        if (gcChannels.length == 0 || !guild.channels.find((gc) => !!gcChannels.find((c) => gc.id === c.channelId))) {
+          let firstChannel: ShardChannel;
+          for (let i = 0; i < guild.channels.length; i++) {
+            const pf = await guild.channels[i].everyone;
+            if (pf) firstChannel = guild.channels[i];
+          }
+          if (firstChannel && guild.channels.length > 0) {
+            gcChannels.push({ channelId: firstChannel.id, gameTemplates: [guildConfig.defaultGameTemplate.id] });
+          }
+        }
+
+        let channels: ShardChannel[] = [];
+
+        if (member) {
+          guild.userRoles = member.roles.map((r) => r.name);
+          guild.isAdmin = !!(
+            member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) ||
+            member.hasPermission(Permissions.FLAGS.ADMINISTRATOR) ||
+            member.roles.find((r) => r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim())
+          );
+          guild.permission = guildConfig.shardMemberHasPermission(member) || guild.isAdmin;
+          gcChannels.forEach((c) => {
+            const gcc = guild.channels.find((gc) => gc.id === c.channelId);
+            if (gcc && guild.permission /*|| (gcc.members && gcc.members.includes(member.user.id))*/) channels.push(gcc);
+          });
+          channels = channels.filter((c) => c && member && (guild.isAdmin || !!guildConfig.shardMemberHasPermission(member, c.id)));
+          // console.log(guild.name, guild.isAdmin, guild.permission, channels.length);
+        }
+
+        guild.announcementChannels = channels;
+        guild.config = guildConfig;
+        account.guilds[gi] = guild;
+      }
+
+      const accountGuild = account.guilds[0];
+
+      if (accountGuild && options.games) {
+        const gameOptions: any = {
+          s: accountGuild.id,
+        };
+
+        const fGames: Game[] = await Game.fetchAllBy(gameOptions, null, sGuilds);
+
+        // console.log(new Date().getTime() - fTime);
+        fGames
+          .filter((game) => {
+            return accountGuild.isAdmin || game.dm.id === id || game.dm.tag === account.user.tag;
+          })
+          .forEach(async (game) => {
+            if (!game.discordGuild) return;
+            const date = Game.ISOGameDate(game);
+            const parsed = aux.parseEventTimes(game);
+            const sGuild = sGuilds.find((g) => g.id === accountGuild.id);
+            let gameData = {
+              links: {
+                upcoming: `https://www.rpg-schedule.com/games/upcoming?s=${escape(`_id:${game._id}`)}`,
+                myGames: `https://www.rpg-schedule.com/games/my-games?s=${escape(`_id:${game._id}`)}`,
+              },
+              ...game.data,
+              dm: (function (r) {
+                const member = sGuild.members.find((m) => (r.id && m.user.id === r.id) || m.user.tag === r.tag);
+                return (member && member.nickname) || (r.tag.indexOf("#") < 0 && r.tag) || "User not found";
+              })(game.data.dm),
+              author: (function (r) {
+                const member = sGuild.members.find((m) => (r.id && m.user.id === r.id) || m.user.tag === r.tag);
+                return (member && member.nickname) || (r.tag.indexOf("#") < 0 && r.tag) || "User not found";
+              })(game.data.author),
+              reserved: game.data.reserved
+                .filter((r) => r.tag)
+                .map((r) => {
+                  const member = sGuild.members.find((m) => (r.id && m.user.id === r.id) || m.user.tag === r.tag);
+                  return (member && member.nickname) || (r.tag.indexOf("#") < 0 && r.tag) || "User not found";
+                }),
+              moment: {
+                ...parsed,
+                iso: date,
+                date: moment(date)
+                  .utcOffset(parseInt(`${game.timezone}`))
+                  .format(config.formats.dateLong),
+                calendar: moment(date)
+                  .utcOffset(parseInt(`${game.timezone}`))
+                  .calendar(),
+                from: moment(date)
+                  .utcOffset(parseInt(`${game.timezone}`))
+                  .fromNow(),
+              },
+            };
+            delete gameData.messageId;
+            delete gameData.reminderMessageId;
+            delete gameData.pm;
+            delete gameData.reminded;
+            delete gameData.pruned;
+            accountGuild.games.push(gameData);
+          });
+      }
+
+      accountGuild.games.sort((a, b) => {
+        return a.timestamp < b.timestamp ? -1 : 1;
+      });
+
+      return res.json({
+        status: "success",
+        games: accountGuild.games,
+      });
+    }
+
+    res.json({
+      status: "error",
+      message: "An error unknown occurred!",
+    });
+  });
+
   router.get("/test/account", async (req, res, next) => {
     const { id, username, discriminator, guildId } = req.query;
     const tag = `${username}#${discriminator}`;
@@ -1206,6 +1526,7 @@ export default (options: APIRouteOptions) => {
         guild.members.forEach((member) => {
           if ((id && member.user.id === id) || member.user.tag === tag || (member.user.username === username && member.user.discriminator === discriminator)) {
             guildInfo.member = member;
+            account.user.tag = member.user.tag;
             if (!options.search) account.guilds.push(guildInfo);
           }
         });
@@ -1704,18 +2025,7 @@ const refreshToken = (access: any) => {
   });
 };
 
-const getUserSettings = async (id: string, req: any) => {
-  const userSettings = await User.fetch(id);
-  let updated = false;
-
-  // if (req.app.locals.lang) {
-  //   if (userSettings.lang != req.app.locals.lang.code) {
-  //     userSettings.lang = req.app.locals.lang.code;
-  //     updated = true;
-  //   }
-  // }
-
-  if (updated) await userSettings.save();
-
+const getUserSettings = async (id: string, req: any, save: boolean = true) => {
+  const userSettings = await User.fetch(id, save);
   return userSettings;
 };
