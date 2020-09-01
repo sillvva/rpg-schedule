@@ -560,7 +560,7 @@ export class Game implements GameModel {
         let message: Message;
         try {
           try {
-            if (game.messageId) message = await ShardManager.findMessage(this.client, guild.id, channel.id, game.messageId, dmmember, game.timestamp); // channel.messages.fetch(game.messageId);
+            if (game.messageId) message = await ShardManager.findMessage(this.client, guild.id, channel.id, game.messageId, dmmember, game.timestamp);
             // console.log(guild.id, channel.id, game.messageId, !!dmmember, game.timestamp, !!message);
           } catch (err) {}
 
@@ -576,7 +576,8 @@ export class Game implements GameModel {
               if (this.client) message = await ShardManager.clientMessageEdit(this.client, guild.id, channel.id, message.id, msg, embed);
               else message = await ShardManager.shardMessageEdit(guild.id, channel.id, message.id, msg, embed);
             }
-          } // else if (channel && !game.messageId && !(<any>game).deleted && !game.pruned && game.timestamp >= new Date().getTime() + parseInt(game.reminder) * 60 * 1000) {
+          } 
+          // else if (channel && !game.messageId && !(<any>game).deleted && !game.pruned && game.timestamp >= new Date().getTime() + parseInt(game.reminder) * 60 * 1000) {
           //   message = <Message>await channel.send(msg, embed);
           //   if (message) {
           //     await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: { messageId: message.id } });
@@ -1073,14 +1074,15 @@ export class Game implements GameModel {
       aux.log("No database connection");
       return { deletedCount: 0 };
     }
-    let games = await Game.fetchAllByLimit(query, 200, client, sGuilds);
+    let deleteQuery = { ...query, ...{ deleted: { $in: [null, false, true] } } };
+    let games = await Game.fetchAllByLimit(deleteQuery, 200, client, sGuilds);
     let deletedCount = 0;
     while (games.length > 0 && deletedCount < 2000) {
       const gameIds = games.map((g) => g._id);
       await GameRSVP.deleteAllGames(gameIds);
       const result = await Game.hardDeleteAllBy({ _id: { $in: gameIds.map((gid) => new ObjectID(gid)) } });
       deletedCount += result.deletedCount;
-      games = await Game.fetchAllByLimit(query, 200, client);
+      games = await Game.fetchAllByLimit(deleteQuery, 200, client, sGuilds);
     }
     return { deletedCount: deletedCount };
   }

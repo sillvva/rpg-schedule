@@ -1336,12 +1336,19 @@ const pruneOldGames = async (guild?: Guild) => {
 
       const hardDeleted = await Game.deleteAllBy(
         {
+          $or: [
+            {
           hideDate: {
             $in: [false, null],
+              }
           },
+            {
+              deleted: true
+            }
+          ],
           timestamp: {
             $lt: new Date().getTime() - 14 * 24 * 3600 * 1000,
-          },
+          }
         },
         client
       );
