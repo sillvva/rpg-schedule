@@ -807,6 +807,10 @@ export default (options: APIRouteOptions) => {
                   game.hideDate = req.body["hideDate"] ? true : false;
                   game.clearReservedOnRepeat = req.body["clearReservedOnRepeat"] ? true : false;
 
+                  const eventTimes = aux.parseEventTimes(game, { isField: true });
+                  const timestamp = new Date(game.when === GameWhen.DATETIME ? eventTimes.rawDate : null).getTime();
+                  game.reminded = new Date().getTime() + parseInt(game.reminder) * 60 * 1000 < timestamp ? false : game.reminded;
+
                   if (req.body.copy) {
                     delete game.reminded;
                     delete (<any>game).deleted;
@@ -1179,7 +1183,7 @@ export default (options: APIRouteOptions) => {
       const result = await axios.post(
         "https://api.imgur.com/3/image",
         {
-          image: req.body.image
+          image: req.body.image,
         },
         {
           headers: {

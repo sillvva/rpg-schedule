@@ -139,10 +139,7 @@ if (process.env.DISCORD_API_LOGIC.toLowerCase() === "true") {
     const guildId = channel.guild.id;
     const guildConfig = await GuildConfig.fetch(guildId);
     if (guildConfig.channels.find((c) => c.channelId === channelId)) {
-      guildConfig.channel.splice(
-        guildConfig.channel.findIndex((c) => c.channelId === channelId),
-        1
-      );
+      guildConfig.channel = guildConfig.channel.filter((ch) => ch.channelId !== channelId);
       await guildConfig.save();
 
       const games = await Game.fetchAllBy(
@@ -516,7 +513,9 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                 if (channel.trim().length === params[0].trim().length) {
                   return (<TextChannel>message.channel).send(responseEmbed(`Channel not found!`));
                 }
-                const channels = guildConfig.channels;
+                const channels = guildConfig.channels.filter((c) => {
+                  return !!guild.channels.cache.get(c.channelId);
+                });
                 if (channels.find((c) => c.channelId === channel)) {
                   channels.splice(
                     channels.findIndex((c) => c.channelId === channel),
@@ -1189,18 +1188,6 @@ const rescheduleOldGames = async (guildId?: string) => {
           try {
             await game.reschedule();
           } catch (err) {
-            const newGames = await Game.fetchAllBy(
-              {
-                s: game.s,
-                c: game.c,
-                adventure: game.adventure,
-                date: {
-                  $ne: game.date,
-                },
-                time: game.time,
-              },
-              client
-            );
           }
         }
       }
@@ -1338,10 +1325,10 @@ const pruneOldGames = async (guild?: Guild) => {
         {
           $or: [
             {
-          hideDate: {
-            $in: [false, null],
+              hideDate: {
+                $in: [false, null],
               }
-          },
+            },
             {
               deleted: true
             }

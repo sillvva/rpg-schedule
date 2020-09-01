@@ -31,6 +31,7 @@ export interface GameTemplate {
   name: string;
   isDefault: boolean;
   role?: string;
+  playerRole?: string;
   embedColor?: string;
   gameDefaults?: GameDefaults;
 }
@@ -182,6 +183,8 @@ export class GuildConfig implements GuildConfigDataModel {
     updates.gameTemplates = updates.gameTemplates.map((gt) => {
       if (!gt.id) gt = { id: new ObjectId().toHexString(), ...gt };
       gt.embedColor = aux.colorFixer(gt.embedColor);
+      gt.role = gt.role.trim();
+      gt.playerRole = gt.playerRole.trim();
       return gt;
     });
     updates.channel = updates.channel.map((channel) => {

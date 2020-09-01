@@ -520,7 +520,7 @@ export class Game implements GameModel {
               if (reservedColumn.join("\n").length > 900) {
                 embed.addField(reservedHeader, reservedColumn.join("\n"), true);
                 reservedColumn = [];
-        }
+              }
             });
             if (waitlist.length > 0 && !game.disableWaitlist) {
               reservedColumn = [];
@@ -1318,23 +1318,27 @@ export class Game implements GameModel {
   }
 
   async signUp(user: User | ShardUser, t?: number) {
-    const hourDiff = (new Date().getTime() - this.timestamp) / 1000 / 3600;
+    if (!this.discordGuild) return false;
 
+    const guildConfig = await GuildConfig.fetch(this.s);
+    const member = this.discordGuild.members.find((m) => m.user.tag === user.tag.trim() || m.user.id === user.id);
+    const lang = gmLanguages.find((l) => l.code === guildConfig.lang) || gmLanguages.find((l) => l.code === "en");
+
+    const hourDiff = (new Date().getTime() - this.timestamp) / 1000 / 3600;
     if (hourDiff >= 0 && !this.pastSignups && !this.hideDate) {
-      if (!this.discordGuild) return false;
-      const member = this.discordGuild.members.find((m) => m.user.tag === user.tag.trim() || m.user.id === user.id);
-      const guildConfig = await GuildConfig.fetch(this.s);
-      const lang = gmLanguages.find((l) => l.code === guildConfig.lang) || gmLanguages.find((l) => l.code === "en");
       if (member) member.send(lang.other.ALREADY_STARTED);
       return false;
     }
 
     if (this.disableWaitlist && this.reserved.length >= parseInt(this.players)) {
-      if (!this.discordGuild) return false;
-      const member = this.discordGuild.members.find((m) => m.user.tag === user.tag.trim() || m.user.id === user.id);
-      const guildConfig = await GuildConfig.fetch(this.s);
-      const lang = gmLanguages.find((l) => l.code === guildConfig.lang) || gmLanguages.find((l) => l.code === "en");
       if (member) member.send(lang.other.MAX_NO_WAITLIST);
+      return false;
+    }
+
+    const channelConfig = guildConfig.channel.find(c => c.channelId === this.c);
+    const template = channelConfig ? guildConfig.gameTemplates.find(t => channelConfig.gameTemplates.find(ct => ct.toString() === t.id.toString())) : guildConfig.gameTemplates.find(t => t.isDefault);
+    if (template && template.playerRole && !member.roles.find(r => r.name === template.playerRole)) {
+      if (member) member.send("You don't have the role required to join that event.");
       return false;
     }
 
