@@ -511,9 +511,32 @@ export class Game implements GameModel {
           embed.addField(lang.game.CUSTOM_SIGNUP_INSTRUCTIONS, game.customSignup);
         }
         if (game.method === GameMethod.AUTOMATED || (game.method === GameMethod.CUSTOM && reserved.length > 0)) {
-          embed.addField(`${lang.game.RESERVED} (${reserved.length}/${game.players})`, reserved.length > 0 ? reserved.join("\n") : lang.game.NO_PLAYERS, true);
+          const reservedHeader = `${lang.game.RESERVED} (${reserved.length}/${game.players})`;
+          const waitlistHeader = `${lang.game.WAITLISTED} (${waitlist.length})`;
+          let reservedColumn = [];
+          if (reserved.length > 0) {
+            reserved.forEach(r => {
+              reservedColumn.push(r);
+              if (reservedColumn.join("\n").length > 900) {
+                embed.addField(reservedHeader, reservedColumn.join("\n"), true);
+                reservedColumn = [];
         }
-        if (waitlist.length > 0 && !game.disableWaitlist) embed.addField(`${lang.game.WAITLISTED} (${waitlist.length})`, waitlist.join("\n"), true);
+            });
+            if (waitlist.length > 0 && !game.disableWaitlist) {
+              reservedColumn = [];
+              waitlist.forEach(w => {
+                reservedColumn.push(w);
+                if (reservedColumn.join("\n").length > 900) {
+                  embed.addField(waitlistHeader, reservedColumn.join("\n"), true);
+                  reservedColumn = [];
+                }
+              })
+            }
+          }
+          else {
+            embed.addField(reservedHeader, lang.game.NO_PLAYERS, true);
+          }
+        }
         if (!game.hideDate)
           embed.addField(
             "Links",
