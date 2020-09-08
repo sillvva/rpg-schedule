@@ -522,6 +522,7 @@ export class Game implements GameModel {
                 reservedColumn = [];
               }
             });
+            embed.addField(reservedHeader, reservedColumn.join("\n"), true);
             if (waitlist.length > 0 && !game.disableWaitlist) {
               reservedColumn = [];
               waitlist.forEach(w => {
@@ -530,7 +531,8 @@ export class Game implements GameModel {
                   embed.addField(waitlistHeader, reservedColumn.join("\n"), true);
                   reservedColumn = [];
                 }
-              })
+              });
+              embed.addField(waitlistHeader, reservedColumn.join("\n"), true);
             }
           }
           else {
