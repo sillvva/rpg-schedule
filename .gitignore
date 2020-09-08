@@ -68,13 +68,8 @@ typings/
 .yarn-integrity
 
 # dotenv environment variables file
-.env
-.env.test
-
-.devenv
+*.env
 dev
-
-.prodenv
 prod
 
 # TypeScript Compiled Files
