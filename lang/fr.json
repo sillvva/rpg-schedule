@@ -216,6 +216,7 @@
     "DELETED": "Le jeu a été supprimé",
     "EDIT_PERMISSION": "Vous n'êtes pas autorisé à modifier ce jeu",
     "ALREADY_STARTED": "Ce jeu a déjà commencé!",
-    "MAX_NO_WAITLIST": "Ce jeu est plein et ne pas accepter des inscriptions supplémentaires."
+    "MAX_NO_WAITLIST": "Ce jeu est plein et ne pas accepter des inscriptions supplémentaires.",
+    "MISSING_PLAYER_ROLE": "Vous n'avez pas le rôle :ROLE nécessaire pour se joindre à cet événement."
   }
 }

@@ -214,6 +214,7 @@
     "DELETED": "Il gioco è stato cancellato",
     "EDIT_PERMISSION": "Non sei autorizzato a modificare questo gioco",
     "ALREADY_STARTED": "Quel gioco è già iniziato!",
-    "MAX_NO_WAITLIST": "Questo gioco è pieno e non accettare iscrizioni supplementari."
+    "MAX_NO_WAITLIST": "Questo gioco è pieno e non accettare iscrizioni supplementari.",
+    "MISSING_PLAYER_ROLE": "Non è necessario il ruolo :ROLE necessaria a raggiungere il detto evento."
   }
 }

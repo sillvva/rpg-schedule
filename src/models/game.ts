@@ -522,7 +522,7 @@ export class Game implements GameModel {
                 reservedColumn = [];
               }
             });
-            embed.addField(reservedHeader, reservedColumn.join("\n"), true);
+            if (reservedColumn.length > 0) embed.addField(reservedHeader, reservedColumn.join("\n"), true);
             if (waitlist.length > 0 && !game.disableWaitlist) {
               reservedColumn = [];
               waitlist.forEach(w => {
@@ -532,7 +532,7 @@ export class Game implements GameModel {
                   reservedColumn = [];
                 }
               });
-              embed.addField(waitlistHeader, reservedColumn.join("\n"), true);
+              if (reservedColumn.length > 0) embed.addField(waitlistHeader, reservedColumn.join("\n"), true);
             }
           }
           else {
@@ -1340,7 +1340,7 @@ export class Game implements GameModel {
     const channelConfig = guildConfig.channel.find(c => c.channelId === this.c);
     const template = channelConfig ? guildConfig.gameTemplates.find(t => channelConfig.gameTemplates.find(ct => ct.toString() === t.id.toString())) : guildConfig.gameTemplates.find(t => t.isDefault);
     if (template && template.playerRole && !member.roles.find(r => r.name === template.playerRole)) {
-      if (member) member.send("You don't have the role required to join that event.");
+      if (member) member.send(lang.other.MISSING_PLAYER_ROLE.replace(/\:ROLE/g, `\`${template.playerRole}\``));
       return false;
     }
 
