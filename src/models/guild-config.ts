@@ -164,6 +164,7 @@ export class GuildConfig implements GuildConfigDataModel {
       isDefault: true,
       embedColor: aux.colorFixer(this.embedColor),
       role: this.role,
+      playerRole: null,
       gameDefaults: {
         minPlayers: 1,
         maxPlayers: 7,
@@ -183,8 +184,8 @@ export class GuildConfig implements GuildConfigDataModel {
     updates.gameTemplates = updates.gameTemplates.map((gt) => {
       if (!gt.id) gt = { id: new ObjectId().toHexString(), ...gt };
       gt.embedColor = aux.colorFixer(gt.embedColor);
-      gt.role = gt.role.trim();
-      gt.playerRole = gt.playerRole.trim();
+      gt.role = gt.role ? gt.role.trim() : null;
+      gt.playerRole = gt.playerRole ? gt.playerRole.trim() : null;
       return gt;
     });
     updates.channel = updates.channel.map((channel) => {

@@ -1101,9 +1101,7 @@ export default (options: APIRouteOptions) => {
                 }
               }
               await guildConfig.save();
-
               io().emit("site", { action: "guild-config", config: guildConfig.data });
-
               res.json({
                 status: "success",
                 token: token,
