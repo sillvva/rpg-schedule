@@ -1350,8 +1350,7 @@ export class Game implements GameModel {
       return false;
     }
 
-    const channelConfig = guildConfig.channel.find(c => c.channelId === this.c);
-    const template = channelConfig ? guildConfig.gameTemplates.find(t => channelConfig.gameTemplates.find(ct => ct.toString() === t.id.toString())) : guildConfig.gameTemplates.find(t => t.isDefault);
+    const template = guildConfig.gameTemplates.find(t => t.id.toString() === this.template) || guildConfig.gameTemplates.find(t => t.isDefault);
     if (template && template.playerRole && !member.roles.find(r => r.name === template.playerRole)) {
       if (member) member.send(lang.other.MISSING_PLAYER_ROLE.replace(/\:ROLE/g, `\`${template.playerRole}\``));
       return false;
