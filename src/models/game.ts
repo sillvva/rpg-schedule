@@ -600,12 +600,12 @@ export class Game implements GameModel {
             this.client.shard.send({
               type: "socket",
               name: "game",
-              room: game.s,
+              room: `g-${game.s}`,
               data: { action: "updated", gameId: game._id, game: updatedGame, guildId: game.s },
             });
           }
           else {
-            io().to(game.s).emit("game", { action: "updated", gameId: game._id, game: updatedGame, guildId: game.s });
+            io().to(`g-${game.s}`).emit("game", { action: "updated", gameId: game._id, game: updatedGame, guildId: game.s });
           }
         } catch (err) {
           aux.log("UpdateGameError:", err);
@@ -702,11 +702,11 @@ export class Game implements GameModel {
           this.client.shard.send({
             type: "socket",
             name: "game",
-            room: game.s,
+            room: `g-${game.s}`,
             data: { action: "new", gameId: inserted.insertedId.toString(), guildId: game.s, authorId: game.author.id },
           });
         else {
-          io().to(game.s).emit("game", { action: "new", gameId: inserted.insertedId.toString(), guildId: game.s, authorId: game.author.id });
+          io().to(`g-${game.s}`).emit("game", { action: "new", gameId: inserted.insertedId.toString(), guildId: game.s, authorId: game.author.id });
         }
 
         const saved: GameSaveData = {
@@ -1029,11 +1029,11 @@ export class Game implements GameModel {
               this.client.shard.send({
                 type: "socket",
                 name: "game",
-                room: game.s,
+                room: `g-${game.s}`,
                 data: { action: "rescheduled", gameId: this._id, newGameId: newGame._id },
               });
             else {
-              io().to(game.s).emit("game", { action: "rescheduled", gameId: this._id, newGameId: newGame._id });
+              io().to(`g-${game.s}`).emit("game", { action: "rescheduled", gameId: this._id, newGameId: newGame._id });
             }
 
             const del = await this.delete();
@@ -1175,11 +1175,11 @@ export class Game implements GameModel {
         this.client.shard.send({
           type: "socket",
           name: "game",
-          room: game.s,
+          room: `g-${game.s}`,
           data: { action: "deleted", gameId: game._id, guildId: game.s },
         });
       else {
-        io().to(game.s).emit("game", { action: "deleted", gameId: game._id, guildId: game.s });
+        io().to(`g-${game.s}`).emit("game", { action: "deleted", gameId: game._id, guildId: game.s });
       }
     }
     return result;

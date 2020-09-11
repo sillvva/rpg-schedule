@@ -26,7 +26,7 @@ const managerConnect = (options: DiscordProcessesOptions, readyCallback: () => {
   manager.on("shardCreate", (shard) => {
     aux.log(`Shard ${shard.id} launched`);
 
-    shard.on("message", (message) => {
+    shard.on("message", async (message) => {
       if (typeof message === "object") {
         if (message.type === "socket") {
           if (message.room) io().to(message.room).emit(message.name, message.data);
@@ -49,6 +49,7 @@ const managerConnect = (options: DiscordProcessesOptions, readyCallback: () => {
                 guildData.push(guild);
               }
             });
+            if (guilds.length === 1) io().to(`g-${guilds[0].id}`).emit('refresh-guilds', guilds[0].id);
           } else if (message.name === "channelCreate") {
             guildData = guildData.map((g) => {
               if (g.id === message.data.guild) {
@@ -59,6 +60,7 @@ const managerConnect = (options: DiscordProcessesOptions, readyCallback: () => {
               }
               return g;
             });
+            io().to(`g-${message.data.guild}`).emit('refresh-guilds', message.data.guild);
           } else if (message.name === "channelUpdate") {
             guildData = guildData.map((g) => {
               if (g.id === message.data.guild) {
@@ -71,14 +73,18 @@ const managerConnect = (options: DiscordProcessesOptions, readyCallback: () => {
               }
               return g;
             });
+            io().to(`g-${message.data.guild}`).emit('refresh-guilds', message.data.guild);
           } else if (message.name === "channelDelete") {
+            let guildId;
             guildData = guildData.map((g) => {
               const index = g.channels.findIndex((c) => c.id === message.data);
               if (index >= 0) {
                 g.channels.splice(index, 1);
+                guildId = g.id;
               }
               return g;
             });
+            if (guildId) io().to(`g-${message.data.guild}`).emit('refresh-guilds', message.data.guild);
           } else if (message.name === "roleCreate") {
             guildData = guildData.map((g) => {
               if (g.id !== message.data.guild) return g;
@@ -88,6 +94,7 @@ const managerConnect = (options: DiscordProcessesOptions, readyCallback: () => {
               });
               return g;
             });
+            io().to(`g-${message.data.guild}`).emit('refresh-guilds', message.data.guild);
           } else if (message.name === "roleUpdate") {
             guildData = guildData.map((g) => {
               if (g.id !== message.data.guild) return g;
@@ -100,12 +107,18 @@ const managerConnect = (options: DiscordProcessesOptions, readyCallback: () => {
               });
               return g;
             });
+            io().to(`g-${message.data.guild}`).emit('refresh-guilds', message.data.guild);
           } else if (message.name === "roleDelete") {
+            let guildId;
             guildData = guildData.map((g) => {
               const index = g.roles.findIndex((c) => c.id === message.data);
-              if (index >= 0) g.roles.splice(index, 1);
+              if (index >= 0) {
+                g.roles.splice(index, 1);
+                guildId = g.id;
+              }
               return g;
             });
+            if (guildId) io().to(`g-${message.data.guild}`).emit('refresh-guilds', message.data.guild);
           } else if (message.name === "guildMemberAdd") {
             guildData = guildData.map((g) => {
               if (g.id !== message.data.guildID) return g;
@@ -114,6 +127,7 @@ const managerConnect = (options: DiscordProcessesOptions, readyCallback: () => {
               g.memberRoles.push(message.roles);
               return g;
             });
+            io().to(`u-${message.user.id}`).emit('refresh-guilds', 'all');
           } else if (message.name === "guildMemberUpdate") {
             guildData = guildData.map((g) => {
               if (g.id !== message.data.guildID) return g;
@@ -126,6 +140,7 @@ const managerConnect = (options: DiscordProcessesOptions, readyCallback: () => {
               });
               return g;
             });
+            io().to(`u-${message.data.userID}`).emit('refresh-guilds', message.data.guildID);
           } else if (message.name === "guildMemberRemove") {
             guildData = guildData.map((g) => {
               if (g.id !== message.data.guildID) return g;
@@ -136,6 +151,7 @@ const managerConnect = (options: DiscordProcessesOptions, readyCallback: () => {
               g.users.splice(index, 1);
               return g;
             });
+            io().to(`u-${message.data.userID}`).emit('delete-guild', message.data.guildID);
           } else if (message.name === "userUpdate") {
             guildData = guildData.map((g) => {
               const index = g.users.findIndex((c) => c.id === message.data.id);
@@ -146,25 +162,29 @@ const managerConnect = (options: DiscordProcessesOptions, readyCallback: () => {
               });
               return g;
             });
+            io().to(`u-${message.data.id}`).emit('update-user', message.data);
           } else if (message.name === "guildUpdate") {
             guildData = guildData.map((g) => {
               if (g.id !== message.data.id) return g;
               g.name = message.data.name;
+              g.icon = message.data.icon;
               return g;
             });
+            io().to(`g-${message.data.id}`).emit('update-guild', { id: message.data.id, name: message.data.name, icon: message.data.iconURL });
           } else if (message.name === "guildDelete") {
             const index = guildData.findIndex((g) => g.id === message.data);
             if (index >= 0) {
               guildData.splice(index, 1);
             }
+            io().to(`g-${message.data}`).emit('delete-guild', message.data);
           }
         }
         if (message.type === "refresh") {
           if (message.guildId) {
-            refreshGuild(message.guildId);
+            await refreshGuild(message.guildId);
           }
           else {
-            manager.broadcastEval(`
+            await manager.broadcastEval(`
               const guilds = this.guilds.cache.array();
               console.log("Force refreshing data for ", guilds.length, "guilds");
               this.shard.send({

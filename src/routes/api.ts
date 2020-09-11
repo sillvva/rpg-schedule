@@ -393,6 +393,70 @@ export default (options: APIRouteOptions) => {
     }
   });
 
+  router.get("/auth-api/guild", async (req, res, next) => {
+    try {
+      fetchAccount(req.session.api.access, {
+        client: client,
+        guilds: true,
+        games: !!req.query.games,
+        page: req.query.page,
+        ip: req.app.locals.ip,
+        search: req.query.search,
+      })
+        .then(async (result: any) => {
+          const guilds = result.account.guilds.filter(g => g.id == req.query.guildId).map((guild) => {
+            guild.roles = guild.roles.map((role) => {
+              delete role.hoist;
+              delete role.createdTimestamp;
+              delete role.deleted;
+              delete role.mentionable;
+              delete role.permissions;
+              delete role.rawPosition;
+              return role;
+            });
+            guild.channelCategories = guild.channelCategories.map((channel) => {
+              // delete channel.members;
+              delete channel.messages;
+              return channel;
+            });
+            guild.announcementChannels = guild.announcementChannels.map((channel) => {
+              // delete channel.members;
+              delete channel.messages;
+              return channel;
+            });
+            guild.channels = guild.channels.map((channel) => {
+              // delete channel.members;
+              delete channel.messages;
+              return channel;
+            });
+            return guild;
+          });
+          res.json({
+            status: "success",
+            token: req.session.api.access.access_token,
+            guild: guilds[0],
+            version: apiVersion,
+          });
+        })
+        .catch((err) => {
+          res.json({
+            status: "error",
+            token: req.session.api.access.access_token,
+            message: `GuildsAPI: FetchAccountError: ${err}`,
+            reauthenticate: (typeof (err.message || err) === "string" ? err.message || err : "").indexOf("OAuth:") >= 0,
+            code: 12,
+          });
+        });
+    } catch (err) {
+      res.json({
+        status: "error",
+        token: req.session.api.access.access_token,
+        message: `GuildsAPI: ${err}`,
+        code: 13,
+      });
+    }
+  });
+
   router.post("/auth-api/guild-config", async (req, res, next) => {
     try {
       fetchAccount(req.session.api.access, {
