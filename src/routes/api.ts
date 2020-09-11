@@ -478,7 +478,7 @@ export default (options: APIRouteOptions) => {
               if (game) {
                 server = game.s;
               } else {
-                throw new Error("Game not found");
+                throw new Error("Game not found (1)");
               }
             }
 
@@ -502,6 +502,10 @@ export default (options: APIRouteOptions) => {
                 const guildChannels = guild.channels;
                 const guildRoles = guild.roles;
                 const guildMembers = guild.members;
+
+                // if (!guildMembers.find(gm => gm.user.id === result.account.user.id)) {
+                //   throw new Error("Game not found (2)");
+                // }
 
                 const guildConfig = await GuildConfig.fetch(guild.id);
 

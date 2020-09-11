@@ -2,8 +2,6 @@ import { ShardingManager, Role, MessageEmbed, Message, Client, TextChannel, Perm
 import { Express } from "express";
 import { io } from "./socket";
 import aux from "../appaux";
-import { RSVP, Game } from "../models/game";
-import { find } from "lodash";
 
 type DiscordProcessesOptions = {
   app: Express;
@@ -31,7 +29,13 @@ const managerConnect = (options: DiscordProcessesOptions, readyCallback: () => {
     shard.on("message", (message) => {
       if (typeof message === "object") {
         if (message.type === "socket") {
-          io().emit(message.name, message.data);
+          if (message.room) io().to(message.room).emit(message.name, message.data);
+          else if (message.rooms && Array.isArray(message.rooms)) {
+            message.rooms.forEach(room => {
+              io().to(room).emit(message.name, message.data);
+            });
+          }
+          else io().emit(message.name, message.data);
         }
         if (message.type === "shard") {
           if (message.name === "guilds") {
