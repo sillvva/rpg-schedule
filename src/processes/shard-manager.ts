@@ -179,6 +179,9 @@ const managerConnect = (options: DiscordProcessesOptions, readyCallback: () => {
             io().to(`g-${message.data}`).emit('delete-guild', message.data);
           }
         }
+        if (message.type === "reboot") {
+          manager.respawnAll(0, 0, 30000);
+        }
         if (message.type === "refresh") {
           if (message.guildId) {
             await refreshGuild(message.guildId);
@@ -587,7 +590,6 @@ const shardGuilds = async (filters: ShardFilters = {}) => {
 };
 
 const refreshGuild = async function (guildId: string) {
-  
   const call = `
     (async () => {
       const guild = this.guilds.cache.get(${JSON.stringify(guildId)});
@@ -642,6 +644,63 @@ const refreshGuild = async function (guildId: string) {
   `;
   const guildData = (await discordClient().broadcastEval(call)).find(s => s);
   return shardGuilds({ guild: guildData });
+};
+
+const clientShardGuilds = function (client: Client, filters: ShardFilters = {}) {
+  const guildIds = filters.guildIds || [];
+  const memberIds = filters.memberIds || [];
+  const call = `
+    const guilds = this.guilds.cache.array()
+    .filter((guild) => ${JSON.stringify(guildIds)}.length === 0 || ${JSON.stringify(guildIds)}.includes(guild.id))
+    .filter((guild) => {
+      return guild.members.cache.find((member) => ${JSON.stringify(memberIds)}.length === 0 || ${JSON.stringify(memberIds)}.includes(member.user.id));
+    });
+    guilds.map(guild => {
+      const members = guild.members.cache.array().filter((member) => ${JSON.stringify(memberIds)}.length === 0 || ${JSON.stringify(memberIds)}.includes(member.user.id));
+      const sGuild = {
+        id: guild.id,
+        name: guild.name,
+        icon: guild.icon,
+        shardID: guild.shardID,
+        ownerID: guild.ownerID,
+        members: members,
+        users: members.map((m) => ({
+          id: m.user.id,
+          username: m.user.username,
+          tag: m.user.tag,
+          discriminator: m.user.discriminator,
+          avatar: m.user.avatar,
+        })),
+        memberRoles: members.map((m) =>
+          m.roles.cache.map((r) => ({
+            id: r.id,
+            name: r.name,
+            permissions: r.permissions,
+          }))
+        ),
+        channels: guild.channels.cache.array().map((c) => ({
+          id: c.id,
+          type: c.type,
+          name: c.name,
+          guild: c.guild.id,
+          parentID: c.parentID,
+          members: [],
+          everyone: c.permissionsFor(c.guild.roles.cache.find((r) => r.name === "@everyone").id).has(Permissions.FLAGS.VIEW_CHANNEL),
+          botPermissions: [
+            c.permissionsFor(this.user.id).has(Permissions.FLAGS.VIEW_CHANNEL) && "VIEW_CHANNEL",
+            c.permissionsFor(this.user.id).has(Permissions.FLAGS.READ_MESSAGE_HISTORY) && "READ_MESSAGE_HISTORY",
+            c.permissionsFor(this.user.id).has(Permissions.FLAGS.SEND_MESSAGES) && "SEND_MESSAGES",
+            c.permissionsFor(this.user.id).has(Permissions.FLAGS.MANAGE_MESSAGES) && "MANAGE_MESSAGES",
+            c.permissionsFor(this.user.id).has(Permissions.FLAGS.EMBED_LINKS) && "EMBED_LINKS",
+            c.permissionsFor(this.user.id).has(Permissions.FLAGS.ADD_REACTIONS) && "ADD_REACTIONS",
+          ].filter((check) => check)
+        })),
+        roles: guild.roles.cache.array(),
+      };
+      return sGuild;
+    });
+  `;
+  return client.shard.broadcastEval(call);
 };
 
 const shardUser = async () => {
@@ -758,6 +817,7 @@ export default {
   processes: managerConnect,
   shardGuilds: shardGuilds,
   clientGuilds: clientGuilds,
+  clientShardGuilds: clientShardGuilds,
   shardUser: shardUser,
   shardMessageReact: shardMessageReact,
   shardMessageEdit: shardMessageEdit,

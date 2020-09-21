@@ -1,14 +1,18 @@
-import { TextChannel, Client, Message, User, GuildChannel, MessageEmbed, Permissions, Guild, CategoryChannel } from "discord.js";
-import { DeleteWriteOpResultObject, FilterQuery, ObjectId, UpdateWriteOpResult, ObjectID } from "mongodb";
+import { TextChannel, Client, Message, User, GuildChannel, MessageEmbed, Permissions, Guild, DMChannel } from "discord.js";
+import { DeleteWriteOpResultObject, FilterQuery, ObjectId, UpdateWriteOpResult } from "mongodb";
 
 import { GuildConfig, GuildConfigModel } from "../models/guild-config";
 import { Game, GameMethod, gameReminderOptions } from "../models/game";
+import { User as RPGSUser } from "../models/user";
 import config from "../models/config";
 import aux from "../appaux";
 import db from "../db";
-import shardManager, { ShardMember } from "./shard-manager";
+import shardManager, { ShardMember, ShardGuild } from "./shard-manager";
 import cloneDeep from "lodash/cloneDeep";
+import flatten from "lodash/flatten";
+import moment from "moment";
 import { GameRSVP } from "../models/game-signups";
+import { multiply } from "lodash";
 
 const app: any = { locals: {} };
 
@@ -325,12 +329,11 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
    */
   client.on("message", async (message: Message) => {
     try {
-      if (message.channel instanceof TextChannel) {
         let isCommand = false;
         for (let i = 1; i <= 3; i++) {
           isCommand = isCommand || message.content.startsWith(config.command, i);
         }
-
+      if (message.channel instanceof TextChannel) {
         if (isCommand) {
           const guild = message.channel.guild;
           const guildId = guild.id;
@@ -378,7 +381,7 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                     `\`${botcmd}\` - ${lang.config.desc.HELP}\n` +
                     `\`${botcmd} help\` - ${lang.config.desc.HELP}\n` +
                     (isAdmin
-                      ? `\n${lang.config.GENERAL_CONFIGURATION}\n` +
+                      ? `\n__**${lang.config.GENERAL_CONFIGURATION}**__\n` +
                         `\`${botcmd} configuration\` - ${lang.config.desc.CONFIGURATION}\n` +
                         `\`${botcmd} role role name\` - ${lang.config.desc.ROLE}\n` +
                         `\`${botcmd} manager-role role name\` - ${lang.config.desc.MANAGER_ROLE}\n` +
@@ -386,16 +389,17 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                         `\`${botcmd} password\` - ${lang.config.desc.PASSWORD_CLEAR}\n` +
                         `\`${botcmd} lang ${guildConfig.lang}\` - ${lang.config.desc.LANG} ${languages.map((l) => `\`${l.code}\` (${l.name})`).join(", ")}\n`
                       : ``) +
-                    `\n${lang.config.USAGE}\n` +
+                    `\n__**${lang.config.USAGE}**__\n` +
+                    `\`${botcmd} events timeframe\` - ${lang.config.desc.EVENTS}\n` +
                     (permission ? `\`${botcmd} link\` - ${lang.config.desc.LINK}` : ``)
                 );
-              if (embed.description.length > 0) (<TextChannel>message.channel).send(embed);
+              if (embed.description.length > 0) message.author.send(embed);
               let embed2 = new MessageEmbed()
                 .setTitle("RPG Schedule Help")
                 .setColor(guildConfig.embedColor)
                 .setDescription(
                   isAdmin
-                    ? `\n${lang.config.BOT_CONFIGURATION}\n` +
+                    ? `\n__**${lang.config.BOT_CONFIGURATION}**__\n` +
                         `\`${botcmd} embeds ${guildConfig.embeds || guildConfig.embeds == null ? "on" : "off"}\` - \`on/off\` - ${lang.config.desc.EMBEDS}\n` +
                         `\`${botcmd} embed-color ${guildConfig.embedColor}\` - ${lang.config.desc.EMBED_COLOR}\n` +
                         `\`${botcmd} embed-user-tags ${guildConfig.embedMentions || guildConfig.embedMentions == null ? "on" : "off"}\` - \`on/off\` - ${
@@ -409,13 +413,13 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                         `\`${botcmd} bot-permissions #channel-name\` - ${lang.config.desc.BOT_PERMISSIONS}\n`
                     : ``
                 );
-              if (embed2.description.length > 0) (<TextChannel>message.channel).send(embed2);
+              if (embed2.description.length > 0) message.author.send(embed2);
               let embed3 = new MessageEmbed()
                 .setTitle("RPG Schedule Help")
                 .setColor(guildConfig.embedColor)
                 .setDescription(
                   isAdmin
-                    ? `\n${lang.config.GAME_CONFIGURATION}\n` +
+                    ? `\n__**${lang.config.GAME_CONFIGURATION}**__\n` +
                         `\`${botcmd} add-channel #channel-name\` - ${lang.config.desc.ADD_CHANNEL}\n` +
                         `\`${botcmd} remove-channel #channel-name\` - ${lang.config.desc.REMOVE_CHANNEL}\n` +
                         `\`${botcmd} pruning ${guildConfig.pruning ? "on" : "off"}\` - \`on/off\` - ${lang.config.desc.PRUNING}\n` +
@@ -424,7 +428,8 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                         `\`${botcmd} reschedule-mode ${guildConfig.rescheduleMode}\` - ${lang.config.desc.RESCHEDULE_MODE}\n`
                     : ``
                 );
-              if (embed3.description.length > 0) (<TextChannel>message.channel).send(embed3);
+              if (embed3.description.length > 0) message.author.send(embed3);
+              message.delete();
             } else if (cmd === "link" && permission) {
               (<TextChannel>message.channel).send(responseEmbed(process.env.HOST + config.urls.game.create.path + "?s=" + guildId));
             } else if (cmd === "configuration" && isAdmin) {
@@ -923,6 +928,10 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                   message.channel.send(responseEmbed(`Data refresh started for the \`${guild.name}\` server`));
                 }
               }
+            } else if (cmd === "reboot" && member.user.tag === config.author) {
+              await client.shard.send({
+                type: "reboot"
+              });
             } else if (cmd === "bot-permissions" && (isAdmin || member.user.tag === config.author)) {
               let channelId = message.channel.id;
               if (params[0]) {
@@ -944,6 +953,11 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
               } else {
                 (<TextChannel>message.channel).send(responseEmbed(`The bot has all the permissions it needs in <#${sChannel.id}>.`));
               }
+            } else if (cmd === "events") {
+              const response = await cmdFetchEvents(message.guild, params.join(" "), lang);
+              if (response) message.author.send(response);
+              else message.author.send(lang.config.EVENTS_NONE);
+              message.delete();
             } else {
               const response = await (<TextChannel>message.channel).send("Command not recognized");
               if (response) {
@@ -953,6 +967,48 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
               }
             }
           } catch (err) {
+            aux.log("BotCommandError:", err);
+          }
+        }
+      }
+      if (message.channel instanceof DMChannel) {
+        if (isCommand) {
+          const userSettings = await RPGSUser.fetch(message.author.id);
+
+          const prefix = "!";
+          const botcmd = `${prefix}${config.command}`;
+          if (!message.content.startsWith(botcmd)) return;
+
+          const parts = message.content
+            .trim()
+            .split(" ")
+            .filter((part) => part.length > 0);
+          const cmd = parts.slice(1, 2)[0];
+          const params = parts.slice(2);
+
+          const languages = app.locals.langs;
+          const lang = languages.find((l) => l.code === userSettings.lang) || languages.find((l) => l.code === "en");
+
+          try {
+            if (cmd === "events") {
+              const guilds = flatten(await shardManager.clientShardGuilds(client, { memberIds: [message.author.id] }));
+              let count = 0;
+              for (let i = 0; i < guilds.length; i++) {
+                const guild = guilds[i];
+                const response = await cmdFetchEvents(guild, params.join(" "), lang, guilds);
+                if (response) count++;
+                if (response) message.author.send(response);
+              }
+              if (!count) message.author.send(lang.config.EVENTS_NONE);
+            } else {
+              const response = await (<DMChannel>message.channel).send("Command not recognized");
+              if (response) {
+                setTimeout(() => {
+                  response.delete();
+                }, 3000);
+              }
+            }
+    } catch (err) {
             aux.log("BotCommandError:", err);
           }
         }
@@ -1187,8 +1243,7 @@ const rescheduleOldGames = async (guildId?: string) => {
           count++;
           try {
             await game.reschedule();
-          } catch (err) {
-          }
+          } catch (err) {}
         }
       }
     }
@@ -1327,15 +1382,15 @@ const pruneOldGames = async (guild?: Guild) => {
             {
               hideDate: {
                 $in: [false, null],
-              }
+              },
             },
             {
-              deleted: true
-            }
+              deleted: true,
+            },
           ],
           timestamp: {
             $lt: new Date().getTime() - 14 * 24 * 3600 * 1000,
-          }
+          },
         },
         client
       );
@@ -1645,4 +1700,69 @@ const guildMap = (guild: Guild) => {
     })),
     roles: guild.roles.cache.array(),
   };
+};
+
+const cmdFetchEvents = async (guild: ShardGuild | Guild, time: string, lang: any, sGuilds: ShardGuild[] = null) => {
+  try {
+    const start = new Date();
+    const end = new Date(start);
+    let timeframe = "";
+
+    let param = time;
+    if (!param) param = "24hr";
+    if (param.match(/\d{1,3} ?h(ou)?rs?/)) {
+      const hours = param.replace(/ ?h(ou)?rs?/, "");
+      end.setHours(start.getHours() + parseInt(hours));
+      timeframe = `${hours} hours`;
+    }
+    if (param.match(/\d{1,3} ?days?/)) {
+      const days = param.replace(/ ?days?/, "");
+      end.setDate(start.getDate() + parseInt(days));
+      timeframe = `${days} days`;
+    }
+    if (param.match(/\d{1,3} ?weeks?/)) {
+      const weeks = param.replace(/ ?weeks?/, "");
+      end.setDate(start.getDate() + 7 * parseInt(weeks));
+      timeframe = `${weeks} weeks`;
+    }
+
+    const games = await Game.fetchAllBy(
+      {
+        s: guild.id,
+        $and: [{ timestamp: { $gt: start.getTime() } }, { timestamp: { $lte: end.getTime() } }],
+      },
+      sGuilds ? null : client,
+      sGuilds ? sGuilds : null
+    );
+
+    games.sort((a, b) => {
+      return a.timestamp > b.timestamp ? 1 : -1;
+    });
+
+    let response: MessageEmbed;
+
+    if (games.length > 0) {
+      moment.locale(lang.code);
+      const embed = new MessageEmbed();
+      embed.setTitle(lang.config.EVENTS_TITLE.replace(/\:SERVER/g, guild.name).replace(/\:TIMEFRAME/g, timeframe));
+      games.forEach((game, i) => {
+        const date = Game.ISOGameDate(game);
+        const timezone = "UTC" + (game.timezone >= 0 ? "+" : "") + game.timezone;
+        const calendarDate = moment(date).utcOffset(game.timezone).calendar();
+        // console.log(date, '||', moment(date).calendar(), '||', moment(date).utcOffset(0).calendar(), '||', moment(date).utcOffset(game.timezone).calendar());
+        const gameDate = calendarDate.indexOf(" at ") >= 0 ? calendarDate : moment(date).format(config.formats[game.tz ? "dateLongTZ" : "dateLong"]);
+        embed.addField(lang.game.GAME_NAME, `[${game.adventure}](https://discordapp.com/channels/${game.discordGuild.id}/${game.discordChannel.id}/${game.messageId})`, true);
+        embed.addField(lang.game.WHEN, `${gameDate} (${timezone})`, true);
+        embed.addField(lang.game.RESERVED, `${game.reserved.length} / ${game.players}`, true);
+      });
+
+      response = embed;
+    }
+
+    moment.locale("en");
+
+    return response;
+  } catch (err) {
+    return `${err.name}: ${err.message}`;
+  }
 };

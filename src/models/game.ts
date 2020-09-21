@@ -1,5 +1,5 @@
 import mongodb, { ObjectID } from "mongodb";
-import discord, { Message, MessageEmbed, User, Client } from "discord.js";
+import discord, { Message, MessageEmbed, User, Client, GuildMember } from "discord.js";
 import moment from "moment-timezone";
 import "moment-recur-ts";
 
@@ -95,6 +95,7 @@ export interface GameModel {
   reminderMessageId: string;
   pm: string;
   gameImage: string;
+  thumbnail: string;
   frequency: Frequency;
   weekdays: boolean[];
   xWeeks: number;
@@ -117,6 +118,7 @@ interface GameSaveData {
 
 interface GameSaveOptions {
   force?: boolean;
+  user?: any;
 }
 
 export enum GameReminder {
@@ -163,6 +165,7 @@ export class Game implements GameModel {
   reminderMessageId: string;
   pm: string;
   gameImage: string;
+  thumbnail: string;
   frequency: Frequency;
   weekdays: boolean[] = [false, false, false, false, false, false, false];
   xWeeks: number = 2;
@@ -279,6 +282,7 @@ export class Game implements GameModel {
       reminderMessageId: this.reminderMessageId,
       pm: this.pm,
       gameImage: this.gameImage,
+      thumbnail: this.thumbnail,
       frequency: this.frequency,
       weekdays: this.weekdays,
       xWeeks: this.xWeeks,
@@ -338,6 +342,8 @@ export class Game implements GameModel {
       const gameTemplate = guildConfig.gameTemplates.find((gt) => gt.id === game.template);
 
       moment.locale(lang.code);
+
+      if (options.user && !game.dm.id && game.dm.tag === options.user.tag) game.dm.id = options.user.id;
 
       const authorParts = game.author.tag.replace("@", "").split("#");
       const dmParts = game.dm.tag.replace("@", "").split("#");
@@ -546,7 +552,8 @@ export class Game implements GameModel {
             true
           );
         if (game.method === GameMethod.AUTOMATED) embed.setFooter(automatedInstructions);
-        if (game && game.gameImage && game.gameImage.trim().length > 0 && urlRegex.test(game.gameImage.trim())) embed.setImage(game.gameImage.trim().substr(0, 2048));
+        if (game.thumbnail && game.thumbnail.trim().length > 0 && urlRegex.test(game.thumbnail.trim())) embed.setThumbnail(game.thumbnail.trim().substr(0, 2048));
+        if (game.gameImage && game.gameImage.trim().length > 0 && urlRegex.test(game.gameImage.trim())) embed.setImage(game.gameImage.trim().substr(0, 2048));
         if (!this.hideDate) embed.setTimestamp(gameDate);
       }
 
@@ -595,17 +602,21 @@ export class Game implements GameModel {
 
           if (message) this.dmNextWaitlist(prev.reserved, game.reserved);
 
-          const updatedGame = aux.objectChanges(prev, game);
-          if (this.client) {
-            this.client.shard.send({
-              type: "socket",
-              name: "game",
-              room: `g-${game.s}`,
-              data: { action: "updated", gameId: game._id, game: updatedGame, guildId: game.s },
-            });
-          }
-          else {
-            io().to(`g-${game.s}`).emit("game", { action: "updated", gameId: game._id, game: updatedGame, guildId: game.s });
+          const updatedGame: any = aux.objectChanges(prev, game);
+          delete updatedGame.sequence;
+          delete updatedGame.updatedTimestamp;
+          if (Object.keys(updatedGame).length > 0) {
+            if (this.client) {
+              this.client.shard.send({
+                type: "socket",
+                name: "game",
+                room: `g-${game.s}`,
+                data: { action: "updated", gameId: game._id, game: updatedGame, guildId: game.s },
+              });
+            }
+            else {
+              io().to(`g-${game.s}`).emit("game", { action: "updated", gameId: game._id, game: updatedGame, guildId: game.s });
+            }
           }
         } catch (err) {
           aux.log("UpdateGameError:", err);
@@ -1282,10 +1293,13 @@ export class Game implements GameModel {
       for (let i = 0; i < this.reserved.length; i++) {
         try {
           const res = cloneDeep(this.reserved[i]);
-          const member = guildMembers.find((m) => (this.reserved[i] && m.user.id === this.reserved[i].id) || m.user.tag === this.reserved[i].tag.trim());
+          const member = guildMembers.find((m) => this.reserved[i] && m.user && (m.user.id === this.reserved[i].id || m.user.tag === this.reserved[i].tag.trim()));
           const countMatches = this.reserved.filter((rr, ri) => ri <= i && ((rr.id ? rr.id === res.id : false) || (rr.tag === res.tag && !/#\d{4}/i.test(res.tag))));
           const rsvpMatches = rsvps.filter((r) => r._id === res._id || (r.id && r.id === res.id) || r.tag === res.tag);
           // console.log(res.tag, countMatches.length, rsvpMatches.length);
+          
+          if (!member) continue;
+
           let rsvp = rsvps.find((r) => r._id === res._id || (r.id && r.id === res.id) || r.tag === res.tag);
           if (!rsvp) rsvp = await GameRSVP.fetchRSVP(this._id, res.id || res.tag);
           if (!rsvp || (!/#\d{4}/i.test(res.tag) && countMatches.length > rsvpMatches.length)) {
@@ -1332,8 +1346,8 @@ export class Game implements GameModel {
     }
   }
 
-  async signUp(user: User | ShardUser, t?: number) {
-    if (!this.discordGuild) return false;
+  async signUp(user: User | ShardUser, t?: number): Promise<{ result: boolean, message?: string }> {
+    if (!this.discordGuild) return { result: false, message: "Server not found!" };
 
     const guildConfig = await GuildConfig.fetch(this.s);
     const member = this.discordGuild.members.find((m) => m.user.tag === user.tag.trim() || m.user.id === user.id);
@@ -1342,18 +1356,18 @@ export class Game implements GameModel {
     const hourDiff = (new Date().getTime() - this.timestamp) / 1000 / 3600;
     if (hourDiff >= 0 && !this.pastSignups && !this.hideDate) {
       if (member) member.send(lang.other.ALREADY_STARTED);
-      return false;
+      return { result: false, message: lang.other.ALREADY_STARTED };
     }
 
     if (this.disableWaitlist && this.reserved.length >= parseInt(this.players)) {
       if (member) member.send(lang.other.MAX_NO_WAITLIST);
-      return false;
+      return { result: false, message: lang.other.MAX_NO_WAITLIST };
     }
 
     const template = guildConfig.gameTemplates.find(t => t.id.toString() === this.template) || guildConfig.gameTemplates.find(t => t.isDefault);
     if (template && template.playerRole && !member.roles.find(r => r.name === template.playerRole)) {
       if (member) member.send(lang.other.MISSING_PLAYER_ROLE.replace(/\:ROLE/g, `\`${template.playerRole}\``));
-      return false;
+      return { result: false, message: lang.other.MISSING_PLAYER_ROLE.replace(/\:ROLE/g, `\`${template.playerRole}\``) };
     }
 
     let match = await GameRSVP.fetchRSVP(this._id, user.id);
@@ -1366,12 +1380,12 @@ export class Game implements GameModel {
       await rsvp.save();
       await this.save();
       this.dmCustomInstructions(user);
-      return true;
+      return { result: true };
     }
-    return false;
+    return { result: false, message: "An error occurred!" };
   }
 
-  async dropOut(user: User | ShardUser, guildConfig: GuildConfig) {
+  async dropOut(user: User | ShardUser, guildConfig: GuildConfig): Promise<{ result: boolean, message?: string }> {
     const hourDiff = (new Date().getTime() - this.timestamp) / 1000 / 3600;
     if (guildConfig.dropOut) {
       if (hourDiff < 0 || this.pastSignups || this.hideDate) {
@@ -1384,16 +1398,17 @@ export class Game implements GameModel {
         await this.save();
         await GameRSVP.deleteUser(this._id, user.id);
         await GameRSVP.deleteUser(this._id, user.tag);
-        return true;
+        return { result: true };
       } else {
-        if (!this.discordGuild) return;
+        if (!this.discordGuild) return { result: false, message: "Server not found!" };
         const member = this.discordGuild.members.find((m) => m.user.tag === user.tag.trim() || m.user.id === user.id);
         const guildConfig = await GuildConfig.fetch(this.s);
         const lang = gmLanguages.find((l) => l.code === guildConfig.lang) || gmLanguages.find((l) => l.code === "en");
         if (member) member.send(lang.other.ALREADY_STARTED);
+        return { result: false, message: lang.other.ALREADY_STARTED }
       }
     }
-    return false;
+    return { result: false, message: "Dropouts are not allowed" };
   }
 
   static parseDiscord(text: string, guild: ShardGuild, getMentions: boolean = false) {

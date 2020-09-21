@@ -16,6 +16,7 @@ import { User } from "../models/user";
 import config from "../models/config";
 import aux from "../appaux";
 import { GameRSVP } from "../models/game-signups";
+import { result } from "lodash";
 
 const apiVersion = process.env.VERSION;
 
@@ -776,7 +777,7 @@ export default (options: APIRouteOptions) => {
                   }
                 }
 
-                if (!isAdmin && game.dm.id !== result.account.user.id) {
+                if (!isAdmin && game.dm.id !== result.account.user.id && game.dm.tag !== result.account.user.tag) {
                   throw new Error("You are not the GM of this game.");
                 }
 
@@ -888,7 +889,9 @@ export default (options: APIRouteOptions) => {
                   const updatedGame = new Game(game.data, [game.discordGuild]);
 
                   updatedGame
-                    .save()
+                    .save({
+                      user: result.account.user
+                    })
                     .then(async (response) => {
                       updatedGame._id = response.modified ? response._id : null;
                       let uRes: GameModel;
@@ -1015,7 +1018,7 @@ export default (options: APIRouteOptions) => {
       const game = await Game.fetch(req.body.game, null, sGuilds);
       if (game) {
         const member = game.discordGuild.members.find((m) => m.id === req.body.id);
-        let rsvp = false;
+        let rsvp: { result: boolean, message?: string };
         if (!game.reserved.find((r) => r.id === member.user.id || r.tag === member.user.tag)) {
           rsvp = await game.signUp(member.user);
         } else {
@@ -1023,7 +1026,7 @@ export default (options: APIRouteOptions) => {
           rsvp = await game.dropOut(member.user, guildConfig);
         }
 
-        if (rsvp)
+        if (rsvp.result)
           res.json({
             status: "success",
             gameId: game._id,
@@ -1031,8 +1034,8 @@ export default (options: APIRouteOptions) => {
           });
         else
           res.json({
-            status: "success",
-            past: true,
+            status: "error",
+            message: rsvp.message,
           });
       } else {
         res.json({
@@ -1062,7 +1065,7 @@ export default (options: APIRouteOptions) => {
           .then(async (result: any) => {
             const game = await Game.fetch(req.body.g, null, result.sGuilds);
             if (game) {
-              let rsvp = false;
+              let rsvp: { result: boolean, message?: string };
               if (!game.reserved.find((r) => r.id === result.account.user.id || r.tag === result.account.user.tag)) {
                 rsvp = await game.signUp(<discord.User>result.account.user, t);
               } else {
@@ -1070,7 +1073,7 @@ export default (options: APIRouteOptions) => {
                 rsvp = await game.dropOut(<discord.User>result.account.user, guildConfig);
               }
 
-              if (rsvp)
+              if (rsvp.result)
                 res.json({
                   status: "success",
                   token: token,
@@ -1079,9 +1082,9 @@ export default (options: APIRouteOptions) => {
                 });
               else
                 res.json({
-                  status: "success",
+                  status: "error",
                   token: token,
-                  past: true,
+                  message: rsvp.message,
                 });
             } else {
               throw new Error("Game not found (2)");
