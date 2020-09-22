@@ -235,6 +235,10 @@ const isEmoji = (emoji: string) => {
   );
 };
 
+const isObject = (value: any) => {
+  return value && typeof value === 'object' && value.constructor === Object;
+};
+
 var colors = {
   aliceblue: "#f0f8ff",
   antiquewhite: "#faebd7",
@@ -389,6 +393,7 @@ export default {
   backslash: backslash,
   timer: timer,
   isEmoji: isEmoji,
+  isObject: isObject,
   log: log,
   patreonPledges: patreonPledges,
   colorFixer: colorFixer,

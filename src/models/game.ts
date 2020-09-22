@@ -11,6 +11,7 @@ import { GuildConfig } from "./guild-config";
 import { GameRSVP } from "./game-signups";
 import config from "./config";
 import cloneDeep from "lodash/cloneDeep";
+import { isObject } from "lodash";
 
 const connection = db.connection;
 const ObjectId = mongodb.ObjectId;
@@ -1365,9 +1366,9 @@ export class Game implements GameModel {
     }
 
     const template = guildConfig.gameTemplates.find(t => t.id.toString() === this.template) || guildConfig.gameTemplates.find(t => t.isDefault);
-    if (template && template.playerRole && !member.roles.find(r => r.name === template.playerRole)) {
-      if (member) member.send(lang.other.MISSING_PLAYER_ROLE.replace(/\:ROLE/g, `\`${template.playerRole}\``));
-      return { result: false, message: lang.other.MISSING_PLAYER_ROLE.replace(/\:ROLE/g, `\`${template.playerRole}\``) };
+    if (template && template.playerRole && !member.roles.find(r => isObject(template.playerRole) ? r.id === template.playerRole.id : r.name === template.playerRole)) {
+      if (member) member.send(lang.other.MISSING_PLAYER_ROLE.replace(/\:ROLE/g, `\`${isObject(template.playerRole) ? template.playerRole.name : template.playerRole}\``));
+      return { result: false, message: lang.other.MISSING_PLAYER_ROLE.replace(/\:ROLE/g, `\`${isObject(template.playerRole) ? template.playerRole.name : template.playerRole}\``) };
     }
 
     let match = await GameRSVP.fetchRSVP(this._id, user.id);

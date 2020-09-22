@@ -192,17 +192,17 @@ export default (options: any) => {
             }
           });
 
-          req.account.guilds = req.account.guilds.map(guild => {
-            const guildConfig = guildConfigs.find(gc => gc.guild === guild.id) || new GuildConfig({ guild: guild.id });
-            const member: GuildMember = guild.member;
-            guild.permission = guildConfig.role ? member.roles.cache.find(r => r.name.toLowerCase().trim() === (guildConfig.role || "").toLowerCase().trim()) : true;
-            guild.isAdmin =
-              member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) ||
-              member.hasPermission(Permissions.FLAGS.ADMINISTRATOR) ||
-              member.roles.cache.find(r => r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim());
-            guild.config = guildConfig;
-            return guild;
-          });
+          // req.account.guilds = req.account.guilds.map(guild => {
+          //   const guildConfig = guildConfigs.find(gc => gc.guild === guild.id) || new GuildConfig({ guild: guild.id });
+          //   const member: GuildMember = guild.member;
+          //   guild.permission = guildConfig.role ? member.roles.cache.find(r => r.name.toLowerCase().trim() === (guildConfig.role || "").toLowerCase().trim()) : true;
+          //   guild.isAdmin =
+          //     member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) ||
+          //     member.hasPermission(Permissions.FLAGS.ADMINISTRATOR) ||
+          //     member.roles.cache.find(r => r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim());
+          //   guild.config = guildConfig;
+          //   return guild;
+          // });
 
           // Manage Server Page
           if (req.account.viewing.server) {

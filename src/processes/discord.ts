@@ -1,7 +1,7 @@
 import { TextChannel, Client, Message, User, GuildChannel, MessageEmbed, Permissions, Guild, DMChannel, NewsChannel } from "discord.js";
 import { DeleteWriteOpResultObject, FilterQuery, ObjectId, UpdateWriteOpResult } from "mongodb";
 
-import { GuildConfig, GuildConfigModel } from "../models/guild-config";
+import { GuildConfig, GuildConfigModel, ConfigRole } from "../models/guild-config";
 import { Game, GameMethod, gameReminderOptions } from "../models/game";
 import { User as RPGSUser } from "../models/user";
 import config from "../models/config";
@@ -12,6 +12,7 @@ import cloneDeep from "lodash/cloneDeep";
 import flatten from "lodash/flatten";
 import moment from "moment";
 import { GameRSVP } from "../models/game-signups";
+import { isObject } from "lodash";
 
 const app: any = { locals: {} };
 
@@ -175,10 +176,11 @@ if (process.env.DISCORD_API_LOGIC.toLowerCase() === "true") {
     });
 
     const guildConfig = await GuildConfig.fetch(oldR.guild.id);
-    if (guildConfig.role == oldR.name) guildConfig.role = role.name;
+    if (isObject(guildConfig.role) ? guildConfig.role.id == oldR.id : guildConfig.role == oldR.name) guildConfig.role = { id: role.id, name: role.name };
+    if (isObject(guildConfig.managerRole) ? guildConfig.managerRole.id == oldR.id : guildConfig.managerRole == oldR.name) guildConfig.managerRole = { id: role.id, name: role.name };
     guildConfig.gameTemplates = guildConfig.gameTemplates.map(gt => {
-      if (gt.role == oldR.name) gt.role = role.name;
-      if (gt.playerRole == oldR.name) gt.playerRole = role.name;
+      if (isObject(gt.role) ? gt.role.id === oldR.id : gt.role == oldR.name) gt.role = { id: role.id, name: role.name };
+      if (isObject(gt.playerRole) ? gt.playerRole.id === oldR.id : gt.playerRole == oldR.name) gt.playerRole = { id: role.id, name: role.name };
       return gt;
     });
     await guildConfig.save();
@@ -374,7 +376,7 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
             isAdmin = !!(
               member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) ||
               member.hasPermission(Permissions.FLAGS.ADMINISTRATOR) ||
-              member.roles.cache.find((r) => r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim())
+              member.roles.cache.find((r) => isObject(guildConfig.managerRole) ? r.id === guildConfig.managerRole.id : r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim())
             );
             permission = guildConfig.memberHasPermission(member) || isAdmin;
           }
@@ -865,44 +867,56 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                 });
             } else if (cmd === "role" && isAdmin) {
               const mentioned = (params[0] || "").match(/(\d+)/);
-              let roleName = params.join(" ");
-              if (roleName.trim() === "All Roles") {
-                roleName = "";
+              let roleObj: ConfigRole = {
+                id: null,
+                name: params.join(" ")
+              };
+              if (roleObj.name.trim() === "All Roles") {
+                roleObj.name = "";
               }
               if (mentioned) {
                 const roleId = mentioned[0];
                 const role = guild.roles.cache.array().find((r) => r.id === roleId);
-                if (role) roleName = role.name;
+                if (role) {
+                  roleObj.id = role.id;
+                  roleObj.name = role.name;
+                }
               }
               const save: GuildConfigModel = {
-                role: roleName == "" ? null : roleName,
+                role: roleObj.id ? roleObj : null,
                 gameTemplates: cloneDeep(guildConfig.gameTemplates).map((gt) => {
-                  if (gt.name === "Default") gt.role = roleName == "" ? null : roleName;
+                  if (gt.name === "Default") gt.role = roleObj.id ? roleObj : null;
                   return gt;
                 }),
               };
               guildConfig
                 .save(save)
                 .then((result) => {
-                  message.channel.send(responseEmbed(roleName.length > 0 ? lang.config.ROLE_SET.replace(/\:role/gi, roleName) : lang.config.ROLE_CLEARED));
+                  message.channel.send(responseEmbed(roleObj.name.length > 0 ? lang.config.ROLE_SET.replace(/\:role/gi, roleObj.name) : lang.config.ROLE_CLEARED));
                 })
                 .catch((err) => {
                   aux.log(err);
                 });
             } else if (cmd === "manager-role" && isAdmin) {
               const mentioned = (params[0] || "").match(/(\d+)/);
-              let roleName = params.join(" ");
+              let roleObj: ConfigRole = {
+                id: null,
+                name: params.join(" ")
+              };
               if (mentioned) {
                 const roleId = mentioned[0];
                 const role = guild.roles.cache.array().find((r) => r.id === roleId);
-                if (role) roleName = role.name;
+                if (role) {
+                  roleObj.id = role.id;
+                  roleObj.name = role.name;
+                }
               }
               guildConfig
                 .save({
-                  managerRole: roleName == "" ? null : roleName,
+                  managerRole: roleObj.id ? roleObj : null,
                 })
                 .then((result) => {
-                  message.channel.send(responseEmbed(roleName.length > 0 ? lang.config.ROLE_SET.replace(/\:role/gi, roleName) : lang.config.ROLE_CLEARED));
+                  message.channel.send(responseEmbed(roleObj.name.length > 0 ? lang.config.ROLE_SET.replace(/\:role/gi, roleObj.name) : lang.config.ROLE_CLEARED));
                 })
                 .catch((err) => {
                   aux.log(err);

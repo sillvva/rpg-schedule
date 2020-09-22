@@ -16,7 +16,7 @@ import { User } from "../models/user";
 import config from "../models/config";
 import aux from "../appaux";
 import { GameRSVP } from "../models/game-signups";
-import { result } from "lodash";
+import { result, isObject } from "lodash";
 
 const apiVersion = process.env.VERSION;
 
@@ -477,7 +477,7 @@ export default (options: APIRouteOptions) => {
             if (typeof req.body[property] != "undefined") guildConfig[property] = req.body[property];
           }
           const saveResult = await guildConfig.save();
-
+          
           const sGuilds = await ShardManager.shardGuilds({
             guildIds: [req.body.id],
           });
@@ -751,7 +751,7 @@ export default (options: APIRouteOptions) => {
                   member &&
                   (member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) ||
                     member.hasPermission(Permissions.FLAGS.ADMINISTRATOR) ||
-                    member.roles.find((r) => r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim()));
+                    member.roles.find((r) => isObject(guildConfig.managerRole) ? r.id === guildConfig.managerRole.id : r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim()));
                 const gcChannel = guildConfig.channel.find((gcc) => gcc.channelId === game.c) || {
                   channelId: game.c,
                   gameTemplates: [guildConfig.defaultGameTemplate.id],
@@ -770,7 +770,7 @@ export default (options: APIRouteOptions) => {
                   if (gameTemplate.role && !isAdmin) {
                     if (member) {
                       // User does not have the require role
-                      if (!member.roles.find((r) => r.name.toLowerCase().trim() === gameTemplate.role.toLowerCase().trim())) {
+                      if (!member.roles.find((r) => isObject(gameTemplate.role) ? r.id === gameTemplate.role.id : r.name.toLowerCase().trim() === gameTemplate.role.toLowerCase().trim())) {
                         throw new Error("You are either not logged in or are missing the role required for posting on this server.");
                       }
                     }
@@ -1152,62 +1152,6 @@ export default (options: APIRouteOptions) => {
     }
   });
 
-  router.post("/auth-api/guild-config", async (req, res, next) => {
-    const token = req.session.api && req.session.api.access.access_token;
-    try {
-      fetchAccount(req.session.api.access, {
-        client: client,
-        ip: req.app.locals.ip,
-      })
-        .then(async (result: any) => {
-          if (Object.keys(req.body).length > 0) {
-            const guild: AccountGuild = result.account.guilds.find((g: AccountGuild) => g.id === req.query.s);
-            if (guild && guild.isAdmin) {
-              const guildConfig = await GuildConfig.fetch(req.query.s);
-              for (const item in guildConfig.data) {
-                if (req.body[item] !== null && typeof req.body[item] !== "undefined") {
-                  if (typeof guildConfig[item] == "number") guildConfig[item] = parseFloat(req.body[item]);
-                  else if (typeof guildConfig[item] == "boolean") guildConfig[item] = req.body[item] == "true";
-                  else guildConfig[item] = req.body[item];
-                }
-              }
-              await guildConfig.save();
-              io().emit("site", { action: "guild-config", config: guildConfig.data });
-              res.json({
-                status: "success",
-                token: token,
-              });
-            } else {
-              res.json({
-                status: "error",
-                token: token,
-                message: "You are either not part of that guild or do not have administrative privileges",
-                code: 25,
-              });
-            }
-          } else {
-            throw new Error("No settings specified");
-          }
-        })
-        .catch((err) => {
-          res.json({
-            status: "error",
-            token: token,
-            message: `UserAuthError`,
-            code: 26,
-          });
-        });
-    } catch (err) {
-      console.log(err);
-      res.json({
-        status: "error",
-        token: token,
-        message: err.message || err,
-        code: 27,
-      });
-    }
-  });
-
   router.get("/api/pledges", async (req, res, next) => {
     const pledges = await aux.patreonPledges();
     res.json({
@@ -1442,7 +1386,7 @@ export default (options: APIRouteOptions) => {
           guild.isAdmin = !!(
             member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) ||
             member.hasPermission(Permissions.FLAGS.ADMINISTRATOR) ||
-            member.roles.find((r) => r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim())
+            member.roles.find((r) => isObject(guildConfig.managerRole) ? r.id === guildConfig.managerRole.id : r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim())
           );
           guild.permission = guildConfig.shardMemberHasPermission(member) || guild.isAdmin;
           gcChannels.forEach((c) => {
@@ -1648,7 +1592,7 @@ export default (options: APIRouteOptions) => {
           guild.isAdmin = !!(
             member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) ||
             member.hasPermission(Permissions.FLAGS.ADMINISTRATOR) ||
-            member.roles.find((r) => r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim())
+            member.roles.find((r) => isObject(guildConfig.managerRole) ? r.id === guildConfig.managerRole.id : r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim())
           );
           guild.permission = guildConfig.shardMemberHasPermission(member) || guild.isAdmin;
           gcChannels.forEach((c) => {
@@ -1862,7 +1806,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
                 guild.isAdmin = !!(
                   member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) ||
                   member.hasPermission(Permissions.FLAGS.ADMINISTRATOR) ||
-                  member.roles.find((r) => r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim())
+                  member.roles.find((r) => isObject(guildConfig.managerRole) ? r.id === guildConfig.managerRole.id : r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim())
                 );
                 guild.permission = guildConfig.shardMemberHasPermission(member) || guild.isAdmin;
               }

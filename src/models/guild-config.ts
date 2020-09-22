@@ -4,6 +4,7 @@ import { Game, GameReminder } from "./game";
 import aux from "../appaux";
 import { GuildMember, Client, TextChannel, NewsChannel } from "discord.js";
 import { ShardMember } from "../processes/shard-manager";
+import { isObject } from "lodash";
 
 const supportedLanguages = require("../../lang/langs.json");
 const langs = supportedLanguages.langs
@@ -30,10 +31,15 @@ export interface GameTemplate {
   id?: MongoDBId;
   name: string;
   isDefault: boolean;
-  role?: string;
-  playerRole?: string;
+  role?: string | ConfigRole;
+  playerRole?: string | ConfigRole;
   embedColor?: string;
   gameDefaults?: GameDefaults;
+}
+
+export interface ConfigRole {
+  id: string;
+  name: string;
 }
 
 export interface ChannelConfig {
@@ -54,13 +60,13 @@ export interface GuildConfigModel {
   emojiAdd?: string;
   emojiRemove?: string;
   password?: string;
-  role?: string;
+  role?: string | ConfigRole;
   hidden?: boolean;
   dropOut?: boolean;
   lang?: string;
   privateReminders?: boolean;
   rescheduleMode?: string;
-  managerRole?: string;
+  managerRole?: string | ConfigRole;
   escape?: string;
   gameTemplates?: GameTemplate[];
 }
@@ -84,13 +90,13 @@ export class GuildConfig implements GuildConfigDataModel {
   emojiAdd: string = "➕";
   emojiRemove: string = "➖";
   password: string = "";
-  role: string = null;
+  role: string | ConfigRole = null;
   hidden: boolean = false;
   dropOut: boolean = true;
   lang: string = "en";
   privateReminders: boolean = false;
   rescheduleMode: string = "repost";
-  managerRole: string = null;
+  managerRole: string | ConfigRole = null;
   escape?: "!";
   gameTemplates?: GameTemplate[] = [];
   saveDefaultTemplate = false;
@@ -184,8 +190,6 @@ export class GuildConfig implements GuildConfigDataModel {
     updates.gameTemplates = updates.gameTemplates.map((gt) => {
       if (!gt.id) gt = { id: new ObjectId().toHexString(), ...gt };
       gt.embedColor = aux.colorFixer(gt.embedColor);
-      gt.role = gt.role ? gt.role.trim() : null;
-      gt.playerRole = gt.playerRole ? gt.playerRole.trim() : null;
       return gt;
     });
     updates.channel = updates.channel.map((channel) => {
@@ -270,7 +274,7 @@ export class GuildConfig implements GuildConfigDataModel {
   shardMemberHasPermission(member: ShardMember, channelId?: string) {
     return !!this.gameTemplates.find((gt) => {
       const matchedChannel = this.channel.find((c) => c.gameTemplates.find((cgt) => cgt === gt.id) && (!channelId || c.channelId === channelId));
-      const userHasRole = !gt.role || !!member.roles.find((r) => gt.role.toLowerCase().trim() === r.name.toLowerCase().trim());
+      const userHasRole = !gt.role || !!member.roles.find((r) => isObject(gt.role) ? gt.role.id === r.id : gt.role.toLowerCase().trim() === r.name.toLowerCase().trim());
       return matchedChannel && userHasRole;
     });
   }
@@ -279,7 +283,7 @@ export class GuildConfig implements GuildConfigDataModel {
     return !!this.gameTemplates.find((gt) => {
       return (
         this.channel.find((c) => c.gameTemplates.find((cgt) => cgt === gt.id) && (!channelId || c.channelId === channelId)) &&
-        (!gt.role || !!member.roles.cache.array().find((r) => gt.role.toLowerCase().trim() === r.name.toLowerCase().trim()))
+        (!gt.role || !!member.roles.cache.array().find((r) => isObject(gt.role) ? gt.role.id === r.id : gt.role.toLowerCase().trim() === r.name.toLowerCase().trim()))
       );
     });
   }
