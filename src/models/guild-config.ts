@@ -2,7 +2,7 @@ import db from "../db";
 import { ObjectID, ObjectId, FilterQuery } from "mongodb";
 import { Game, GameReminder } from "./game";
 import aux from "../appaux";
-import { GuildMember, Client, TextChannel } from "discord.js";
+import { GuildMember, Client, TextChannel, NewsChannel } from "discord.js";
 import { ShardMember } from "../processes/shard-manager";
 
 const supportedLanguages = require("../../lang/langs.json");
@@ -301,7 +301,7 @@ export class GuildConfig implements GuildConfigDataModel {
       const game = games[i];
       const guild = client.guilds.cache.find((g) => g.id === game.discordGuild.id);
       if (guild) {
-        const channel = <TextChannel>guild.channels.cache.find((c) => c instanceof TextChannel && c.id === game.discordChannel.id);
+        const channel = <TextChannel | NewsChannel>guild.channels.cache.find((c) => (c instanceof TextChannel || c instanceof NewsChannel) && c.id === game.discordChannel.id);
         if (channel) {
           const message = await channel.messages.fetch(game.messageId);
           if (message) {

@@ -1,4 +1,4 @@
-import { ShardingManager, Role, MessageEmbed, Message, Client, TextChannel, Permissions } from "discord.js";
+import { ShardingManager, Role, MessageEmbed, Message, Client, TextChannel, Permissions, NewsChannel } from "discord.js";
 import { Express } from "express";
 import { io } from "./socket";
 import aux from "../appaux";
@@ -358,7 +358,7 @@ const clientGuilds = async (client: Client, guildIds: string[] = []) => {
                   if (sGuild) {
                     const sChannel = sGuild.channels.cache.get(channel.id);
                     if (sChannel) {
-                      return await (<TextChannel>sChannel).messages.fetch(messageId);
+                      return await (<TextChannel | NewsChannel>sChannel).messages.fetch(messageId);
                     }
                   }
                   return null;
@@ -370,7 +370,7 @@ const clientGuilds = async (client: Client, guildIds: string[] = []) => {
                   if (sGuild) {
                     const sChannel = sGuild.channels.cache.get(channel.id);
                     if (sChannel) {
-                      return [await (<TextChannel>sChannel).send(content, options)];
+                      return [await (<TextChannel | NewsChannel>sChannel).send(content, options)];
                     }
                   }
                   return [null];
@@ -758,7 +758,7 @@ const clientMessageEdit = async (client: Client, guildId: string, channelId: str
   if (guild) {
     const channel = guild.channels.cache.get(channelId);
     if (channel) {
-      const message = await (<TextChannel>channel).messages.fetch(messageId);
+      const message = await (<TextChannel | NewsChannel>channel).messages.fetch(messageId);
       if (message) {
         return message.edit(content, options);
       }
@@ -772,7 +772,7 @@ const findMessage = async (client: Client, guildId: string, channelId: string, m
     if (client) {
       const guild = client.guilds.cache.get(guildId);
       if (guild) {
-        const channel = <TextChannel>guild.channels.cache.get(channelId);
+        const channel = <TextChannel | NewsChannel>guild.channels.cache.get(channelId);
         if (channel) {
           let message = await channel.messages.fetch(messageId);
           if (message) return message;

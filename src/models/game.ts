@@ -207,7 +207,7 @@ export class Game implements GameModel {
           if (!this._channel && c.type === "text") {
             this._channel = c;
           }
-          if (c.id === value && c.type === "text") {
+          if (c.id === value && (c.type === "text" || c.type === "news")) {
             this._channel = c;
           }
         });
@@ -238,7 +238,7 @@ export class Game implements GameModel {
         if (!this._channel && c.type === "text") {
           this._channel = c;
         }
-        if (c.id === this.c && c.type === "text") {
+        if (c.id === this.c && (c.type === "text" || c.type === "news")) {
           this._channel = c;
         }
       });
