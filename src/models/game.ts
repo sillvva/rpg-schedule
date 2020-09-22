@@ -505,8 +505,8 @@ export class Game implements GameModel {
         embed = new discord.MessageEmbed();
         embed.setColor(gameTemplate && gameTemplate.embedColor ? gameTemplate.embedColor : guildConfig.embedColor);
         embed.setTitle(game.adventure);
-        embed.setAuthor(dm, dmmember && dmmember.user.avatarUrl && urlRegex.test(dmmember.user.avatarUrl) ? dmmember.user.avatarUrl.substr(0, 2048) : null);
-        if (dmmember && dmmember.user.avatarUrl && urlRegex.test(dmmember.user.avatarUrl)) embed.setThumbnail(dmmember.user.avatarUrl.substr(0, 2048));
+        embed.setAuthor(dm, dmmember && dmmember.user.avatarUrl && dmmember.user.avatarUrl.match(urlRegex) ? dmmember.user.avatarUrl.substr(0, 2048) : null);
+        if (dmmember && dmmember.user.avatarUrl && dmmember.user.avatarUrl.match(urlRegex)) embed.setThumbnail(dmmember.user.avatarUrl.substr(0, 2048));
         if (description.length > 0) embed.setDescription(description);
         if (game.hideDate) embed.addField(lang.game.WHEN, lang.game.labels.TBD, true);
         else embed.addField(lang.game.WHEN, when, true);
@@ -552,8 +552,8 @@ export class Game implements GameModel {
             true
           );
         if (game.method === GameMethod.AUTOMATED) embed.setFooter(automatedInstructions);
-        if (game.thumbnail && game.thumbnail.trim().length > 0 && urlRegex.test(game.thumbnail.trim())) embed.setThumbnail(game.thumbnail.trim().substr(0, 2048));
-        if (game.gameImage && game.gameImage.trim().length > 0 && urlRegex.test(game.gameImage.trim())) embed.setImage(game.gameImage.trim().substr(0, 2048));
+        if (game.gameImage && game.gameImage.trim().length > 0 && game.gameImage.trim().match(urlRegex)) embed.setImage(game.gameImage.trim().substr(0, 2048));
+        if (game.thumbnail && game.thumbnail.trim().length > 0 && game.thumbnail.trim().match(urlRegex)) embed.setThumbnail(game.thumbnail.trim().substr(0, 2048));
         if (!this.hideDate) embed.setTimestamp(gameDate);
       }
 
