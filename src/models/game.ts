@@ -1299,9 +1299,8 @@ export class Game implements GameModel {
           const rsvpMatches = rsvps.filter((r) => r._id === res._id || (r.id && r.id === res.id) || r.tag === res.tag);
           // console.log(res.tag, countMatches.length, rsvpMatches.length);
           
-          if (!member) continue;
-
           let rsvp = rsvps.find((r) => r._id === res._id || (r.id && r.id === res.id) || r.tag === res.tag);
+          // if (rsvp && rsvp.id && !member) continue;
           if (!rsvp) rsvp = await GameRSVP.fetchRSVP(this._id, res.id || res.tag);
           if (!rsvp || (!/#\d{4}/i.test(res.tag) && countMatches.length > rsvpMatches.length)) {
             rsvp = new GameRSVP({
