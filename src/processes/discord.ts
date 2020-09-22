@@ -174,6 +174,15 @@ if (process.env.DISCORD_API_LOGIC.toLowerCase() === "true") {
       name: "roleUpdate",
       data: role,
     });
+
+    const guildConfig = await GuildConfig.fetch(oldR.guild.id);
+    if (guildConfig.role == oldR.name) guildConfig.role = role.name;
+    guildConfig.gameTemplates = guildConfig.gameTemplates.map(gt => {
+      if (gt.role == oldR.name) gt.role = role.name;
+      if (gt.playerRole == oldR.name) gt.playerRole = role.name;
+      return gt;
+    });
+    await guildConfig.save();
   });
 
   client.on("roleDelete", async (role) => {
@@ -329,10 +338,10 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
    */
   client.on("message", async (message: Message) => {
     try {
-        let isCommand = false;
-        for (let i = 1; i <= 3; i++) {
-          isCommand = isCommand || message.content.startsWith(config.command, i);
-        }
+      let isCommand = false;
+      for (let i = 1; i <= 3; i++) {
+        isCommand = isCommand || message.content.startsWith(config.command, i);
+      }
       if (message.channel instanceof TextChannel) {
         if (isCommand) {
           const guild = message.channel.guild;
@@ -1008,7 +1017,7 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                 }, 3000);
               }
             }
-    } catch (err) {
+          } catch (err) {
             aux.log("BotCommandError:", err);
           }
         }
