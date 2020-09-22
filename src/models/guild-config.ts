@@ -32,7 +32,7 @@ export interface GameTemplate {
   name: string;
   isDefault: boolean;
   role?: string | ConfigRole;
-  playerRole?: string | ConfigRole;
+  playerRole?: ConfigRole[];
   embedColor?: string;
   gameDefaults?: GameDefaults;
 }
@@ -140,6 +140,8 @@ export class GuildConfig implements GuildConfigDataModel {
       } else if (key === "gameTemplates") {
         this[key] = (value || []).map((gt) => {
           gt.embedColor = aux.colorFixer(gt.embedColor);
+          if (gt.playerRole && !Array.isArray(gt.playerRole)) gt.playerRole = [ isObject(gt.playerRole) ? gt.playerRole : { name: gt.playerRole } ];
+          else if (!gt.playerRole) gt.playerRole = [];
           return gt;
         });
       } else if (key === "embedColor") {

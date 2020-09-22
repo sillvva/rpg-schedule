@@ -48,6 +48,7 @@
     "TIME_ZONE": "Fuseau horaire",
     "TODAY": "Aujourd'hui",
     "GAME_IMAGE": "Image du jeu",
+    "THUMBNAIL": "La vignette",
     "GAME_IMAGE_DESC": "Par défaut, l'avatar Discord de GM",
     "REMINDER": "Rappel",
     "REMINDER_FOR": "Rappel pour",
@@ -75,7 +76,11 @@
     "GAME_OPTIONS": "Options de jeu",
     "DISABLE_WAITLIST": "Désactiver la liste d'attente",
     "UPLOAD_GAME_IMAGE": "Télécharger Image du jeu",
+    "UPLOAD_THUMBNAIL": "Télécharger Vignette",
     "MAX_UPLOAD_SIZE": "Taille maximale (10 Mo)",
+    "DESCRIPTION_PANEL": "Description",
+    "RESCHEDULING_PANEL": "Rééchelonnement",
+    "EXTRA_PANEL": "Options Supplémentaires",
     "options": {
       "AUTOMATED_SIGNUP": "Inscription automatisée",
       "CUSTOM_SIGNUP_INSTRUCTIONS": "Instructions d'inscription personnalisées",
@@ -220,6 +225,7 @@
     "EDIT_PERMISSION": "Vous n'êtes pas autorisé à modifier ce jeu",
     "ALREADY_STARTED": "Ce jeu a déjà commencé!",
     "MAX_NO_WAITLIST": "Ce jeu est plein et ne pas accepter des inscriptions supplémentaires.",
-    "MISSING_PLAYER_ROLE": "Vous n'avez pas le rôle :ROLE nécessaire pour se joindre à cet événement."
+    "MISSING_PLAYER_ROLE": "Vous n'avez pas le rôle :ROLE nécessaire pour se joindre à cet événement.",
+    "OR": "ou"
   }
 }

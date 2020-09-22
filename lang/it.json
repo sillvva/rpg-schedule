@@ -46,6 +46,7 @@
     "TIME_ZONE": "Time-zone",
     "TODAY": "Today",
     "GAME_IMAGE": "Immagine del gioco",
+    "THUMBNAIL": "Miniatura",
     "GAME_IMAGE_DESC": "L'impostazione predefinita è Avatar Discord di GM",
     "REMINDER": "Promemoria",
     "REMINDER_FOR": "Promemoria per",
@@ -73,7 +74,11 @@
     "GAME_OPTIONS": "Opzioni di gioco",
     "DISABLE_WAITLIST": "Disabilitare lista d'attesa",
     "UPLOAD_GAME_IMAGE": "Carica Gioco Immagine",
+    "UPLOAD_THUMBNAIL": "Carica Miniatura",
     "MAX_UPLOAD_SIZE": "Dimensione massima (5 MB)",
+    "DESCRIPTION_PANEL": "Descrizione",
+    "RESCHEDULING_PANEL": "Ripianificazione",
+    "EXTRA_PANEL": "Opzioni Extra",
     "options": {
       "AUTOMATED_SIGNUP": "Entrata automatica",
       "CUSTOM_SIGNUP_INSTRUCTIONS": "Istruzioni di iscrizione personalizzate",
@@ -218,6 +223,7 @@
     "EDIT_PERMISSION": "Non sei autorizzato a modificare questo gioco",
     "ALREADY_STARTED": "Quel gioco è già iniziato!",
     "MAX_NO_WAITLIST": "Questo gioco è pieno e non accettare iscrizioni supplementari.",
-    "MISSING_PLAYER_ROLE": "Non è necessario il ruolo :ROLE necessaria a raggiungere il detto evento."
+    "MISSING_PLAYER_ROLE": "Non è necessario il ruolo :ROLE necessaria a raggiungere il detto evento.",
+    "OR": "o"
   }
 }

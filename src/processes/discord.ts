@@ -180,7 +180,10 @@ if (process.env.DISCORD_API_LOGIC.toLowerCase() === "true") {
     if (isObject(guildConfig.managerRole) ? guildConfig.managerRole.id == oldR.id : guildConfig.managerRole == oldR.name) guildConfig.managerRole = { id: role.id, name: role.name };
     guildConfig.gameTemplates = guildConfig.gameTemplates.map(gt => {
       if (isObject(gt.role) ? gt.role.id === oldR.id : gt.role == oldR.name) gt.role = { id: role.id, name: role.name };
-      if (isObject(gt.playerRole) ? gt.playerRole.id === oldR.id : gt.playerRole == oldR.name) gt.playerRole = { id: role.id, name: role.name };
+      gt.playerRole = gt.playerRole.map(pr => {
+        if (pr.id === oldR.id || (!pr.id && pr.name === oldR.name)) pr = { id: role.id, name: role.name };
+        return pr;
+      });
       return gt;
     });
     await guildConfig.save();

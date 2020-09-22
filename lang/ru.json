@@ -48,6 +48,7 @@
     "TIME_ZONE": "Часовой пояс",
     "TODAY": "Сегодня",
     "GAME_IMAGE": "Изображение игры",
+    "THUMBNAIL": "Thumbnail",
     "GAME_IMAGE_DESC": "По умолчанию аватар GM'а в Discord",
     "REMINDER": "Напоминание",
     "REMINDER_FOR": "Напоминание для",
@@ -75,7 +76,11 @@
     "GAME_OPTIONS": "Варианты игры",
     "DISABLE_WAITLIST": "Отключить листа ожидания",
     "UPLOAD_GAME_IMAGE": "Загрузить игру Изображение",
+    "UPLOAD_THUMBNAIL": "Загрузить изображение Thumbnail",
     "MAX_UPLOAD_SIZE": "Максимальный размер (5 MB)",
+    "DESCRIPTION_PANEL": "Описание",
+    "RESCHEDULING_PANEL": "Перепланирование",
+    "EXTRA_PANEL": "Дополнительные опции",
     "options": {
       "AUTOMATED_SIGNUP": "Автоматическая запись",
       "CUSTOM_SIGNUP_INSTRUCTIONS": "Свои условия записи",
@@ -220,6 +225,7 @@
     "EDIT_PERMISSION": "У вас нет разрешения на редактирование этой игры",
     "ALREADY_STARTED": "Эта игра уже началась!",
     "MAX_NO_WAITLIST": "Эта игра полна и не принимать дополнительные подписки.",
-    "MISSING_PLAYER_ROLE": "У вас нет роли :ROLE должны присоединиться к этому событию."
+    "MISSING_PLAYER_ROLE": "У вас нет роли :ROLE должны присоединиться к этому событию.",
+    "OR": "или"
   }
 }

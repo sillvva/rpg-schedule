@@ -1365,9 +1365,16 @@ export class Game implements GameModel {
     }
 
     const template = guildConfig.gameTemplates.find(t => t.id.toString() === this.template) || guildConfig.gameTemplates.find(t => t.isDefault);
-    if (template && template.playerRole && !member.roles.find(r => isObject(template.playerRole) ? r.id === template.playerRole.id : r.name === template.playerRole)) {
-      if (member) member.send(lang.other.MISSING_PLAYER_ROLE.replace(/\:ROLE/g, `\`${isObject(template.playerRole) ? template.playerRole.name : template.playerRole}\``));
-      return { result: false, message: lang.other.MISSING_PLAYER_ROLE.replace(/\:ROLE/g, `\`${isObject(template.playerRole) ? template.playerRole.name : template.playerRole}\``) };
+    if (template && template.playerRole && template.playerRole.length > 0) {
+      if (!template.playerRole.find(pr => member.roles.find(r => r.id === pr.id || (!pr.id && r.name === pr.name)))) {
+        const separator = "`, `"
+        const pattern = new RegExp('(\\b' + separator + '\\b)(?!.*\\b\\1\\b)', 'i');
+        let message = template.playerRole.map(pr => pr.name).join(separator);
+        if (message.indexOf(separator) === message.lastIndexOf(separator)) message = message.replace(separator, "` "+lang.other.OR+" `");
+        else message = message.replace(pattern, "`, "+lang.other.OR+" `");
+        if (member) member.send(lang.other.MISSING_PLAYER_ROLE.replace(/\:ROLE/g, `\`${message}\``));
+        return { result: false, message: lang.other.MISSING_PLAYER_ROLE.replace(/\:ROLE/g, `\`${message}\``) };
+      }
     }
 
     let match = await GameRSVP.fetchRSVP(this._id, user.id);

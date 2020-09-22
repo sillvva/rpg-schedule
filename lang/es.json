@@ -48,6 +48,7 @@
     "TIME_ZONE": "Zona Horaria",
     "TODAY": "Hoy",
     "GAME_IMAGE": "Imagen del Juego",
+    "THUMBNAIL": "Miniatura",
     "GAME_IMAGE_DESC": "Descripcion de la imagen del juego GM's Discord avatar",
     "REMINDER": "Recordatorio",
     "REMINDER_FOR": "Recordatorio para",
@@ -56,10 +57,10 @@
     "RESERVED_SLOTS": "Plazas reservadas (1 Jugador por linea)",
     "RESERVED": "Reservado",
     "WAITLISTED": "Lista Espera",
-    "DESCRIPTION": "Descripcion",
+    "DESCRIPTION": "Descripción",
     "EDIT_LINK": "Puedes editar tu `:SERVER_NAME` - `:GAME_NAME` aqui mismo:",
     "MAX": "Maximo",
-    "CHARACTERS": "caracteres",
+    "CHARACTERS": "Caracteres",
     "NO_PLAYERS": "Sin Jugadores",
     "NEXT_DATE": "Siguiente Fecha en el calendario",
     "WHEN_REPEAT": "Cuando se Repite este evento",
@@ -75,7 +76,11 @@
     "GAME_OPTIONS": "Opciones de juego",
     "DISABLE_WAITLIST": "Desactivar la Lista de Espera",
     "UPLOAD_GAME_IMAGE": "Subir imagen juego",
+    "UPLOAD_THUMBNAIL": "Subir Imagen en miniatura",
     "MAX_UPLOAD_SIZE": "Tamaño máximo (5 MB)",
+    "DESCRIPTION_PANEL": "Descripción",
+    "RESCHEDULING_PANEL": "Reprogramación",
+    "EXTRA_PANEL": "Opciones Adicionales",
     "options": {
       "AUTOMATED_SIGNUP": "Registrarse Automaticamente",
       "CUSTOM_SIGNUP_INSTRUCTIONS": "Instrucciones para unirse al evento",
@@ -220,6 +225,7 @@
     "EDIT_PERMISSION": "No tienes permiso para editar este juego",
     "ALREADY_STARTED": "¡Ese juego ya ha comenzado!",
     "MAX_NO_WAITLIST": "Ese juego está lleno y no aceptar suscripciones adicionales.",
-    "MISSING_PLAYER_ROLE": "Usted no tiene el papel :ROLE requerida para unirse a ese evento."
+    "MISSING_PLAYER_ROLE": "Usted no tiene el papel :ROLE requerida para unirse a ese evento.",
+    "OR": "o"
   }
 }
