@@ -963,7 +963,16 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
               }
             } else if (cmd === "events") {
               const response = await cmdFetchEvents(message.guild, params.join(" "), lang);
-              if (response) message.author.send(response);
+              if (response) {
+                if (Array.isArray(response)) {
+                  response.forEach(r => {
+                    message.author.send(r);
+                  });
+                }
+                else {
+                  message.author.send(response)
+                }
+              }
               else message.author.send(lang.config.EVENTS_NONE);
               message.delete();
             } else {
@@ -1005,7 +1014,16 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                 const guild = guilds[i];
                 const response = await cmdFetchEvents(guild, params.join(" "), lang, guilds);
                 if (response) count++;
-                if (response) message.author.send(response);
+                if (response) {
+                  if (Array.isArray(response)) {
+                    response.forEach(r => {
+                      message.author.send(r);
+                    });
+                  }
+                  else {
+                    message.author.send(response)
+                  }
+                }
               }
               if (!count) message.author.send(lang.config.EVENTS_NONE);
             } else {
@@ -1749,12 +1767,13 @@ const cmdFetchEvents = async (guild: ShardGuild | Guild, time: string, lang: any
       return a.timestamp > b.timestamp ? 1 : -1;
     });
 
-    let response: MessageEmbed;
+    let response: MessageEmbed[] = [];
 
     if (games.length > 0) {
       moment.locale(lang.code);
-      const embed = new MessageEmbed();
-      embed.setTitle(lang.config.EVENTS_TITLE.replace(/\:SERVER/g, guild.name).replace(/\:TIMEFRAME/g, timeframe));
+      let embed = new MessageEmbed();
+      const title = lang.config.EVENTS_TITLE.replace(/\:SERVER/g, guild.name).replace(/\:TIMEFRAME/g, timeframe);
+      embed.setTitle(title);
       games.forEach((game, i) => {
         const date = Game.ISOGameDate(game);
         const timezone = "UTC" + (game.timezone >= 0 ? "+" : "") + game.timezone;
@@ -1764,9 +1783,19 @@ const cmdFetchEvents = async (guild: ShardGuild | Guild, time: string, lang: any
         embed.addField(lang.game.GAME_NAME, `[${game.adventure}](https://discordapp.com/channels/${game.discordGuild.id}/${game.discordChannel.id}/${game.messageId})`, true);
         embed.addField(lang.game.WHEN, `${gameDate} (${timezone})`, true);
         embed.addField(lang.game.RESERVED, `${game.reserved.length} / ${game.players}`, true);
+
+        if ((i + 1) % 6 === 0) {
+          if (games.length > 6) embed.setFooter(`Page ${response.length + 1}`);
+          response.push(embed);
+          embed = new MessageEmbed();
+          // embed.setTitle(title);
+        }
       });
 
-      response = embed;
+      if ((games.length + 1) % 6 !== 0) {
+        if (games.length > 6) embed.setFooter(`Page ${response.length + 1}`);
+        response.push(embed);
+      }
     }
 
     moment.locale("en");
