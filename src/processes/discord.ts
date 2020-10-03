@@ -1475,8 +1475,12 @@ const pruneOldGames = async (guild?: Guild) => {
           }
           if (clientMessages.length === 0) continue;
           try {
-            const deleted = await c.bulkDelete(clientMessages);
+            const deleted = await c.bulkDelete(clientMessages, true);
             count += deleted.size;
+            clientMessages.filter(cm => !deleted.find(d => d.id === cm.id)).forEach(cm => {
+              cm.delete({ reason: "Automated pruning..." });
+              count++;
+            });
           } catch (err) {
             console.log("AutomatedPruningError:", err);
           }
