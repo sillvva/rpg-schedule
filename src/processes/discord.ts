@@ -1374,14 +1374,14 @@ const pruneOldGames = async (guild?: Guild) => {
                 client.shard.send({
                   type: "socket",
                   name: "game",
-                  data: { action: "pruned", gameId: game._id },
+                  data: { action: "pruned", gameId: game._id, room: `g-${game.s}` },
                 });
               } else {
                 deletedIds.push(game._id);
                 client.shard.send({
                   type: "socket",
                   name: "game",
-                  data: { action: "deleted", gameId: game._id },
+                  data: { action: "deleted", gameId: game._id, room: `g-${game.s}` },
                 });
               }
             }
@@ -1395,7 +1395,7 @@ const pruneOldGames = async (guild?: Guild) => {
             client.shard.send({
               type: "socket",
               name: "game",
-              data: { action: "deleted", gameId: game._id },
+              data: { action: "deleted", gameId: game._id, room: `g-${game.s}` },
             });
           }
         } catch (err) {
