@@ -177,10 +177,11 @@ if (process.env.DISCORD_API_LOGIC.toLowerCase() === "true") {
 
     const guildConfig = await GuildConfig.fetch(oldR.guild.id);
     if (isObject(guildConfig.role) ? guildConfig.role.id == oldR.id : guildConfig.role == oldR.name) guildConfig.role = { id: role.id, name: role.name };
-    if (isObject(guildConfig.managerRole) ? guildConfig.managerRole.id == oldR.id : guildConfig.managerRole == oldR.name) guildConfig.managerRole = { id: role.id, name: role.name };
-    guildConfig.gameTemplates = guildConfig.gameTemplates.map(gt => {
+    if (isObject(guildConfig.managerRole) ? guildConfig.managerRole.id == oldR.id : guildConfig.managerRole == oldR.name)
+      guildConfig.managerRole = { id: role.id, name: role.name };
+    guildConfig.gameTemplates = guildConfig.gameTemplates.map((gt) => {
       if (isObject(gt.role) ? gt.role.id === oldR.id : gt.role == oldR.name) gt.role = { id: role.id, name: role.name };
-      gt.playerRole = gt.playerRole.map(pr => {
+      gt.playerRole = gt.playerRole.map((pr) => {
         if (pr.id === oldR.id || (!pr.id && pr.name === oldR.name)) pr = { id: role.id, name: role.name };
         return pr;
       });
@@ -379,7 +380,9 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
             isAdmin = !!(
               member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) ||
               member.hasPermission(Permissions.FLAGS.ADMINISTRATOR) ||
-              member.roles.cache.find((r) => isObject(guildConfig.managerRole) ? r.id === guildConfig.managerRole.id : r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim())
+              member.roles.cache.find((r) =>
+                isObject(guildConfig.managerRole) ? r.id === guildConfig.managerRole.id : r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim()
+              )
             );
             permission = guildConfig.memberHasPermission(member) || isAdmin;
           }
@@ -511,9 +514,7 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                         !addedChannel.permissionsFor(client.user.id).has(Permissions.FLAGS.ADD_REACTIONS) && "ADD_REACTIONS",
                       ].filter((check) => check);
                       if (missingPermissions.length > 0) {
-                        message.channel.send(
-                          responseEmbed(`The bot is missing the following permissions in ${addedChannel.toString()}: ${missingPermissions.join(", ")}`)
-                        );
+                        message.channel.send(responseEmbed(`The bot is missing the following permissions in ${addedChannel.toString()}: ${missingPermissions.join(", ")}`));
                       }
                     }
                   })
@@ -872,7 +873,7 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
               const mentioned = (params[0] || "").match(/(\d+)/);
               let roleObj: ConfigRole = {
                 id: null,
-                name: params.join(" ")
+                name: params.join(" "),
               };
               if (roleObj.name.trim() === "All Roles") {
                 roleObj.name = "";
@@ -904,7 +905,7 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
               const mentioned = (params[0] || "").match(/(\d+)/);
               let roleObj: ConfigRole = {
                 id: null,
-                name: params.join(" ")
+                name: params.join(" "),
               };
               if (mentioned) {
                 const roleId = mentioned[0];
@@ -955,7 +956,7 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
               }
             } else if (cmd === "reboot" && member.user.tag === config.author) {
               await client.shard.send({
-                type: "reboot"
+                type: "reboot",
               });
             } else if (cmd === "bot-permissions" && (isAdmin || member.user.tag === config.author)) {
               let channelId = message.channel.id;
@@ -982,15 +983,13 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
               const response = await cmdFetchEvents(message.guild, params.join(" "), lang);
               if (response) {
                 if (Array.isArray(response)) {
-                  response.forEach(r => {
+                  response.forEach((r) => {
                     message.author.send(r);
                   });
+                } else {
+                  message.author.send(response);
                 }
-                else {
-                  message.author.send(response)
-                }
-              }
-              else message.author.send(lang.config.EVENTS_NONE);
+              } else message.author.send(lang.config.EVENTS_NONE);
               message.delete();
             } else {
               const response = await message.channel.send("Command not recognized");
@@ -1033,12 +1032,11 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                 if (response) count++;
                 if (response) {
                   if (Array.isArray(response)) {
-                    response.forEach(r => {
+                    response.forEach((r) => {
                       message.author.send(r);
                     });
-                  }
-                  else {
-                    message.author.send(response)
+                  } else {
+                    message.author.send(response);
                   }
                 }
               }
@@ -1103,7 +1101,7 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
         },
         deleted: {
           $in: [false, null],
-        }
+        },
       },
       client
     );
@@ -1306,11 +1304,12 @@ const rescheduleOldGames = async (guildId?: string) => {
 
 const pruneOldGames = async (guild?: Guild) => {
   let pruned: UpdateWriteOpResult;
+  const day = 24 * 3600 * 1000;
   try {
     aux.log(`Pruning old games for ${guild ? `${guild.name} server` : "all servers"}`);
     const query: FilterQuery<any> = {
       timestamp: {
-        $lt: new Date().getTime() - 48 * 3600 * 1000,
+        $lt: new Date().getTime() - 2 * day,
       },
       frequency: "0",
       hideDate: {
@@ -1339,6 +1338,10 @@ const pruneOldGames = async (guild?: Guild) => {
       page++;
 
       let games = await Game.fetchAllBy(query, client);
+      games.sort((a, b) => {
+        return a.s > b.s ? 1 : -1;
+      });
+
       const guildConfigs = await GuildConfig.fetchAllBy({
         guild: guild
           ? guild.id
@@ -1346,10 +1349,10 @@ const pruneOldGames = async (guild?: Guild) => {
               $in: games.map((g) => g.s).filter((s, i, arr) => arr.indexOf(s) === i),
             },
       });
-      const gameChannelMessages: { guild: string; channel: string; message: string }[] = [];
+
       const prunedIds = [];
       const deletedIds = [];
-      const prunedMessageIds = [];
+
       for (let i = 0; i < games.length; i++) {
         let game = games[i];
         if (!game.discordGuild) continue;
@@ -1359,10 +1362,14 @@ const pruneOldGames = async (guild?: Guild) => {
           const guildConfig = guildConfigs.find((gc) => gc.guild === game.s) || new GuildConfig();
           if (!guildConfig) continue;
 
-          if (!game.pruned && game.discordChannel && new Date().getTime() - game.timestamp >= guildConfig.pruneIntDiscord * 24 * 3600 * 1000) {
+          if (!game.pruned && game.discordChannel && new Date().getTime() - game.timestamp >= guildConfig.pruneIntDiscord * day) {
             if (game.messageId) {
-              if (guildConfig.pruning) prunedMessageIds.push(game.messageId);
-              if (guildConfig.pruneIntDiscord < guildConfig.pruneIntEvents && new Date().getTime() - game.timestamp < guildConfig.pruneIntEvents * 24 * 3600 * 1000) {
+              if (guildConfig.pruning) {
+                const message = await game.discordChannel.messages.fetch(game.messageId);
+                if (message.deletable) message.delete();
+              }
+
+              if (guildConfig.pruneIntDiscord < guildConfig.pruneIntEvents && new Date().getTime() - game.timestamp < guildConfig.pruneIntEvents * day) {
                 prunedIds.push(game._id);
                 client.shard.send({
                   type: "socket",
@@ -1377,12 +1384,13 @@ const pruneOldGames = async (guild?: Guild) => {
                   data: { action: "deleted", gameId: game._id },
                 });
               }
-              if (guildConfig.pruning) gameChannelMessages.push({ guild: game.s, channel: game.c, message: game.messageId });
             }
+
             if (game.reminderMessageId) {
-              if (guildConfig.pruning) gameChannelMessages.push({ guild: game.s, channel: game.c, message: game.messageId });
+              const message = await game.discordChannel.messages.fetch(game.reminderMessageId);
+              if (message.deletable) message.delete();
             }
-          } else if (new Date().getTime() - game.timestamp >= guildConfig.pruneIntEvents * 24 * 3600 * 1000) {
+          } else if (new Date().getTime() - game.timestamp >= guildConfig.pruneIntEvents * day) {
             deletedIds.push(game._id);
             client.shard.send({
               type: "socket",
@@ -1397,7 +1405,6 @@ const pruneOldGames = async (guild?: Guild) => {
 
       pruned = <UpdateWriteOpResult>await Game.updateAllBy(
         {
-          ...query,
           pruned: {
             $in: [false, null],
           },
@@ -1414,7 +1421,6 @@ const pruneOldGames = async (guild?: Guild) => {
       if (pruned.modifiedCount > 0) aux.log(`${pruned.modifiedCount} old game(s) pruned from Discord only`);
 
       pruned = await Game.softDeleteAllBy({
-        ...query,
         _id: {
           $in: deletedIds.map((pid) => new ObjectId(pid)),
         },
@@ -1434,7 +1440,7 @@ const pruneOldGames = async (guild?: Guild) => {
             },
           ],
           timestamp: {
-            $lt: new Date().getTime() - 14 * 24 * 3600 * 1000,
+            $lt: new Date().getTime() - 14 * day,
           },
         },
         client
@@ -1446,7 +1452,9 @@ const pruneOldGames = async (guild?: Guild) => {
       for (let gci = 0; gci < guildConfigs.length; gci++) {
         const gc = guildConfigs[gci];
         const guild = client.guilds.cache.find((g) => g.id === gc.guild);
-        const channels = <(TextChannel | NewsChannel)[]>guild.channels.cache.array().filter((c) => gc.channels.find((gcc) => gcc.channelId === c.id) && (c instanceof TextChannel || c instanceof NewsChannel));
+        const channels = <(TextChannel | NewsChannel)[]>(
+          guild.channels.cache.array().filter((c) => gc.channels.find((gcc) => gcc.channelId === c.id) && (c instanceof TextChannel || c instanceof NewsChannel))
+        );
 
         for (let ci = 0; ci < channels.length; ci++) {
           const c = channels[ci];
@@ -1460,27 +1468,20 @@ const pruneOldGames = async (guild?: Guild) => {
                 m.author.id === client.user.id &&
                 m.deletable &&
                 !m.deleted &&
-                (m.embeds.filter(
-                  (e) => new Date().getTime() - m.createdTimestamp >= 14 * 24 * 3600 * 1000 && new Date().getTime() - e.timestamp >= gc.pruneIntDiscord * 24 * 3600 * 1000
-                ).length > 0 ||
-                  prunedMessageIds.includes(m.id))
+                (new Date().getTime() - m.createdTimestamp >= 14 * day || new Date().getTime() - m.createdTimestamp >= gc.pruneIntDiscord * day)
             );
 
-          for (let i = 0; i < gameChannelMessages.length; i++) {
-            const msg = gameChannelMessages[i];
-            if (guild.id === msg.guild && c.id === msg.channel && !clientMessages.find((cm) => cm.id === msg.message)) {
-              const chm = await c.messages.resolve(msg.message);
-              if (chm) clientMessages.push(chm);
-            }
-          }
           if (clientMessages.length === 0) continue;
+
           try {
             const deleted = await c.bulkDelete(clientMessages, true);
             count += deleted.size;
-            clientMessages.filter(cm => !deleted.find(d => d.id === cm.id)).forEach(cm => {
-              cm.delete({ reason: "Automated pruning..." });
-              count++;
-            });
+            clientMessages
+              .filter((cm) => !deleted.find((d) => d.id === cm.id))
+              .forEach((cm) => {
+                cm.delete({ reason: "Automated pruning..." });
+                count++;
+              });
           } catch (err) {
             console.log("AutomatedPruningError:", err);
           }
