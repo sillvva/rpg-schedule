@@ -405,33 +405,35 @@ export default (options: APIRouteOptions) => {
         search: req.query.search,
       })
         .then(async (result: any) => {
-          const guilds = result.account.guilds.filter(g => g.id == req.query.guildId).map((guild) => {
-            guild.roles = guild.roles.map((role) => {
-              delete role.hoist;
-              delete role.createdTimestamp;
-              delete role.deleted;
-              delete role.mentionable;
-              delete role.permissions;
-              delete role.rawPosition;
-              return role;
+          const guilds = result.account.guilds
+            .filter((g) => g.id == req.query.guildId)
+            .map((guild) => {
+              guild.roles = guild.roles.map((role) => {
+                delete role.hoist;
+                delete role.createdTimestamp;
+                delete role.deleted;
+                delete role.mentionable;
+                delete role.permissions;
+                delete role.rawPosition;
+                return role;
+              });
+              guild.channelCategories = guild.channelCategories.map((channel) => {
+                // delete channel.members;
+                delete channel.messages;
+                return channel;
+              });
+              guild.announcementChannels = guild.announcementChannels.map((channel) => {
+                // delete channel.members;
+                delete channel.messages;
+                return channel;
+              });
+              guild.channels = guild.channels.map((channel) => {
+                // delete channel.members;
+                delete channel.messages;
+                return channel;
+              });
+              return guild;
             });
-            guild.channelCategories = guild.channelCategories.map((channel) => {
-              // delete channel.members;
-              delete channel.messages;
-              return channel;
-            });
-            guild.announcementChannels = guild.announcementChannels.map((channel) => {
-              // delete channel.members;
-              delete channel.messages;
-              return channel;
-            });
-            guild.channels = guild.channels.map((channel) => {
-              // delete channel.members;
-              delete channel.messages;
-              return channel;
-            });
-            return guild;
-          });
           res.json({
             status: "success",
             token: req.session.api.access.access_token,
@@ -477,7 +479,7 @@ export default (options: APIRouteOptions) => {
             if (typeof req.body[property] != "undefined") guildConfig[property] = req.body[property];
           }
           const saveResult = await guildConfig.save();
-          
+
           const sGuilds = await ShardManager.shardGuilds({
             guildIds: [req.body.id],
           });
@@ -751,7 +753,9 @@ export default (options: APIRouteOptions) => {
                   member &&
                   (member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) ||
                     member.hasPermission(Permissions.FLAGS.ADMINISTRATOR) ||
-                    member.roles.find((r) => isObject(guildConfig.managerRole) ? r.id === guildConfig.managerRole.id : r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim()));
+                    member.roles.find((r) =>
+                      isObject(guildConfig.managerRole) ? r.id === guildConfig.managerRole.id : r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim()
+                    ));
                 const gcChannel = guildConfig.channel.find((gcc) => gcc.channelId === game.c) || {
                   channelId: game.c,
                   gameTemplates: [guildConfig.defaultGameTemplate.id],
@@ -770,7 +774,11 @@ export default (options: APIRouteOptions) => {
                   if (gameTemplate.role && !isAdmin) {
                     if (member) {
                       // User does not have the require role
-                      if (!member.roles.find((r) => isObject(gameTemplate.role) ? r.id === gameTemplate.role.id : r.name.toLowerCase().trim() === gameTemplate.role.toLowerCase().trim())) {
+                      if (
+                        !member.roles.find((r) =>
+                          isObject(gameTemplate.role) ? r.id === gameTemplate.role.id : r.name.toLowerCase().trim() === gameTemplate.role.toLowerCase().trim()
+                        )
+                      ) {
                         throw new Error("You are either not logged in or are missing the role required for posting on this server.");
                       }
                     }
@@ -890,7 +898,7 @@ export default (options: APIRouteOptions) => {
 
                   updatedGame
                     .save({
-                      user: result.account.user
+                      user: result.account.user,
                     })
                     .then(async (response) => {
                       updatedGame._id = response.modified ? response._id : null;
@@ -1005,6 +1013,40 @@ export default (options: APIRouteOptions) => {
       });
   });
 
+  router.get("/auth-api/game-restore", async (req, res, next) => {
+    fetchAccount(req.session.api.access, {
+      client: client,
+      ip: req.app.locals.ip,
+      guilds: true,
+    })
+      .then(async (result: any) => {
+        try {
+          if (req.query.g) {
+            const game = await Game.fetch(req.query.g, null, result.sGuilds);
+            if (!game) throw new Error("Game not found");
+            await game.undelete();
+          } else {
+            throw new Error("Game not found");
+          }
+        } catch (err) {
+          res.json({
+            status: "error",
+            token: req.session.api.access.access_token,
+            message: `UndeleteGameError`,
+            code: 32,
+          });
+        }
+      })
+      .catch((err) => {
+        res.json({
+          status: "error",
+          token: req.session.api.access.access_token,
+          message: `UserAuthError`,
+          code: 33,
+        });
+      });
+  });
+
   router.post("/api/rsvp", async (req, res, next) => {
     try {
       const bearer = (req.headers.authorization || "").replace("Bearer ", "").trim();
@@ -1018,7 +1060,7 @@ export default (options: APIRouteOptions) => {
       const game = await Game.fetch(req.body.game, null, sGuilds);
       if (game) {
         const member = game.discordGuild.members.find((m) => m.id === req.body.id);
-        let rsvp: { result: boolean, message?: string };
+        let rsvp: { result: boolean; message?: string };
         if (!game.reserved.find((r) => r.id === member.user.id || r.tag === member.user.tag)) {
           rsvp = await game.signUp(member.user);
         } else {
@@ -1065,7 +1107,7 @@ export default (options: APIRouteOptions) => {
           .then(async (result: any) => {
             const game = await Game.fetch(req.body.g, null, result.sGuilds);
             if (game) {
-              let rsvp: { result: boolean, message?: string };
+              let rsvp: { result: boolean; message?: string };
               if (!game.reserved.find((r) => r.id === result.account.user.id || r.tag === result.account.user.tag)) {
                 rsvp = await game.signUp(<discord.User>result.account.user, t);
               } else {
@@ -1386,7 +1428,9 @@ export default (options: APIRouteOptions) => {
           guild.isAdmin = !!(
             member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) ||
             member.hasPermission(Permissions.FLAGS.ADMINISTRATOR) ||
-            member.roles.find((r) => isObject(guildConfig.managerRole) ? r.id === guildConfig.managerRole.id : r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim())
+            member.roles.find((r) =>
+              isObject(guildConfig.managerRole) ? r.id === guildConfig.managerRole.id : r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim()
+            )
           );
           guild.permission = guildConfig.shardMemberHasPermission(member) || guild.isAdmin;
           gcChannels.forEach((c) => {
@@ -1427,20 +1471,23 @@ export default (options: APIRouteOptions) => {
                 myGames: `https://www.rpg-schedule.com/games/my-games?s=${escape(`_id:${game._id}`)}`,
               },
               ...game.data,
-              dm: (function (r) {
+              dm: ((r) => {
                 const member = sGuild.members.find((m) => (r.id && m.user.id === r.id) || m.user.tag === r.tag);
                 return (member && member.nickname) || (r.tag.indexOf("#") < 0 && r.tag) || "User not found";
               })(game.data.dm),
-              author: (function (r) {
+              dmData: game.data.dm,
+              author: ((r) => {
                 const member = sGuild.members.find((m) => (r.id && m.user.id === r.id) || m.user.tag === r.tag);
                 return (member && member.nickname) || (r.tag.indexOf("#") < 0 && r.tag) || "User not found";
               })(game.data.author),
+              authorData: game.data.author,
               reserved: game.data.reserved
                 .filter((r) => r.tag)
                 .map((r) => {
                   const member = sGuild.members.find((m) => (r.id && m.user.id === r.id) || m.user.tag === r.tag);
                   return (member && member.nickname) || (r.tag.indexOf("#") < 0 && r.tag) || "User not found";
                 }),
+              reservedData: game.data.reserved.filter((r) => r.tag),
               moment: {
                 ...parsed,
                 iso: date,
@@ -1495,6 +1542,7 @@ export default (options: APIRouteOptions) => {
         ...req.query,
         ...{
           tag: tag,
+          apiKey: await aux.getAPIKey(id),
         },
       },
       guilds: [],
@@ -1592,7 +1640,9 @@ export default (options: APIRouteOptions) => {
           guild.isAdmin = !!(
             member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) ||
             member.hasPermission(Permissions.FLAGS.ADMINISTRATOR) ||
-            member.roles.find((r) => isObject(guildConfig.managerRole) ? r.id === guildConfig.managerRole.id : r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim())
+            member.roles.find((r) =>
+              isObject(guildConfig.managerRole) ? r.id === guildConfig.managerRole.id : r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim()
+            )
           );
           guild.permission = guildConfig.shardMemberHasPermission(member) || guild.isAdmin;
           gcChannels.forEach((c) => {
@@ -1806,7 +1856,9 @@ const fetchAccount = (token: any, options: AccountOptions) => {
                 guild.isAdmin = !!(
                   member.hasPermission(Permissions.FLAGS.MANAGE_GUILD) ||
                   member.hasPermission(Permissions.FLAGS.ADMINISTRATOR) ||
-                  member.roles.find((r) => isObject(guildConfig.managerRole) ? r.id === guildConfig.managerRole.id : r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim())
+                  member.roles.find((r) =>
+                    isObject(guildConfig.managerRole) ? r.id === guildConfig.managerRole.id : r.name.toLowerCase().trim() === (guildConfig.managerRole || "").toLowerCase().trim()
+                  )
                 );
                 guild.permission = guildConfig.shardMemberHasPermission(member) || guild.isAdmin;
               }
@@ -1891,7 +1943,7 @@ const fetchAccount = (token: any, options: AccountOptions) => {
                 };
               }
 
-              const fGames: Game[] = await Game.fetchAllBy(gameOptions, null, sGuilds);
+              const fGames: Game[] = await Game.fetchAllBy(gameOptions, null, sGuilds, true);
               // const games: any[] = [];
               // for (let i = 0; i < fGames.length; i++) {
               //   const game = fGames[i];

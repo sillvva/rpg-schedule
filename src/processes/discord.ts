@@ -1178,29 +1178,6 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
     aux.log("Database connected in shard!");
     // Login the Discord bot
     client.login(process.env.TOKEN);
-    // const result = await Game.deleteAllBy({ s: "497043627432738817", adventure: "Mothership: A Carrion-Eater Company" }, client);
-    // console.log(result.deletedCount);
-
-    // const games = await Game.fetchAllBy({});
-    // let gameCounts = [];
-    // games.filter((g:any) => !g.deleted).forEach(g => {
-    //   const index = gameCounts.findIndex(gc => gc.s === g.s && gc.adventure === g.adventure);
-    //   if (index >= 0) {
-    //     gameCounts[index] = {
-    //       ...gameCounts[index],
-    //       count: gameCounts[index].count+1
-    //     };
-    //   }
-    //   else {
-    //     gameCounts.push({
-    //       s: g.s,
-    //       adventure: g.adventure,
-    //       frequency: g.frequency,
-    //       count: 1
-    //     });
-    //   }
-    // });
-    // console.log(gameCounts.filter(gc => gc.count > 100));
   }
 })();
 
@@ -1386,7 +1363,7 @@ const pruneOldGames = async (guild?: Guild) => {
               }
             }
 
-            if (game.reminderMessageId) {
+            if (game.reminderMessageId && guildConfig.pruning) {
               const message = await game.discordChannel.messages.fetch(game.reminderMessageId);
               if (message.deletable) message.delete();
             }
@@ -1402,6 +1379,8 @@ const pruneOldGames = async (guild?: Guild) => {
           aux.log("MessagePruningError:", err);
         }
       }
+
+      // console.log(deletedIds); return;
 
       pruned = <UpdateWriteOpResult>await Game.updateAllBy(
         {
@@ -1449,44 +1428,50 @@ const pruneOldGames = async (guild?: Guild) => {
 
       let count = 0;
 
-      for (let gci = 0; gci < guildConfigs.length; gci++) {
-        const gc = guildConfigs[gci];
-        const guild = client.guilds.cache.find((g) => g.id === gc.guild);
-        const channels = <(TextChannel | NewsChannel)[]>(
-          guild.channels.cache.array().filter((c) => gc.channels.find((gcc) => gcc.channelId === c.id) && (c instanceof TextChannel || c instanceof NewsChannel))
-        );
+      // for (let gci = 0; gci < guildConfigs.length; gci++) {
+      //   const gc = guildConfigs[gci];
+      //   if (!gc.pruning) continue;
 
-        for (let ci = 0; ci < channels.length; ci++) {
-          const c = channels[ci];
-          const messages = await c.messages.fetch({ limit: 100 });
-          if (messages.size === 0) continue;
+      //   const sGames = games.filter((g) => g.s === gc.guild && !g.hideDate && !!g.messageId);
 
-          const clientMessages = messages
-            .array()
-            .filter(
-              (m) =>
-                m.author.id === client.user.id &&
-                m.deletable &&
-                !m.deleted &&
-                (new Date().getTime() - m.createdTimestamp >= 14 * day || new Date().getTime() - m.createdTimestamp >= gc.pruneIntDiscord * day)
-            );
+      //   const guild = client.guilds.cache.find((g) => g.id === gc.guild);
+      //   const channels = <(TextChannel | NewsChannel)[]>(
+      //     guild.channels.cache.array().filter((c) => gc.channels.find((gcc) => gcc.channelId === c.id) && (c instanceof TextChannel || c instanceof NewsChannel))
+      //   );
 
-          if (clientMessages.length === 0) continue;
+      //   for (let ci = 0; ci < channels.length; ci++) {
+      //     const c = channels[ci];
+      //     const messages = await c.messages.fetch({ limit: 100 });
+      //     if (messages.size === 0) continue;
 
-          try {
-            const deleted = await c.bulkDelete(clientMessages, true);
-            count += deleted.size;
-            clientMessages
-              .filter((cm) => !deleted.find((d) => d.id === cm.id))
-              .forEach((cm) => {
-                cm.delete({ reason: "Automated pruning..." });
-                count++;
-              });
-          } catch (err) {
-            console.log("AutomatedPruningError:", err);
-          }
-        }
-      }
+      //     const clientMessages = messages
+      //       .array()
+      //       .filter(
+      //         (m) =>
+      //           m.author.id === client.user.id &&
+      //           m.deletable &&
+      //           !m.deleted &&
+      //           !sGames.find((sg) => sg.messageId === m.id) &&
+      //           !sGames.find((sg) => sg.reminderMessageId === m.id) &&
+      //           new Date().getTime() - m.createdTimestamp >= 14 * day
+      //       );
+
+      //     if (clientMessages.length === 0) continue;
+
+      //     try {
+      //       const deleted = await c.bulkDelete(clientMessages, true);
+      //       count += deleted.size;
+      //       clientMessages
+      //         .filter((cm) => !deleted.find((d) => d.id === cm.id))
+      //         .forEach((cm) => {
+      //           cm.delete({ reason: "Automated pruning..." });
+      //           count++;
+      //         });
+      //     } catch (err) {
+      //       console.log("AutomatedPruningError:", err);
+      //     }
+      //   }
+      // }
 
       if (count > 0) aux.log(`${count} old message(s) successfully pruned`);
       page++;

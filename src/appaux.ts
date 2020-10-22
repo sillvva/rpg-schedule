@@ -22,27 +22,41 @@ const patreonPledges = async () => {
   const accessToken = process.env.PATREON_API_ACCESS_TOKEN;
   const campaignId = process.env.PATREON_CAMPAIGN_ID;
   try {
-    const url = `https://www.patreon.com/api/oauth2/api/campaigns/${campaignId}/pledges`;
-    const response = await axios.get(url, {
-      headers: {
-        authorization: `Bearer ${accessToken}`,
-      },
-    });
-    const data = response.data;
-    const rewards = data.included.filter((i) => i.type === "reward" && i.id > 0);
-    const pledges = data.data.filter((i) => i.type === "pledge" && i.id > 0);
-    const users = data.included.filter((i) => i.type === "user" && i.id > 0);
     const result = [];
-    pledges.forEach((pledge) => {
-      const rewardId = pledge.relationships.reward.data.id;
-      const reward = rewards.find((r) => r.id === rewardId);
-      const patronId = pledge.relationships.patron.data.id;
-      const user = users.find((u) => u.id === patronId);
-      result.push({
-        patron: user,
-        reward: reward,
+    let url = `https://www.patreon.com/api/oauth2/api/campaigns/${campaignId}/pledges?page%5Bcount%5D=100`;
+    do {
+      const response = await axios.get(url, {
+        headers: {
+          authorization: `Bearer ${accessToken}`,
+        },
       });
-    });
+      const data = response.data;
+      const rewards = data.included.filter((i) => i.type === "reward" && i.id > 0);
+      const pledges = data.data.filter((i) => i.type === "pledge" && i.id > 0);
+      const users = data.included.filter((i) => i.type === "user" && i.id > 0);
+      pledges.forEach((pledge) => {
+        if (!pledge.relationships.reward.data) return;
+        if (!pledge.relationships.patron.data) return;
+        try {
+          const rewardId = pledge.relationships.reward.data.id;
+          const reward = rewards.find((r) => r.id === rewardId);
+          const patronId = pledge.relationships.patron.data.id;
+          const user = users.find((u) => u.id === patronId);
+          result.push({
+            patron: user,
+            reward: reward,
+          });
+        }
+        catch(err) {
+          console.log(pledge.relationships.reward)
+        }
+      });
+
+      // Patreon API returns paginated results
+      // data.links.next is the URL for the next set of pledges
+      url = data.links.next;
+    }
+    while(url)
     return {
       status: "success",
       data: result,

@@ -107,6 +107,7 @@ export interface GameModel {
   pastSignups: boolean;
   sequence: number;
   pruned?: boolean;
+  deleted?: boolean;
   createdTimestamp: number;
   updatedTimestamp: number;
 }
@@ -120,6 +121,7 @@ interface GameSaveData {
 interface GameSaveOptions {
   force?: boolean;
   user?: any;
+  repost?: boolean;
 }
 
 export enum GameReminder {
@@ -177,6 +179,7 @@ export class Game implements GameModel {
   pastSignups: boolean = false;
   sequence: number = 1;
   pruned: boolean = false;
+  deleted: boolean = false;
   createdTimestamp: number;
   updatedTimestamp: number;
   slot: number = 0;
@@ -294,6 +297,7 @@ export class Game implements GameModel {
       pastSignups: this.pastSignups,
       sequence: this.sequence,
       pruned: this.pruned,
+      deleted: this.deleted,
       createdTimestamp: this.createdTimestamp,
       updatedTimestamp: this.updatedTimestamp,
     };
@@ -561,6 +565,11 @@ export class Game implements GameModel {
       const dbCollection = connection().collection(collection);
       if (game._id) {
         game.sequence++;
+        if (options.repost) {
+          game.deleted = false;
+          game.pruned = false;
+        }
+
         const gameData = cloneDeep(game);
         const prev = await Game.fetch(game._id, this.client, [this._guild], false);
         delete gameData._id;
@@ -581,19 +590,20 @@ export class Game implements GameModel {
             }
           } else embed = null;
 
+          if (channel && options.repost) {
+            message = <Message>await channel.send(msg, embed);
+            if (message) {
+              await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: { messageId: message.id } });
+              game.messageId = message.id;
+            }
+          }
+
           if (message) {
             if ((message.author ? message.author.id : (<any>message).authorID) === process.env.CLIENT_ID) {
               if (this.client) message = await ShardManager.clientMessageEdit(this.client, guild.id, channel.id, message.id, msg, embed);
               else message = await ShardManager.shardMessageEdit(guild.id, channel.id, message.id, msg, embed);
             }
           } 
-          // else if (channel && !game.messageId && !(<any>game).deleted && !game.pruned && game.timestamp >= new Date().getTime() + parseInt(game.reminder) * 60 * 1000) {
-          //   message = <Message>await channel.send(msg, embed);
-          //   if (message) {
-          //     await dbCollection.updateOne({ _id: new ObjectId(game._id) }, { $set: { messageId: message.id } });
-          //     game.messageId = message.id;
-          //   }
-          // }
           else return;
 
           this.addReactions(message, guildConfig);
@@ -1122,6 +1132,12 @@ export class Game implements GameModel {
     return await connection()
       .collection(collection)
       .updateOne({ _id: new ObjectId(_id) }, { $set: { deleted: true, frequency: Frequency.NO_REPEAT } });
+  }
+
+  async undelete() {
+    return await this.save({
+      repost: true
+    });
   }
 
   async delete(options: any = {}) {
