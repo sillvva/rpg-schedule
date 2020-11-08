@@ -698,7 +698,7 @@ export class Game implements GameModel {
               dmEmbed.addField(lang.game.SERVER, guild.name, true);
               dmEmbed.addField(lang.game.GAME_NAME, `[${game.adventure}](https://discordapp.com/channels/${this.discordGuild.id}/${this.discordChannel.id}/${message.id})`, true);
               const pm = await dmmember.send(dmEmbed);
-              await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { pm: pm.id } });
+              if (pm) await dbCollection.updateOne({ _id: new ObjectId(inserted.insertedId) }, { $set: { pm: pm.id } });
             } catch (err) {
               aux.log("EditLinkError:", err);
             }

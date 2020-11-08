@@ -26,7 +26,7 @@ app.locals.langs = app.locals.supportedLanguages.langs
   })
   .sort((a: any, b: any) => (a.name > b.name ? 1 : -1));
 
-let client = new Client();
+let client = new Client({ fetchAllMembers: true });
 let isReady = false;
 let connected = false;
 let numSlices = client.shard.count * 2;
@@ -955,6 +955,7 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
                 }
               }
             } else if (cmd === "reboot" && member.user.tag === config.author) {
+              await message.channel.send(responseEmbed(`Rebooting the bot's shards`));
               await client.shard.send({
                 type: "reboot",
               });
@@ -1064,7 +1065,7 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
    */
   client.on("messageReactionAdd", async (reaction, user: User) => {
     try {
-      if (!reaction) return;
+      if (!reaction || !user) return;
       const message = reaction.message;
       const t = new Date().getTime();
       const guildConfig = await GuildConfig.fetch(message.guild.id);
@@ -1151,7 +1152,7 @@ if (process.env.DISCORD_LOGIC.toLowerCase() === "true") {
     aux.log(err);
   });
 
-  client.on("shardReady", (id) => {
+  client.on("shardReady", async (id) => {
     aux.log("Client: Shard Ready", id);
   });
 
