@@ -835,7 +835,10 @@ export default (options: APIRouteOptions) => {
                   weekdays: [false, false, false, false, false, false, false],
                   xWeeks: 2,
                   clearReservedOnRepeat: false,
-                  env: process.env,
+                  env: {
+                    REMINDERS: process.env.REMINDERS,
+                    RESCHEDULING: process.env.RESCHEDULING,
+                  },
                   is: {
                     newgame: !req.query.g ? true : false,
                     editgame: req.query.g ? true : false,
