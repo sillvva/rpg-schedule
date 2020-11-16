@@ -27,6 +27,8 @@ export default {
     login: { path: "/login" },
     logout: { path: "/logout" },
     rss: { path: "/rss/:uid" },
+    guildUserRss: { path: "/rss/:uid/:guildId" },
+    guildRss: { path: "/guild-rss/:guildId" },
     ics: { path: "/ics/:uid.ics" },
     timezone: {
       convert: { path: "/tz/:time/:tz" },
@@ -34,12 +36,14 @@ export default {
     }
   },
   formats: {
-    dateLong: "llll"
+    dateLong: "llll",
+    dateLongTZ: "llll z"
   },
   author: "Sillvva#2532",
   command: "schedule",
   patreon: {
-    creditPledge: '4773971'
+    creditPledge: "4773971",
+    apiPledge: "5658220"
   },
   defaults: {
     sessionStatus: {

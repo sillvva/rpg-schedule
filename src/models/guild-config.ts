@@ -2,8 +2,9 @@ import db from "../db";
 import { ObjectID, ObjectId, FilterQuery } from "mongodb";
 import { Game, GameReminder } from "./game";
 import aux from "../appaux";
-import { GuildMember, Client, TextChannel } from "discord.js";
+import { GuildMember, Client, TextChannel, NewsChannel } from "discord.js";
 import { ShardMember } from "../processes/shard-manager";
+import { isObject } from "lodash";
 
 const supportedLanguages = require("../../lang/langs.json");
 const langs = supportedLanguages.langs
@@ -30,9 +31,15 @@ export interface GameTemplate {
   id?: MongoDBId;
   name: string;
   isDefault: boolean;
-  role?: string;
+  role?: string | ConfigRole;
+  playerRole?: ConfigRole[];
   embedColor?: string;
   gameDefaults?: GameDefaults;
+}
+
+export interface ConfigRole {
+  id: string;
+  name: string;
 }
 
 export interface ChannelConfig {
@@ -53,13 +60,13 @@ export interface GuildConfigModel {
   emojiAdd?: string;
   emojiRemove?: string;
   password?: string;
-  role?: string;
+  role?: string | ConfigRole;
   hidden?: boolean;
   dropOut?: boolean;
   lang?: string;
   privateReminders?: boolean;
   rescheduleMode?: string;
-  managerRole?: string;
+  managerRole?: string | ConfigRole;
   escape?: string;
   gameTemplates?: GameTemplate[];
 }
@@ -83,13 +90,13 @@ export class GuildConfig implements GuildConfigDataModel {
   emojiAdd: string = "➕";
   emojiRemove: string = "➖";
   password: string = "";
-  role: string = null;
+  role: string | ConfigRole = null;
   hidden: boolean = false;
   dropOut: boolean = true;
   lang: string = "en";
   privateReminders: boolean = false;
   rescheduleMode: string = "repost";
-  managerRole: string = null;
+  managerRole: string | ConfigRole = null;
   escape?: "!";
   gameTemplates?: GameTemplate[] = [];
   saveDefaultTemplate = false;
@@ -133,6 +140,8 @@ export class GuildConfig implements GuildConfigDataModel {
       } else if (key === "gameTemplates") {
         this[key] = (value || []).map((gt) => {
           gt.embedColor = aux.colorFixer(gt.embedColor);
+          if (gt.playerRole && !Array.isArray(gt.playerRole)) gt.playerRole = [ isObject(gt.playerRole) ? gt.playerRole : { name: gt.playerRole } ];
+          else if (!gt.playerRole) gt.playerRole = [];
           return gt;
         });
       } else if (key === "embedColor") {
@@ -163,6 +172,7 @@ export class GuildConfig implements GuildConfigDataModel {
       isDefault: true,
       embedColor: aux.colorFixer(this.embedColor),
       role: this.role,
+      playerRole: null,
       gameDefaults: {
         minPlayers: 1,
         maxPlayers: 7,
@@ -266,7 +276,7 @@ export class GuildConfig implements GuildConfigDataModel {
   shardMemberHasPermission(member: ShardMember, channelId?: string) {
     return !!this.gameTemplates.find((gt) => {
       const matchedChannel = this.channel.find((c) => c.gameTemplates.find((cgt) => cgt === gt.id) && (!channelId || c.channelId === channelId));
-      const userHasRole = !gt.role || !!member.roles.find((r) => gt.role.toLowerCase().trim() === r.name.toLowerCase().trim());
+      const userHasRole = !gt.role || !!member.roles.find((r) => isObject(gt.role) ? gt.role.id === r.id : gt.role.toLowerCase().trim() === r.name.toLowerCase().trim());
       return matchedChannel && userHasRole;
     });
   }
@@ -275,7 +285,7 @@ export class GuildConfig implements GuildConfigDataModel {
     return !!this.gameTemplates.find((gt) => {
       return (
         this.channel.find((c) => c.gameTemplates.find((cgt) => cgt === gt.id) && (!channelId || c.channelId === channelId)) &&
-        (!gt.role || !!member.roles.cache.array().find((r) => gt.role.toLowerCase().trim() === r.name.toLowerCase().trim()))
+        (!gt.role || !!member.roles.cache.array().find((r) => isObject(gt.role) ? gt.role.id === r.id : gt.role.toLowerCase().trim() === r.name.toLowerCase().trim()))
       );
     });
   }
@@ -297,7 +307,7 @@ export class GuildConfig implements GuildConfigDataModel {
       const game = games[i];
       const guild = client.guilds.cache.find((g) => g.id === game.discordGuild.id);
       if (guild) {
-        const channel = <TextChannel>guild.channels.cache.find((c) => c instanceof TextChannel && c.id === game.discordChannel.id);
+        const channel = <TextChannel | NewsChannel>guild.channels.cache.find((c) => (c instanceof TextChannel || c instanceof NewsChannel) && c.id === game.discordChannel.id);
         if (channel) {
           const message = await channel.messages.fetch(game.messageId);
           if (message) {

@@ -7,7 +7,10 @@ export function socket(httpServer: http.Server) {
   _io = SocketIO.listen(httpServer);
 
   _io.on("connection", (socket) => {
-    // console.log("Client connected!");
+    if (socket.handshake.query && socket.handshake.query.rooms) {
+      socket.join(socket.handshake.query.rooms.split(','));
+      socket.emit("connected", `Connected to rooms: ${socket.handshake.query.rooms.split(',').join(', ')}`);
+    }
   });
 
   return _io;

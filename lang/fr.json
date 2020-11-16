@@ -48,6 +48,7 @@
     "TIME_ZONE": "Fuseau horaire",
     "TODAY": "Aujourd'hui",
     "GAME_IMAGE": "Image du jeu",
+    "THUMBNAIL": "La vignette",
     "GAME_IMAGE_DESC": "Par défaut, l'avatar Discord de GM",
     "REMINDER": "Rappel",
     "REMINDER_FOR": "Rappel pour",
@@ -69,8 +70,17 @@
     "COUNTDOWN": "Countdown",
     "MONTHLY_TYPE": "Type mensuel",
     "HIDE_DATE": "Masquer la date",
+    "PAST_SIGNUPS": "Autoriser les inscriptions après la date / l'heure d'inscription",
     "SLOT": "Fente",
     "UNSAVED": "Vous avez des changements non enregistrés. Voulez-vous continuer?",
+    "GAME_OPTIONS": "Options de jeu",
+    "DISABLE_WAITLIST": "Désactiver la liste d'attente",
+    "UPLOAD_GAME_IMAGE": "Télécharger Image du jeu",
+    "UPLOAD_THUMBNAIL": "Télécharger Vignette",
+    "MAX_UPLOAD_SIZE": "Taille maximale (10 Mo)",
+    "DESCRIPTION_PANEL": "Description",
+    "RESCHEDULING_PANEL": "Rééchelonnement",
+    "EXTRA_PANEL": "Options Supplémentaires",
     "options": {
       "AUTOMATED_SIGNUP": "Inscription automatisée",
       "CUSTOM_SIGNUP_INSTRUCTIONS": "Instructions d'inscription personnalisées",
@@ -154,9 +164,10 @@
     "PRIVATE_REMINDERS_OFF": "Les rappels privés ont été désactivés!",
     "PASSWORD": "Mot de passe",
     "PASSWORD_SET": "Mot de passe mis à jour!",
-    "ROLE": "Rôle",
+    "ROLE": "MJ Rôle",
     "ROLE_SET": "Rôle attribué à `:ROLE`!",
     "ROLE_CLEARED": "Rôle effacé!",
+    "PLAYER_ROLE": "Joueur Rôle",
     "NO_ROLE": "Aucun rôle",
     "MANAGER_ROLE": "Rôle de Directeur",
     "LANGUAGE": "La langue",
@@ -167,10 +178,13 @@
     "DROP_OUTS_DISABLED": "Les désinscriptions sont maintenant `interdites` pour les nouvelles parties.",
     "RESCHEDULE_MODE": "Mode de reprogrammation",
     "RESCHEDULE_MODE_UPDATED": "Le mode reprogrammation a été mis à jour",
+    "EVENTS_TITLE": "Jeux à venir sur :SERVER dans le prochain :TIMEFRAME",
+    "EVENTS_NONE": "Pas de jeux dans le laps de temps spécifié.",
     "desc": {
       "SERVER_COMMAND": "Cette commande ne fonctionnera que sur un serveur",
       "HELP": "Afficher cette fenêtre d'aide",
       "LINK": "Récupérer le lien pour poster des parties",
+      "EVENTS": "Obtenez un message privé avec une liste des événements à venir. Pour la `timeframe`, vous pouvez spécifier `# hours`, `# days`, ou `# weeks`.",
       "CONFIGURATION": "Obtenir la configuration du bot",
       "CHANNEL_CONFIGURATION": "Les paramètres configurés ici remplaceront les paramètres de serveur correspondants pour le canal donné.",
       "ADD_CHANNEL": "Ajouter un channel où les parties seront publiées",
@@ -189,12 +203,14 @@
       "EMOJI_ERROR": "L'emoji doit être un caractère unicode connu comme emoji. Tu as entré `:CHAR`. Allez voir https://www.unicode.org/emoji/charts/full-emoji-list.html pour une liste complete des Emojis. Utilisez la version du navigateur.",
       "PRIVATE_REMINDERS": "Indiquez si les rappels de jeu sont envoyés aux messages privés. Actuellement `:PR`",
       "ROLE": "Attribuer un rôle comme condition préalable à la publication de partie",
+      "PLAYER_ROLE": "Attribuer un rôle en tant que condition préalable à la signature pour les jeux",
       "MANAGER_ROLE": "Attribuer un rôle pour permettre la gestion de tous les jeux sur serveur",
       "PASSWORD_SET": "Configurer un mot de passe pour les parties à créer",
       "PASSWORD_CLEAR": "Supprimer le mot de passe",
       "TOGGLE_DROP_OUT": "Activer / désactiver la possibilité pour les joueurs de se désinscrire",
       "LANG": "Définissez la langue du bot. Prise en charge:",
-      "RESCHEDULE_MODE": ""
+      "RESCHEDULE_MODE": "Options: `repost` (par défaut, crée un nouveau message d'annonce), `update` (met à jour le message d'annonce d'origine)",
+      "BOT_PERMISSIONS": "Montre quelles autorisations le bot manque dans le canal désigné"
     }
   },
   "other": {
@@ -203,6 +219,13 @@
     "MAINTENANCE": "Le site sera en maintenance :TIME d'environ :DURATION heure(s).",
     "UNDER_MAINTENANCE": "est en maintenance",
     "YOURE_IN": "You're in! You've secured a spot for **:GAME** in **:SERVER**.",
-    "BACK_SOON": "Il sera bientôt de retour!"
+    "BACK_SOON": "Il sera bientôt de retour!",
+    "RESCHEDULED": "Le jeu a été reprogrammé",
+    "DELETED": "Le jeu a été supprimé",
+    "EDIT_PERMISSION": "Vous n'êtes pas autorisé à modifier ce jeu",
+    "ALREADY_STARTED": "Ce jeu a déjà commencé!",
+    "MAX_NO_WAITLIST": "Ce jeu est plein et ne pas accepter des inscriptions supplémentaires.",
+    "MISSING_PLAYER_ROLE": "Vous n'avez pas le rôle :ROLE nécessaire pour se joindre à cet événement.",
+    "OR": "ou"
   }
 }

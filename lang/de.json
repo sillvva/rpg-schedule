@@ -48,6 +48,7 @@
     "TIME_ZONE": "Zeitzone",
     "TODAY": "Heute",
     "GAME_IMAGE": "Spielbild",
+    "THUMBNAIL": "Miniaturansicht",
     "GAME_IMAGE_DESC": "Standardmäßig wird der Avatar des SL verwendet.",
     "REMINDER": "Erinnerung",
     "REMINDER_FOR": "Erinnerung für",
@@ -69,8 +70,17 @@
     "COUNTDOWN": "Countdown",
     "MONTHLY_TYPE": "Monatlicher Typ",
     "HIDE_DATE": "Datum ausblenden",
+    "PAST_SIGNUPS": "Zulassen von Anmeldungen nach dem Datum / der Uhrzeit der Anmeldung",
     "SLOT": "Slot",
     "UNSAVED": "Du hast nicht gespeicherte Änderungen. Möchten Sie fortfahren?",
+    "GAME_OPTIONS": "Spieleinstellungen",
+    "DISABLE_WAITLIST": "Deaktivieren Warteliste",
+    "UPLOAD_GAME_IMAGE": "Hochladen von Spielbild",
+    "UPLOAD_THUMBNAIL": "Hochladen Minibild",
+    "MAX_UPLOAD_SIZE": "Max Größe (5 MB)",
+    "DESCRIPTION_PANEL": "Beschreibung",
+    "RESCHEDULING_PANEL": "Neuterminierung",
+    "EXTRA_PANEL": "Zusätzliche Optionen",
     "options": {
       "AUTOMATED_SIGNUP": "Automatisches Eintragen",
       "CUSTOM_SIGNUP_INSTRUCTIONS": "Benutzerdefinierter Befehl zum Eintragen",
@@ -154,8 +164,9 @@
     "PRIVATE_REMINDERS_OFF": "Private Erinnerungen wurden deaktiviert!",
     "PASSWORD": "Passwort",
     "PASSWORD_SET": "Passwort aktualisiert!",
-    "ROLE": "Rolle",
+    "ROLE": "SL Rolle",
     "ROLE_SET": "Rolle wurde auf `:ROLE` gesetzt!",
+    "PLAYER_ROLE": "Spieler Rolle",
     "NO_ROLE": "Keine Rolle",
     "ROLE_CLEARED": "Rolle gelöscht!",
     "MANAGER_ROLE": "Manager Rolle",
@@ -167,10 +178,13 @@
     "DROP_OUTS_DISABLED": "Austragungen sind nun `deaktiviert` für neue Spiele.",
     "RESCHEDULE_MODE": "Terminverschiebungsmodus",
     "RESCHEDULE_MODE_UPDATED": "Terminverschiebungsmodus wurde aktualisiert",
+    "EVENTS_TITLE": "Die nächsten Spiele :SERVER innerhalb der nächsten :TIMEFRAME",
+    "EVENTS_NONE": "Keine Spiele innerhalb der vorgegebenen Zeit.",
     "desc": {
       "SERVER_COMMAND": "Dieser Befehl wird nur auf dem Server funktionieren.",
       "HELP": "Zeige dieses Hilfefenster an.",
       "LINK": "Erhalte den Link für das veröffentliche Spiel.",
+      "EVENTS": "Holen Sie sich eine private Nachricht mit einer Liste der kommenden Veranstaltungen. Für die `timeframe`, können Sie `# hours` angeben, `# days` oder `# weeks`.",
       "CONFIGURATION": "Zeige die Bot Konfiguration.",
       "CHANNEL_CONFIGURATION": "Die hier konfigurierten Einstellungen überschreiben die entsprechenden Servereinstellungen für den angegebenen Kanal.",
       "ADD_CHANNEL": "Füge einen Kanal hinzu, in welchem Spiele veröffentlicht werden können.",
@@ -189,12 +203,14 @@
       "EMOJI_ERROR": "Emoji muss ein Unicode Emoji Zeichen sein. Du hast eingegeben `:CHAR`. Hier eine vollständige Liste von Emojis (verwende die Browser-Version): https://www.unicode.org/emoji/charts/full-emoji-list.html",
       "PRIVATE_REMINDERS": "Stellen Sie ein, ob die Spielerinnerungen an private Nachrichten gesendet werden. Aktuell `:PR`",
       "ROLE": "Weise eine Rolle zu, die als Voraussetzung gilt, um Spiele zu veröffentlichen.",
+      "PLAYER_ROLE": "eine Rolle als Voraussetzung für Vergeben für Spiele anmelden",
       "MANAGER_ROLE": "Weise eine Rolle zu, um die Verwaltung aller Spiele auf dem Server zu ermöglichen.",
       "PASSWORD_SET": "Konfiguriere ein Passwort für das Veröffentlichen von Spielen.",
       "PASSWORD_CLEAR": "Passwort entfernen",
       "TOGGLE_DROP_OUT": "Aktivieren/Deaktivieren, ob sich Spieler austragen dürfen.",
       "LANG": "Wähle die Sprache des Bots. Unterstützt:",
-      "RESCHEDULE_MODE": "Optionen: `repost` (standard, erstellt einen neuen Ankündigungsbeitrag), `update` (aktualisiert den originalen Ankündigungsbeitrag)"
+      "RESCHEDULE_MODE": "Optionen: `repost` (standard, erstellt einen neuen Ankündigungsbeitrag), `update` (aktualisiert den originalen Ankündigungsbeitrag)",
+      "BOT_PERMISSIONS": "Zeigt an, welche Berechtigungen die Bot in dem bezeichneten Platz Kanal fehlt."
     }
   },
   "other": {
@@ -203,6 +219,13 @@
     "MAINTENANCE": "Die Website wird gewartet :TIME für ungefähr :DURATION stunde(n).",
     "UNDER_MAINTENANCE": "ist in Wartung",
     "YOURE_IN": "Du bist in! Sie haben sich einen Platz für :GAME in :SERVER gesichert.",
-    "BACK_SOON": "Es wird bald zurück sein!"
+    "BACK_SOON": "Es wird bald zurück sein!",
+    "RESCHEDULED": "Das Spiel wurde verschoben",
+    "DELETED": "Das Spiel wurde gelöscht",
+    "EDIT_PERMISSION": "Sie haben keine Berechtigung, dieses Spiel zu bearbeiten",
+    "ALREADY_STARTED": "Das Spiel hat bereits begonnen!",
+    "MAX_NO_WAITLIST": "Das Spiel ist voll und keine zusätzliche Anmeldungen zu akzeptieren.",
+    "MISSING_PLAYER_ROLE": "Sie haben nicht die :ROLE Rolle erforderlich, dass die Veranstaltung zu verbinden.",
+    "OR": "oder"
   }
 }

@@ -2,9 +2,11 @@ import cloneDeep from "lodash/cloneDeep";
 import isEqual from "lodash/isEqual";
 import fromPairs from "lodash/fromPairs";
 import toPairs from "lodash/toPairs";
-import moment from "moment";
+import moment from "moment-timezone";
 import "moment-recur-ts";
 import axios from "axios";
+import md5 from "md5";
+import config from "./models/config";
 import { GameModel } from "./models/game";
 
 interface Path {
@@ -20,27 +22,41 @@ const patreonPledges = async () => {
   const accessToken = process.env.PATREON_API_ACCESS_TOKEN;
   const campaignId = process.env.PATREON_CAMPAIGN_ID;
   try {
-    const url = `https://www.patreon.com/api/oauth2/api/campaigns/${campaignId}/pledges`;
-    const response = await axios.get(url, {
-      headers: {
-        authorization: `Bearer ${accessToken}`,
-      },
-    });
-    const data = response.data;
-    const rewards = data.included.filter((i) => i.type === "reward" && i.id > 0);
-    const pledges = data.data.filter((i) => i.type === "pledge" && i.id > 0);
-    const users = data.included.filter((i) => i.type === "user" && i.id > 0);
     const result = [];
-    pledges.forEach((pledge) => {
-      const rewardId = pledge.relationships.reward.data.id;
-      const reward = rewards.find((r) => r.id === rewardId);
-      const patronId = pledge.relationships.patron.data.id;
-      const user = users.find((u) => u.id === patronId);
-      result.push({
-        patron: user,
-        reward: reward,
+    let url = `https://www.patreon.com/api/oauth2/api/campaigns/${campaignId}/pledges?page%5Bcount%5D=100`;
+    do {
+      const response = await axios.get(url, {
+        headers: {
+          authorization: `Bearer ${accessToken}`,
+        },
       });
-    });
+      const data = response.data;
+      const rewards = data.included.filter((i) => i.type === "reward" && i.id > 0);
+      const pledges = data.data.filter((i) => i.type === "pledge" && i.id > 0);
+      const users = data.included.filter((i) => i.type === "user" && i.id > 0);
+      pledges.forEach((pledge) => {
+        if (!pledge.relationships.reward.data) return;
+        if (!pledge.relationships.patron.data) return;
+        try {
+          const rewardId = pledge.relationships.reward.data.id;
+          const reward = rewards.find((r) => r.id === rewardId);
+          const patronId = pledge.relationships.patron.data.id;
+          const user = users.find((u) => u.id === patronId);
+          result.push({
+            patron: user,
+            reward: reward,
+          });
+        }
+        catch(err) {
+          console.log(pledge.relationships.reward)
+        }
+      });
+
+      // Patreon API returns paginated results
+      // data.links.next is the URL for the next set of pledges
+      url = data.links.next;
+    }
+    while(url)
     return {
       status: "success",
       data: result,
@@ -51,6 +67,24 @@ const patreonPledges = async () => {
       error: err,
     };
   }
+};
+
+const getAPIKey = async (discordId: string) => {
+  const pledges = await patreonPledges();
+  const pledge =
+    pledges.status === "success"
+      ? pledges.data.find((p) => p.reward.id === config.patreon.apiPledge && (p.patron.attributes.social_connections.discord || {}).user_id === discordId)
+      : null;
+  return pledge && md5(`${pledge.patron.id}${discordId}`);
+};
+
+const validateAPIKey = async (key: string) => {
+  const pledges = await patreonPledges();
+  const pledge =
+    pledges.status === "success"
+      ? pledges.data.find((p) => config.patreon.apiPledge.split(",").includes(p.reward.id) && md5(`${p.patron.id}${(p.patron.attributes.social_connections.discord || {}).user_id}`) === key)
+      : null;
+  return pledge && (pledge.patron.attributes.social_connections.discord || {}).user_id;
 };
 
 const log = (...content: any) => {
@@ -215,6 +249,10 @@ const isEmoji = (emoji: string) => {
   );
 };
 
+const isObject = (value: any) => {
+  return value && typeof value === 'object' && value.constructor === Object;
+};
+
 var colors = {
   aliceblue: "#f0f8ff",
   antiquewhite: "#faebd7",
@@ -369,7 +407,10 @@ export default {
   backslash: backslash,
   timer: timer,
   isEmoji: isEmoji,
+  isObject: isObject,
   log: log,
   patreonPledges: patreonPledges,
   colorFixer: colorFixer,
+  getAPIKey: getAPIKey,
+  validateAPIKey: validateAPIKey
 };
