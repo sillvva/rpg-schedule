@@ -20,7 +20,7 @@
     "discord.js": "^12.0.2",
     "dotenv": "^8.0.0",
     "ejs": "^2.6.1",
-    "express": "^4.16.4",
+    "express": "^4.17.3",
     "express-handlebars": "^3.0.0",
     "express-session": "^1.16.1",
     "ics": "^2.19.0",
