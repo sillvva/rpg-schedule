@@ -13,7 +13,7 @@
     "@types/moment": "^2.13.0",
     "@types/request": "^2.48.1",
     "@types/socket.io": "^2.1.2",
-    "axios": "^0.19.2",
+    "axios": "^0.21.1",
     "body-parser": "^1.18.3",
     "connect-mongodb-session": "^2.1.1",
     "cookie-parser": "^1.4.4",
